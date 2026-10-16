@@ -491,6 +491,13 @@ function DocumentEditor({ doc, token, persist, user, onAwareness, onCollabStatus
     provider.on('status', status); provider.awareness.on('change', publish); publish()
     return () => { provider.off('status', status); provider.awareness.off('change', publish); onAwareness([]); provider.destroy(); ydoc?.destroy() }
   }, [provider, user.id, user.name, user.email, onAwareness, onCollabStatus, ydoc])
+  useEffect(() => {
+    const preserveSelection = (event: MouseEvent) => {
+      if ((event.target as HTMLElement).closest('.toolbar-format')) event.preventDefault()
+    }
+    document.addEventListener('mousedown', preserveSelection)
+    return () => document.removeEventListener('mousedown', preserveSelection)
+  }, [])
   const editor = useEditor({
     extensions: [
       StarterKit.configure(provider ? { history: false } : {}),
