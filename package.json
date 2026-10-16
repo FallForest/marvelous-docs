@@ -1,0 +1,13 @@
+{
+  "name": "marvelous-docs",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "dev:web": "pnpm --filter @marvelous-docs/web dev",
+    "dev:server": "pnpm --filter @marvelous-docs/server dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "cli": "pnpm --filter @marvelous-docs/cli exec node dist/index.js"
+  }
+}

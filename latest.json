@@ -1,0 +1,7 @@
+{
+  "version": "0.1.0",
+  "releaseUrl": "https://github.com/your-org/marvelous-docs/releases/tag/v0.1.0",
+  "notesUrl": "https://github.com/your-org/marvelous-docs/releases",
+  "apiImage": "ghcr.io/your-org/marvelous-docs-api:0.1.0",
+  "webImage": "ghcr.io/your-org/marvelous-docs-web:0.1.0"
+}
