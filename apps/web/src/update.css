@@ -8,3 +8,22 @@
 .update-link:hover {
   text-decoration: underline;
 }
+
+.update-banner {
+  min-height: 38px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #eef5ff;
+  border-bottom: 1px solid #d8e6fb;
+  color: #42658f;
+  font-size: 12px;
+  z-index: 4;
+}
+.update-banner.running { background: #fff8e8; border-color: #f1dfb0; color: #886b2b; }
+.update-banner.failed { background: #fff2ef; border-color: #f2d0c8; color: #a34d3c; }
+.update-banner.completed { background: #edf8f0; border-color: #cfe8d4; color: #39764a; }
+.update-action { border: 0; border-radius: 4px; padding: 6px 11px; background: #3370ff; color: #fff; font-size: 11px; }
+.update-action:hover { background: #245edb; }

@@ -6,6 +6,8 @@ import { createServer, type IncomingMessage } from 'node:http';
 import { WebSocketServer, WebSocket, type RawData } from 'ws';
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual, createHash } from 'node:crypto';
 import { promisify } from 'node:util';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { z } from 'zod';
 import * as Y from 'yjs';
 import * as encoding from 'lib0/encoding';
@@ -20,11 +22,15 @@ import { prosemirrorToYXmlFragment, yDocToProsemirrorJSON } from 'y-prosemirror'
 const { Pool } = pg;
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const scrypt = promisify(scryptCallback);
-const app = Fastify({ logger: true, bodyLimit: 2 * 1024 * 1024 });
+const app = Fastify({ logger: true, bodyLimit: 25 * 1024 * 1024 });
+app.addContentTypeParser('application/octet-stream', { parseAs: 'buffer' }, (_request, body, done) => done(null, body));
+for (const type of ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'application/pdf']) {
+  app.addContentTypeParser(type, { parseAs: 'buffer' }, (_request, body, done) => done(null, body));
+}
 
 type Claims = { sub: string; email: string; workspaceId: string };
 type AuthRequest = FastifyRequest & { user: Claims };
-type DocumentRow = { id: string; workspace_id: string; parent_id: string | null; title: string; kind: 'document' | 'folder'; content: unknown; version: number; acl_restricted: boolean; created_by: string; updated_by: string; created_at: Date; updated_at: Date; access_role?: string };
+type DocumentRow = { id: string; workspace_id: string; parent_id: string | null; title: string; kind: 'document' | 'folder'; content: unknown; version: number; acl_restricted: boolean; deleted_at: Date | null; created_by: string; updated_by: string; created_at: Date; updated_at: Date; access_role?: string };
 type Room = { id: string; doc: Y.Doc; awareness: awarenessProtocol.Awareness; clients: Map<WebSocket, { userId: string; canWrite: boolean; clientIds: Set<number> }>; timer?: NodeJS.Timeout; disposeTimer?: NodeJS.Timeout; saveQueue: Promise<void>; suppressSave: boolean; dirty: boolean; changeSeq: number; lastActor?: string };
 
 const contentSchema = z.object({ schemaVersion: z.literal(1), doc: z.object({ type: z.literal('doc'), content: z.array(z.unknown()).optional() }).passthrough() }).passthrough();
@@ -118,14 +124,14 @@ async function getDocumentAccess(user: Claims, documentId: string) {
     `SELECT d.*, da.role, m.role AS member_role
        FROM documents d JOIN memberships m ON m.workspace_id=d.workspace_id AND m.user_id=$2
        LEFT JOIN document_acl da ON da.document_id=d.id AND da.user_id=$2
-      WHERE d.id=$1 AND d.workspace_id=$3`, [documentId, user.sub, user.workspaceId]);
+      WHERE d.id=$1 AND d.workspace_id=$3 AND d.deleted_at IS NULL`, [documentId, user.sub, user.workspaceId]);
   if (!result.rowCount) return null;
   const row = result.rows[0];
   const role = row.member_role === 'admin' ? 'owner' : (row.role || (row.acl_restricted ? 'none' : 'editor'));
   return { row, role };
 }
 function documentJson(row: DocumentRow) {
-  return { id: row.id, title: row.title, kind: row.kind, parentId: row.parent_id, content: row.content, version: row.version, createdBy: row.created_by, updatedBy: row.updated_by, createdAt: row.created_at, updatedAt: row.updated_at };
+  return { id: row.id, title: row.title, kind: row.kind, parentId: row.parent_id, content: row.content, version: row.version, createdBy: row.created_by, updatedBy: row.updated_by, createdAt: row.created_at, updatedAt: row.updated_at, deletedAt: row.deleted_at ?? null };
 }
 function createYDoc(docJson: unknown): Y.Doc {
   const parsed = schema.nodeFromJSON(docJson);
@@ -259,6 +265,40 @@ app.get('/api/v1/system/update-check', authenticate, async () => {
   return { currentVersion: appVersion, latestVersion: latest?.version || null, updateAvailable: Boolean(latest && compareVersions(latest.version, appVersion) > 0), manifest: latest };
 });
 
+async function requireWorkspaceAdmin(auth: AuthRequest, reply: FastifyReply) {
+  const result = await pool.query('SELECT 1 FROM memberships WHERE workspace_id=$1 AND user_id=$2 AND role=\'admin\'', [auth.user.workspaceId, auth.user.sub]);
+  if (!result.rowCount) { fail(reply, 403, 'ADMIN_REQUIRED', 'Workspace administrator role is required.'); return false; }
+  return true;
+}
+
+app.post('/api/v1/system/update', authenticate, async (request, reply) => {
+  const auth = request as AuthRequest;
+  if (!await requireWorkspaceAdmin(auth, reply)) return;
+  const agentUrl = process.env.UPDATE_AGENT_URL?.trim();
+  const agentToken = process.env.UPDATE_AGENT_TOKEN?.trim();
+  if (!agentUrl || !agentToken) return fail(reply, 503, 'UPDATER_UNAVAILABLE', 'The update agent is not configured.');
+  try {
+    const response = await fetch(`${agentUrl}/update`, { method: 'POST', headers: { authorization: `Bearer ${agentToken}` }, signal: AbortSignal.timeout(5000) });
+    const body = await response.json() as unknown;
+    if (!response.ok) return fail(reply, response.status === 409 ? 409 : 502, 'UPDATE_START_FAILED', (body as { error?: string }).error || 'Unable to start the update.');
+    return reply.code(202).send({ update: body });
+  } catch { return fail(reply, 502, 'UPDATER_UNAVAILABLE', 'The update agent could not be reached.'); }
+});
+
+app.get('/api/v1/system/update-status', authenticate, async (request, reply) => {
+  const auth = request as AuthRequest;
+  if (!await requireWorkspaceAdmin(auth, reply)) return;
+  const agentUrl = process.env.UPDATE_AGENT_URL?.trim();
+  const agentToken = process.env.UPDATE_AGENT_TOKEN?.trim();
+  if (!agentUrl || !agentToken) return fail(reply, 503, 'UPDATER_UNAVAILABLE', 'The update agent is not configured.');
+  try {
+    const response = await fetch(`${agentUrl}/status`, { headers: { authorization: `Bearer ${agentToken}` }, signal: AbortSignal.timeout(3000) });
+    const body = await response.json() as unknown;
+    if (!response.ok) return fail(reply, 502, 'UPDATER_UNAVAILABLE', 'The update agent returned an error.');
+    return { update: body };
+  } catch { return fail(reply, 502, 'UPDATER_UNAVAILABLE', 'The update agent could not be reached.'); }
+});
+
 app.post('/api/v1/auth/login', async (request, reply) => {
   const input = parse(z.object({ email: emailSchema, password: z.string().min(1).max(1024) }), request.body);
   if (!input) return fail(reply, 400, 'INVALID_INPUT', 'Email and password are required.');
@@ -312,9 +352,61 @@ app.get('/api/v1/documents', authenticate, async request => {
   const auth = request as AuthRequest;
   const result = await pool.query<DocumentRow>(`SELECT d.* FROM documents d JOIN memberships m ON m.workspace_id=d.workspace_id AND m.user_id=$1
     LEFT JOIN document_acl a ON a.document_id=d.id AND a.user_id=$1
-    WHERE d.workspace_id=$2 AND (m.role='admin' OR a.role IS NOT NULL OR d.acl_restricted=false)
+    WHERE d.workspace_id=$2 AND d.deleted_at IS NULL AND (m.role='admin' OR a.role IS NOT NULL OR d.acl_restricted=false)
     ORDER BY d.updated_at DESC`, [auth.user.sub,auth.user.workspaceId]);
   return { documents: result.rows.map(documentJson) };
+});
+
+app.get('/api/v1/workspace/members', authenticate, async request => {
+  const auth = request as AuthRequest;
+  const result = await pool.query('SELECT u.id,u.email,u.name,m.role FROM users u JOIN memberships m ON m.user_id=u.id WHERE m.workspace_id=$1 ORDER BY u.name', [auth.user.workspaceId]);
+  return { members: result.rows.map(row => ({ ...safeUser(row), role: row.role })) };
+});
+
+app.get('/api/v1/documents/trash', authenticate, async request => {
+  const auth = request as AuthRequest;
+  const result = await pool.query<DocumentRow>(`SELECT d.* FROM documents d JOIN memberships m ON m.workspace_id=d.workspace_id AND m.user_id=$1
+    LEFT JOIN document_acl a ON a.document_id=d.id AND a.user_id=$1 WHERE d.workspace_id=$2 AND d.deleted_at IS NOT NULL
+    AND (m.role='admin' OR a.role IS NOT NULL OR d.acl_restricted=false) ORDER BY d.deleted_at DESC`, [auth.user.sub, auth.user.workspaceId]);
+  return { documents: result.rows.map(documentJson) };
+});
+
+app.get('/api/v1/documents/recent', authenticate, async request => {
+  const auth = request as AuthRequest;
+  const result = await pool.query<DocumentRow>(`SELECT d.*, max(da.created_at) AS activity_at FROM document_activity da JOIN documents d ON d.id=da.document_id
+    JOIN memberships m ON m.workspace_id=d.workspace_id AND m.user_id=$1 LEFT JOIN document_acl a ON a.document_id=d.id AND a.user_id=$1
+    WHERE da.user_id=$1 AND d.workspace_id=$2 AND d.deleted_at IS NULL AND (m.role='admin' OR a.role IS NOT NULL OR d.acl_restricted=false)
+    GROUP BY d.id ORDER BY activity_at DESC LIMIT 50`, [auth.user.sub, auth.user.workspaceId]);
+  return { documents: result.rows.map(documentJson) };
+});
+
+app.get('/api/v1/documents/favorites', authenticate, async request => {
+  const auth = request as AuthRequest;
+  const result = await pool.query<DocumentRow>(`SELECT d.* FROM document_favorites f JOIN documents d ON d.id=f.document_id
+    WHERE f.user_id=$1 AND d.workspace_id=$2 AND d.deleted_at IS NULL ORDER BY f.created_at DESC`, [auth.user.sub, auth.user.workspaceId]);
+  return { documents: result.rows.map(documentJson) };
+});
+
+app.put('/api/v1/documents/:id/favorite', authenticate, async (request, reply) => {
+  const auth = request as AuthRequest; const params = parse(idParams, request.params); if (!params) return fail(reply,400,'INVALID_ID','Document id must be a UUID.');
+  if (!await requireDoc(auth, reply, params.id)) return;
+  const input = parse(z.object({ favorite: z.boolean() }), request.body); if (!input) return fail(reply,400,'INVALID_INPUT','favorite must be boolean.');
+  if (input.favorite) await pool.query('INSERT INTO document_favorites(document_id,user_id) VALUES ($1,$2) ON CONFLICT DO NOTHING', [params.id,auth.user.sub]);
+  else await pool.query('DELETE FROM document_favorites WHERE document_id=$1 AND user_id=$2', [params.id,auth.user.sub]);
+  return { favorite: input.favorite };
+});
+
+app.get('/api/v1/documents/search', authenticate, async (request, reply) => {
+  const auth = request as AuthRequest; const query = parse(z.object({ q: z.string().trim().min(1).max(200), scope: z.enum(['all','title','content']).default('all') }), request.query);
+  if (!query) return fail(reply,400,'INVALID_INPUT','q is required.');
+  const result = await pool.query(`SELECT d.id,d.title,d.kind,d.parent_id AS "parentId",d.updated_at AS "updatedAt",d.version,
+    CASE WHEN d.title ILIKE $3 THEN 1 ELSE 0 END AS title_match,
+    ts_headline('simple', regexp_replace(d.content::text,'[{}\"]','','g'), plainto_tsquery('simple',$3), 'MaxWords=30,MinWords=10') AS snippet
+    FROM documents d JOIN memberships m ON m.workspace_id=d.workspace_id AND m.user_id=$1 LEFT JOIN document_acl a ON a.document_id=d.id AND a.user_id=$1
+    WHERE d.workspace_id=$2 AND d.deleted_at IS NULL AND (m.role='admin' OR a.role IS NOT NULL OR d.acl_restricted=false)
+      AND (($4='title' AND d.title ILIKE '%'||$3||'%') OR ($4='content' AND d.content::text ILIKE '%'||$3||'%') OR ($4='all' AND (d.title ILIKE '%'||$3||'%' OR d.content::text ILIKE '%'||$3||'%')))
+    ORDER BY title_match DESC,d.updated_at DESC LIMIT 50`, [auth.user.sub,auth.user.workspaceId,query.q,query.scope]);
+  return { results: result.rows };
 });
 
 app.post('/api/v1/documents', authenticate, async (request, reply) => {
@@ -344,6 +436,7 @@ app.get('/api/v1/documents/:id', authenticate, async (request, reply) => {
   const access = await requireDoc(auth,reply,params.id); if (!access) return;
   const room = rooms.get(params.id); if (room) await flushRoom(room);
   const current = await pool.query<DocumentRow>('SELECT * FROM documents WHERE id=$1 AND workspace_id=$2',[params.id,auth.user.workspaceId]);
+  await pool.query("INSERT INTO document_activity(document_id,user_id,action) VALUES ($1,$2,'view')", [params.id, auth.user.sub]);
   return current.rowCount ? { document: documentJson(current.rows[0]) } : fail(reply,404,'NOT_FOUND','Document was not found.');
 });
 
@@ -381,23 +474,44 @@ app.put('/api/v1/documents/:id', authenticate, async (request, reply) => {
   } catch (error) { await client.query('ROLLBACK'); throw error; } finally { client.release(); }
 });
 
+app.delete('/api/v1/documents/:id', authenticate, async (request, reply) => {
+  const auth = request as AuthRequest; const params = parse(idParams, request.params); if (!params) return fail(reply,400,'INVALID_ID','Document id must be a UUID.');
+  if (!await requireDoc(auth, reply, params.id, 'owner')) return;
+  await pool.query('UPDATE documents SET deleted_at=now(),updated_at=now(),updated_by=$2 WHERE id=$1', [params.id,auth.user.sub]);
+  return { ok: true };
+});
+app.post('/api/v1/documents/:id/restore', authenticate, async (request, reply) => {
+  const auth = request as AuthRequest; const params = parse(idParams, request.params); if (!params) return fail(reply,400,'INVALID_ID','Document id must be a UUID.');
+  const result = await pool.query('SELECT d.* FROM documents d JOIN memberships m ON m.workspace_id=d.workspace_id AND m.user_id=$2 WHERE d.id=$1 AND m.role IN (\'admin\',\'member\')', [params.id,auth.user.sub]);
+  if (!result.rowCount) return fail(reply,404,'NOT_FOUND','Document was not found.');
+  await pool.query('UPDATE documents SET deleted_at=NULL,updated_at=now(),updated_by=$2 WHERE id=$1', [params.id,auth.user.sub]); return { ok: true };
+});
+app.delete('/api/v1/documents/:id/permanent', authenticate, async (request, reply) => {
+  const auth = request as AuthRequest; const params = parse(idParams, request.params); if (!params) return fail(reply,400,'INVALID_ID','Document id must be a UUID.');
+  const owner = await pool.query('SELECT 1 FROM documents d JOIN memberships m ON m.workspace_id=d.workspace_id AND m.user_id=$2 WHERE d.id=$1 AND (m.role=\'admin\' OR d.created_by=$2)', [params.id,auth.user.sub]);
+  if (!owner.rowCount) return fail(reply,404,'NOT_FOUND','Document was not found.');
+  await pool.query('DELETE FROM documents WHERE id=$1 AND deleted_at IS NOT NULL', [params.id]); return { ok: true };
+});
+
 app.get('/api/v1/documents/:id/acl', authenticate, async (request, reply) => {
   const auth = request as AuthRequest; const params = parse(idParams, request.params);
   if (!params) return fail(reply, 400, 'INVALID_ID', 'Document id must be a UUID.');
   if (!await requireDoc(auth, reply, params.id, 'owner')) return;
   const result = await pool.query('SELECT u.id AS "userId",u.email,u.name,a.role FROM document_acl a JOIN users u ON u.id=a.user_id WHERE a.document_id=$1 ORDER BY u.name', [params.id]);
-  return { permissions: result.rows };
+  const settings = await pool.query('SELECT acl_restricted FROM documents WHERE id=$1', [params.id]);
+  return { restricted: Boolean(settings.rows[0]?.acl_restricted), permissions: result.rows };
 });
 app.put('/api/v1/documents/:id/acl', authenticate, async (request, reply) => {
   const auth = request as AuthRequest; const params = parse(idParams, request.params);
   if (!params) return fail(reply, 400, 'INVALID_ID', 'Document id must be a UUID.');
   if (!await requireDoc(auth, reply, params.id, 'owner')) return;
-  const input = parse(z.object({ userId: uuidSchema, role: z.enum(['owner','editor','viewer']).nullable() }), request.body);
+  const input = parse(z.object({ userId: uuidSchema, role: z.enum(['owner','editor','viewer']).nullable(), restricted: z.boolean().optional() }), request.body);
   if (!input) return fail(reply, 400, 'INVALID_INPUT', 'Provide a workspace userId and role, or null to remove the explicit permission.');
   const member = await pool.query('SELECT 1 FROM memberships m JOIN documents d ON d.workspace_id=m.workspace_id WHERE d.id=$1 AND m.user_id=$2', [params.id, input.userId]);
   if (!member.rowCount) return fail(reply, 404, 'MEMBER_NOT_FOUND', 'User is not a member of this workspace.');
   if (input.userId === auth.user.sub && input.role !== 'owner') return fail(reply, 400, 'OWNER_REQUIRED', 'Document owners cannot remove their own owner role.');
-  await pool.query('UPDATE documents SET acl_restricted=true WHERE id=$1', [params.id]);
+  if (input.restricted !== undefined) await pool.query('UPDATE documents SET acl_restricted=$2 WHERE id=$1', [params.id, input.restricted]);
+  else await pool.query('UPDATE documents SET acl_restricted=true WHERE id=$1', [params.id]);
   if (input.role === null) await pool.query('DELETE FROM document_acl WHERE document_id=$1 AND user_id=$2', [params.id,input.userId]);
   else await pool.query('INSERT INTO document_acl(document_id,user_id,role) VALUES ($1,$2,$3) ON CONFLICT(document_id,user_id) DO UPDATE SET role=EXCLUDED.role', [params.id,input.userId,input.role]);
   return { ok: true };
@@ -406,16 +520,23 @@ app.put('/api/v1/documents/:id/acl', authenticate, async (request, reply) => {
 app.get('/api/v1/documents/:id/comments', authenticate, async (request, reply) => {
   const auth=request as AuthRequest; const params=parse(idParams,request.params); if(!params) return fail(reply,400,'INVALID_ID','Document id must be a UUID.');
   if(!await requireDoc(auth,reply,params.id)) return;
-  const result=await pool.query('SELECT c.id,c.body,c.anchor,c.created_at AS "createdAt",u.id AS "userId",u.name AS "userName" FROM comments c JOIN users u ON u.id=c.user_id WHERE c.document_id=$1 ORDER BY c.created_at',[params.id]);
+  const result=await pool.query('SELECT c.id,c.parent_id AS "parentId",c.body,c.anchor,c.status,c.resolved_at AS "resolvedAt",c.resolved_by AS "resolvedBy",c.created_at AS "createdAt",c.updated_at AS "updatedAt",u.id AS "userId",u.name AS "userName" FROM comments c JOIN users u ON u.id=c.user_id WHERE c.document_id=$1 ORDER BY c.created_at',[params.id]);
   return { comments: result.rows };
 });
 app.post('/api/v1/documents/:id/comments', authenticate, async (request, reply) => {
   const auth=request as AuthRequest; const params=parse(idParams,request.params); if(!params) return fail(reply,400,'INVALID_ID','Document id must be a UUID.');
   if(!await requireDoc(auth,reply,params.id,'editor')) return;
-  const input=parse(z.object({body:z.string().trim().min(1).max(10000),anchor:z.unknown().optional()}),request.body);
+  const input=parse(z.object({body:z.string().trim().min(1).max(10000),anchor:z.unknown().optional(),parentId:uuidSchema.optional()}),request.body);
   if(!input) return fail(reply,400,'INVALID_INPUT','Comment body is required.');
-  const result=await pool.query('INSERT INTO comments(document_id,user_id,body,anchor) VALUES ($1,$2,$3,$4) RETURNING id,body,anchor,created_at AS "createdAt"',[params.id,auth.user.sub,input.body,input.anchor ?? null]);
+  if (input.parentId) { const parent=await pool.query('SELECT 1 FROM comments WHERE id=$1 AND document_id=$2',[input.parentId,params.id]); if(!parent.rowCount) return fail(reply,404,'PARENT_COMMENT_NOT_FOUND','Parent comment was not found.'); }
+  const result=await pool.query('INSERT INTO comments(document_id,user_id,body,anchor,parent_id) VALUES ($1,$2,$3,$4,$5) RETURNING id,parent_id AS "parentId",body,anchor,status,created_at AS "createdAt",updated_at AS "updatedAt"',[params.id,auth.user.sub,input.body,input.anchor ?? null,input.parentId ?? null]);
   return reply.code(201).send({comment:{...result.rows[0],userId:auth.user.sub}});
+});
+app.patch('/api/v1/documents/:id/comments/:commentId', authenticate, async (request,reply)=>{
+  const auth=request as AuthRequest; const params=parse(z.object({id:uuidSchema,commentId:uuidSchema}),request.params); if(!params) return fail(reply,400,'INVALID_ID','Document and comment ids must be UUIDs.');
+  if(!await requireDoc(auth,reply,params.id,'editor')) return; const input=parse(z.object({body:z.string().trim().min(1).max(10000).optional(),status:z.enum(['open','resolved']).optional()}),request.body); if(!input || (!input.body && !input.status)) return fail(reply,400,'INVALID_INPUT','Comment body or status is required.');
+  const result=await pool.query('UPDATE comments SET body=COALESCE($3,body),status=COALESCE($4,status),resolved_at=CASE WHEN $4=\'resolved\' THEN now() WHEN $4=\'open\' THEN NULL ELSE resolved_at END,resolved_by=CASE WHEN $4=\'resolved\' THEN $2 WHEN $4=\'open\' THEN NULL ELSE resolved_by END,updated_at=now() WHERE id=$1 AND document_id=$5 AND (user_id=$2 OR EXISTS (SELECT 1 FROM memberships m JOIN documents d ON d.workspace_id=m.workspace_id WHERE d.id=$5 AND m.user_id=$2 AND m.role=\'admin\')) RETURNING id,body,status,parent_id AS "parentId",resolved_at AS "resolvedAt",updated_at AS "updatedAt"',[params.commentId,auth.user.sub,input.body ?? null,input.status ?? null,params.id]);
+  if(!result.rowCount) return fail(reply,404,'COMMENT_NOT_FOUND','Comment was not found.'); return {comment:result.rows[0]};
 });
 
 app.get('/api/v1/documents/:id/versions', authenticate, async (request,reply)=>{
@@ -424,6 +545,12 @@ app.get('/api/v1/documents/:id/versions', authenticate, async (request,reply)=>{
   const room=rooms.get(params.id); if(room) await flushRoom(room);
   const result=await pool.query('SELECT id,version,title,content,created_by AS "createdBy",created_at AS "createdAt" FROM document_versions WHERE document_id=$1 ORDER BY version DESC',[params.id]);
   return {versions:result.rows};
+});
+app.get('/api/v1/documents/:id/versions/:versionId', authenticate, async (request,reply)=>{
+  const auth=request as AuthRequest; const params=parse(versionParams,request.params); if(!params) return fail(reply,400,'INVALID_ID','Document and version ids must be UUIDs.');
+  if(!await requireDoc(auth,reply,params.id)) return;
+  const result=await pool.query('SELECT id,document_id AS "documentId",version,title,content,created_by AS "createdBy",u.name AS "createdByName",created_at AS "createdAt" FROM document_versions v JOIN users u ON u.id=v.created_by WHERE v.id=$1 AND v.document_id=$2',[params.versionId,params.id]);
+  if(!result.rowCount) return fail(reply,404,'VERSION_NOT_FOUND','Version was not found.'); return { version: result.rows[0] };
 });
 app.post('/api/v1/documents/:id/versions/:versionId/restore', authenticate, async (request,reply)=>{
   const auth=request as AuthRequest; const params=parse(versionParams,request.params); if(!params) return fail(reply,400,'INVALID_ID','Document and version ids must be UUIDs.');
@@ -450,6 +577,25 @@ app.post('/api/v1/documents/:id/versions/:versionId/restore', authenticate, asyn
     const activeRoom = rooms.get(params.id); if (activeRoom) await syncRoomFromContent(activeRoom, (target.rows[0].content as { doc: unknown }).doc);
     return {document:documentJson(updated.rows[0])};
   } catch(error) { await client.query('ROLLBACK'); throw error; } finally { client.release(); }
+});
+
+app.put('/api/v1/uploads', authenticate, async (request, reply) => {
+  const auth = request as AuthRequest;
+  const body = request.body as Buffer;
+  if (!Buffer.isBuffer(body) || body.length === 0) return fail(reply, 400, 'INVALID_INPUT', 'Upload body is required.');
+  if (body.length > 20 * 1024 * 1024) return fail(reply, 413, 'FILE_TOO_LARGE', 'Files are limited to 20 MB.');
+  const mime = String(request.headers['content-type'] || 'application/octet-stream').split(';')[0].toLowerCase();
+  const allowed = new Set(['application/octet-stream','image/png','image/jpeg','image/gif','image/webp','application/pdf']);
+  if (!allowed.has(mime)) return fail(reply, 415, 'UNSUPPORTED_MEDIA_TYPE', 'This file type is not supported.');
+  const rawName = String(request.headers['x-file-name'] || 'upload.bin').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 120) || 'upload.bin';
+  const id = randomBytes(16).toString('hex'); const dir = process.env.UPLOAD_DIR || '/data/uploads'; await mkdir(dir, { recursive: true });
+  const filename = `${id}-${rawName}`; await writeFile(join(dir, filename), body);
+  return reply.code(201).send({ file: { id, name: rawName, mimeType: mime, size: body.length, url: `/api/v1/uploads/${filename}`, uploadedBy: auth.user.sub } });
+});
+app.get('/api/v1/uploads/:filename', async (request, reply) => {
+  const filename = String((request.params as { filename?: string }).filename || ''); if (!/^[a-f0-9]{32}-[a-zA-Z0-9._-]+$/.test(filename)) return fail(reply,404,'NOT_FOUND','File was not found.');
+  try { const fs = await import('node:fs/promises'); const data = await fs.readFile(join(process.env.UPLOAD_DIR || '/data/uploads', filename)); return reply.type('application/octet-stream').send(data); }
+  catch { return fail(reply,404,'NOT_FOUND','File was not found.'); }
 });
 
 app.setErrorHandler((error, _request, reply) => {

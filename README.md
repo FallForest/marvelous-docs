@@ -30,7 +30,7 @@ docker compose up -d --build
 docker compose ps
 ```
 
-For releases, set `API_IMAGE`, `WEB_IMAGE`, `APP_VERSION`, and `UPDATE_MANIFEST_URL` in `.env`. Use the stable manifest URL `https://github.com/OWNER/marvelous-docs/releases/latest/download/latest.json`. The API exposes `/api/v1/system/update-check` for authenticated clients. The recommended upgrade command is `./scripts/update.sh`; it creates a database backup, pulls the configured GHCR images, runs migrations, restarts the stack, and verifies `/healthz`.
+For releases, set `API_IMAGE`, `WEB_IMAGE`, `APP_VERSION`, `UPDATE_MANIFEST_URL`, and a long random `UPDATE_AGENT_TOKEN` in `.env`. Use the stable manifest URL `https://github.com/FallForest/marvelous-docs/releases/latest/download/latest.json`. The API exposes `/api/v1/system/update-check` and lets workspace administrators start an update from the in-app `立即更新` button. The internal updater performs the same backup, image pull, migration, restart, and `/healthz` verification as `./scripts/update.sh`; it requires access to `/var/run/docker.sock` and is never exposed through Caddy.
 
 Caddy serves HTTPS and obtains certificates for a public domain automatically. For a local-only instance, use `localhost` and open `https://localhost` (Caddy uses its local CA). The database and uploaded files live in named Docker volumes.
 

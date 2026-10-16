@@ -44,7 +44,9 @@ CREATE TABLE IF NOT EXISTS documents (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 CREATE INDEX IF NOT EXISTS documents_workspace_updated ON documents(workspace_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS documents_workspace_deleted ON documents(workspace_id, deleted_at);
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS acl_restricted boolean NOT NULL DEFAULT false;
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS yjs_state bytea;
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS kind text NOT NULL DEFAULT 'document';
@@ -72,3 +74,23 @@ CREATE TABLE IF NOT EXISTS comments (
   anchor jsonb,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+ALTER TABLE comments ADD COLUMN IF NOT EXISTS parent_id uuid REFERENCES comments(id) ON DELETE CASCADE;
+ALTER TABLE comments ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'open' CHECK (status IN ('open','resolved'));
+ALTER TABLE comments ADD COLUMN IF NOT EXISTS resolved_at timestamptz;
+ALTER TABLE comments ADD COLUMN IF NOT EXISTS resolved_by uuid REFERENCES users(id);
+ALTER TABLE comments ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
+CREATE INDEX IF NOT EXISTS comments_document_thread ON comments(document_id, parent_id, created_at);
+CREATE TABLE IF NOT EXISTS document_favorites (
+  document_id uuid NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (document_id, user_id)
+);
+CREATE TABLE IF NOT EXISTS document_activity (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  document_id uuid NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  action text NOT NULL DEFAULT 'view',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS document_activity_recent ON document_activity(user_id, created_at DESC);
