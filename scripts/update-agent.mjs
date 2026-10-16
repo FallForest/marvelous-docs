@@ -24,6 +24,16 @@ async function syncReleaseEnv() {
     content = pattern.test(content) ? content.replace(pattern, line) : `${content.trimEnd()}\n${line}\n`
   }
   await writeFile(envPath, content)
+  const composePath = `${projectDir}/${process.env.COMPOSE_FILE || 'docker-compose.yml'}`
+  let compose = await readFile(composePath, 'utf8')
+  const imageValues = { apiImage: manifest.apiImage, webImage: manifest.webImage }
+  for (const [service, image] of Object.entries(imageValues)) {
+    if (!image) continue
+    const pattern = new RegExp(`(^\\s*image:\\s*)[^\\n]*${service === 'apiImage' ? '-api:' : '-web:'}[^\\s]*$`, 'm')
+    if (pattern.test(compose)) compose = compose.replace(pattern, `$1${image}`)
+  }
+  compose = compose.replace(/^(\\s*APP_VERSION:\\s*).*$/m, `$1${manifest.version}`)
+  await writeFile(composePath, compose)
 }
 
 function authorized(request) {
