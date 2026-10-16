@@ -44,7 +44,7 @@ jobs:
       - name: Create release manifest
         run: |
           version='${{ steps.version.outputs.version }}'
-          owner='${{ github.repository_owner }}'
+          owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
           jq -n --arg version "$version" --arg owner "$owner" '{version:$version, releaseUrl:("https://github.com/" + $owner + "/marvelous-docs/releases/tag/v" + $version), apiImage:("ghcr.io/" + $owner + "/marvelous-docs-api:" + $version), webImage:("ghcr.io/" + $owner + "/marvelous-docs-web:" + $version)}' > latest.json
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
