@@ -17,8 +17,11 @@ docker compose -f "$COMPOSE_FILE" pull api web
 echo "Applying database migrations"
 docker compose -f "$COMPOSE_FILE" run --rm api npm run db:migrate
 
+echo "Building the in-app updater"
+docker compose -f "$COMPOSE_FILE" build updater
+
 echo "Restarting application"
-docker compose -f "$COMPOSE_FILE" up -d api web caddy
+docker compose -f "$COMPOSE_FILE" up -d updater api web caddy
 
 echo "Waiting for health check"
 for attempt in $(seq 1 30); do
