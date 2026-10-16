@@ -29,6 +29,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./apps/server
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: |
             ${{ steps.image.outputs.prefix }}-api:${{ steps.version.outputs.version }}
@@ -37,6 +38,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./apps/web
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: |
             ${{ steps.image.outputs.prefix }}-web:${{ steps.version.outputs.version }}

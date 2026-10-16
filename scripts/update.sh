@@ -14,9 +14,6 @@ docker compose -f "$COMPOSE_FILE" exec -T postgres \
 echo "Pulling configured images"
 docker compose -f "$COMPOSE_FILE" pull api web
 
-echo "Applying database migrations"
-docker compose -f "$COMPOSE_FILE" run --rm api npm run db:migrate
-
 echo "Building the in-app updater"
 docker compose -f "$COMPOSE_FILE" build updater
 
