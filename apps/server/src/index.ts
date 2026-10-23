@@ -89,8 +89,8 @@ async function passwordMatches(password: string, encoded: string): Promise<boole
   const expected = Buffer.from(expectedHex, 'hex');
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
-function safeUser(row: { id: string; email: string; name: string }) {
-  return { id: row.id, email: row.email, name: row.name };
+function safeUser(row: { id: string; email: string; name: string; role: 'admin' | 'member' }) {
+  return { id: row.id, email: row.email, name: row.name, role: row.role };
 }
 async function initialize() {
   const migration = await import('node:fs/promises').then(fs => fs.readFile(new URL('../migrations/001_initial.sql', import.meta.url), 'utf8'));
@@ -302,7 +302,7 @@ app.get('/api/v1/system/update-status', authenticate, async (request, reply) => 
 app.post('/api/v1/auth/login', async (request, reply) => {
   const input = parse(z.object({ email: emailSchema, password: z.string().min(1).max(1024) }), request.body);
   if (!input) return fail(reply, 400, 'INVALID_INPUT', 'Email and password are required.');
-  const result = await pool.query('SELECT u.id,u.email,u.name,u.password_hash,m.workspace_id FROM users u JOIN memberships m ON m.user_id=u.id WHERE lower(u.email)=lower($1) ORDER BY m.created_at LIMIT 1', [input.email]);
+  const result = await pool.query('SELECT u.id,u.email,u.name,u.password_hash,m.workspace_id,m.role FROM users u JOIN memberships m ON m.user_id=u.id WHERE lower(u.email)=lower($1) ORDER BY m.created_at LIMIT 1', [input.email]);
   if (!result.rowCount || !(await passwordMatches(input.password, result.rows[0].password_hash))) return fail(reply, 401, 'INVALID_CREDENTIALS', 'Email or password is incorrect.');
   const row = result.rows[0];
   const token = app.jwt.sign({ sub: row.id, email: row.email, workspaceId: row.workspace_id } satisfies Claims, { expiresIn: '12h' });
@@ -327,13 +327,13 @@ app.post('/api/v1/auth/accept-invite', async (request, reply) => {
     await client.query('DELETE FROM invites WHERE id=$1', [invite.id]);
     await client.query('COMMIT');
     const token = app.jwt.sign({ sub: user.id, email: user.email, workspaceId: invite.workspace_id } satisfies Claims, { expiresIn: '12h' });
-    return { token, user: safeUser(user) };
+    return { token, user: safeUser({ ...user, role: invite.role }) };
   } catch (error) { await client.query('ROLLBACK'); throw error; } finally { client.release(); }
 });
 
 app.get('/api/v1/me', authenticate, async request => {
   const auth = request as AuthRequest;
-  const result = await pool.query('SELECT id,email,name FROM users WHERE id=$1', [auth.user.sub]);
+  const result = await pool.query('SELECT u.id,u.email,u.name,m.role FROM users u JOIN memberships m ON m.user_id=u.id AND m.workspace_id=$2 WHERE u.id=$1', [auth.user.sub, auth.user.workspaceId]);
   return { user: result.rowCount ? safeUser(result.rows[0]) : null };
 });
 

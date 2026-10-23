@@ -18,17 +18,19 @@ import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
 import './update.css'
 import {
-  AlertCircle, ArrowDownToLine, Bold, Check, ChevronDown, ChevronRight,
+  AlertCircle, ArrowLeft, ArrowDownToLine, Bold, Check, ChevronDown, ChevronRight,
   Clock3, Code2, Copy, FilePlus2, FileText, Folder, FolderPlus, History, Italic,
-  List, ListOrdered, LogOut, Mail, MessageCircle, MoreHorizontal, PanelLeftClose,
-  Plus, Search, Send, Share2, Sparkles, Underline as UnderlineIcon, UserPlus, Users, X,
+  LayoutDashboard, List, ListOrdered, LogOut, Mail, MessageCircle, MoreHorizontal, PanelLeftClose,
+  Plus, Search, Send, Share2, ShieldCheck, Sparkles, Underline as UnderlineIcon, UserPlus, Users, X,
   CheckSquare, Home, Star, Trash2, Table2, Link as LinkIcon, Highlighter as HighlightIcon, Palette, Undo2, Redo2,
 } from 'lucide-react'
 
 type DocJson = { schemaVersion: 1; doc: Record<string, unknown> }
 type Doc = { id: string; title: string; kind?: 'folder' | 'document'; parentId?: string | null; content: DocJson; version: number; updatedAt?: string }
 type DocNode = { doc: Doc; children: DocNode[] }
-type User = { id: string; name?: string; email: string }
+type User = { id: string; name?: string; email: string; role: 'admin' | 'member' }
+type WorkspaceMember = User & { role: 'admin' | 'member' }
+type DocumentPermission = { userId: string; email: string; name: string; role: 'owner' | 'editor' | 'viewer' }
 type Comment = { id: string; body: string; userId: string; userName: string; createdAt?: string; anchor?: { from?: number; to?: number; text?: string; blockId?: string } | null; parentId?: string | null; status?: 'open' | 'resolved'; resolvedAt?: string; resolvedBy?: string }
 type Version = { id: string; version: number; createdAt?: string; createdBy: string; title?: string }
 const emptyContent: DocJson = { schemaVersion: 1, doc: { type: 'doc', content: [{ type: 'paragraph' }] } }
@@ -74,6 +76,9 @@ async function request<T>(path: string, token: string, init?: RequestInit): Prom
 function App() {
   const [token, setToken] = useState(() => localStorage.getItem('mdocs-token') || '')
   const [user, setUser] = useState<User | null>(null)
+  const [workspaceView, setWorkspaceView] = useState<'documents' | 'admin'>('documents')
+  const [adminMembers, setAdminMembers] = useState<WorkspaceMember[]>([])
+  const [adminMembersBusy, setAdminMembersBusy] = useState(false)
   const [loginError, setLoginError] = useState('')
   const [documents, setDocuments] = useState<Doc[]>([])
   const [active, setActive] = useState<Doc | null>(null)
@@ -84,6 +89,11 @@ function App() {
   const [rightTab, setRightTab] = useState<'comments' | 'history'>('comments')
   const [showRight, setShowRight] = useState(false)
   const [showInvite, setShowInvite] = useState(false)
+  const [showShare, setShowShare] = useState(false)
+  const [workspaceMembers, setWorkspaceMembers] = useState<WorkspaceMember[]>([])
+  const [documentPermissions, setDocumentPermissions] = useState<DocumentPermission[]>([])
+  const [documentRestricted, setDocumentRestricted] = useState(false)
+  const [shareBusy, setShareBusy] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<'member' | 'admin'>('member')
   const [inviteLink, setInviteLink] = useState('')
@@ -124,7 +134,7 @@ function App() {
   }, [])
 
   const clearToken = useCallback(() => {
-    localStorage.removeItem('mdocs-token'); setToken(''); setUser(null); setActive(null); setDocuments([])
+    localStorage.removeItem('mdocs-token'); setToken(''); setUser(null); setActive(null); setDocuments([]); setWorkspaceView('documents')
   }, [])
 
   const startUpdate = useCallback(async () => {
@@ -164,6 +174,7 @@ function App() {
     Promise.all([request<{ user: User }>('/me', token), request<{ documents: Doc[] }>('/documents', token), request<{ documents: Doc[] }>('/documents/favorites', token)])
       .then(([me, docs, favorites]) => {
         if (!live) return
+        if (!me.user) { clearToken(); return }
         setUser(me.user); setDocuments(docs.documents || [])
         const favoriteRows = favorites.documents || []
         setFavoriteIds(favoriteRows.map((doc) => doc.id)); localStorage.setItem('mdocs-favorites', JSON.stringify(favoriteRows.map((doc) => doc.id)))
@@ -172,6 +183,17 @@ function App() {
       .catch(() => { if (live) clearToken() })
     return () => { live = false }
   }, [token, clearToken])
+
+  useEffect(() => {
+    if (!token || workspaceView !== 'admin' || user?.role !== 'admin') return
+    let live = true
+    setAdminMembersBusy(true)
+    request<{ members: WorkspaceMember[] }>('/workspace/members', token)
+      .then(({ members }) => { if (live) setAdminMembers(members || []) })
+      .catch((error) => { if (live) { setWorkspaceView('documents'); setNotice(`管理权限验证失败：${error.message}`) } })
+      .finally(() => { if (live) setAdminMembersBusy(false) })
+    return () => { live = false }
+  }, [token, user?.role, workspaceView])
 
   useEffect(() => {
     if (!token || homeView !== 'trash') return
@@ -192,7 +214,7 @@ function App() {
   }, [token, commandOpen, query])
 
   useEffect(() => {
-    if (!token) { setUpdateInfo(null); return }
+    if (!token || user?.role !== 'admin') { setUpdateInfo(null); return }
     let live = true
     request<{ updateAvailable: boolean; latestVersion?: string | null; manifest?: { releaseUrl?: string } | null }>('/system/update-check', token)
       .then((result) => {
@@ -200,7 +222,7 @@ function App() {
       })
       .catch(() => undefined)
     return () => { live = false }
-  }, [token])
+  }, [token, user?.role])
 
   useEffect(() => {
     const syncDocument = (event: Event) => {
@@ -369,6 +391,44 @@ function App() {
     return () => { window.removeEventListener('mdoc-comment-status', handler); document.removeEventListener('click', clickHandler) }
   }, [comments, active])
 
+  async function openShareDialog() {
+    if (!active || active.kind === 'folder') { setNotice('请先打开一个文档再设置共享权限'); return }
+    setShowShare(true); setShareBusy(true)
+    try {
+      const [members, access] = await Promise.all([
+        request<{ members: WorkspaceMember[] }>('/workspace/members', token),
+        request<{ restricted: boolean; permissions: DocumentPermission[] }>(`/documents/${active.id}/acl`, token),
+      ])
+      setWorkspaceMembers(members.members || [])
+      setDocumentPermissions(access.permissions || [])
+      setDocumentRestricted(access.restricted)
+    } catch (error) { setNotice(`共享设置加载失败：${(error as Error).message}`); setShowShare(false) }
+    finally { setShareBusy(false) }
+  }
+
+  async function saveDocumentPermission(member: WorkspaceMember, role: DocumentPermission['role'] | null) {
+    if (!active) return
+    setShareBusy(true)
+    try {
+      await request(`/documents/${active.id}/acl`, token, { method: 'PUT', body: JSON.stringify({ userId: member.id, role, restricted: documentRestricted }) })
+      setDocumentPermissions((current) => {
+        const next = current.filter((permission) => permission.userId !== member.id)
+        return role ? [...next, { userId: member.id, email: member.email, name: member.name || member.email, role }] : next
+      })
+    } catch (error) { setNotice(`权限更新失败：${(error as Error).message}`) }
+    finally { setShareBusy(false) }
+  }
+
+  async function toggleDocumentRestriction(restricted: boolean) {
+    if (!active) return
+    setDocumentRestricted(restricted); setShareBusy(true)
+    try {
+      const owner = documentPermissions.find((permission) => permission.userId === user?.id)
+      await request(`/documents/${active.id}/acl`, token, { method: 'PUT', body: JSON.stringify({ userId: user!.id, role: owner?.role || 'owner', restricted }) })
+    } catch (error) { setDocumentRestricted(!restricted); setNotice(`共享范围更新失败：${(error as Error).message}`) }
+    finally { setShareBusy(false) }
+  }
+
   async function createInvite(event: React.FormEvent) {
     event.preventDefault()
     setInviteError(''); setInviteLink(''); setInviteBusy(true)
@@ -404,6 +464,7 @@ function App() {
   const folderChildren = documents.filter((doc) => (doc.parentId || null) === selectedFolderId)
 
   if (!token || !user) return <Login onLogin={login} onAccepted={({ token: acceptedToken, user: acceptedUser }) => { setToken(acceptedToken); setUser(acceptedUser) }} error={loginError} busy={busy} />
+  if (workspaceView === 'admin' && user.role === 'admin') return <AdminWorkspace user={user} members={adminMembers} membersBusy={adminMembersBusy} updateInfo={updateInfo} notice={notice} showInvite={showInvite} onBack={() => setWorkspaceView('documents')} onOpenInvite={() => { setShowInvite(true); setInviteError(''); setInviteLink('') }} onStartUpdate={() => void startUpdate()} onLogout={clearToken} onCloseInvite={() => setShowInvite(false)} inviteProps={{ email: inviteEmail, setEmail: setInviteEmail, role: inviteRole, setRole: setInviteRole, link: inviteLink, error: inviteError, busy: inviteBusy, copied, onSubmit: createInvite, onCopy: copyInviteLink }} />
   return <div className="app-shell">
     {sidebarOpen && <aside className="sidebar">
       <div className="brand-row"><div className="brand-mark"><Sparkles size={16} /></div><span>Marvelous Docs</span><button className="icon-btn push" title="收起侧边栏" onClick={() => setSidebarOpen(false)}><PanelLeftClose size={17} /></button></div>
@@ -411,22 +472,31 @@ function App() {
       <div className="sidebar-actions"><button className="action-row" onClick={() => { setCommandOpen(true); setCommandIndex(0) }}><Search size={16} /><input aria-label="搜索文档" placeholder="搜索文档" value={query === '__favorites__' ? '' : query} onChange={(e) => { setQuery(e.target.value); setCommandOpen(true) }} onFocus={() => setCommandOpen(true)} /><kbd>⌘ K</kbd></button></div>
       <div className="nav-label">工作区</div>
       <button className={`nav-row ${homeView === 'home' && !active && !selectedFolderId ? 'nav-active' : ''}`} onClick={() => { setHomeView('home'); setActive(null); setSelectedFolderId(null) }}><Home size={16} />首页</button>
-      <button className="nav-row" onClick={() => { setShowInvite(true); setInviteError(''); setInviteLink('') }}><Users size={16} />成员</button>
+      {user.role === 'admin' && <button className="nav-row" onClick={() => setWorkspaceView('admin')}><ShieldCheck size={16} />管理中心</button>}
       <button className="nav-row" onClick={() => { setHomeView('home'); setActive(null); setSelectedFolderId(null); setQuery('__favorites__') }}><Star size={16} />收藏 <span className="nav-count">{favoriteIds.length || ''}</span></button>
       <button className="nav-row" onClick={() => { setHomeView('trash'); setActive(null); setSelectedFolderId(null) }}><Trash2 size={16} />回收站</button>
       <div className="tree-heading"><button onClick={() => setExpanded((value) => !value)}>{expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}<span>文档</span></button><div><button className="tiny-btn" title="新建文件夹" onClick={() => createDocument('folder')}><FolderPlus size={15} /></button><button className="tiny-btn" title="新建文档" onClick={() => createDocument('document')}><Plus size={16} /></button></div></div>
       {expanded && <div className="doc-tree"><button className={`root-folder ${selectedFolderId === null ? 'selected' : ''}`} onClick={() => { setSelectedFolderId(null); setActive(null); setHomeView('home'); setQuery('') }}><Folder size={15} /><span>所有文档</span></button>{visibleTree.map((node) => <TreeItem key={node.doc.id} node={node} depth={0} activeId={active?.id || null} selectedFolderId={selectedFolderId} expandedFolders={expandedFolders} onToggle={(id) => setExpandedFolders((folders) => { const next = new Set(folders); next.has(id) ? next.delete(id) : next.add(id); return next })} onSelectFolder={(folder) => { setSelectedFolderId(folder.id); setActive(null); setHomeView('home'); setShowRight(false) }} onSelectDocument={(doc) => { setActive(doc); setSelectedFolderId(doc.parentId || null); setHomeView('home'); setShowRight(false) }} onAction={handleDocumentAction} favoriteIds={favoriteSet} />)}{visibleTree.length === 0 && <div className="empty-tree">{query ? '没有匹配的文档' : '暂无文档或文件夹'}</div>}</div>}
       <div className="sidebar-bottom"><div className="help-row"><span className="help-dot">?</span><span>帮助与反馈</span><MoreHorizontal size={17} /></div><div className="profile-row"><div className="avatar">{(user.name || user.email)[0].toUpperCase()}</div><div className="profile-copy"><b>{user.name || user.email.split('@')[0]}</b><small>{user.email}</small></div><button className="icon-btn" title="退出登录" onClick={clearToken}><LogOut size={16} /></button></div></div>
     </aside>}
-    <main className="main-area">{updateInfo && <div className={`update-banner ${updateInfo.status}`} role="status"><span>{updateInfo.status === 'running' ? `正在更新到 ${updateInfo.version}…` : updateInfo.status === 'completed' ? '更新完成' : updateInfo.status === 'failed' ? `更新失败（${updateInfo.version}）` : `发现新版本 ${updateInfo.version}`}</span>{updateInfo.status === 'available' && <button className="update-action" onClick={() => void startUpdate()}>立即更新</button>}{updateInfo.status === 'failed' && <button className="update-action" onClick={() => void startUpdate()}>重试</button>}</div>}
-      <header className="topbar">{!sidebarOpen && <button className="icon-btn" title="展开侧边栏" onClick={() => setSidebarOpen(true)}><PanelLeftClose size={17} /></button>}<div className="breadcrumbs"><span>我的文档</span><ChevronRight size={14} /><strong>{active?.title || selectedFolder?.title || '所有文档'}</strong></div><div className="top-actions">{updateInfo && <a className="update-link" href={updateInfo.url || '#'} target="_blank" rel="noreferrer">新版本 {updateInfo.version}</a>}<span className={`save-state ${notice.includes('失败') || notice.includes('冲突') ? 'save-error' : ''}`}><span className="save-dot" />{notice || '已同步'}</span><div className="collaborators" aria-label="在线成员"><div className="presence-stack"><div className="mini-avatar green" title="你">{(user.name || user.email)[0].toUpperCase()}</div>{collaborators.slice(0, 3).map((person) => <div key={person.clientId} className="mini-avatar" title={person.name} style={{ background: person.color + '24', color: person.color }}>{person.name[0]?.toUpperCase()}</div>)}{collaborators.length > 3 && <span className="presence-more">+{collaborators.length - 3}</span>}</div><span className={`connection-state ${collabStatus}`} aria-live="polite">{collabStatus === 'connected' ? '已连接' : collabStatus === 'connecting' ? '连接中' : '已断开'}</span><button className="share-btn" onClick={() => { setShowInvite(true); setInviteError(''); setInviteLink('') }}><Share2 size={15} />共享</button><button className="icon-btn" title="文档历史" onClick={() => { setRightTab('history'); setShowRight(true) }}><History size={17} /></button><button className="icon-btn" title="评论" onClick={() => { setRightTab('comments'); setShowRight(true) }}><MessageCircle size={17} /></button><button className="icon-btn" title="更多操作"><MoreHorizontal size={18} /></button></div></div></header>
+    <main className="main-area">
+      <header className="topbar">{!sidebarOpen && <button className="icon-btn" title="展开侧边栏" onClick={() => setSidebarOpen(true)}><PanelLeftClose size={17} /></button>}<div className="breadcrumbs"><span>我的文档</span><ChevronRight size={14} /><strong>{active?.title || selectedFolder?.title || '所有文档'}</strong></div><div className="top-actions"><span className={`save-state ${notice.includes('失败') || notice.includes('冲突') ? 'save-error' : ''}`}><span className="save-dot" />{notice || '已同步'}</span><div className="collaborators" aria-label="在线成员"><div className="presence-stack"><div className="mini-avatar green" title="你">{(user.name || user.email)[0].toUpperCase()}</div>{collaborators.slice(0, 3).map((person) => <div key={person.clientId} className="mini-avatar" title={person.name} style={{ background: person.color + '24', color: person.color }}>{person.name[0]?.toUpperCase()}</div>)}{collaborators.length > 3 && <span className="presence-more">+{collaborators.length - 3}</span>}</div><span className={`connection-state ${collabStatus}`} aria-live="polite">{collabStatus === 'connected' ? '已连接' : collabStatus === 'connecting' ? '连接中' : '已断开'}</span><button className="share-btn" onClick={() => void openShareDialog()}><Share2 size={15} />共享</button><button className="icon-btn" title="文档历史" onClick={() => { setRightTab('history'); setShowRight(true) }}><History size={17} /></button><button className="icon-btn" title="评论" onClick={() => { setRightTab('comments'); setShowRight(true) }}><MessageCircle size={17} /></button><button className="icon-btn" title="更多操作"><MoreHorizontal size={18} /></button></div></div></header>
       {active && <div className="workspace-content"><section className="editor-column"><DocumentEditor key={active.id} doc={active} token={token} persist={persist} user={user} onAwareness={setCollaborators} onCollabStatus={setCollabStatus} onSelection={(anchor) => { setCommentAnchor(anchor); setRightTab('comments'); setShowRight(true) }} /></section>
       {showRight && active && <aside className="right-panel"><div className="panel-tabs"><button className={rightTab === 'comments' ? 'active' : ''} onClick={() => setRightTab('comments')}><MessageCircle size={15} />评论</button><button className={rightTab === 'history' ? 'active' : ''} onClick={() => setRightTab('history')}><History size={15} />历史</button><button className="icon-btn close-panel" title="关闭面板" onClick={() => setShowRight(false)}><X size={16} /></button></div>{rightTab === 'comments' ? <div className="panel-body"><div className="panel-intro"><b>讨论</b><span>{comments.length} 条评论</span></div>{comments.length === 0 ? <div className="panel-empty"><MessageCircle size={21} /><b>还没有评论</b><span>选中文本后点击评论开始讨论</span></div> : <div className="comment-list">{comments.map((comment) => <div className={`comment ${comment.status === 'resolved' ? 'comment-resolved' : ''}`} key={comment.id}><div className="comment-head"><div className="avatar small-avatar">{(comment.userName || '?')[0].toUpperCase()}</div><div><b>{comment.userName || '成员'}</b><small>{formatDate(comment.createdAt)}{comment.status === 'resolved' ? ' · 已解决' : ''}</small></div></div>{comment.anchor?.text && <button className="comment-anchor" title="定位到引用" onClick={() => window.dispatchEvent(new CustomEvent('mdoc-focus-anchor', { detail: comment.anchor }))}>“{comment.anchor.text.slice(0, 80)}”</button>}<p>{comment.body}</p><div className="comment-actions"><button onClick={() => setCommentText(`@${comment.userName || '成员'} `)}>回复</button>{comment.status !== 'resolved' && <button onClick={() => setNotice('评论线程需要服务端状态接口支持。')}>解决</button>}</div></div>)}</div>}<div className="comment-compose">{commentAnchor?.text && <div className="anchor-preview">引用：“{commentAnchor.text.slice(0, 90)}” <button aria-label="移除引用" onClick={() => setCommentAnchor(null)}><X size={12} /></button></div>}<textarea aria-label="评论内容" placeholder="添加评论..." value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) addComment() }} /><div><span>Ctrl + Enter 发送</span><button className="send-btn" title="发送评论" onClick={addComment} disabled={!commentText.trim()}><Send size={15} /></button></div></div></div> : <div className="panel-body"><div className="panel-intro"><b>版本历史</b><span>{versions.length} 个版本</span></div>{versions.length === 0 ? <div className="panel-empty"><Clock3 size={21} /><b>暂无历史记录</b><span>文档更改后会保留版本</span></div> : <div className="version-list">{versions.map((version) => <div className="version-item" key={version.id}><div className="version-line"><span className="version-dot" /><div><b>版本 {version.version}</b><small>{version.createdBy || '成员'} · {formatDate(version.createdAt)}</small></div></div><button onClick={() => { if (window.confirm(`确认恢复到版本 ${version.version}？当前内容会先保存为新版本。`)) void restoreVersion(version.id) }}>恢复</button></div>)}</div>}</div>}</aside>}</div>}
       {!active && (selectedFolder ? <div className="folder-overview"><div className="folder-overview-head"><div className="folder-large-icon"><Folder size={23} /></div><div><h1>{selectedFolder.title}</h1><p>{folderChildren.length} 个项目</p></div><button className="primary-btn" onClick={() => createDocument('document')}><FilePlus2 size={15} />新建文档</button></div>{folderChildren.length ? <div className="folder-items">{folderChildren.map((child) => <button key={child.id} className="folder-item" onClick={() => child.kind === 'folder' ? (setSelectedFolderId(child.id), setActive(null)) : (setActive(child), setSelectedFolderId(child.parentId || null))}><span className={`folder-item-icon ${child.kind === 'folder' ? 'is-folder' : ''}`}>{child.kind === 'folder' ? <Folder size={17} /> : <FileText size={17} />}</span><span>{child.title}</span><ChevronRight size={15} /></button>)}</div> : <div className="folder-empty"><div className="folder-empty-icon"><Folder size={22} /></div><h2>此文件夹为空</h2><p>在这里创建文档，或新建子文件夹来整理内容。</p><div><button className="primary-btn" onClick={() => createDocument('document')}><FilePlus2 size={15} />新建文档</button><button className="secondary-btn" onClick={() => createDocument('folder')}><FolderPlus size={15} />新建子文件夹</button></div></div>}</div> : <HomeDashboard documents={homeView === 'trash' ? trashDocuments : documents} favorites={favoriteSet} query={query === '__favorites__' ? '' : query} trash={homeView === 'trash'} onOpen={(doc) => { setActive(doc); setSelectedFolderId(doc.parentId || null) }} onCreate={() => createDocument('document')} onRestore={async (doc) => { await request(`/documents/${doc.id}/restore`, token, { method: 'POST' }); setTrashDocuments((rows) => rows.filter((row) => row.id !== doc.id)); setNotice('文档已恢复') }} onPermanentDelete={async (doc) => { if (!window.confirm(`永久删除“${doc.title}”？`)) return; await request(`/documents/${doc.id}/permanent`, token, { method: 'DELETE' }); setTrashDocuments((rows) => rows.filter((row) => row.id !== doc.id)); setNotice('文档已永久删除') }} />)}
     {commandOpen && <CommandPalette query={query} setQuery={setQuery} index={commandIndex} setIndex={setCommandIndex} documents={searchResults.length ? searchResults : documents} onClose={() => setCommandOpen(false)} onOpen={(doc) => { setActive(doc); setSelectedFolderId(doc.parentId || null); setCommandOpen(false) }} onCreate={() => { setCommandOpen(false); createDocument('document') }} onHome={() => { setActive(null); setSelectedFolderId(null); setHomeView('home'); setCommandOpen(false) }} />}
     </main>
+    {showShare && active && <ShareDialog title={active.title} members={workspaceMembers} permissions={documentPermissions} restricted={documentRestricted} busy={shareBusy} onRestrictedChange={(value) => void toggleDocumentRestriction(value)} onPermissionChange={(member, role) => void saveDocumentPermission(member, role)} onClose={() => setShowShare(false)} />}
     {showInvite && <InviteDialog email={inviteEmail} setEmail={setInviteEmail} role={inviteRole} setRole={setInviteRole} link={inviteLink} error={inviteError} busy={inviteBusy} copied={copied} onSubmit={createInvite} onCopy={copyInviteLink} onClose={() => setShowInvite(false)} />}
   </div>
+}
+
+type AdminInviteProps = { email: string; setEmail: (value: string) => void; role: 'member' | 'admin'; setRole: (value: 'member' | 'admin') => void; link: string; error: string; busy: boolean; copied: boolean; onSubmit: (event: React.FormEvent) => void; onCopy: () => void }
+
+type AdminWorkspaceProps = { user: User; members: WorkspaceMember[]; membersBusy: boolean; updateInfo: { version: string; url?: string; status: 'available' | 'running' | 'failed' | 'completed' } | null; notice: string; showInvite: boolean; onBack: () => void; onOpenInvite: () => void; onStartUpdate: () => void; onLogout: () => void; onCloseInvite: () => void; inviteProps: AdminInviteProps }
+
+function AdminWorkspace({ user, members, membersBusy, updateInfo, notice, showInvite, onBack, onOpenInvite, onStartUpdate, onLogout, onCloseInvite, inviteProps }: AdminWorkspaceProps) {
+  return <div className="admin-shell"><aside className="admin-sidebar"><div className="brand-row"><div className="brand-mark"><Sparkles size={16} /></div><span>Marvelous Docs</span></div><div className="admin-sidebar-title"><ShieldCheck size={17} /><div><b>管理中心</b><small>工作区设置</small></div></div><button className="admin-back" onClick={onBack}><ArrowLeft size={15} />返回文档</button><div className="admin-sidebar-footer"><div className="profile-row"><div className="avatar">{(user.name || user.email)[0].toUpperCase()}</div><div className="profile-copy"><b>{user.name || user.email.split('@')[0]}</b><small>管理员</small></div><button className="icon-btn" title="退出登录" onClick={onLogout}><LogOut size={16} /></button></div></div></aside><main className="admin-main"><header className="admin-topbar"><div><span className="eyebrow">工作区管理</span><h1>管理中心</h1><p>管理成员、邀请和工作区服务。</p></div><span className="admin-status"><span className="save-dot" />管理员权限</span></header><div className="admin-content"><section className="admin-section"><div className="admin-section-head"><div><h2><Users size={18} />成员管理</h2><p>管理工作区成员并邀请新的协作者。</p></div><button className="primary-btn" onClick={onOpenInvite}><UserPlus size={15} />邀请成员</button></div><div className="admin-member-list">{membersBusy ? <div className="admin-empty">正在加载成员…</div> : members.length ? members.map((member) => <div className="admin-member-row" key={member.id}><div className="avatar">{(member.name || member.email)[0].toUpperCase()}</div><div className="admin-member-copy"><b>{member.name || member.email.split('@')[0]}</b><small>{member.email}</small></div><span className={`role-badge ${member.role}`}>{member.role === 'admin' ? '管理员' : '成员'}</span></div>) : <div className="admin-empty">暂无工作区成员</div>}</div></section><section className="admin-section"><div className="admin-section-head"><div><h2><LayoutDashboard size={18} />系统更新</h2><p>检查并部署 Marvelous Docs 的新版本。</p></div>{updateInfo?.url && <a className="admin-release-link" href={updateInfo.url} target="_blank" rel="noreferrer">查看发布说明</a>}</div><div className="admin-update-card"><div className="admin-update-icon"><Sparkles size={19} /></div><div className="admin-update-copy"><b>{updateInfo?.status === 'available' ? `发现新版本 ${updateInfo.version}` : updateInfo?.status === 'running' ? `正在更新到 ${updateInfo.version}` : updateInfo?.status === 'failed' ? `更新失败（${updateInfo.version}）` : '当前使用最新版本'}</b><span>{notice || '系统会在更新前自动备份数据库。'}</span></div>{(updateInfo?.status === 'available' || updateInfo?.status === 'failed') && <button className="secondary-btn" onClick={onStartUpdate}>{updateInfo.status === 'failed' ? '重试' : '立即更新'}</button>}</div></section></div></main>{showInvite && <InviteDialog {...inviteProps} onClose={onCloseInvite} />}</div>
 }
 
 function HomeDashboard({ documents, favorites, query, trash, onOpen, onCreate, onRestore, onPermanentDelete }: { documents: Doc[]; favorites: Set<string>; query: string; trash: boolean; onOpen: (doc: Doc) => void; onCreate: () => void; onRestore: (doc: Doc) => Promise<void>; onPermanentDelete: (doc: Doc) => Promise<void> }) {
@@ -460,6 +530,11 @@ function Login({ onLogin, onAccepted, error, busy }: { onLogin: (email: string, 
     finally { setInviteBusy(false) }
   }
   return <div className="login-screen"><div className="login-card"><div className="login-brand"><div className="brand-mark"><Sparkles size={17} /></div><span>Marvelous Docs</span></div>{inviteToken ? <><h1>加入团队</h1><p>设置你的账户以加入工作区</p><form onSubmit={acceptInvite}><label>姓名<input autoComplete="name" placeholder="你的姓名" value={name} onChange={(e) => setName(e.target.value)} required /></label><label>设置密码<input type="password" autoComplete="new-password" placeholder="至少 12 个字符" minLength={12} value={password} onChange={(e) => setPassword(e.target.value)} required /></label>{inviteError && <div className="login-error"><AlertCircle size={15} />{inviteError}</div>}<button className="primary-btn login-submit" disabled={inviteBusy}>{inviteBusy ? '正在加入...' : '接受邀请'}<ChevronRight size={16} /></button></form></> : <><h1>欢迎回来</h1><p>登录你的团队工作区</p><form onSubmit={(e) => { e.preventDefault(); onLogin(email, password) }}><label>邮箱地址<input type="email" autoComplete="username" placeholder="name@company.com" value={email} onChange={(e) => setEmail(e.target.value)} required /></label><label>密码<input type="password" autoComplete="current-password" placeholder="输入密码" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>{error && <div className="login-error"><AlertCircle size={15} />{error}</div>}<button className="primary-btn login-submit" disabled={busy}>{busy ? '正在登录...' : '登录'}<ChevronRight size={16} /></button></form></>}<div className="login-foot">私有部署 · 团队知识空间</div></div></div>
+}
+
+function ShareDialog({ title, members, permissions, restricted, busy, onRestrictedChange, onPermissionChange, onClose }: { title: string; members: WorkspaceMember[]; permissions: DocumentPermission[]; restricted: boolean; busy: boolean; onRestrictedChange: (restricted: boolean) => void; onPermissionChange: (member: WorkspaceMember, role: DocumentPermission['role'] | null) => void; onClose: () => void }) {
+  const permissionMap = new Map(permissions.map((permission) => [permission.userId, permission]))
+  return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}><section className="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-title"><header><div><div className="invite-icon"><Share2 size={17} /></div><h2 id="share-title">共享文档</h2><p>{title}</p></div><button className="icon-btn" title="关闭" onClick={onClose}><X size={17} /></button></header><label className="share-restriction"><span><b>仅指定成员可访问</b><small>{restricted ? '只有下方名单中的成员可以打开此文档' : '工作区所有成员均可查看和编辑'}</small></span><input type="checkbox" checked={restricted} disabled={busy} onChange={(event) => onRestrictedChange(event.target.checked)} /></label><div className="share-members-heading"><b>工作区成员</b><span>{members.length} 人</span></div><div className="share-members">{members.map((member) => { const permission = permissionMap.get(member.id); const role = permission?.role || (restricted ? null : 'editor'); return <div className="share-member" key={member.id}><div className="avatar">{(member.name || member.email)[0].toUpperCase()}</div><div className="share-member-copy"><b>{member.name || member.email.split('@')[0]}</b><small>{member.email}</small></div>{member.role === 'admin' ? <span className="share-admin">管理员</span> : <select aria-label={`${member.name || member.email}的文档权限`} value={role || 'none'} disabled={busy} onChange={(event) => onPermissionChange(member, event.target.value === 'none' ? null : event.target.value as DocumentPermission['role'])}><option value="none">无权限</option><option value="viewer">可查看</option><option value="editor">可编辑</option><option value="owner">管理权限</option></select>}</div> })}{members.length === 0 && <div className="share-empty">工作区暂无其他成员</div>}</div><footer><span>权限更改会立即生效</span><button className="primary-btn" onClick={onClose}>完成</button></footer></section></div>
 }
 
 function InviteDialog({ email, setEmail, role, setRole, link, error, busy, copied, onSubmit, onCopy, onClose }: { email: string; setEmail: (value: string) => void; role: 'member' | 'admin'; setRole: (value: 'member' | 'admin') => void; link: string; error: string; busy: boolean; copied: boolean; onSubmit: (event: React.FormEvent) => void; onCopy: () => void; onClose: () => void }) {
