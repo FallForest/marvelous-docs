@@ -43,6 +43,9 @@ jobs:
         with:
           context: ./apps/web
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            VITE_API_URL=
+            VITE_COLLAB_URL=
           push: true
           tags: |
             ${{ steps.image.outputs.prefix }}-web:${{ steps.version.outputs.version }}

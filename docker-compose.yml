@@ -71,7 +71,7 @@ services:
       context: ./apps/web
       args:
         VITE_API_URL: ""
-        VITE_COLLAB_URL: wss://${DOCS_DOMAIN:-localhost}/collab
+        VITE_COLLAB_URL: ${VITE_COLLAB_URL:-}
     restart: unless-stopped
     depends_on:
       api:

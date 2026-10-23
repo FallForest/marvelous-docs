@@ -35,7 +35,16 @@ type Comment = { id: string; body: string; userId: string; userName: string; cre
 type Version = { id: string; version: number; createdAt?: string; createdBy: string; title?: string }
 const emptyContent: DocJson = { schemaVersion: 1, doc: { type: 'doc', content: [{ type: 'paragraph' }] } }
 const API = import.meta.env.VITE_API_URL ?? ''
-const COLLAB_URL = import.meta.env.VITE_COLLAB_URL
+const configuredCollabUrl = import.meta.env.VITE_COLLAB_URL?.trim() || ''
+
+export function resolveCollabUrl(location: Pick<Location, 'protocol' | 'host'> | undefined, configuredUrl = configuredCollabUrl) {
+  if (configuredUrl) return configuredUrl
+  if (!location) return ''
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${protocol}//${location.host}/collab`
+}
+
+const COLLAB_URL = typeof window === 'undefined' ? '' : resolveCollabUrl(window.location)
 
 function buildDocTree(documents: Doc[]): DocNode[] {
   const nodes = new Map(documents.map((doc) => [doc.id, { doc, children: [] as DocNode[] }]))
