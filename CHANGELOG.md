@@ -8,6 +8,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.20] - 2026-11-08
+
+### Fixed
+
+- Popovers no longer get clipped by scrollable sidebars. Menus were absolutely
+  positioned inside `.doc-tree`, so a long document tree cut off items such as
+  移到回收站. Every popover now renders in a portal on `document.body` with fixed
+  positioning, flips above the trigger when there is no room below, clamps to
+  the viewport, and repositions on scroll/resize. Affected: tree actions, new
+  document menu, workspace switcher, export menu, paragraph/size/color/align
+  menus.
+
 ## [0.1.19] - 2026-11-08
 
 ### Fixed

@@ -63,7 +63,7 @@
 .menu-anchor,.new-menu-anchor{position:relative}
 .menu-scrim{position:fixed;inset:0;z-index:34;background:transparent}
 .menu-popover{position:absolute;z-index:35;min-width:220px;background:#fff;border:1px solid #e5e8eb;border-radius:7px;box-shadow:0 14px 36px #17203324;padding:6px}
-.template-menu{top:32px;right:0;max-height:min(70vh,420px);overflow:auto}
+.template-menu{max-height:min(70vh,420px);overflow:auto}
 .export-menu{top:34px;right:0;min-width:186px}
 .menu-heading{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#5f6673;padding:5px 8px}
 .menu-item{width:100%;min-height:32px;display:flex;align-items:center;gap:8px;border:0;background:transparent;border-radius:4px;padding:5px 8px;font-size:11px;color:#4a505b;text-align:left}
@@ -81,7 +81,7 @@
 .tree-more{width:24px;height:24px;flex:0 0 24px;margin-right:4px;border:0;background:transparent;border-radius:4px;color:#6b7280;display:grid;place-items:center;padding:0;opacity:0;transition:opacity .12s ease}
 .tree-entry:hover .tree-more,.tree-more:focus-visible,.tree-more[aria-expanded="true"]{opacity:1}
 .tree-more:hover{background:#e4e7eb;color:#4a505b}
-.tree-menu{position:absolute;top:28px;right:6px;min-width:168px;z-index:35;background:#fff;border:1px solid #e5e8eb;border-radius:7px;box-shadow:0 14px 36px #17203324;padding:5px;display:flex;flex-direction:column;gap:1px}
+.tree-menu{min-width:168px;background:#fff;border:1px solid #e5e8eb;border-radius:7px;box-shadow:0 14px 36px #17203324;padding:5px;display:flex;flex-direction:column;gap:1px}
 .tree-menu button{width:100%;min-height:30px;border:0;background:transparent;border-radius:4px;text-align:left;padding:0 9px;font-size:12px;color:#4a505b;white-space:nowrap}
 .tree-menu button:hover{background:#f3f4f6;color:#292e39}
 .tree-menu .menu-danger{color:#b64e43}
@@ -278,9 +278,7 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
 .menu-scrim{display:none}
 
 .popover{
-  position:absolute;
-  top:calc(100% + 6px);
-  right:0;
+  position:fixed;
   z-index:var(--z-popover);
   min-width:180px;
   max-width:min(320px,calc(100vw - 24px));
@@ -567,7 +565,7 @@ html,body{max-width:100%}
   .menu-item{min-height:44px;font-size:13px}
   .menu-item svg{width:17px;height:17px}
   .popover{min-width:min(240px,calc(100vw - 20px));max-width:calc(100vw - 20px);border-radius:12px}
-  .workspace-menu{width:100%;min-width:0;max-width:calc(100vw - 20px)}
+  .workspace-menu{width:min(240px, calc(100vw - 22px))}
   .confirm-modal,.prompt-modal,.help-modal{padding:20px;border-radius:var(--radius-lg);max-height:calc(100vh - 24px)}
   .modal-actions,.dialog-actions{flex-direction:column;align-items:stretch}
   .modal-actions button,.dialog-actions button,.modal-danger,.btn-danger,.btn-ghost{width:100%;justify-content:center;min-height:44px}
@@ -624,9 +622,9 @@ html,body{max-width:100%}
 .tree-entry .tree-menu-anchor{margin-left:auto}
 
 /* 14. final alignment fixes */
-.template-menu{position:absolute !important;top:calc(100% + 6px) !important;right:0 !important;left:auto !important;width:min(232px, calc(100vw - 32px));max-height:min(72vh,460px)}
-.tree-menu{position:absolute !important;top:calc(100% + 4px) !important;right:0 !important;left:auto !important;width:176px}
-.workspace-menu{position:absolute !important;top:calc(100% + 6px) !important;left:0 !important;right:auto !important;width:100%;min-width:0}
+.template-menu{width:min(232px, calc(100vw - 32px))}
+.tree-menu{width:180px}
+.workspace-menu{width:min(240px, calc(100vw - 22px))}
 .workspace-menu .workspace-menu-head{display:flex;flex-direction:column;gap:2px;padding:6px 9px 8px;border-bottom:1px solid var(--border)}
 .workspace-menu .workspace-menu-head b{font-size:12px;color:var(--text)}
 .workspace-menu .workspace-menu-head span{font-size:11px;color:var(--text-muted)}
@@ -853,3 +851,6 @@ html,body{max-width:100%}
 @media (max-width:560px){
   .editor-toolbar{overflow-x:auto;mask-image:linear-gradient(90deg,#000 calc(100% - 18px),transparent)}
 }
+
+.popover-above{animation:popover-in-up .12s ease-out}
+@keyframes popover-in-up{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}

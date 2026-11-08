@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
 
 type PopoverProps = {
@@ -10,24 +11,68 @@ type PopoverProps = {
   label: string
 }
 
+type Position = { top: number; left: number; minWidth: number; maxHeight: number; placement: 'below' | 'above' }
+
+const GAP = 6
+const EDGE = 8
+
 /**
- * A non-modal popover: no full-screen scrim, closes on outside pointerdown or
- * Escape, and keeps focus inside the menu while it is open. This replaces the
- * old menu-scrim pattern that intercepted clicks on unrelated buttons.
+ * Non-modal popover rendered in a portal on document.body with fixed
+ * positioning. Portals are required because the trigger often lives inside a
+ * scroll container (sidebar, document tree); an absolutely positioned menu
+ * there gets clipped by that container's overflow.
  */
 export default function Popover({ open, onClose, children, align = 'right', className = '', label }: PopoverProps) {
-  const ref = useRef<HTMLDivElement | null>(null)
+  const marker = useRef<HTMLSpanElement | null>(null)
+  const panel = useRef<HTMLDivElement | null>(null)
   const closeRef = useRef(onClose)
   closeRef.current = onClose
+  const [position, setPosition] = useState<Position | null>(null)
+
+  useLayoutEffect(() => {
+    if (!open) { setPosition(null); return }
+    const measure = () => {
+      const anchor = marker.current?.parentElement
+      const node = panel.current
+      if (!anchor) return
+      const rect = anchor.getBoundingClientRect()
+      const width = node?.offsetWidth || 180
+      const height = node?.offsetHeight || 240
+      const viewportWidth = window.innerWidth
+      const viewportHeight = window.innerHeight
+      const spaceBelow = viewportHeight - rect.bottom - GAP - EDGE
+      const spaceAbove = rect.top - GAP - EDGE
+      const placement: 'below' | 'above' = spaceBelow >= height || spaceBelow >= spaceAbove ? 'below' : 'above'
+      const top = placement === 'below' ? rect.bottom + GAP : Math.max(EDGE, rect.top - height - GAP)
+      let left = align === 'right' ? rect.right - width : rect.left
+      left = Math.min(Math.max(EDGE, left), Math.max(EDGE, viewportWidth - width - EDGE))
+      setPosition({
+        top,
+        left,
+        minWidth: Math.max(rect.width, 180),
+        maxHeight: Math.max(120, placement === 'below' ? spaceBelow : spaceAbove),
+        placement,
+      })
+    }
+    measure()
+    const frame = requestAnimationFrame(measure)
+    window.addEventListener('resize', measure)
+    window.addEventListener('scroll', measure, true)
+    return () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener('resize', measure)
+      window.removeEventListener('scroll', measure, true)
+    }
+  }, [open, align])
 
   useEffect(() => {
     if (!open) return
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Node | null
-      if (!ref.current || !target) return
-      if (ref.current.contains(target)) return
-      const anchor = ref.current.parentElement
-      if (anchor && anchor.contains(target)) return
+      if (!target) return
+      if (panel.current?.contains(target)) return
+      const anchor = marker.current?.parentElement
+      if (anchor?.contains(target)) return
       closeRef.current()
     }
     const onKeyDown = (event: KeyboardEvent) => {
@@ -44,17 +89,19 @@ export default function Popover({ open, onClose, children, align = 'right', clas
   }, [open])
 
   useEffect(() => {
-    if (!open || !ref.current) return
-    const first = ref.current.querySelector<HTMLElement>('[role="menuitem"], button, [tabindex="0"]')
+    if (!open || !panel.current) return
+    const first = panel.current.querySelector<HTMLElement>('[role="menuitem"], button, [tabindex="0"]')
     first?.focus({ preventScroll: true })
   }, [open])
 
-  if (!open) return null
-
-  return <div
-    ref={ref}
-    className={'popover popover-' + align + (className ? ' ' + className : '')}
-    role="menu"
-    aria-label={label}
-  >{children}</div>
+  return <>
+    <span ref={marker} hidden aria-hidden="true" />
+    {open && createPortal(<div
+      ref={panel}
+      className={'popover popover-' + align + (className ? ' ' + className : '') + (position?.placement === 'above' ? ' popover-above' : '')}
+      role="menu"
+      aria-label={label}
+      style={position ? { top: position.top, left: position.left, minWidth: position.minWidth, maxHeight: position.maxHeight } : { visibility: 'hidden', top: 0, left: 0 }}
+    >{children}</div>, document.body)}
+  </>
 }
