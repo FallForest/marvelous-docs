@@ -8,6 +8,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.15] - 2026-11-08
+
+### Fixed
+
+- The document tree context menu now renders as a real popover (surface,
+  border, shadow, padding and readable 12px rows) instead of bare text floating
+  over the sidebar, which made 重命名/收藏/移动到/移到回收站 hard to read.
+
 ## [0.1.14] - 2026-11-08
 
 ### Fixed
