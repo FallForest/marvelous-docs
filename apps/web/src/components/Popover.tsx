@@ -49,7 +49,7 @@ export default function Popover({ open, onClose, children, align = 'right', clas
       setPosition({
         top,
         left,
-        minWidth: Math.max(rect.width, 180),
+        minWidth: rect.width,
         maxHeight: Math.max(120, placement === 'below' ? spaceBelow : spaceAbove),
         placement,
       })

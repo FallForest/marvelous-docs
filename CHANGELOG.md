@@ -8,6 +8,32 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.21] - 2026-11-08
+
+### Added
+
+- Dedicated 收藏 view: the sidebar entry now opens a real favorites page with
+  its own heading, empty state and card grid, instead of only resetting the
+  query.
+- Quick favorite toggle in the document topbar (star button), mirrored with the
+  sidebar count and the favorites page.
+
+### Fixed
+
+- Mobile/tablet floating sidebar covered the editor toolbar and blocked clicks;
+  the sidebar is now a proper modal layer (scrim closes it), nav actions close
+  it, and toolbar popovers sit above it.
+- Unified the z-index scale (sidebar 30, scrim 29, popover 60, modal 70,
+  toast 80) so menus can never be hidden behind panels.
+- Dropdown widths are constrained per menu type instead of stretching to the
+  viewport; every menu was verified at 1440/1024/768/390 with no clipping or
+  horizontal page overflow.
+
+### Changed
+
+- Refined sidebar labels, counts and active states, plus a tighter toolbar with
+  consistent hover/active tokens and a neutral keyboard focus ring.
+
 ## [0.1.20] - 2026-11-08
 
 ### Fixed

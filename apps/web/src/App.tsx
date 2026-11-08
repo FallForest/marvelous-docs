@@ -138,7 +138,7 @@ function App() {
   const [collabStatus, setCollabStatus] = useState<CollabStatus>('connecting')
   const [expanded, setExpanded] = useState(true)
   const [commandOpen, setCommandOpen] = useState(false)
-  const [homeView, setHomeView] = useState<'home' | 'search' | 'trash'>('home')
+  const [homeView, setHomeView] = useState<'home' | 'search' | 'trash' | 'favorites'>('home')
   const [favoriteIds, setFavoriteIds] = useState<string[]>(() => JSON.parse(localStorage.getItem('mdocs-favorites') || '[]'))
   const [trashDocuments, setTrashDocuments] = useState<Doc[]>([])
   const [searchResults, setSearchResults] = useState<SearchHit[]>([])
@@ -506,6 +506,7 @@ function App() {
         setSelectedFolderId(created.parentId || null)
         setHomeView('home')
       }
+      if (narrow) setSidebarOpen(false)
       if (templateId) setNotice('已用模板创建“' + (created.title || '未命名文档') + '”')
       void refreshStats()
     } catch (error) {
@@ -794,10 +795,10 @@ function App() {
         onKeyDown={(event) => { if (event.key === 'Escape') { setQuery(''); setHomeView('home') } }}
       /><kbd>⌘ K</kbd></div></div>
       <div className="nav-label">工作区</div>
-      <button type="button" className={'nav-row ' + (homeView === 'home' && !active && !selectedFolderId ? 'nav-active' : '')} aria-current={homeView === 'home' && !active && !selectedFolderId ? 'page' : undefined} onClick={() => { setHomeView('home'); setActive(null); setSelectedFolderId(null); setQuery('') }}><Home size={16} />首页</button>
-      {user.role === 'admin' && <button className="nav-row" onClick={() => setWorkspaceView('admin')}><ShieldCheck size={16} />管理中心</button>}
-      <button type="button" className="nav-row" aria-current={query === '__favorites__' ? 'page' : undefined} onClick={() => { setHomeView('home'); setActive(null); setSelectedFolderId(null); setQuery('__favorites__') }}><Star size={16} />收藏 <span className="nav-count">{favoriteIds.length || ''}</span></button>
-      <button type="button" className="nav-row" aria-current={homeView === 'trash' ? 'page' : undefined} onClick={() => { setHomeView('trash'); setActive(null); setSelectedFolderId(null); setQuery('') }}><Trash2 size={16} />回收站</button>
+      <button type="button" className={'nav-row ' + (homeView === 'home' && !active && !selectedFolderId ? 'nav-active' : '')} aria-current={homeView === 'home' && !active && !selectedFolderId ? 'page' : undefined} onClick={() => { setHomeView('home'); setActive(null); setSelectedFolderId(null); setQuery(''); if (narrow) setSidebarOpen(false) }}><Home size={16} />首页</button>
+      {user.role === 'admin' && <button className="nav-row" onClick={() => { setWorkspaceView('admin'); if (narrow) setSidebarOpen(false) }}><ShieldCheck size={16} />管理中心</button>}
+      <button type="button" className="nav-row" aria-current={homeView === 'favorites' ? 'page' : undefined} onClick={() => { setHomeView('favorites'); setActive(null); setSelectedFolderId(null); setQuery(''); if (narrow) setSidebarOpen(false) }}><Star size={16} />收藏 <span className="nav-count">{favoriteIds.length || ''}</span></button>
+      <button type="button" className="nav-row" aria-current={homeView === 'trash' ? 'page' : undefined} onClick={() => { setHomeView('trash'); setActive(null); setSelectedFolderId(null); setQuery(''); if (narrow) setSidebarOpen(false) }}><Trash2 size={16} />回收站</button>
       <div className="tree-heading">
         <button aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>{expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}<span>文档</span></button>
         <div className="new-menu-anchor">
@@ -836,7 +837,7 @@ function App() {
       </div>
     </aside>}
     {narrow && sidebarOpen && <div className="sidebar-scrim" onClick={() => setSidebarOpen(false)} />}
-    <main className="main-area" id="main-content" tabIndex={-1}>
+    <main className="main-area" id="main-content" tabIndex={-1} onPointerDown={() => { if (narrow && sidebarOpen) setSidebarOpen(false) }}>
       <header className="topbar">
         {!sidebarOpen && <button className="icon-btn" aria-label="展开侧边栏" title="展开侧边栏" onClick={() => setSidebarOpen(true)}><PanelLeftClose size={17} /></button>}
         <div className="breadcrumbs"><span>我的文档</span><ChevronRight size={14} /><strong>{active?.title || selectedFolder?.title || (showingSearch ? '搜索' : '所有文档')}</strong></div>
@@ -850,6 +851,7 @@ function App() {
             </div>
             <span className={'connection-state ' + collabStatus} aria-live="polite">{collabStatus === 'connected' ? '已连接' : collabStatus === 'connecting' ? '连接中' : '已断开'}</span>
           </div>
+          {active && <button type="button" className={'icon-btn favorite-btn' + (favoriteSet.has(active.id) ? ' is-favorite' : '')} aria-label={favoriteSet.has(active.id) ? '取消收藏' : '收藏文档'} aria-pressed={favoriteSet.has(active.id)} title={favoriteSet.has(active.id) ? '取消收藏' : '收藏文档'} onClick={() => void handleDocumentAction('favorite', active)}><Star size={17} fill={favoriteSet.has(active.id) ? 'currentColor' : 'none'} /></button>}
           {active && <button className="share-btn" onClick={() => void openShareDialog()}><Share2 size={15} />共享</button>}
           <div className="menu-anchor">
             <button className="icon-btn" aria-label="导出文档" title="导出文档" aria-haspopup="menu" aria-expanded={exportMenuOpen} disabled={!active} onClick={() => setExportMenuOpen((value) => !value)}><ArrowDownToLine size={17} /></button>
@@ -934,6 +936,7 @@ function App() {
         favorites={favoriteSet}
         query={query === '__favorites__' ? '' : query}
         trash={homeView === 'trash'}
+        favoritesView={homeView === 'favorites'}
         stats={stats}
         onOpen={(doc) => { setActive(doc); setSelectedFolderId(doc.parentId || null) }}
         onCreate={() => void createDocument('document')}
@@ -1098,6 +1101,7 @@ type HomeDashboardProps = {
   favorites: Set<string>
   query: string
   trash: boolean
+  favoritesView: boolean
   stats: WorkspaceStats | null
   onOpen: (doc: Doc) => void
   onCreate: () => void
@@ -1107,7 +1111,7 @@ type HomeDashboardProps = {
   onPermanentDelete: (doc: Doc) => Promise<void>
 }
 
-function HomeDashboard({ documents, favorites, query, trash, stats, onOpen, onCreate, onImport, onCreateFolder, onRestore, onPermanentDelete }: HomeDashboardProps) {
+function HomeDashboard({ documents, favorites, query, trash, favoritesView, stats, onOpen, onCreate, onImport, onCreateFolder, onRestore, onPermanentDelete }: HomeDashboardProps) {
   const visible = documents.filter((doc) => !query || doc.title.toLowerCase().includes(query.toLowerCase()))
   if (trash) return <div className="home-dashboard">
     <div className="home-hero"><div><span className="eyebrow">文档管理</span><h1>回收站</h1><p>恢复误删的文档，或永久清理不再需要的内容。</p></div></div>
@@ -1120,6 +1124,17 @@ function HomeDashboard({ documents, favorites, query, trash, stats, onOpen, onCr
     </section>
   </div>
   const favoriteDocs = visible.filter((doc) => favorites.has(doc.id))
+  if (favoritesView) return <div className="home-dashboard">
+    <div className="home-hero"><div><span className="eyebrow">我的收藏</span><h1>收藏</h1><p>标星过的文档和文件夹集中在这里，方便随时回到常用内容。</p></div></div>
+    <section className="home-section">
+      <div className="home-section-head"><h2><Star size={16} />已收藏</h2><span>{favoriteDocs.length + ' 项'}</span></div>
+      {favoriteDocs.length ? <div className="home-grid">{favoriteDocs.map((doc) => <button className="home-card" key={doc.id} onClick={() => onOpen(doc)}>
+        <span className={'home-card-icon ' + (doc.kind === 'folder' ? 'folder' : '')}>{doc.kind === 'folder' ? <Folder size={17} /> : <FileText size={17} />}</span>
+        <span><b>{doc.title || '未命名文档'}</b><small>{doc.kind === 'folder' ? '文件夹' : '更新于 ' + (formatDate(doc.updatedAt) || '刚刚')}</small></span>
+        <ChevronRight size={15} />
+      </button>)}</div> : <div className="home-empty">还没有收藏。打开任意文档，点击右上角的星标即可加入收藏。</div>}
+    </section>
+  </div>
   const recent = [...visible].sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()).slice(0, 6)
   const sections = [
     { title: '最近访问', icon: Clock3, items: recent },
