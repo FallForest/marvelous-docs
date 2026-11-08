@@ -6,6 +6,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.14] - 2026-11-08
+
 ### Fixed
 
 - CI builds the CLI `dist` before running `node --test`; the test script now
