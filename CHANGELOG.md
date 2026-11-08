@@ -8,6 +8,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.17] - 2026-11-08
+
+### Fixed
+
+- The web image's nginx config proxies `/healthz` to the API again. Earlier
+  the container patch was applied live only, so rebuilt images reverted to the
+  catch-all `try_files` and returned `index.html` with HTTP 200 for health
+  probes — misleading for external monitors.
+
 ## [0.1.16] - 2026-11-08
 
 ### Fixed
