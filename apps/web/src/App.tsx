@@ -30,6 +30,8 @@ import StatsCards from './components/StatsCards'
 import TemplateMenu, { templateLabel } from './components/TemplateMenu'
 import TreeItem from './components/TreeItem'
 import VersionPreview from './components/VersionPreview'
+import { Dialog, PromptDialog } from './components/Dialog'
+import Popover from './components/Popover'
 
 type UpdateInfo = { version: string; url?: string; status: 'available' | 'running' | 'failed' | 'completed' }
 type CollabStatus = 'connecting' | 'connected' | 'disconnected'
@@ -145,6 +147,13 @@ function App() {
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
   const [moveDoc, setMoveDoc] = useState<Doc | null>(null)
   const [previewVersion, setPreviewVersion] = useState<Version | null>(null)
+  const [renameDoc, setRenameDoc] = useState<Doc | null>(null)
+  const [deleteDoc, setDeleteDoc] = useState<Doc | null>(null)
+  const [purgeDoc, setPurgeDoc] = useState<Doc | null>(null)
+  const [updatePrompt, setUpdatePrompt] = useState<UpdateInfo | null>(null)
+  const [linkPrompt, setLinkPrompt] = useState<{ from: number; to: number } | null>(null)
+  const [helpOpen, setHelpOpen] = useState(false)
+  const [workspaceOpen, setWorkspaceOpen] = useState(false)
   const [narrow, setNarrow] = useState(false)
   const saveTimer = useRef<number | undefined>(undefined)
   const importInput = useRef<HTMLInputElement | null>(null)
@@ -166,6 +175,7 @@ function App() {
     setPreviewVersion(null)
     setNewMenuOpen(false)
     setExportMenuOpen(false)
+    setWorkspaceOpen(false)
   }, [])
 
   const refreshStats = useCallback(async () => {
@@ -250,6 +260,13 @@ function App() {
   }, [exportActive, closeOverlays])
 
   useEffect(() => {
+    if (saveStatus !== 'saving') return
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = '' }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [saveStatus])
+
+  useEffect(() => {
     const media = window.matchMedia('(max-width: 820px)')
     const sync = () => { setNarrow(media.matches); if (media.matches) setSidebarOpen(false) }
     sync()
@@ -278,7 +295,7 @@ function App() {
 
   const startUpdate = useCallback(async () => {
     if (!token || !updateInfo || updateInfo.status === 'running') return
-    if (!window.confirm('确认更新到 ' + updateInfo.version + '？系统会先备份数据库并短暂重启服务。')) return
+    setUpdatePrompt(null)
     setUpdateInfo((current) => current ? { ...current, status: 'running' } : current)
     try {
       await request('/system/update', token, { method: 'POST' })
@@ -551,8 +568,7 @@ function App() {
       return
     }
     if (action === 'rename') {
-      const title = window.prompt('重命名', doc.title)
-      if (title && title.trim() && title.trim() !== doc.title) await updateDocument(doc, { title: title.trim() })
+      setRenameDoc(doc)
       return
     }
     if (action === 'duplicate') {
@@ -564,16 +580,7 @@ function App() {
       return
     }
     if (action === 'delete') {
-      if (!window.confirm('将“' + doc.title + '”移到回收站？')) return
-      try {
-        await request('/documents/' + doc.id, token, { method: 'DELETE' })
-        setDocuments((rows) => rows.filter((row) => row.id !== doc.id))
-        if (active?.id === doc.id) setActive(null)
-        setNotice('已移到回收站')
-        void refreshStats()
-      } catch (error) {
-        setNotice('删除失败：' + (error as Error).message)
-      }
+      setDeleteDoc(doc)
     }
   }
 
@@ -741,16 +748,27 @@ function App() {
     showInvite={showInvite}
     onBack={() => setWorkspaceView('documents')}
     onOpenInvite={() => { setShowInvite(true); setInviteError(''); setInviteLink('') }}
-    onStartUpdate={() => void startUpdate()}
+    onStartUpdate={() => setUpdatePrompt(updateInfo)}
     onLogout={clearToken}
     onCloseInvite={() => setShowInvite(false)}
     inviteProps={{ email: inviteEmail, setEmail: setInviteEmail, role: inviteRole, setRole: setInviteRole, link: inviteLink, error: inviteError, busy: inviteBusy, copied, onSubmit: createInvite, onCopy: copyInviteLink }}
   />
 
   return <div className="app-shell">
+    <a className="skip-link" href="#main-content">跳到主要内容</a>
     {sidebarOpen && <aside className={'sidebar' + (narrow ? ' sidebar-floating' : '')} aria-label="文档导航">
       <div className="brand-row"><div className="brand-mark"><Sparkles size={16} /></div><span>Marvelous Docs</span><button className="icon-btn push" aria-label="收起侧边栏" title="收起侧边栏" onClick={() => setSidebarOpen(false)}><PanelLeftClose size={17} /></button></div>
-      <button className="workspace"><div className="workspace-avatar">M</div><span className="workspace-copy"><b>Marvelous 团队</b><small>工作区</small></span><ChevronDown size={16} /></button>
+      <div className="workspace-anchor">
+        <button type="button" className="workspace" aria-haspopup="menu" aria-expanded={workspaceOpen} onClick={() => setWorkspaceOpen((value) => !value)}><div className="workspace-avatar">M</div><span className="workspace-copy"><b>Marvelous 团队</b><small>工作区</small></span><ChevronDown size={16} /></button>
+        <Popover open={workspaceOpen} onClose={() => setWorkspaceOpen(false)} label="工作区菜单" align="left" className="workspace-menu">
+          <div className="workspace-menu-head"><b>Marvelous 团队</b><span>私有部署 · 单工作区</span></div>
+          <div className="workspace-menu-user"><span className="avatar">{(user.name || user.email)[0].toUpperCase()}</span><div><b>{user.name || user.email.split('@')[0]}</b><small>{user.email}</small></div></div>
+          <div className="menu-divider" />
+          {user.role === 'admin' && <button type="button" role="menuitem" className="menu-item" onClick={() => { setWorkspaceOpen(false); setWorkspaceView('admin') }}><ShieldCheck size={15} /><span>管理中心</span></button>}
+          <button type="button" role="menuitem" className="menu-item" onClick={() => { setWorkspaceOpen(false); setHelpOpen(true) }}><span className="menu-key">?</span><span>快捷键与帮助</span></button>
+          <button type="button" role="menuitem" className="menu-item menu-item-danger" onClick={() => { setWorkspaceOpen(false); clearToken() }}><LogOut size={15} /><span>退出登录</span></button>
+        </Popover>
+      </div>
       <div className="sidebar-actions"><div className="action-row"><Search size={16} /><input
         aria-label="搜索文档"
         placeholder="搜索文档"
@@ -765,22 +783,23 @@ function App() {
         onKeyDown={(event) => { if (event.key === 'Escape') { setQuery(''); setHomeView('home') } }}
       /><kbd>⌘ K</kbd></div></div>
       <div className="nav-label">工作区</div>
-      <button className={'nav-row ' + (homeView === 'home' && !active && !selectedFolderId ? 'nav-active' : '')} onClick={() => { setHomeView('home'); setActive(null); setSelectedFolderId(null); setQuery('') }}><Home size={16} />首页</button>
+      <button type="button" className={'nav-row ' + (homeView === 'home' && !active && !selectedFolderId ? 'nav-active' : '')} aria-current={homeView === 'home' && !active && !selectedFolderId ? 'page' : undefined} onClick={() => { setHomeView('home'); setActive(null); setSelectedFolderId(null); setQuery('') }}><Home size={16} />首页</button>
       {user.role === 'admin' && <button className="nav-row" onClick={() => setWorkspaceView('admin')}><ShieldCheck size={16} />管理中心</button>}
-      <button className="nav-row" onClick={() => { setHomeView('home'); setActive(null); setSelectedFolderId(null); setQuery('__favorites__') }}><Star size={16} />收藏 <span className="nav-count">{favoriteIds.length || ''}</span></button>
-      <button className="nav-row" onClick={() => { setHomeView('trash'); setActive(null); setSelectedFolderId(null); setQuery('') }}><Trash2 size={16} />回收站</button>
+      <button type="button" className="nav-row" aria-current={query === '__favorites__' ? 'page' : undefined} onClick={() => { setHomeView('home'); setActive(null); setSelectedFolderId(null); setQuery('__favorites__') }}><Star size={16} />收藏 <span className="nav-count">{favoriteIds.length || ''}</span></button>
+      <button type="button" className="nav-row" aria-current={homeView === 'trash' ? 'page' : undefined} onClick={() => { setHomeView('trash'); setActive(null); setSelectedFolderId(null); setQuery('') }}><Trash2 size={16} />回收站</button>
       <div className="tree-heading">
         <button aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>{expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}<span>文档</span></button>
         <div className="new-menu-anchor">
           <button className="new-doc-btn" aria-haspopup="menu" aria-expanded={newMenuOpen} title="新建" onClick={() => setNewMenuOpen((value) => !value)}><Plus size={14} /><span>新建</span><ChevronDown size={12} /></button>
-          {newMenuOpen && <TemplateMenu
+          <TemplateMenu
+            open={newMenuOpen}
             templates={templates}
             onCreateBlank={() => void createDocument('document')}
             onCreateTemplate={(templateId) => void createDocument('document', templateId)}
             onImport={() => importInput.current?.click()}
             onNewFolder={() => void createDocument('folder')}
             onClose={() => setNewMenuOpen(false)}
-          />}
+          />
         </div>
       </div>
       {expanded && <div className="doc-tree">
@@ -801,18 +820,18 @@ function App() {
         {visibleTree.length === 0 && <div className="empty-tree">{treeQuery ? '没有匹配的文档' : '暂无文档或文件夹'}</div>}
       </div>}
       <div className="sidebar-bottom">
-        <div className="help-row"><span className="help-dot">?</span><span>帮助与反馈</span></div>
+        <button type="button" className="help-row" onClick={() => setHelpOpen(true)}><span className="help-dot">?</span><span>帮助与快捷键</span></button>
         <div className="profile-row"><div className="avatar">{(user.name || user.email)[0].toUpperCase()}</div><div className="profile-copy"><b>{user.name || user.email.split('@')[0]}</b><small>{user.email}</small></div><button className="icon-btn" aria-label="退出登录" title="退出登录" onClick={clearToken}><LogOut size={16} /></button></div>
       </div>
     </aside>}
     {narrow && sidebarOpen && <div className="sidebar-scrim" onClick={() => setSidebarOpen(false)} />}
-    <main className="main-area">
+    <main className="main-area" id="main-content" tabIndex={-1}>
       <header className="topbar">
         {!sidebarOpen && <button className="icon-btn" aria-label="展开侧边栏" title="展开侧边栏" onClick={() => setSidebarOpen(true)}><PanelLeftClose size={17} /></button>}
         <div className="breadcrumbs"><span>我的文档</span><ChevronRight size={14} /><strong>{active?.title || selectedFolder?.title || (showingSearch ? '搜索' : '所有文档')}</strong></div>
         <div className="top-actions">
-          <span className={'save-state save-' + saveStatus} aria-live="polite"><span className="save-dot" />{saveStatus === 'saving' ? '正在保存…' : saveStatus === 'error' ? '保存失败' : '已保存'}</span>
-          <div className="collaborators" aria-label="在线成员">
+          <span className={'save-state save-' + saveStatus} role="status" aria-live="polite"><span className="save-dot" />{saveStatus === 'saving' ? '正在保存…' : saveStatus === 'error' ? '保存失败' : '已保存'}</span>
+          <div className="collaborators" role="group" aria-label="在线成员">
             <div className="presence-stack">
               <div className="mini-avatar green" title="你">{(user.name || user.email)[0].toUpperCase()}</div>
               {collaborators.slice(0, 3).map((person) => <div key={person.clientId} className="mini-avatar" title={person.name} style={{ background: person.color + '24', color: person.color }}>{person.name[0]?.toUpperCase()}</div>)}
@@ -823,7 +842,7 @@ function App() {
           {active && <button className="share-btn" onClick={() => void openShareDialog()}><Share2 size={15} />共享</button>}
           <div className="menu-anchor">
             <button className="icon-btn" aria-label="导出文档" title="导出文档" aria-haspopup="menu" aria-expanded={exportMenuOpen} disabled={!active} onClick={() => setExportMenuOpen((value) => !value)}><ArrowDownToLine size={17} /></button>
-            {exportMenuOpen && <ExportMenu onSelect={(format) => void exportActive(format)} onClose={() => setExportMenuOpen(false)} />}
+            <ExportMenu open={exportMenuOpen} onSelect={(format) => void exportActive(format)} onClose={() => setExportMenuOpen(false)} />
           </div>
           <button className="icon-btn" aria-label="版本历史" title="版本历史" onClick={() => { setRightTab('history'); setShowRight(true) }}><History size={17} /></button>
           <button className="icon-btn" aria-label="评论" title="评论" onClick={() => { setRightTab('comments'); setShowRight(true) }}><MessageCircle size={17} /></button>
@@ -844,16 +863,19 @@ function App() {
             onCollabStatus={setCollabStatus}
             onSelection={(anchor) => { setCommentAnchor(anchor); setRightTab('comments'); setShowRight(true) }}
             onExport={(format) => void exportActive(format)}
+            onLink={(range) => setLinkPrompt(range)}
           />
         </section>
         {showRight && <aside className="right-panel" aria-label="文档侧边栏">
-          <div className="panel-tabs" role="tablist" aria-label="侧边栏标签">
-            <button role="tab" aria-selected={rightTab === 'comments'} className={rightTab === 'comments' ? 'active' : ''} onClick={() => setRightTab('comments')}><MessageCircle size={15} />评论</button>
-            <button role="tab" aria-selected={rightTab === 'history'} className={rightTab === 'history' ? 'active' : ''} onClick={() => setRightTab('history')}><History size={15} />历史</button>
-            <button role="tab" aria-selected={rightTab === 'activity'} className={rightTab === 'activity' ? 'active' : ''} onClick={() => setRightTab('activity')}><Activity size={15} />动态</button>
-            <button className="icon-btn close-panel" aria-label="关闭面板" title="关闭面板" onClick={() => setShowRight(false)}><X size={16} /></button>
+          <div className="panel-tabbar">
+            <div className="panel-tabs" role="tablist" aria-label="侧边栏标签">
+              <button type="button" role="tab" id="tab-comments" aria-controls="panel-comments" aria-selected={rightTab === 'comments'} className={rightTab === 'comments' ? 'active' : ''} onClick={() => setRightTab('comments')}><MessageCircle size={15} />评论</button>
+              <button type="button" role="tab" id="tab-history" aria-controls="panel-history" aria-selected={rightTab === 'history'} className={rightTab === 'history' ? 'active' : ''} onClick={() => setRightTab('history')}><History size={15} />历史</button>
+              <button type="button" role="tab" id="tab-activity" aria-controls="panel-activity" aria-selected={rightTab === 'activity'} className={rightTab === 'activity' ? 'active' : ''} onClick={() => setRightTab('activity')}><Activity size={15} />动态</button>
+            </div>
+            <button type="button" className="icon-btn close-panel" aria-label="关闭面板" title="关闭面板" onClick={() => setShowRight(false)}><X size={16} /></button>
           </div>
-          {rightTab === 'comments' ? <div className="panel-body">
+          {rightTab === 'comments' ? <div className="panel-body" role="tabpanel" id="panel-comments" aria-labelledby="tab-comments">
             <div className="panel-intro"><b>讨论</b><span>{comments.length + ' 条评论'}</span></div>
             {comments.length === 0 ? <div className="panel-empty"><MessageCircle size={21} /><b>还没有评论</b><span>选中文本后点击评论开始讨论</span></div>
               : <div className="comment-list">{comments.map((comment) => <div className={'comment ' + (comment.status === 'resolved' ? 'comment-resolved' : '')} key={comment.id}>
@@ -867,7 +889,7 @@ function App() {
               <textarea aria-label="评论内容" placeholder="添加评论..." value={commentText} onChange={(event) => setCommentText(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) void addComment() }} />
               <div><span>Ctrl + Enter 发送</span><button className="send-btn" aria-label="发送评论" title="发送评论" onClick={() => void addComment()} disabled={!commentText.trim()}><Send size={15} /></button></div>
             </div>
-          </div> : rightTab === 'history' ? <div className="panel-body">
+          </div> : rightTab === 'history' ? <div className="panel-body" role="tabpanel" id="panel-history" aria-labelledby="tab-history">
             <div className="panel-intro"><b>版本历史</b><span>{versions.length + ' 个版本'}</span></div>
             {versions.length === 0 ? <div className="panel-empty"><Clock3 size={21} /><b>暂无历史记录</b><span>文档更改后会保留版本</span></div>
               : <div className="version-list">{versions.map((version) => <div className="version-item" key={version.id}>
@@ -876,8 +898,8 @@ function App() {
                   <span className="version-copy"><b>版本 {version.version}</b><small>{version.createdBy || '成员'} · {formatDate(version.createdAt)}</small></span>
                 </button>
                 <div className="version-actions">
-                  <button onClick={() => setPreviewVersion(version)}>预览</button>
-                  <button onClick={() => { if (window.confirm('确认恢复到版本 ' + version.version + '？当前内容会先保存为新版本。')) void restoreVersion(version.id) }}>恢复</button>
+                  <button type="button" onClick={() => setPreviewVersion(version)}>预览</button>
+                  <button type="button" onClick={() => setPreviewVersion(version)}>恢复</button>
                 </div>
               </div>)}</div>}
           </div> : <ActivityPanel token={token} documentId={active.id} />}
@@ -913,13 +935,7 @@ function App() {
           void refreshStats()
           await refreshDocuments()
         }}
-        onPermanentDelete={async (doc) => {
-          if (!window.confirm('永久删除“' + doc.title + '”？')) return
-          await request('/documents/' + doc.id + '/permanent', token, { method: 'DELETE' })
-          setTrashDocuments((rows) => rows.filter((row) => row.id !== doc.id))
-          setNotice('文档已永久删除')
-          void refreshStats()
-        }}
+        onPermanentDelete={async (doc) => { setPurgeDoc(doc) }}
       />}
       {commandOpen && <CommandPalette
         query={query}
@@ -942,6 +958,87 @@ function App() {
     {moveDoc && <MoveDialog doc={moveDoc} documents={documents} busy={busy} onMove={(parentId) => void moveDocument(moveDoc, parentId)} onClose={() => setMoveDoc(null)} />}
     {previewVersion && active && <VersionPreview token={token} documentId={active.id} version={previewVersion} onRestore={restoreVersion} onClose={() => setPreviewVersion(null)} />}
     <input ref={importInput} className="visually-hidden" type="file" accept=".md,.markdown,.txt" aria-label="导入 Markdown 文件" onChange={(event) => void handleImport(event)} />
+    {renameDoc && <PromptDialog
+      title="重命名"
+      description={renameDoc.kind === 'folder' ? '给文件夹换一个更清晰的名字。' : '标题会立即同步给所有协作者。'}
+      label="名称"
+      initialValue={renameDoc.title}
+      confirmLabel="保存"
+      validate={(value) => value ? (value.length > 120 ? '名称不能超过 120 个字符' : null) : '名称不能为空'}
+      onSubmit={async (value) => { setRenameDoc(null); if (value !== renameDoc.title) await updateDocument(renameDoc, { title: value }) }}
+      onClose={() => setRenameDoc(null)}
+    />}
+    {deleteDoc && <Dialog
+      title="移到回收站？"
+      description={'“' + (deleteDoc.title || '未命名文档') + '”会移到回收站，之后仍可恢复。'}
+      confirmLabel="移到回收站"
+      danger
+      onConfirm={async () => {
+        const doc = deleteDoc
+        setDeleteDoc(null)
+        try {
+          await request('/documents/' + doc.id, token, { method: 'DELETE' })
+          setDocuments((rows) => rows.filter((row) => row.id !== doc.id))
+          if (active?.id === doc.id) setActive(null)
+          setNotice('已移到回收站')
+          void refreshStats()
+        } catch (error) { setNotice('删除失败：' + (error as Error).message) }
+      }}
+      onClose={() => setDeleteDoc(null)}
+    />}
+    {purgeDoc && <Dialog
+      title="永久删除？"
+      description={'“' + (purgeDoc.title || '未命名文档') + '”将无法恢复，相关评论与历史也会一并删除。'}
+      confirmLabel="永久删除"
+      danger
+      onConfirm={async () => {
+        const doc = purgeDoc
+        setPurgeDoc(null)
+        try {
+          await request('/documents/' + doc.id + '/permanent', token, { method: 'DELETE' })
+          setTrashDocuments((rows) => rows.filter((row) => row.id !== doc.id))
+          setNotice('文档已永久删除')
+          void refreshStats()
+        } catch (error) { setNotice('永久删除失败：' + (error as Error).message) }
+      }}
+      onClose={() => setPurgeDoc(null)}
+    />}
+    {updatePrompt && <Dialog
+      title={'更新到 ' + updatePrompt.version + '？'}
+      description="系统会先备份数据库，然后拉取新镜像并短暂重启服务。更新期间建议暂停编辑。"
+      confirmLabel="开始更新"
+      onConfirm={async () => { setUpdatePrompt(null); await startUpdate() }}
+      onClose={() => setUpdatePrompt(null)}
+    />}
+    {helpOpen && <Dialog
+      title="快捷键与帮助"
+      description="少用鼠标，编辑更快。"
+      confirmLabel="知道了"
+      cancelLabel="关闭"
+      onConfirm={() => setHelpOpen(false)}
+      onClose={() => setHelpOpen(false)}
+    >
+      <dl className="shortcut-list">
+        <div className="shortcut-row"><dt>搜索与命令面板</dt><dd><kbd>Ctrl</kbd><kbd>K</kbd></dd></div>
+        <div className="shortcut-row"><dt>强制保存</dt><dd><kbd>Ctrl</kbd><kbd>S</kbd></dd></div>
+        <div className="shortcut-row"><dt>导出 Markdown</dt><dd><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>E</kbd></dd></div>
+        <div className="shortcut-row"><dt>关闭弹层 / 面板</dt><dd><kbd>Esc</kbd></dd></div>
+        <div className="shortcut-row"><dt>发送评论</dt><dd><kbd>Ctrl</kbd><kbd>Enter</kbd></dd></div>
+      </dl>
+      <p className="help-note">协作连接断开时，编辑会保留在本地，恢复后自动同步。遇到界面异常可刷新页面，历史版本里能找回未同步内容。</p>
+    </Dialog>}
+    {linkPrompt && <PromptDialog
+      title="添加链接"
+      description="输入链接地址，选中文本会变成可点击链接。"
+      label="链接地址"
+      initialValue="https://"
+      confirmLabel="添加链接"
+      validate={(value) => {
+        try { const url = new URL(value); return url.protocol === 'http:' || url.protocol === 'https:' ? null : '只支持 http 或 https 链接' } catch { return '请输入完整的网址' }
+      }}
+      onSubmit={async (value) => { const range = linkPrompt; setLinkPrompt(null); window.dispatchEvent(new CustomEvent('mdoc-insert-link', { detail: { from: range.from, to: range.to, href: value } })) }}
+      onClose={() => setLinkPrompt(null)}
+    />}
   </div>
 }
 
@@ -1164,9 +1261,10 @@ type DocumentEditorProps = {
   onCollabStatus: (status: CollabStatus) => void
   onSelection: (anchor: { from: number; to: number; text: string }) => void
   onExport: (format: 'markdown' | 'html' | 'json') => void
+  onLink: (range: { from: number; to: number }) => void
 }
 
-function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, onAwareness, onCollabStatus, onSelection, onExport }: DocumentEditorProps) {
+function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, onAwareness, onCollabStatus, onSelection, onExport, onLink }: DocumentEditorProps) {
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null)
   const [provider, setProvider] = useState<WebsocketProvider | null>(null)
   const [title, setTitle] = useState(doc.title)
@@ -1223,6 +1321,8 @@ function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, o
     return () => document.removeEventListener('mousedown', preserveSelection)
   }, [])
 
+
+
   const editor = useEditor({
     extensions: buildEditorExtensions({ ydoc: provider ? ydoc : null, placeholder: '从这里开始写作…' }),
     content: doc.content?.doc || emptyContent.doc,
@@ -1243,6 +1343,27 @@ function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, o
     },
     editorProps: { attributes: { class: 'tiptap-content' } },
   }, [doc.id, provider])
+
+  // Reveal the quoted text when a comment anchor is clicked in the side panel.
+  useEffect(() => {
+    const reveal = (event: Event) => {
+      const anchor = (event as CustomEvent<{ from?: number; to?: number }>).detail
+      if (!anchor || !editor || typeof anchor.from !== 'number' || typeof anchor.to !== 'number') return
+      editor.chain().focus().setTextSelection({ from: anchor.from, to: anchor.to }).scrollIntoView().run()
+    }
+    window.addEventListener('mdoc-focus-anchor', reveal)
+    return () => window.removeEventListener('mdoc-focus-anchor', reveal)
+  }, [editor])
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ from: number; to: number; href: string }>).detail
+      if (!detail || !editor) return
+      editor.chain().focus().setTextSelection({ from: detail.from, to: detail.to }).extendMarkRange('link').setLink({ href: detail.href }).run()
+    }
+    window.addEventListener('mdoc-insert-link', handler)
+    return () => window.removeEventListener('mdoc-insert-link', handler)
+  }, [editor])
 
   useEffect(() => {
     const handler = () => {
@@ -1284,7 +1405,7 @@ function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, o
       <span className="tool-separator" />
       <button className="toolbar-format" onClick={() => editor?.chain().focus().toggleHeading({ level: editor?.isActive('heading', { level: 1 }) ? 2 : 1 }).run()}>标题 <ChevronDown size={14} /></button>
       <ToolButton title="插入表格" onClick={() => editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}><Table2 size={16} /></ToolButton>
-      <ToolButton title="添加链接" onClick={() => { const url = window.prompt('链接地址'); if (url) editor?.chain().focus().setLink({ href: url }).run() }}><LinkIcon size={16} /></ToolButton>
+      <ToolButton title="添加链接" onClick={() => { const selection = editor?.state.selection; onLink({ from: selection?.from ?? 0, to: selection?.to ?? 0 }) }}><LinkIcon size={16} /></ToolButton>
       <ToolButton title="高亮" onClick={() => editor?.chain().focus().toggleHighlight().run()} active={!!editor?.isActive('highlight')}><HighlightIcon size={16} /></ToolButton>
       <ToolButton title="文字颜色" onClick={() => editor?.chain().focus().setColor('#3370ff').run()} active={!!editor?.isActive('textStyle', { color: '#3370ff' })}><Palette size={16} /></ToolButton>
       <ToolButton title="对选中文本添加评论" onClick={() => {

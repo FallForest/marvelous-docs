@@ -8,6 +8,40 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.16] - 2026-11-08
+
+### Fixed
+
+- Clicking a menu no longer blocks the rest of the UI: the full-screen
+  `menu-scrim` is gone. Menus close on outside pointerdown or Escape, so topbar
+  actions such as 导出、版本历史、评论 respond immediately.
+- Every native `window.prompt`/`window.confirm` flow was replaced with in-app
+  dialogs: rename, move-to-trash, permanent delete, version restore, link
+  insertion, and the admin update confirmation. Dialogs trap focus, restore it
+  on close, and support Escape and backdrop dismissal.
+- The sidebar workspace button was a dead control; it now opens a workspace menu
+  with 管理中心、快捷键与帮助 and 退出登录. 帮助与快捷键 opens a real dialog with
+  the shortcut table.
+- The comment "定位到引用" action dispatched an event nobody listened to; the
+  editor now selects and scrolls to the quoted range.
+- Tree rows no longer nest an interactive control inside the row button, so
+  folder expand/collapse works with mouse, touch, and keyboard.
+- The version list's 恢复 action now opens the preview dialog (with its explicit
+  confirmation) instead of a blocking confirm.
+
+### Changed
+
+- New Popover and Dialog primitives in `apps/web/src/components` replace the
+  ad-hoc menus; menus, tree actions, export, and workspace switcher all share
+  the same behaviour and layering.
+- Design tokens (28 CSS variables) for surfaces, borders, text, accent, status,
+  focus ring, radii, shadows, and a z-index scale. Muted text moved to #5f6673
+  and the accent to #c0533f for WCAG AA contrast (13 failing nodes → 0).
+- Focus-visible rings across buttons, links, inputs, menu items, and tabs; a
+  skip link and tabpanel roles; touch targets enlarge to 44px at ≤560px and
+  tree menus are no longer hover-only on touch devices.
+- Reduced-motion support and a before-unload warning while a save is in flight.
+
 ## [0.1.15] - 2026-11-08
 
 ### Fixed

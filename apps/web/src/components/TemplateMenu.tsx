@@ -1,4 +1,5 @@
 import { FilePlus2, FolderPlus, Upload } from 'lucide-react'
+import Popover from './Popover'
 import type { Template } from '../lib/types'
 
 const TEMPLATE_ORDER = ['meeting-notes', 'weekly-report', 'project-plan', 'product-spec', 'release-notes']
@@ -37,6 +38,7 @@ export function mergeTemplates(fetched: Template[]): Template[] {
 }
 
 type TemplateMenuProps = {
+  open: boolean
   templates: Template[]
   onCreateBlank: () => void
   onCreateTemplate: (templateId: string) => void
@@ -45,19 +47,16 @@ type TemplateMenuProps = {
   onClose: () => void
 }
 
-export default function TemplateMenu({ templates, onCreateBlank, onCreateTemplate, onImport, onNewFolder, onClose }: TemplateMenuProps) {
+export default function TemplateMenu({ open, templates, onCreateBlank, onCreateTemplate, onImport, onNewFolder, onClose }: TemplateMenuProps) {
   const entries = mergeTemplates(templates)
-  return <>
-    <div className="menu-scrim" onClick={onClose} />
-    <div className="menu-popover template-menu" role="menu" aria-label="新建">
-      <div className="menu-heading">新建</div>
-      <button role="menuitem" className="menu-item" onClick={() => { onClose(); onCreateBlank() }}><FilePlus2 size={15} /><span>空白文档</span></button>
-      {entries.map((template) => <button key={template.id} role="menuitem" className="menu-item" onClick={() => { onClose(); onCreateTemplate(template.id) }}>
-        <span className="menu-item-copy"><b>{TEMPLATE_LABELS[template.id] || template.name}</b><small>{TEMPLATE_HINTS[template.id] || template.description || '模板'}</small></span>
-      </button>)}
-      <div className="menu-divider" />
-      <button role="menuitem" className="menu-item" onClick={() => { onClose(); onImport() }}><Upload size={15} /><span>导入 Markdown</span></button>
-      <button role="menuitem" className="menu-item" onClick={() => { onClose(); onNewFolder() }}><FolderPlus size={15} /><span>新建文件夹</span></button>
-    </div>
-  </>
+  return <Popover open={open} onClose={onClose} label="新建" align="right" className="template-menu">
+    <div className="menu-heading">新建</div>
+    <button type="button" role="menuitem" className="menu-item" onClick={() => { onClose(); onCreateBlank() }}><FilePlus2 size={15} /><span>空白文档</span></button>
+    {entries.map((template) => <button key={template.id} type="button" role="menuitem" className="menu-item" onClick={() => { onClose(); onCreateTemplate(template.id) }}>
+      <span className="menu-item-copy"><b>{TEMPLATE_LABELS[template.id] || template.name}</b><small>{TEMPLATE_HINTS[template.id] || template.description || '模板'}</small></span>
+    </button>)}
+    <div className="menu-divider" />
+    <button type="button" role="menuitem" className="menu-item" onClick={() => { onClose(); onImport() }}><Upload size={15} /><span>导入 Markdown</span></button>
+    <button type="button" role="menuitem" className="menu-item" onClick={() => { onClose(); onNewFolder() }}><FolderPlus size={15} /><span>新建文件夹</span></button>
+  </Popover>
 }

@@ -71,7 +71,7 @@ export default function CommandPalette({ query, onQuery, scope, onScope, index, 
     <section className="command-palette" role="dialog" aria-modal="true" aria-label="命令面板">
       <div className="command-input">
         <Search size={17} />
-        <input autoFocus aria-label="搜索文档或输入命令" placeholder="搜索文档或输入命令" value={query === '__favorites__' ? '' : query} onChange={(event) => onQuery(event.target.value)} />
+        <input autoFocus role="combobox" aria-expanded="true" aria-controls="command-results" aria-autocomplete="list" aria-label="搜索文档或输入命令" placeholder="搜索文档或输入命令" value={query === '__favorites__' ? '' : query} onChange={(event) => onQuery(event.target.value)} />
         <kbd>ESC</kbd>
       </div>
       <div className="command-scope" role="group" aria-label="搜索范围">
@@ -83,11 +83,13 @@ export default function CommandPalette({ query, onQuery, scope, onScope, index, 
         >{item.label}</button>)}
         <span className="command-scope-hint">{loading ? '检索中…' : results.length ? results.length + ' 条结果' : ''}</span>
       </div>
-      <div className="command-list">
+      <div className="command-list" id="command-results" role="listbox" aria-label="搜索结果">
         {items.map((item, itemIndex) => {
           const Icon = item.icon
           return <button
             key={item.key}
+            type="button"
+            role="option"
             className={itemIndex === index ? 'active' : ''}
             aria-selected={itemIndex === index}
             onMouseEnter={() => onIndex(itemIndex)}
