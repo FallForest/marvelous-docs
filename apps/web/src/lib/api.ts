@@ -1,10 +1,18 @@
 export const API = (import.meta.env?.VITE_API_URL as string | undefined) ?? ''
 
+/**
+ * Sends a JSON API request. Content-Type is only set when a body is present:
+ * a DELETE or empty POST carrying "application/json" with no body makes
+ * Fastify reject the request with 400 INVALID_INPUT.
+ */
 export async function request<T>(path: string, token: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(API + '/api/v1' + path, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token, ...init?.headers },
-  })
+  const headers = new Headers(init?.headers)
+  headers.set('Accept', 'application/json')
+  if (init?.body !== undefined && init?.body !== null && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
+  }
+  if (token) headers.set('Authorization', 'Bearer ' + token)
+  const response = await fetch(API + '/api/v1' + path, { ...init, headers })
   if (!response.ok) {
     const body = await response.json().catch(() => ({}))
     const message = body.message || body.error?.message || body.error || '请求失败 (' + response.status + ')'

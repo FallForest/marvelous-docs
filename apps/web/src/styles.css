@@ -780,7 +780,7 @@ html,body{max-width:100%}
 .tiptap-content li{margin:3px 0}
 .tiptap-content blockquote{border-left:3px solid var(--accent);background:var(--accent-soft);margin:14px 0;padding:8px 14px;border-radius:0 6px 6px 0}
 .tiptap-content pre{background:#f6f7f9;border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow:auto;font-size:13px}
-.tiptap-content code{background:#f2f3f6;border-radius:4px;padding:1px 5px;font-size:.9em}
+.tiptap-content code{background:#f2f3f6;border-radius:4px;padding:1px 5px;font-size:.9em;color:#1f2937}
 .tiptap-content hr{border:0;border-top:1px solid var(--border-strong);margin:26px 0}
 .tiptap-content table{border-collapse:collapse;width:100%;margin:14px 0;table-layout:fixed}
 .tiptap-content th,.tiptap-content td{border:1px solid var(--border-strong);padding:8px 10px;vertical-align:top;position:relative;min-width:40px}
@@ -974,3 +974,50 @@ html,body{max-width:100%}
   .sidebar-scrim{display:block;position:fixed;inset:0;z-index:29;background:#11182740;backdrop-filter:blur(1px)}
   .popover{z-index:60}
 }
+
+/* 23. code block readability + root-folder button */
+.tiptap-content pre{
+  background:#f7f8fa;border:1px solid var(--border);border-radius:8px;
+  padding:14px 16px;overflow:auto;font-size:13px;line-height:1.65;
+  color:#1f2937;font-family:ui-monospace,SFMono-Regular,"JetBrains Mono",Menlo,Consolas,monospace;
+}
+.tiptap-content pre code{
+  background:none;border:0;padding:0;color:inherit;font-size:inherit;
+  font-family:inherit;white-space:pre;
+}
+.tiptap-content code{
+  font-family:ui-monospace,SFMono-Regular,"JetBrains Mono",Menlo,Consolas,monospace;
+  color:#b0453a;background:#f5f6f8;
+}
+/* “所有文档” row: full-width ghost button, no boxy outline */
+.root-folder{
+  width:100%;display:flex;align-items:center;gap:9px;height:34px;
+  padding:0 9px;border:0;border-radius:6px;background:transparent;
+  color:var(--text-secondary);font-size:12.5px;text-align:left;cursor:pointer;
+}
+.root-folder svg{color:var(--text-muted);flex:0 0 auto}
+.root-folder:hover{background:var(--surface-sunken);color:var(--text)}
+.root-folder:hover svg{color:var(--text)}
+.root-folder.selected{background:var(--accent-soft);color:var(--accent-strong);font-weight:600}
+.root-folder.selected svg{color:var(--accent-strong)}
+.tree-heading>button{height:28px;border-radius:5px;padding:0 6px}
+.tree-heading>button:hover{background:var(--surface-sunken)}
+
+/* 24. sidebar refinements */
+.nav-count:empty{display:none}
+.nav-row{position:relative}
+.nav-row[aria-current="page"]::before{
+  content:"";position:absolute;left:-9px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;
+  background:var(--accent);
+}
+.root-folder{font-weight:500}
+.root-folder.selected{font-weight:600}
+.tree-heading>button>span{letter-spacing:.01em}
+.doc-tree{padding-top:4px}
+
+/* 25. avoid double-highlighting both nav and tree root */
+.sidebar .root-folder.selected{background:var(--surface-sunken);color:var(--text);font-weight:600}
+.sidebar .root-folder.selected svg{color:var(--text-secondary)}
+
+.sidebar .root-folder,.sidebar .root-folder.selected{background:transparent;color:var(--text-secondary);font-weight:500}
+.sidebar .root-folder:hover{background:var(--surface-sunken);color:var(--text)}

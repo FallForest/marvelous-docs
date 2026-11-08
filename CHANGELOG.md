@@ -8,6 +8,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.22] - 2026-11-08
+
+### Fixed
+
+- 移到回收站 no longer fails with 删除失败. The API client sent
+  `Content-Type: application/json` on every request, including bodyless
+  DELETE/POST calls; Fastify rejects an empty JSON body with 400 INVALID_INPUT.
+  The header is now only set when a body exists. This also fixes permanent
+  delete, restore, favorite toggles and other bodyless mutations.
+- Code blocks were rendered in muted grey. `pre`/`pre code` now use a readable
+  #1f2937 on #f7f8fa surface with a monospace stack, while inline code keeps a
+  subtle tint instead of inheriting muted text.
+- The “所有文档” row looked like a boxed, double-highlighted button. It is now a
+  neutral full-width row with a hover state, and only the nav item carries the
+  active indicator.
+- Empty favorite counts no longer render a stray dot in the sidebar.
+
 ## [0.1.21] - 2026-11-08
 
 ### Added
