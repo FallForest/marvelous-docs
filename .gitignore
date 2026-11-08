@@ -1,10 +1,27 @@
+# Dependencies
 node_modules/
 **/node_modules/
+.pnpm-store/
+
+# Build output
 dist/
 **/dist/
+
+# TypeScript incremental build metadata
+*.tsbuildinfo
+apps/web/tsconfig.tsbuildinfo
+
+# Environment and secrets
 .env
 .env.*
 !.env.example
-.pnpm-store/
+
+# Local scratch space, backups, coverage
+.tmp/
+tmp/
+backups/
 coverage/
 *.log
+
+# Local tool state
+.claude/settings.local.json

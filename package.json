@@ -1,13 +1,33 @@
 {
   "name": "marvelous-docs",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.13",
   "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=11"
+  },
   "scripts": {
-    "dev:web": "pnpm --filter @marvelous-docs/web dev",
+    "dev": "pnpm --parallel --filter @marvelous-docs/server --filter @marvelous-docs/web dev",
     "dev:server": "pnpm --filter @marvelous-docs/server dev",
+    "dev:web": "pnpm --filter @marvelous-docs/web dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "cli": "pnpm --filter @marvelous-docs/cli exec node dist/index.js"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "pnpm -r test",
+    "test:server": "pnpm --filter @marvelous-docs/server test",
+    "test:web": "pnpm --filter @marvelous-docs/web test",
+    "test:cli": "pnpm --filter @marvelous-docs/cli test",
+    "cli": "pnpm --filter @marvelous-docs/cli exec node dist/index.js",
+    "db:migrate": "pnpm --filter @marvelous-docs/server db:migrate",
+    "clean": "node -e \"for (const p of ['apps/server/dist','apps/web/dist','packages/cli/dist','apps/web/tsconfig.tsbuildinfo','coverage','.tmp']) { require('node:fs').rmSync(p, { recursive: true, force: true }) }\""
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.14.0",
+    "typescript-eslint": "^8.72.1"
   }
 }

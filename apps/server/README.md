@@ -9,7 +9,7 @@ The service also runs a y-websocket-compatible Yjs collaboration endpoint on por
 | Variable | Required | Description |
 | --- | --- | --- |
 | `DATABASE_URL` | yes | PostgreSQL connection string |
-| `JWT_SECRET` | production | Long random signing secret; development has an insecure fallback |
+| `JWT_SECRET` | production | Signing secret of at least 32 characters; the process refuses to start in production when it is missing or shorter. Development keeps an insecure fallback |
 | `BOOTSTRAP_ADMIN_EMAIL` | first startup | Creates the first workspace administrator |
 | `BOOTSTRAP_ADMIN_PASSWORD` | first startup | Initial administrator password |
 | `BOOTSTRAP_ADMIN_NAME` | no | Initial administrator display name |
@@ -26,25 +26,46 @@ Legacy `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_NAME` are also accepted for b
 
 All application routes use `/api/v1`; pass `Authorization: Bearer <token>` after login. Login returns a 12-hour JWT. Document content is JSON with `schemaVersion: 1` and a Tiptap-compatible `doc` object. Writes require `expectedVersion`; a stale version returns HTTP 409 with `VERSION_CONFLICT`.
 
-- `POST /api/v1/auth/login` with `{ "email", "password" }`
+- `POST /api/v1/auth/login` with `{ "email", "password" }`; ten failed attempts per IP and email within 15 minutes return `429 RATE_LIMITED` with `Retry-After`
 - `POST /api/v1/auth/accept-invite` with `{ "inviteToken", "name", "password" }`
 - `GET /api/v1/me`
 - `POST /api/v1/invites` (workspace admin; returns a one-time token for delivery)
-- `GET|POST /api/v1/documents`
+- `GET /api/v1/workspace/members`, `GET /api/v1/workspace/stats`
+- `GET /api/v1/templates` (six built-in templates; the id is accepted by `POST /documents`)
+- `GET|POST /api/v1/documents` (`POST` takes `content` or `templateId`, never both)
+- `POST /api/v1/documents/import` with `{ "format": "markdown", "markdown", "title"?, "parentId"? }` (2 MB limit)
+- `GET /api/v1/documents/search?q=&scope=&limit=` (limit 1-100, default 20)
+- `GET /api/v1/documents/trash|recent|favorites`
 - `GET|PUT /api/v1/documents/:id`
-- `GET|POST /api/v1/documents/:id/comments`
+- `POST /api/v1/documents/:id/duplicate`, `GET /api/v1/documents/:id/export?format=markdown|html|json`
+- `GET /api/v1/documents/:id/activity?limit=`
+- `POST /api/v1/documents/:id/restore`, `DELETE /api/v1/documents/:id/permanent`
+- `GET|POST /api/v1/documents/:id/comments`, `PATCH /api/v1/documents/:id/comments/:commentId`
 - `GET /api/v1/documents/:id/versions`
 - `POST /api/v1/documents/:id/versions/:versionId/restore` with `{ "expectedVersion" }`
 - `GET|PUT /api/v1/documents/:id/acl` (document owner)
+- `PUT /api/v1/uploads`, `GET /api/v1/uploads/:filename`
 - `GET /healthz`
 - `GET /api/v1/system/version`
 - `GET /api/v1/system/update-check` (authenticated)
+- `POST /api/v1/system/update`, `GET /api/v1/system/update-status` (workspace admin)
 
 `POST /documents` accepts `kind: "document"` (default) or `kind: "folder"`. Folder content is always an empty versioned JSON document; only folders may be used as `parentId`. Document editing, comments, history, restore, and collaboration endpoints reject folder IDs.
 
+Every JSON response carries `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, and `Referrer-Policy: no-referrer`. In production the process exits at startup when `JWT_SECRET` is missing or shorter than 32 characters, and `CORS_ORIGIN` is parsed as a trimmed, comma-separated allow-list with no wildcard fallback.
+
+## Testing
+
+```bash
+pnpm --filter @marvelous-docs/server test       # tsx --test test/*.test.ts
+pnpm --filter @marvelous-docs/server typecheck  # tsc -p tsconfig.json --noEmit
+```
+
+The suite covers Markdown import/export round-trips, HTML escaping, built-in template schema validity, version comparison, and the login rate limiter. It does not need a database: the conversion, template, version, and rate-limit modules are pure and imported directly.
+
 ## Live collaboration
 
-Set the browser provider base URL to `wss://<host>/collab` (the provider adds `/<documentId>`). Authenticate with `?token=<JWT>` because browsers cannot set custom WebSocket headers; the endpoint also accepts `Authorization: Bearer <JWT>` from non-browser clients. Each room name must be the document UUID. The server implements y-websocket v2 binary sync and awareness messages, uses the Tiptap `default` XML fragment, and loads its initial Y.Doc by converting the stored `content.doc` through the server's StarterKit plus Underline schema.
+Set the browser provider base URL to `wss://<host>/collab` (the provider adds `/<documentId>`). Authenticate with `?token=<JWT>` because browsers cannot set custom WebSocket headers; the endpoint also accepts `Authorization: Bearer <JWT>` from non-browser clients. Each room name must be the document UUID. The server implements y-websocket v2 binary sync and awareness messages, uses the Tiptap `default` XML fragment, and loads its initial Y.Doc by converting the stored `content.doc` through the shared editor schema in `src/lib/schema.ts` (StarterKit, underline, link, text style, colour, highlight, task lists, and tables).
 
 The server checks workspace membership and document ACL before upgrading. Owners and editors can submit Yjs sync updates; viewers can receive state and publish awareness, while sync-step-2 and update messages from viewers are ignored and answered with the authoritative server state. Yjs changes are persisted after a 500 ms idle debounce as a PostgreSQL Yjs state update plus a Tiptap JSON snapshot and version-history entry. `GET /documents/:id` and version history flush any pending room changes before responding. REST content updates and version restores rebuild the `default` fragment and persist its corresponding Yjs state, so later WebSocket loads match the REST JSON. Existing room clients receive the REST change through ordinary Yjs updates.
 

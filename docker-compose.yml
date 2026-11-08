@@ -17,20 +17,25 @@ services:
   api:
     image: ${API_IMAGE:-marvelous-docs-api:local}
     build:
-      context: ./apps/server
+      context: .
+      dockerfile: apps/server/Dockerfile
     restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: 3000
       HOST: 0.0.0.0
-      APP_VERSION: ${APP_VERSION:-0.1.0}
+      APP_VERSION: ${APP_VERSION:-0.1.13}
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
+      COLLAB_PORT: 1234
       DATABASE_URL: postgres://${POSTGRES_USER:-marvelous_docs}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-marvelous_docs}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:?Set BOOTSTRAP_ADMIN_EMAIL in .env}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:?Set BOOTSTRAP_ADMIN_PASSWORD in .env}
+      BOOTSTRAP_ADMIN_NAME: ${BOOTSTRAP_ADMIN_NAME:-Administrator}
       PUBLIC_ORIGIN: https://${DOCS_DOMAIN:-localhost}
       UPLOAD_DIR: /data/uploads
       UPDATE_AGENT_URL: http://updater:8080
+      UPDATE_MANIFEST_URL: ${UPDATE_MANIFEST_URL:-}
       UPDATE_AGENT_TOKEN: ${UPDATE_AGENT_TOKEN:?Set UPDATE_AGENT_TOKEN in .env}
       COMPOSE_FILE: ${COMPOSE_FILE:-docker-compose.yml}
     volumes:
@@ -68,7 +73,8 @@ services:
   web:
     image: ${WEB_IMAGE:-marvelous-docs-web:local}
     build:
-      context: ./apps/web
+      context: .
+      dockerfile: apps/web/Dockerfile
       args:
         VITE_API_URL: ""
         VITE_COLLAB_URL: ${VITE_COLLAB_URL:-}

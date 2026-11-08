@@ -1,0 +1,24 @@
+# Keep the build context small and free of secrets.
+node_modules
+**/node_modules
+dist
+**/dist
+*.tsbuildinfo
+.git
+.github
+.claude
+.gitignore
+.gitattributes
+.editorconfig
+.env
+.env.*
+backups
+coverage
+.tmp
+release-check
+docs
+README.md
+CHANGELOG.md
+CONTRIBUTING.md
+latest.json
+*.log

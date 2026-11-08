@@ -94,3 +94,5 @@ CREATE TABLE IF NOT EXISTS document_activity (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS document_activity_recent ON document_activity(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS document_activity_document_recent ON document_activity(document_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS comments_document_status ON comments(document_id, status);

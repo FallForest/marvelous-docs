@@ -14,12 +14,24 @@ import * as encoding from 'lib0/encoding';
 import * as decoding from 'lib0/decoding';
 import * as syncProtocol from 'y-protocols/sync';
 import * as awarenessProtocol from 'y-protocols/awareness';
-import { getSchema } from '@tiptap/core';
-import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
 import { prosemirrorToYXmlFragment, yDocToProsemirrorJSON } from 'y-prosemirror';
+import { schema } from './lib/schema.js';
+import { compareVersions } from './lib/version.js';
+import { exportResponse, firstHeadingTitle, markdownToTiptap, searchSnippet, type ExportFormat } from './lib/markdown.js';
+import { getTemplate, templates } from './lib/templates.js';
+import { LoginRateLimiter, loginBuckets } from './lib/rate-limit.js';
+import { applyMigrations } from './lib/migrations.js';
 
 const { Pool } = pg;
+
+const environment = process.env.NODE_ENV || 'development';
+const configuredSecret = process.env.JWT_SECRET?.trim();
+const jwtSecret = configuredSecret || 'development-only-change-this-secret';
+if (environment === 'production' && (!configuredSecret || configuredSecret.length < 32)) {
+  console.error('JWT_SECRET must be configured with at least 32 characters when NODE_ENV=production.');
+  process.exit(1);
+}
+
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const scrypt = promisify(scryptCallback);
 const app = Fastify({ logger: true, bodyLimit: 25 * 1024 * 1024 });
@@ -38,8 +50,6 @@ const uuidSchema = z.string().uuid();
 const emailSchema = z.string().email().max(320).transform(v => v.toLowerCase());
 const idParams = z.object({ id: uuidSchema });
 const versionParams = z.object({ id: uuidSchema, versionId: uuidSchema });
-const tiptapExtensions = [StarterKit, Underline];
-const schema = getSchema(tiptapExtensions);
 const rooms = new Map<string, Room>();
 const roomLoads = new Map<string, Promise<Room>>();
 const wsServer = new WebSocketServer({ noServer: true, maxPayload: 2 * 1024 * 1024 });
@@ -50,14 +60,6 @@ const awarenessMessage = 1;
 const appVersion = process.env.APP_VERSION || '0.1.0';
 
 type UpdateManifest = { version: string; releaseUrl?: string; notesUrl?: string; apiImage?: string; webImage?: string; sha256?: string };
-function compareVersions(left: string, right: string): number {
-  const parseVersion = (value: string) => value.replace(/^v/i, '').split(/[+-]/, 1)[0].split('.').map(part => Number.parseInt(part, 10) || 0);
-  const a = parseVersion(left); const b = parseVersion(right);
-  for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
-    if ((a[index] || 0) !== (b[index] || 0)) return (a[index] || 0) > (b[index] || 0) ? 1 : -1;
-  }
-  return 0;
-}
 async function readUpdateManifest(): Promise<UpdateManifest | null> {
   const url = process.env.UPDATE_MANIFEST_URL?.trim();
   if (!url) return null;
@@ -93,8 +95,7 @@ function safeUser(row: { id: string; email: string; name: string; role: 'admin' 
   return { id: row.id, email: row.email, name: row.name, role: row.role };
 }
 async function initialize() {
-  const migration = await import('node:fs/promises').then(fs => fs.readFile(new URL('../migrations/001_initial.sql', import.meta.url), 'utf8'));
-  await pool.query(migration);
+  await applyMigrations(pool);
   const adminEmail = process.env.BOOTSTRAP_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
   const adminPassword = process.env.BOOTSTRAP_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD;
   if (!adminEmail || !adminPassword) return;
@@ -111,8 +112,20 @@ async function initialize() {
   } catch (error) { await client.query('ROLLBACK'); throw error; } finally { client.release(); }
 }
 
-await app.register(cors, { origin: process.env.CORS_ORIGIN?.split(',') ?? true, credentials: true });
-await app.register(jwt, { secret: process.env.JWT_SECRET || 'development-only-change-this-secret' });
+const corsOrigins = (process.env.CORS_ORIGIN || '').split(',').map(value => value.trim()).filter(Boolean);
+await app.register(cors, { origin: corsOrigins.length ? corsOrigins : environment === 'production' ? false : true, credentials: true });
+await app.register(jwt, { secret: jwtSecret });
+
+app.addHook('onSend', async (_request, reply, payload) => {
+  reply.header('X-Content-Type-Options', 'nosniff');
+  reply.header('X-Frame-Options', 'SAMEORIGIN');
+  reply.header('Referrer-Policy', 'no-referrer');
+  return payload;
+});
+
+const loginLimiter = new LoginRateLimiter();
+const limiterSweep = setInterval(() => loginLimiter.sweep(), 10 * 60 * 1000);
+limiterSweep.unref();
 app.decorate('authenticate', async function (request: FastifyRequest, reply: FastifyReply) {
   try { await request.jwtVerify(); }
   catch { return fail(reply, 401, 'UNAUTHENTICATED', 'A valid bearer token is required.'); }
@@ -127,12 +140,38 @@ async function getDocumentAccess(user: Claims, documentId: string) {
       WHERE d.id=$1 AND d.workspace_id=$3 AND d.deleted_at IS NULL`, [documentId, user.sub, user.workspaceId]);
   if (!result.rowCount) return null;
   const row = result.rows[0];
-  const role = row.member_role === 'admin' ? 'owner' : (row.role || (row.acl_restricted ? 'none' : 'editor'));
-  return { row, role };
+  return { row, role: accessRoleFor(row) };
 }
 function documentJson(row: DocumentRow) {
   return { id: row.id, title: row.title, kind: row.kind, parentId: row.parent_id, content: row.content, version: row.version, createdBy: row.created_by, updatedBy: row.updated_by, createdAt: row.created_at, updatedAt: row.updated_at, deletedAt: row.deleted_at ?? null };
 }
+const ROLE_LEVEL: Record<string, number> = { none: -1, viewer: 0, editor: 1, owner: 2 };
+
+function accessRoleFor(row: { member_role?: string; role?: string | null; acl_restricted?: boolean }): 'owner' | 'editor' | 'viewer' | 'none' {
+  if (row.member_role === 'admin') return 'owner';
+  if (row.role === 'owner' || row.role === 'editor' || row.role === 'viewer') return row.role;
+  return row.acl_restricted ? 'none' : 'editor';
+}
+
+/** Records a document activity entry without ever failing the request. */
+async function recordActivity(documentId: string, userId: string, action: 'view' | 'edit' | 'restore'): Promise<void> {
+  try { await pool.query('INSERT INTO document_activity(document_id,user_id,action) VALUES ($1,$2,$3)', [documentId, userId, action]); }
+  catch (error) { app.log.warn({ err: error }, 'Unable to record document activity'); }
+}
+
+async function assertFolderParent(auth: AuthRequest, parentId: string | null | undefined, reply: FastifyReply): Promise<boolean> {
+  if (!parentId) return true;
+  const parent = await pool.query('SELECT id,kind FROM documents WHERE id=$1 AND workspace_id=$2 AND deleted_at IS NULL', [parentId, auth.user.workspaceId]);
+  if (!parent.rowCount || parent.rows[0].kind !== 'folder') { fail(reply, 404, 'PARENT_NOT_FOUND', 'Parent folder was not found.'); return false; }
+  return true;
+}
+
+async function insertDocument(auth: AuthRequest, title: string, kind: 'document' | 'folder', parentId: string | null, content: unknown, initialDoc: Y.Doc | null): Promise<DocumentRow> {
+  const result = await pool.query<DocumentRow>('INSERT INTO documents(workspace_id,parent_id,title,kind,content,yjs_state,created_by,updated_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$7) RETURNING *', [auth.user.workspaceId, parentId, title, kind, content, initialDoc ? yState(initialDoc) : null, auth.user.sub]);
+  await pool.query("INSERT INTO document_acl(document_id,user_id,role) VALUES ($1,$2,'owner')", [result.rows[0].id, auth.user.sub]);
+  return result.rows[0];
+}
+
 function createYDoc(docJson: unknown): Y.Doc {
   const parsed = schema.nodeFromJSON(docJson);
   const ydoc = new Y.Doc();
@@ -243,14 +282,18 @@ async function syncRoomFromContent(room: Room, docJson: unknown) {
   } finally { room.suppressSave = false; }
   await pool.query('UPDATE documents SET yjs_state=$2 WHERE id=$1', [room.id,yState(room.doc)]);
 }
-async function requireDoc(request: AuthRequest, reply: FastifyReply, idValue: unknown, minimum: 'viewer' | 'editor' | 'owner' = 'viewer') {
+async function requireNode(request: AuthRequest, reply: FastifyReply, idValue: unknown, minimum: 'viewer' | 'editor' | 'owner' = 'viewer') {
   const id = parse(uuidSchema, idValue);
   if (!id) { fail(reply, 400, 'INVALID_ID', 'Document id must be a UUID.'); return null; }
   const access = await getDocumentAccess(request.user, id);
-  if (!access) { fail(reply, 404, 'NOT_FOUND', 'Document was not found.'); return null; }
+  if (!access) { fail(reply, 404, 'NOT_FOUND', 'Document or folder was not found.'); return null; }
+  if (ROLE_LEVEL[access.role] < ROLE_LEVEL[minimum]) { fail(reply, 403, 'FORBIDDEN', 'You do not have permission for this operation.'); return null; }
+  return access;
+}
+async function requireDoc(request: AuthRequest, reply: FastifyReply, idValue: unknown, minimum: 'viewer' | 'editor' | 'owner' = 'viewer') {
+  const access = await requireNode(request, reply, idValue, minimum);
+  if (!access) return null;
   if (access.row.kind !== 'document') { fail(reply, 404, 'NOT_A_DOCUMENT', 'This operation requires a document.'); return null; }
-  const level: Record<string, number> = { none: -1, viewer: 0, editor: 1, owner: 2 };
-  if (level[access.role] < level[minimum]) { fail(reply, 403, 'FORBIDDEN', 'You do not have permission for this operation.'); return null; }
   return access;
 }
 
@@ -302,8 +345,18 @@ app.get('/api/v1/system/update-status', authenticate, async (request, reply) => 
 app.post('/api/v1/auth/login', async (request, reply) => {
   const input = parse(z.object({ email: emailSchema, password: z.string().min(1).max(1024) }), request.body);
   if (!input) return fail(reply, 400, 'INVALID_INPUT', 'Email and password are required.');
+  const buckets = loginBuckets(request.ip || 'unknown', input.email);
+  const blockedSeconds = loginLimiter.retryAfter(buckets);
+  if (blockedSeconds !== null) {
+    reply.header('Retry-After', String(blockedSeconds));
+    return fail(reply, 429, 'RATE_LIMITED', 'Too many failed login attempts. Try again later.');
+  }
   const result = await pool.query('SELECT u.id,u.email,u.name,u.password_hash,m.workspace_id,m.role FROM users u JOIN memberships m ON m.user_id=u.id WHERE lower(u.email)=lower($1) ORDER BY m.created_at LIMIT 1', [input.email]);
-  if (!result.rowCount || !(await passwordMatches(input.password, result.rows[0].password_hash))) return fail(reply, 401, 'INVALID_CREDENTIALS', 'Email or password is incorrect.');
+  if (!result.rowCount || !(await passwordMatches(input.password, result.rows[0].password_hash))) {
+    loginLimiter.recordFailure(buckets);
+    return fail(reply, 401, 'INVALID_CREDENTIALS', 'Email or password is incorrect.');
+  }
+  loginLimiter.clear(buckets);
   const row = result.rows[0];
   const token = app.jwt.sign({ sub: row.id, email: row.email, workspaceId: row.workspace_id } satisfies Claims, { expiresIn: '12h' });
   return { token, user: safeUser(row) };
@@ -363,6 +416,24 @@ app.get('/api/v1/workspace/members', authenticate, async request => {
   return { members: result.rows.map(row => ({ ...safeUser(row), role: row.role })) };
 });
 
+app.get('/api/v1/workspace/stats', authenticate, async request => {
+  const auth = request as AuthRequest;
+  const result = await pool.query<{ documents: string; folders: string; members: string; openComments: string; trashed: string; versions: string }>(
+    `SELECT
+       (SELECT count(*) FROM documents WHERE workspace_id=$1 AND kind='document' AND deleted_at IS NULL) AS documents,
+       (SELECT count(*) FROM documents WHERE workspace_id=$1 AND kind='folder' AND deleted_at IS NULL) AS folders,
+       (SELECT count(*) FROM memberships WHERE workspace_id=$1) AS members,
+       (SELECT count(*) FROM comments c JOIN documents d ON d.id=c.document_id WHERE d.workspace_id=$1 AND c.status='open' AND d.deleted_at IS NULL) AS "openComments",
+       (SELECT count(*) FROM documents WHERE workspace_id=$1 AND deleted_at IS NOT NULL) AS trashed,
+       (SELECT count(*) FROM document_versions v JOIN documents d ON d.id=v.document_id WHERE d.workspace_id=$1) AS versions`, [auth.user.workspaceId]);
+  const row = result.rows[0];
+  return { stats: { documents: Number(row.documents), folders: Number(row.folders), members: Number(row.members), openComments: Number(row.openComments), trashed: Number(row.trashed), versions: Number(row.versions) } };
+});
+
+app.get('/api/v1/templates', authenticate, async () => ({
+  templates: templates.map(({ id, name, description, content }) => ({ id, name, description, content })),
+}));
+
 app.get('/api/v1/documents/trash', authenticate, async request => {
   const auth = request as AuthRequest;
   const result = await pool.query<DocumentRow>(`SELECT d.* FROM documents d JOIN memberships m ON m.workspace_id=d.workspace_id AND m.user_id=$1
@@ -383,13 +454,17 @@ app.get('/api/v1/documents/recent', authenticate, async request => {
 app.get('/api/v1/documents/favorites', authenticate, async request => {
   const auth = request as AuthRequest;
   const result = await pool.query<DocumentRow>(`SELECT d.* FROM document_favorites f JOIN documents d ON d.id=f.document_id
-    WHERE f.user_id=$1 AND d.workspace_id=$2 AND d.deleted_at IS NULL ORDER BY f.created_at DESC`, [auth.user.sub, auth.user.workspaceId]);
+    JOIN memberships m ON m.workspace_id=d.workspace_id AND m.user_id=$1
+    LEFT JOIN document_acl a ON a.document_id=d.id AND a.user_id=$1
+    WHERE f.user_id=$1 AND d.workspace_id=$2 AND d.deleted_at IS NULL
+      AND (m.role='admin' OR a.role IS NOT NULL OR d.acl_restricted=false)
+    ORDER BY f.created_at DESC`, [auth.user.sub, auth.user.workspaceId]);
   return { documents: result.rows.map(documentJson) };
 });
 
 app.put('/api/v1/documents/:id/favorite', authenticate, async (request, reply) => {
   const auth = request as AuthRequest; const params = parse(idParams, request.params); if (!params) return fail(reply,400,'INVALID_ID','Document id must be a UUID.');
-  if (!await requireDoc(auth, reply, params.id)) return;
+  if (!await requireNode(auth, reply, params.id)) return;
   const input = parse(z.object({ favorite: z.boolean() }), request.body); if (!input) return fail(reply,400,'INVALID_INPUT','favorite must be boolean.');
   if (input.favorite) await pool.query('INSERT INTO document_favorites(document_id,user_id) VALUES ($1,$2) ON CONFLICT DO NOTHING', [params.id,auth.user.sub]);
   else await pool.query('DELETE FROM document_favorites WHERE document_id=$1 AND user_id=$2', [params.id,auth.user.sub]);
@@ -397,37 +472,70 @@ app.put('/api/v1/documents/:id/favorite', authenticate, async (request, reply) =
 });
 
 app.get('/api/v1/documents/search', authenticate, async (request, reply) => {
-  const auth = request as AuthRequest; const query = parse(z.object({ q: z.string().trim().min(1).max(200), scope: z.enum(['all','title','content']).default('all') }), request.query);
-  if (!query) return fail(reply,400,'INVALID_INPUT','q is required.');
-  const result = await pool.query(`SELECT d.id,d.title,d.kind,d.parent_id AS "parentId",d.updated_at AS "updatedAt",d.version,
+  const auth = request as AuthRequest; const query = parse(z.object({ q: z.string().trim().min(1).max(200), scope: z.enum(['all','title','content']).default('all'), limit: z.coerce.number().int().min(1).max(100).default(20) }), request.query);
+  if (!query) return fail(reply,400,'INVALID_INPUT','q, an optional scope, and a limit between 1 and 100 are required.');
+  const result = await pool.query(`SELECT d.id,d.title,d.kind,d.parent_id AS "parentId",d.updated_at AS "updatedAt",d.version,d.content,
     CASE WHEN d.title ILIKE $3 THEN 1 ELSE 0 END AS title_match,
-    ts_headline('simple', regexp_replace(d.content::text,'[{}\"]','','g'), plainto_tsquery('simple',$3), 'MaxWords=30,MinWords=10') AS snippet
+    CASE WHEN d.title ILIKE $3 THEN 1 ELSE 0 END AS "titleMatch"
     FROM documents d JOIN memberships m ON m.workspace_id=d.workspace_id AND m.user_id=$1 LEFT JOIN document_acl a ON a.document_id=d.id AND a.user_id=$1
     WHERE d.workspace_id=$2 AND d.deleted_at IS NULL AND (m.role='admin' OR a.role IS NOT NULL OR d.acl_restricted=false)
       AND (($4='title' AND d.title ILIKE '%'||$3||'%') OR ($4='content' AND d.content::text ILIKE '%'||$3||'%') OR ($4='all' AND (d.title ILIKE '%'||$3||'%' OR d.content::text ILIKE '%'||$3||'%')))
-    ORDER BY title_match DESC,d.updated_at DESC LIMIT 50`, [auth.user.sub,auth.user.workspaceId,query.q,query.scope]);
-  return { results: result.rows };
+    ORDER BY title_match DESC,d.updated_at DESC LIMIT $5`, [auth.user.sub,auth.user.workspaceId,query.q,query.scope,query.limit]);
+  return { results: result.rows.map(row => { const { content, ...rest } = row as Record<string, unknown>; return { ...rest, snippet: searchSnippet(content, query.q) }; }) };
+});
+
+const MAX_IMPORT_CHARS = 2 * 1024 * 1024;
+
+app.post('/api/v1/documents/import', authenticate, async (request, reply) => {
+  const auth = request as AuthRequest;
+  const input = parse(z.object({
+    format: z.literal('markdown').default('markdown'),
+    title: z.string().trim().min(1).max(500).optional(),
+    parentId: uuidSchema.optional().nullable(),
+    markdown: z.string().max(MAX_IMPORT_CHARS),
+  }), request.body);
+  if (!input) return fail(reply, 400, 'INVALID_INPUT', 'Provide format "markdown", the markdown source, and an optional title and parentId.');
+  if (!input.markdown.trim()) return fail(reply, 400, 'INVALID_INPUT', 'markdown must not be empty.');
+  if (Buffer.byteLength(input.markdown, 'utf8') > MAX_IMPORT_CHARS) return fail(reply, 400, 'INVALID_INPUT', 'Markdown imports are limited to 2 MB.');
+  const document = markdownToTiptap(input.markdown);
+  let initialDoc: Y.Doc;
+  try { initialDoc = createYDoc(document); }
+  catch { return fail(reply, 400, 'INVALID_CONTENT', 'Imported Markdown cannot be represented with the server editor schema.'); }
+  if (!await assertFolderParent(auth, input.parentId ?? null, reply)) { initialDoc.destroy(); return; }
+  const title = (input.title ?? firstHeadingTitle(document) ?? 'Imported document').slice(0, 500).trim() || 'Imported document';
+  const row = await insertDocument(auth, title, 'document', input.parentId ?? null, { schemaVersion: 1, doc: document }, initialDoc);
+  initialDoc.destroy();
+  return reply.code(201).send({ document: documentJson(row) });
 });
 
 app.post('/api/v1/documents', authenticate, async (request, reply) => {
   const auth = request as AuthRequest;
-  const input = parse(z.object({ title: z.string().trim().min(1).max(500), kind: z.enum(['document','folder']).default('document'), parentId: uuidSchema.optional().nullable(), content: contentSchema.optional() }), request.body);
-  if (!input || (input.kind === 'document' && !input.content)) return fail(reply, 400, 'INVALID_INPUT', 'Documents require title and schemaVersion 1 content; folders require a title.');
-  if (input.kind === 'folder' && input.content) return fail(reply, 400, 'INVALID_INPUT', 'Folder content is managed by the server and must not be supplied.');
-  const content = input.kind === 'folder' ? { schemaVersion: 1, doc: { type: 'doc', content: [] } } : input.content!;
+  const input = parse(z.object({ title: z.string().trim().min(1).max(500).optional(), kind: z.enum(['document','folder']).default('document'), parentId: uuidSchema.optional().nullable(), content: contentSchema.optional(), templateId: z.string().trim().min(1).max(64).optional() }), request.body);
+  if (!input) return fail(reply, 400, 'INVALID_INPUT', 'Title and either content or templateId are required.');
+  const kind = input.kind ?? 'document';
+  if (kind === 'folder' && !input.title) return fail(reply, 400, 'INVALID_INPUT', 'Folders require a title.');
+  if (kind === 'folder' && (input.content || input.templateId)) return fail(reply, 400, 'INVALID_INPUT', 'Folder content is managed by the server and must not be supplied.');
+  if (kind === 'document' && !input.content && !input.templateId) return fail(reply, 400, 'INVALID_INPUT', 'Documents require schemaVersion 1 content or a templateId.');
+  if (input.content && input.templateId) return fail(reply, 400, 'INVALID_INPUT', 'Provide either content or templateId, not both.');
+  let content: unknown = input.content;
+  let title = input.title;
+  if (input.templateId) {
+    const template = getTemplate(input.templateId);
+    if (!template) return fail(reply, 400, 'INVALID_INPUT', 'Unknown templateId.');
+    content = template.content;
+    title = title ?? template.name;
+  }
+  if (!title) return fail(reply, 400, 'INVALID_INPUT', 'Documents require a title or a templateId.');
+  if (kind === 'folder') content = { schemaVersion: 1, doc: { type: 'doc', content: [] } };
   let initialDoc: Y.Doc | null = null;
-  if (input.kind === 'document') {
-    try { initialDoc = createYDoc(content.doc); }
+  if (kind === 'document') {
+    try { initialDoc = createYDoc((content as { doc: unknown }).doc); }
     catch { return fail(reply, 400, 'INVALID_CONTENT', 'Document content does not match the supported Tiptap schema.'); }
   }
-  if (input.parentId) {
-    const parent = await pool.query('SELECT id,kind FROM documents WHERE id=$1 AND workspace_id=$2', [input.parentId,auth.user.workspaceId]);
-    if (!parent.rowCount || parent.rows[0].kind !== 'folder') return fail(reply, 404, 'PARENT_NOT_FOUND', 'Parent folder was not found.');
-  }
-  const result = await pool.query<DocumentRow>('INSERT INTO documents(workspace_id,parent_id,title,kind,content,yjs_state,created_by,updated_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$7) RETURNING *', [auth.user.workspaceId,input.parentId ?? null,input.title,input.kind,content,initialDoc ? yState(initialDoc) : null,auth.user.sub]);
+  if (!await assertFolderParent(auth, input.parentId ?? null, reply)) { initialDoc?.destroy(); return; }
+  const row = await insertDocument(auth, title, kind, input.parentId ?? null, content, initialDoc);
   initialDoc?.destroy();
-  await pool.query("INSERT INTO document_acl(document_id,user_id,role) VALUES ($1,$2,'owner')", [result.rows[0].id,auth.user.sub]);
-  return reply.code(201).send({ document: documentJson(result.rows[0]) });
+  return reply.code(201).send({ document: documentJson(row) });
 });
 
 app.get('/api/v1/documents/:id', authenticate, async (request, reply) => {
@@ -436,7 +544,7 @@ app.get('/api/v1/documents/:id', authenticate, async (request, reply) => {
   const access = await requireDoc(auth,reply,params.id); if (!access) return;
   const room = rooms.get(params.id); if (room) await flushRoom(room);
   const current = await pool.query<DocumentRow>('SELECT * FROM documents WHERE id=$1 AND workspace_id=$2',[params.id,auth.user.workspaceId]);
-  await pool.query("INSERT INTO document_activity(document_id,user_id,action) VALUES ($1,$2,'view')", [params.id, auth.user.sub]);
+  await recordActivity(params.id, auth.user.sub, 'view');
   return current.rowCount ? { document: documentJson(current.rows[0]) } : fail(reply,404,'NOT_FOUND','Document was not found.');
 });
 
@@ -444,9 +552,10 @@ app.put('/api/v1/documents/:id', authenticate, async (request, reply) => {
   const auth = request as AuthRequest; const params = parse(idParams,request.params);
   if (!params) return fail(reply,400,'INVALID_ID','Document id must be a UUID.');
   const roomBeforeUpdate = rooms.get(params.id); if (roomBeforeUpdate) await flushRoom(roomBeforeUpdate);
-  const access = await requireDoc(auth,reply,params.id,'editor'); if (!access) return;
+  const access = await requireNode(auth,reply,params.id,'editor'); if (!access) return;
   const input = parse(z.object({ title: z.string().trim().min(1).max(500).optional(), parentId: uuidSchema.nullable().optional(), content: contentSchema.optional(), expectedVersion: z.number().int().positive() }),request.body);
   if (!input || (input.title === undefined && input.parentId === undefined && input.content === undefined)) return fail(reply,400,'INVALID_INPUT','At least one document field and expectedVersion are required.');
+  if (access.row.kind === 'folder' && input.content) return fail(reply,400,'INVALID_CONTENT','Folders do not store document content.');
   let replacementState: Buffer | null = null;
   if (input.content) {
     try { const replacement = createYDoc(input.content.doc); replacementState = yState(replacement); replacement.destroy(); }
@@ -454,8 +563,16 @@ app.put('/api/v1/documents/:id', authenticate, async (request, reply) => {
   }
   if (input.expectedVersion !== access.row.version) return fail(reply,409,'VERSION_CONFLICT',`Document is at version ${access.row.version}; reload and retry.`);
   if (input.parentId) {
+    if (input.parentId === params.id) return fail(reply,400,'INVALID_PARENT','A folder cannot be moved into itself.');
     const parent = await pool.query('SELECT id,kind FROM documents WHERE id=$1 AND workspace_id=$2 AND id<>$3',[input.parentId,auth.user.workspaceId,params.id]);
     if (!parent.rowCount || parent.rows[0].kind !== 'folder') return fail(reply,400,'INVALID_PARENT','Parent must be a folder in this workspace.');
+    if (access.row.kind === 'folder') {
+      const cycle = await pool.query(`WITH RECURSIVE subtree AS (
+        SELECT id FROM documents WHERE parent_id=$1
+        UNION ALL SELECT d.id FROM documents d JOIN subtree s ON d.parent_id=s.id
+      ) SELECT 1 FROM subtree WHERE id=$2`,[params.id,input.parentId]);
+      if (cycle.rowCount) return fail(reply,400,'INVALID_PARENT','A folder cannot be moved inside one of its descendants.');
+    }
   }
   const client = await pool.connect();
   try {
@@ -470,27 +587,90 @@ app.put('/api/v1/documents/:id', authenticate, async (request, reply) => {
     await client.query('COMMIT');
     const activeRoom = input.content ? rooms.get(params.id) : undefined;
     if (activeRoom) await syncRoomFromContent(activeRoom, input.content!.doc);
+    if (input.content) await recordActivity(params.id, auth.user.sub, 'edit');
     return { document: documentJson(updated.rows[0]) };
   } catch (error) { await client.query('ROLLBACK'); throw error; } finally { client.release(); }
 });
 
 app.delete('/api/v1/documents/:id', authenticate, async (request, reply) => {
   const auth = request as AuthRequest; const params = parse(idParams, request.params); if (!params) return fail(reply,400,'INVALID_ID','Document id must be a UUID.');
-  if (!await requireDoc(auth, reply, params.id, 'owner')) return;
-  await pool.query('UPDATE documents SET deleted_at=now(),updated_at=now(),updated_by=$2 WHERE id=$1', [params.id,auth.user.sub]);
+  if (!await requireNode(auth, reply, params.id, 'owner')) return;
+  await pool.query(`WITH RECURSIVE subtree AS (
+      SELECT id FROM documents WHERE id=$1 AND workspace_id=$3
+      UNION ALL SELECT d.id FROM documents d JOIN subtree s ON d.parent_id=s.id
+    ) UPDATE documents SET deleted_at=now(),updated_at=now(),updated_by=$2
+      WHERE id IN (SELECT id FROM subtree) AND deleted_at IS NULL`, [params.id,auth.user.sub,auth.user.workspaceId]);
   return { ok: true };
 });
 app.post('/api/v1/documents/:id/restore', authenticate, async (request, reply) => {
   const auth = request as AuthRequest; const params = parse(idParams, request.params); if (!params) return fail(reply,400,'INVALID_ID','Document id must be a UUID.');
-  const result = await pool.query('SELECT d.* FROM documents d JOIN memberships m ON m.workspace_id=d.workspace_id AND m.user_id=$2 WHERE d.id=$1 AND m.role IN (\'admin\',\'member\')', [params.id,auth.user.sub]);
-  if (!result.rowCount) return fail(reply,404,'NOT_FOUND','Document was not found.');
-  await pool.query('UPDATE documents SET deleted_at=NULL,updated_at=now(),updated_by=$2 WHERE id=$1', [params.id,auth.user.sub]); return { ok: true };
+  const result = await pool.query<DocumentRow & { role: string | null; member_role: string }>(`SELECT d.*, da.role, m.role AS member_role FROM documents d
+    JOIN memberships m ON m.workspace_id=d.workspace_id AND m.user_id=$2
+    LEFT JOIN document_acl da ON da.document_id=d.id AND da.user_id=$2
+    WHERE d.id=$1 AND d.workspace_id=$3`, [params.id,auth.user.sub,auth.user.workspaceId]);
+  if (!result.rowCount || !result.rows[0].deleted_at) return fail(reply,404,'NOT_FOUND','Document was not found.');
+  const row = result.rows[0];
+  if (ROLE_LEVEL[accessRoleFor(row)] < ROLE_LEVEL.editor) return fail(reply,403,'FORBIDDEN','You do not have permission for this operation.');
+  await pool.query(`WITH RECURSIVE subtree AS (
+      SELECT id FROM documents WHERE id=$1
+      UNION ALL SELECT d.id FROM documents d JOIN subtree s ON d.parent_id=s.id
+    ) UPDATE documents SET deleted_at=NULL,updated_at=now(),updated_by=$2
+      WHERE id IN (SELECT id FROM subtree) AND deleted_at IS NOT NULL`, [params.id,auth.user.sub]);
+  await recordActivity(params.id, auth.user.sub, 'restore');
+  return { ok: true };
 });
 app.delete('/api/v1/documents/:id/permanent', authenticate, async (request, reply) => {
   const auth = request as AuthRequest; const params = parse(idParams, request.params); if (!params) return fail(reply,400,'INVALID_ID','Document id must be a UUID.');
-  const owner = await pool.query('SELECT 1 FROM documents d JOIN memberships m ON m.workspace_id=d.workspace_id AND m.user_id=$2 WHERE d.id=$1 AND (m.role=\'admin\' OR d.created_by=$2)', [params.id,auth.user.sub]);
+  const owner = await pool.query('SELECT 1 FROM documents d JOIN memberships m ON m.workspace_id=d.workspace_id AND m.user_id=$2 LEFT JOIN document_acl a ON a.document_id=d.id AND a.user_id=$2 WHERE d.id=$1 AND (m.role=\'admin\' OR a.role=\'owner\' OR d.created_by=$2)', [params.id,auth.user.sub]);
   if (!owner.rowCount) return fail(reply,404,'NOT_FOUND','Document was not found.');
-  await pool.query('DELETE FROM documents WHERE id=$1 AND deleted_at IS NOT NULL', [params.id]); return { ok: true };
+  await pool.query(`WITH RECURSIVE subtree AS (
+      SELECT id FROM documents WHERE id=$1
+      UNION ALL SELECT d.id FROM documents d JOIN subtree s ON d.parent_id=s.id
+    ) DELETE FROM documents WHERE id IN (SELECT id FROM subtree) AND deleted_at IS NOT NULL`, [params.id]); return { ok: true };
+});
+
+app.get('/api/v1/documents/:id/export', authenticate, async (request, reply) => {
+  const auth = request as AuthRequest; const params = parse(idParams, request.params);
+  if (!params) return fail(reply, 400, 'INVALID_ID', 'Document id must be a UUID.');
+  const query = parse(z.object({ format: z.enum(['markdown','html','json']).default('markdown') }), request.query);
+  if (!query) return fail(reply, 400, 'INVALID_INPUT', 'format must be markdown, html, or json.');
+  const room = rooms.get(params.id); if (room) await flushRoom(room);
+  const access = await getDocumentAccess(auth.user, params.id);
+  if (!access) return fail(reply, 404, 'NOT_FOUND', 'Document was not found.');
+  if (access.role === 'none') return fail(reply, 403, 'FORBIDDEN', 'You do not have permission for this operation.');
+  const payload = exportResponse({ id: access.row.id, title: access.row.title, content: access.row.content }, query.format as ExportFormat);
+  reply.header('Content-Disposition', `attachment; filename="${payload.filename}"`);
+  return payload;
+});
+
+app.post('/api/v1/documents/:id/duplicate', authenticate, async (request, reply) => {
+  const auth = request as AuthRequest; const params = parse(idParams, request.params);
+  if (!params) return fail(reply, 400, 'INVALID_ID', 'Document id must be a UUID.');
+  const input = parse(z.object({ title: z.string().trim().min(1).max(500).optional(), parentId: uuidSchema.nullable().optional() }), request.body ?? {});
+  if (!input) return fail(reply, 400, 'INVALID_INPUT', 'Optional title and parentId must be valid when supplied.');
+  const access = await getDocumentAccess(auth.user, params.id);
+  if (!access) return fail(reply, 404, 'NOT_FOUND', 'Document was not found.');
+  if (access.role === 'none') return fail(reply, 403, 'FORBIDDEN', 'You do not have permission for this operation.');
+  if (access.row.kind !== 'document') return fail(reply, 400, 'NOT_A_DOCUMENT', 'Folders cannot be duplicated.');
+  const parentId = input.parentId !== undefined ? input.parentId : access.row.parent_id;
+  if (!await assertFolderParent(auth, parentId, reply)) return;
+  const title = (input.title ?? `${access.row.title} (copy)`).slice(0, 500);
+  let initialDoc: Y.Doc;
+  try { initialDoc = createYDoc((access.row.content as { doc: unknown }).doc); }
+  catch { return fail(reply, 409, 'INVALID_STORED_CONTENT', 'The source document cannot be copied with the current editor schema.'); }
+  const row = await insertDocument(auth, title, 'document', parentId, access.row.content, initialDoc);
+  initialDoc.destroy();
+  return reply.code(201).send({ document: documentJson(row) });
+});
+
+app.get('/api/v1/documents/:id/activity', authenticate, async (request, reply) => {
+  const auth = request as AuthRequest; const params = parse(idParams, request.params);
+  if (!params) return fail(reply, 400, 'INVALID_ID', 'Document id must be a UUID.');
+  if (!await requireDoc(auth, reply, params.id)) return;
+  const query = parse(z.object({ limit: z.coerce.number().int().min(1).max(100).default(20) }), request.query);
+  if (!query) return fail(reply, 400, 'INVALID_INPUT', 'limit must be an integer between 1 and 100.');
+  const result = await pool.query('SELECT a.id,a.user_id AS "userId",u.name AS "userName",a.action,a.created_at AS "createdAt" FROM document_activity a JOIN users u ON u.id=a.user_id WHERE a.document_id=$1 ORDER BY a.created_at DESC LIMIT $2', [params.id, query.limit]);
+  return { activity: result.rows };
 });
 
 app.get('/api/v1/documents/:id/acl', authenticate, async (request, reply) => {
@@ -526,7 +706,7 @@ app.get('/api/v1/documents/:id/comments', authenticate, async (request, reply) =
 app.post('/api/v1/documents/:id/comments', authenticate, async (request, reply) => {
   const auth=request as AuthRequest; const params=parse(idParams,request.params); if(!params) return fail(reply,400,'INVALID_ID','Document id must be a UUID.');
   if(!await requireDoc(auth,reply,params.id,'editor')) return;
-  const input=parse(z.object({body:z.string().trim().min(1).max(10000),anchor:z.unknown().optional(),parentId:uuidSchema.optional()}),request.body);
+  const input=parse(z.object({body:z.string().trim().min(1).max(10000),anchor:z.unknown().optional(),parentId:uuidSchema.nullable().optional()}),request.body);
   if(!input) return fail(reply,400,'INVALID_INPUT','Comment body is required.');
   if (input.parentId) { const parent=await pool.query('SELECT 1 FROM comments WHERE id=$1 AND document_id=$2',[input.parentId,params.id]); if(!parent.rowCount) return fail(reply,404,'PARENT_COMMENT_NOT_FOUND','Parent comment was not found.'); }
   const result=await pool.query('INSERT INTO comments(document_id,user_id,body,anchor,parent_id) VALUES ($1,$2,$3,$4,$5) RETURNING id,parent_id AS "parentId",body,anchor,status,created_at AS "createdAt",updated_at AS "updatedAt"',[params.id,auth.user.sub,input.body,input.anchor ?? null,input.parentId ?? null]);
@@ -549,7 +729,7 @@ app.get('/api/v1/documents/:id/versions', authenticate, async (request,reply)=>{
 app.get('/api/v1/documents/:id/versions/:versionId', authenticate, async (request,reply)=>{
   const auth=request as AuthRequest; const params=parse(versionParams,request.params); if(!params) return fail(reply,400,'INVALID_ID','Document and version ids must be UUIDs.');
   if(!await requireDoc(auth,reply,params.id)) return;
-  const result=await pool.query('SELECT id,document_id AS "documentId",version,title,content,created_by AS "createdBy",u.name AS "createdByName",created_at AS "createdAt" FROM document_versions v JOIN users u ON u.id=v.created_by WHERE v.id=$1 AND v.document_id=$2',[params.versionId,params.id]);
+  const result=await pool.query('SELECT v.id,v.document_id AS "documentId",v.version,v.title,v.content,v.created_by AS "createdBy",u.name AS "createdByName",v.created_at AS "createdAt" FROM document_versions v JOIN users u ON u.id=v.created_by WHERE v.id=$1 AND v.document_id=$2',[params.versionId,params.id]);
   if(!result.rowCount) return fail(reply,404,'VERSION_NOT_FOUND','Version was not found.'); return { version: result.rows[0] };
 });
 app.post('/api/v1/documents/:id/versions/:versionId/restore', authenticate, async (request,reply)=>{
@@ -575,6 +755,7 @@ app.post('/api/v1/documents/:id/versions/:versionId/restore', authenticate, asyn
     const updated=await client.query<DocumentRow>('UPDATE documents SET title=$2,content=$3,yjs_state=$4,version=version+1,updated_by=$5,updated_at=now() WHERE id=$1 RETURNING *',[params.id,target.rows[0].title,target.rows[0].content,restoredState,auth.user.sub]);
     await client.query('COMMIT');
     const activeRoom = rooms.get(params.id); if (activeRoom) await syncRoomFromContent(activeRoom, (target.rows[0].content as { doc: unknown }).doc);
+    await recordActivity(params.id, auth.user.sub, 'restore');
     return {document:documentJson(updated.rows[0])};
   } catch(error) { await client.query('ROLLBACK'); throw error; } finally { client.release(); }
 });
@@ -599,10 +780,15 @@ app.get('/api/v1/uploads/:filename', async (request, reply) => {
 });
 
 app.setErrorHandler((error, _request, reply) => {
+  const status = (error as { statusCode?: number }).statusCode;
+  if ((error as { validation?: unknown }).validation) return fail(reply, 400, 'INVALID_INPUT', 'Request validation failed.');
+  if (status === 413) return fail(reply, 413, 'FILE_TOO_LARGE', 'Request body is too large.');
+  if (status && status >= 400 && status < 500) return fail(reply, status, 'INVALID_INPUT', 'The request could not be processed.');
   app.log.error(error);
-  if ((error as { validation?: unknown }).validation) return fail(reply,400,'INVALID_INPUT','Request validation failed.');
-  return fail(reply,500,'INTERNAL_ERROR','An unexpected server error occurred.');
+  return fail(reply, 500, 'INTERNAL_ERROR', 'An unexpected server error occurred.');
 });
+
+app.setNotFoundHandler((_request, reply) => fail(reply, 404, 'NOT_FOUND', 'The requested resource was not found.'));
 
 function rejectUpgrade(socket: import('node:stream').Duplex, status: number, message: string) {
   socket.write(`HTTP/1.1 ${status} ${message}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);

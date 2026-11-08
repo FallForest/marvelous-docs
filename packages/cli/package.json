@@ -1,13 +1,22 @@
 {
   "name": "@marvelous-docs/cli",
-  "version": "0.1.0",
+  "version": "0.1.13",
   "private": false,
+  "description": "Command line client for Marvelous Docs: documents, comments, versions, sharing, and uploads over the versioned REST API.",
   "type": "module",
   "bin": {
     "mdocs": "dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --test test/*.test.mjs"
   },
   "engines": {

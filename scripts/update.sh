@@ -15,10 +15,20 @@ echo "Pulling configured images"
 docker compose -f "$COMPOSE_FILE" pull api web
 
 echo "Building the in-app updater"
-docker compose -f "$COMPOSE_FILE" build updater
+services="$(docker compose -f "$COMPOSE_FILE" config --services)"
+has_service() {
+  printf '%s\n' "$services" | grep -Fxq "$1"
+}
+if has_service updater; then
+  docker compose -f "$COMPOSE_FILE" build updater
+fi
+
+restart_services=(api web)
+if has_service updater; then restart_services+=(updater); fi
+if has_service caddy; then restart_services+=(caddy); fi
 
 echo "Restarting application"
-docker compose -f "$COMPOSE_FILE" up -d updater api web caddy
+docker compose -f "$COMPOSE_FILE" up -d "${restart_services[@]}"
 
 echo "Waiting for health check"
 for attempt in $(seq 1 30); do

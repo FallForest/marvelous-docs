@@ -1,59 +1,199 @@
 # Marvelous Docs
 
-Self-hosted collaborative cloud documents for small teams. The monorepo contains a React web client, a Node.js API and collaboration service, and the `mdocs` CLI.
+Self-hosted collaborative cloud documents for small teams. One pnpm monorepo holds the React web client, the Fastify API with its Yjs collaboration service, and the `mdocs` command line client. Everything runs on one Docker Compose stack behind Caddy, stores data in PostgreSQL, and speaks a versioned JSON API documented in [docs/API.md](docs/API.md).
 
-## Local development
+## Features
 
-Requirements: Node.js 22+, pnpm 11+, and Docker Compose. Copy `.env.example` to `.env`, replace the example secrets, and install dependencies:
+- **Documents and folders** - nested tree, drag-free move by `parentId`, folders keep documents organised.
+- **Real-time collaboration** - Yjs CRDT editing over the `/collab` WebSocket; the server persists Yjs state and a Tiptap JSON projection.
+- **Rich Tiptap editor** - headings, lists, task lists, tables, code blocks, links, colours, highlights, underline, plus a template picker, export menu, and move dialog.
+- **Command palette and workspace views** - keyboard-driven command palette, search page, activity panel, version preview, workspace statistics cards.
+- **Comments** - threaded, anchored, resolvable; open/ resolved status per thread.
+- **Version history** - every REST write, version restore, and persisted collaboration snapshot appends a snapshot; restore with optimistic concurrency.
+- **Search** - case-insensitive title and content search with highlighted snippets.
+- **Favorites, recent, trash** - favourite documents and folders, 50 most recently opened documents, recoverable trash with permanent delete.
+- **Templates** - built-in meeting notes, weekly report, project plan, product spec, release notes.
+- **Markdown import and export** - import Markdown to Tiptap JSON, export Markdown, standalone HTML, or raw JSON.
+- **Sharing and ACL** - workspace roles (`admin`, `member`) plus per-document `owner`/`editor`/`viewer` ACL with restriction per document.
+- **Admin and updates** - invite-based onboarding, workspace statistics, in-app update check and one-click update through the internal update agent.
+- **CLI** - `mdocs` covers documents, folders, templates, import/export, comments, versions, sharing, favorites, trash, search, activity, workspace stats, members, invites, uploads, and shell completion; the full command reference is [packages/cli/README.md](packages/cli/README.md).
 
-```powershell
+## Architecture
+
+```
+                        Internet
+                           |
+                    +------+-------+
+                    |    Caddy     |  TLS termination, automatic certificates
+                    |  :80 / :443  |
+                    +------+-------+
+                           |
+                    +------+-------+
+                    |    nginx     |  static web bundle (apps/web/dist)
+                    |     :80      |  proxies /api -> api:3000, /collab -> api:1234
+                    +------+-------+
+                           |
+        +------------------+------------------+
+        |                                    |
++-------+-------+                    +-------+--------+
+|  api          |                    |   postgres     |
+|  Fastify :3000|  <---+             |   :5432        |
+|  y-websocket  |      |             |  documents,    |
+|  :1234        |      |             |  versions,     |
++-------+-------+      |             |  comments, acl |
+        |              |             +----------------+
+        |              |
+        |        +-----+----------------+
+        |        | /data/uploads volume |
+        |        +----------------------+
+        |
++-------+----------------+
+|  updater :8080         |  internal only, docker socket + compose project
+|  update.sh equivalent  |
++------------------------+
+```
+
+The browser talks to the API through nginx on the same origin, so no CORS
+configuration is required for the bundled client. Browsers authenticate the
+WebSocket with `?token=<jwt>` because WebSocket handshakes cannot carry a
+custom header.
+
+## Quick start (development)
+
+Requirements: Node.js 22+, pnpm 11+, Docker Compose.
+
+```sh
+git clone <repository-url> && cd marvelous-docs
+corepack enable            # or: npm i -g pnpm@11
 pnpm install
+cp .env.example .env       # fill in the required secrets
 docker compose up -d postgres
-pnpm dev:server
-pnpm dev:web
+pnpm dev                   # API on :3000/:1234 and Vite on :5173 in parallel
 ```
 
-The Vite development server proxies API requests and Yjs WebSocket traffic to the local server. Open the URL printed by Vite.
+Set at least `DATABASE_URL`, `JWT_SECRET`, `BOOTSTRAP_ADMIN_EMAIL`, and
+`BOOTSTRAP_ADMIN_PASSWORD` in `.env` before the first start; the schema is
+applied automatically and the bootstrap administrator is created once. Vite
+proxies `/api` and `/collab` to the local API, so open the URL it prints and
+sign in with the bootstrap account.
 
-## Linux deployment
+Prefer separate terminals? `pnpm dev:server` and `pnpm dev:web` do the same
+thing without `--parallel`. Details and troubleshooting: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
-Install Docker Engine and the Compose plugin. Point a DNS name at the server, copy the configuration, and replace every example secret before starting the stack:
+## Production deployment
 
 ```sh
-cp .env.example .env
-```
-
-Set `DOCS_DOMAIN`, `POSTGRES_PASSWORD`, `JWT_SECRET`, `BOOTSTRAP_ADMIN_EMAIL`, and `BOOTSTRAP_ADMIN_PASSWORD` in `.env`. Use long random secrets (hex values avoid URL encoding issues in the database URL). Then start the services:
-
-```sh
+cp .env.example .env       # DOCS_DOMAIN, POSTGRES_PASSWORD, JWT_SECRET, admin, UPDATE_AGENT_TOKEN
 docker compose up -d --build
 docker compose ps
 ```
 
-For releases, set `API_IMAGE`, `WEB_IMAGE`, `APP_VERSION`, `UPDATE_MANIFEST_URL`, and a long random `UPDATE_AGENT_TOKEN` in `.env`. Use the stable manifest URL `https://github.com/FallForest/marvelous-docs/releases/latest/download/latest.json`. The API exposes `/api/v1/system/update-check` and lets workspace administrators start an update from the in-app `立即更新` button. The internal updater performs the same backup, image pull, migration, restart, and `/healthz` verification as `./scripts/update.sh`; it requires access to `/var/run/docker.sock` and is never exposed through Caddy.
+Caddy obtains a certificate for `DOCS_DOMAIN` (use `localhost` for a local
+instance and its local CA). Database rows live in the `postgres_data` volume and
+uploads in `uploads_data`. To run released images instead of local builds, set
+`API_IMAGE`/`WEB_IMAGE`/`APP_VERSION` and use `docker compose pull && docker compose up -d`.
+The internal `updater` service performs the same backup, pull, migration,
+restart, and `/healthz` verification as `scripts/update.sh`; it is never
+exposed through Caddy.
 
-Caddy serves HTTPS and obtains certificates for a public domain automatically. For a local-only instance, use `localhost` and open `https://localhost` (Caddy uses its local CA). The database and uploaded files live in named Docker volumes.
+Full guide - TLS, updates, upgrades, rollback, observability: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
-## Backups
-
-Create a compressed PostgreSQL backup and archive uploaded files before moving or upgrading the server:
+## CLI quick start
 
 ```sh
-docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > marvelous-docs.sql
+pnpm --filter @marvelous-docs/cli build
+pnpm cli -- login --server https://docs.example.com --email you@example.com
+pnpm cli -- whoami
+pnpm cli -- tree
+pnpm cli -- create --title "Weekly report" --template weekly-report
+pnpm cli -- import notes.md --parent <folder-id>
+pnpm cli -- search "quarterly" --scope all
+pnpm cli -- update <document-id> --expected-version 3 --input doc.json
+pnpm cli -- export <document-id> --format markdown --output notes.md
+pnpm cli -- comments add <document-id> --body "Can we split this section?"
+pnpm cli -- versions list <document-id>
+pnpm cli -- share grant <document-id> --user <member-id> --role viewer
+pnpm cli -- trash <document-id>
+```
+
+The token is stored in the platform config directory (`%APPDATA%\mdocs` on
+Windows, `~/.config/mdocs` elsewhere); `MDOCS_SERVER`, `MDOCS_TOKEN`,
+`MDOCS_PASSWORD`, `MDOCS_PROFILE`, and `MDOCS_CONFIG_DIR` override it in
+automation. `mdocs --help` lists every command; the reference lives in
+[packages/cli/README.md](packages/cli/README.md) and the endpoint mapping in
+[docs/API.md](docs/API.md#cli-mapping).
+
+## Testing and linting
+
+```sh
+pnpm lint        # eslint . (flat config, whole monorepo)
+pnpm lint:fix    # same, with --fix
+pnpm typecheck   # pnpm -r typecheck (tsc per package, no bundles)
+pnpm test        # pnpm -r test (node:test suites in every package)
+pnpm test:server # server unit tests only
+pnpm test:web    # web helper tests only
+pnpm test:cli    # CLI tests only
+pnpm build       # type-check and bundle every package
+pnpm clean       # remove dist output and tsbuildinfo files
+```
+
+CI runs exactly these steps on every push and pull request
+(`.github/workflows/ci.yml`).
+
+## Repository layout
+
+```
+apps/
+  server/          Fastify API, Yjs collaboration server, SQL migrations, Dockerfile
+  web/             React + Vite + Tiptap client, nginx config, Dockerfile
+  updater/         Dockerfile for the internal update agent (scripts/update-agent.mjs)
+packages/
+  cli/             mdocs command line client (published package)
+docs/
+  API.md           authoritative HTTP + WebSocket API contract
+  ARCHITECTURE.md  components, data model, collaboration, security, deployment
+  DEVELOPMENT.md   local setup, conventions, migrations, debugging
+  DEPLOYMENT.md    compose, TLS, updates, backup/restore, upgrades, observability
+  SECURITY.md      authentication, ACL, uploads, rate limits, hardening
+scripts/
+  update.sh        manual backup + pull + migrate + restart + health check
+  update-agent.mjs internal update agent used by the updater container
+  backup.sh        pg_dump + uploads archive
+  restore.sh       restore a dump and the uploads archive
+Caddyfile          reverse proxy and TLS for the compose stack
+docker-compose.yml postgres, api, updater, web, caddy
+```
+
+## Backups and restore
+
+```sh
+./scripts/backup.sh                                  # pg_dump + uploads archive into ./backups
+./scripts/restore.sh backups/<dump>.sql [uploads.tar.gz]
+```
+
+The scripts wrap the documented commands; both are POSIX `sh` and safe to call
+from cron. Without them:
+
+```sh
+docker compose exec -T postgres sh -c 'pg_dump --clean --if-exists -U "$POSTGRES_USER" "$POSTGRES_DB"' > marvelous-docs.sql
 docker compose cp api:/data/uploads ./uploads-backup
 ```
 
-Restore the database while the application is stopped:
+Restore while the application is stopped, then start it again and verify
+`/healthz`. Keep copies off the server and test a restore periodically. Never
+commit `.env` or backup files - both are ignored by git.
 
-```sh
-  docker compose stop api web
-docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"' < marvelous-docs.sql
-docker compose cp ./uploads-backup/. api:/data/uploads
-docker compose up -d
-```
+## Documentation
 
-Store backups outside the server and test restores periodically. Do not commit `.env` or backup files.
+- [docs/API.md](docs/API.md) - HTTP and WebSocket contract (authoritative)
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - components, data model, conflict model, extension points
+- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) - prerequisites, scripts, conventions, migrations, debugging
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) - production, TLS, updates, backup, upgrades
+- [docs/SECURITY.md](docs/SECURITY.md) - auth, roles, uploads, rate limiting, hardening
+- [CONTRIBUTING.md](CONTRIBUTING.md) - workflow, commit style, checks
+- [CHANGELOG.md](CHANGELOG.md) - release notes
+- [packages/cli/README.md](packages/cli/README.md) - CLI reference
 
-## CLI
+## License
 
-The CLI package lives in `packages/cli`; build it with `pnpm --filter @marvelous-docs/cli build`. To use it from this checkout, run `pnpm cli -- --help` or `pnpm cli -- login --server https://docs.example.com --email you@example.com --password '...'`. It stores the token in the user config directory; do not pass credentials through shell history on shared systems. Document commands accept versioned Tiptap JSON files and `-` for standard input/output. `mdocs update` requires `--expected-version`; a concurrent write returns a conflict and must be reread before retrying.
+Proprietary, all rights reserved unless the repository states otherwise.
