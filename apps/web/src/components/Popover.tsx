@@ -17,6 +17,8 @@ type PopoverProps = {
  */
 export default function Popover({ open, onClose, children, align = 'right', className = '', label }: PopoverProps) {
   const ref = useRef<HTMLDivElement | null>(null)
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
 
   useEffect(() => {
     if (!open) return
@@ -26,12 +28,12 @@ export default function Popover({ open, onClose, children, align = 'right', clas
       if (ref.current.contains(target)) return
       const anchor = ref.current.parentElement
       if (anchor && anchor.contains(target)) return
-      onClose()
+      closeRef.current()
     }
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
       event.stopPropagation()
-      onClose()
+      closeRef.current()
     }
     document.addEventListener('pointerdown', onPointerDown, true)
     document.addEventListener('keydown', onKeyDown)
@@ -39,7 +41,7 @@ export default function Popover({ open, onClose, children, align = 'right', clas
       document.removeEventListener('pointerdown', onPointerDown, true)
       document.removeEventListener('keydown', onKeyDown)
     }
-  }, [open, onClose])
+  }, [open])
 
   useEffect(() => {
     if (!open || !ref.current) return

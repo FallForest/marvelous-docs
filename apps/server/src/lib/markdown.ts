@@ -571,7 +571,12 @@ export class BlockParser {
       paragraphLines.push(line.replace(/^ {0,3}/, ''));
       this.index += 1;
     }
-    return paragraphNode(parseInline(paragraphLines.join('\n').trim()));
+    const text = paragraphLines.join('\n').trim();
+    const standaloneImage = /^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)$/.exec(text);
+    if (standaloneImage) {
+      return { type: 'image', attrs: { src: standaloneImage[2], alt: standaloneImage[1] || null, title: null } } as TiptapNode;
+    }
+    return paragraphNode(parseInline(text));
   }
 
   private startsBlock(): boolean {
@@ -726,6 +731,8 @@ function renderBlock(node: TiptapNode): string {
       });
     case 'horizontalRule':
       return '---';
+    case 'image':
+      return typeof node.attrs?.src === 'string' && node.attrs.src ? '![' + escapeMarkdown(String(node.attrs.alt ?? '')) + '](' + node.attrs.src + ')' : '';
     case 'table':
       return renderTable(node);
     case 'hardBreak':
@@ -775,6 +782,11 @@ function safeColor(value: unknown): string | null {
   return /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value) ? value : null;
 }
 
+function alignStyle(node: TiptapNode): string {
+  const align = node.attrs?.textAlign;
+  return align === 'center' || align === 'right' || align === 'justify' ? ' style="text-align:' + align + '"' : '';
+}
+
 function renderHtmlTextNode(node: TiptapNode): string {
   const text = node.text ?? '';
   if (!text) return '';
@@ -817,11 +829,17 @@ function renderHtmlBlock(node: TiptapNode): string {
   switch (node.type) {
     case 'paragraph': {
       const inner = renderHtmlInline(node.content);
-      return inner ? '<p>' + inner + '</p>' : '<p></p>';
+      return '<p' + alignStyle(node) + '>' + inner + '</p>';
     }
     case 'heading': {
       const level = Math.min(6, Math.max(1, Number(node.attrs?.level ?? 1) || 1));
-      return '<h' + level + '>' + renderHtmlInline(node.content) + '</h' + level + '>';
+      return '<h' + level + alignStyle(node) + '>' + renderHtmlInline(node.content) + '</h' + level + '>';
+    }
+    case 'image': {
+      const src = typeof node.attrs?.src === 'string' ? safeHref(node.attrs.src) : '';
+      if (!src) return '';
+      const alt = escapeHtml(String(node.attrs?.alt ?? ''));
+      return '<img src="' + escapeHtml(src) + '" alt="' + alt + '" style="max-width:100%;height:auto">';
     }
     case 'blockquote':
       return '<blockquote>' + renderHtmlBlocks(node.content ?? []) + '</blockquote>';

@@ -11,6 +11,10 @@ import Table from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
+import FontFamily from '@tiptap/extension-font-family';
+import TextAlign from '@tiptap/extension-text-align';
+import Image from '@tiptap/extension-image';
+import { FontSize } from './font-size.js';
 
 /**
  * Editor extensions shared by the REST API and the collaboration layer. The
@@ -23,6 +27,9 @@ export const editorExtensions = [
   Link.configure({ openOnClick: false, autolink: false, HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' } }),
   TextStyle,
   Color,
+  FontFamily,
+  FontSize,
+  TextAlign.configure({ types: ['heading', 'paragraph'] }),
   Highlight.configure({ multicolor: true }),
   TaskList,
   TaskItem.configure({ nested: true }),
@@ -30,6 +37,7 @@ export const editorExtensions = [
   TableRow,
   TableCell,
   TableHeader,
+  Image.configure({ inline: false, allowBase64: true }),
 ];
 
 /** ProseMirror schema derived from {@link editorExtensions}. */

@@ -8,6 +8,42 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.18] - 2026-11-08
+
+### Added
+
+- Feishu-style grouped editing toolbar: undo/redo, paragraph style picker
+  (正文/标题 1–3), font size, bold/italic/underline/strike/inline code,
+  text color and highlight palettes, alignment, lists, task list, quote,
+  code block, link, image, table, insert menu, comment, indentation and export.
+- Selection bubble toolbar (加粗/斜体/下划线/删除线/行内代码/链接/评论)
+  that follows the selection and hides for node selections.
+- Slash command menu: type `/` to insert headings, lists, tasks, quotes,
+  code blocks, tables, dividers and images with keyboard navigation.
+- Image insertion from URL or upload (20 MB), rendered in the editor and
+  included in Markdown/HTML/JSON exports.
+- Find & replace panel (match count, previous/next, case sensitivity,
+  replace, replace all) and a document outline panel with click-to-jump.
+- Table contextual menu: insert/delete rows and columns, merge/split cells,
+  toggle header row, delete table.
+- Font family, font size, text alignment and image nodes in the shared
+  Tiptap schema, mirrored in the server and in REST validation.
+
+### Changed
+
+- Document canvas typography follows Feishu density: 15px body at 1.75 line
+  height, 32px title, styled headings, quotes, code, tables and task lists.
+- Selecting text no longer force-opens the comments panel; the bubble toolbar
+  and the explicit 评论 action do that.
+- Toolbar supports arrow-key navigation and horizontal scrolling on narrow
+  screens without page-level overflow.
+
+### Fixed
+
+- Dialog and popover focus effects depended on inline callbacks, causing a
+  render loop ("Maximum update depth exceeded") in some editor interactions.
+  Callbacks are now held in refs so effects depend only on open state.
+
 ## [0.1.17] - 2026-11-08
 
 ### Fixed

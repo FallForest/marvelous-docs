@@ -246,3 +246,15 @@ test('extracts plain text and builds focused search snippets', () => {
   const wrapped = searchSnippet({ schemaVersion: 1, doc: document }, 'target');
   assert.ok(wrapped.includes('target phrase'));
 });
+
+test('round-trips standalone images and aligned paragraphs', () => {
+  const md = '![示例](https://example.com/a.png)\n\n正文\n';
+  const doc = markdownToTiptap(md);
+  const types = doc.content.map(node => node.type);
+  assert.ok(types.includes('image'));
+  const out = tiptapToMarkdown({ schemaVersion: 1, doc });
+  assert.ok(out.includes('![示例](https://example.com/a.png)'));
+  const aligned = { schemaVersion: 1, doc: { type: 'doc', content: [{ type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', text: '居中' }] }] } };
+  const html = tiptapToHtml(aligned);
+  assert.ok(html.includes('text-align:center'));
+});

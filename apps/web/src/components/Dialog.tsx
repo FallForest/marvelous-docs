@@ -17,6 +17,8 @@ type DialogProps = {
 /** Accessible modal shell: focus trap, Escape to close, backdrop click to close. */
 export function Dialog({ title, description, children, confirmLabel = '确定', cancelLabel = '取消', danger = false, busy = false, onConfirm, onClose }: DialogProps) {
   const panel = useRef<HTMLDivElement | null>(null)
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
   const [pending, setPending] = useState(false)
 
   useEffect(() => {
@@ -25,7 +27,7 @@ export function Dialog({ title, description, children, confirmLabel = '确定', 
     const focusables = () => node ? Array.from(node.querySelectorAll<HTMLElement>('button, input, select, textarea, [tabindex="0"]')).filter(el => !el.hasAttribute('disabled')) : []
     focusables()[0]?.focus({ preventScroll: true })
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { event.stopPropagation(); onClose(); return }
+      if (event.key === 'Escape') { event.stopPropagation(); closeRef.current(); return }
       if (event.key !== 'Tab') return
       const items = focusables()
       if (!items.length) return
@@ -39,7 +41,7 @@ export function Dialog({ title, description, children, confirmLabel = '确定', 
       document.removeEventListener('keydown', onKeyDown)
       previous?.focus?.({ preventScroll: true })
     }
-  }, [onClose])
+  }, [])
 
   async function submit() {
     setPending(true)

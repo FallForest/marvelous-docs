@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { ChangeEvent, FormEvent, ReactNode } from 'react'
+import type { ChangeEvent, FormEvent } from 'react'
 import { EditorContent, useEditor } from '@tiptap/react'
 import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
 import './update.css'
 import {
-  Activity, AlertCircle, ArrowDownToLine, ArrowLeft, Bold, CheckSquare, ChevronDown, ChevronRight,
-  Clock3, Code2, Copy, FilePlus2, FileText, Folder, FolderPlus, Highlighter as HighlightIcon, History,
-  Home, Italic, LayoutDashboard, Link as LinkIcon, List, ListOrdered, LogOut, Mail, MessageCircle,
-  Palette, PanelLeftClose, Plus, Redo2, Search, Send, Share2, ShieldCheck, Sparkles, Star, Table2,
-  Trash2, Underline as UnderlineIcon, Undo2, Upload, UserPlus, Users, X,
+  Activity, AlertCircle, ArrowDownToLine, ArrowLeft, ChevronDown, ChevronRight,
+  Clock3, Copy, FilePlus2, FileText, Folder, FolderPlus, History,
+  Home, LayoutDashboard, LogOut, Mail, MessageCircle,
+  PanelLeftClose, Plus, Search, Send, Share2, ShieldCheck, Sparkles, Star,
+  Trash2, Upload, UserPlus, Users, X,
 } from 'lucide-react'
 import { API, request } from './lib/api'
 import { COLLAB_URL } from './lib/collab'
@@ -31,6 +31,11 @@ import TemplateMenu, { templateLabel } from './components/TemplateMenu'
 import TreeItem from './components/TreeItem'
 import VersionPreview from './components/VersionPreview'
 import { Dialog, PromptDialog } from './components/Dialog'
+import EditorToolbar from './components/EditorToolbar'
+import BubbleToolbar from './components/BubbleToolbar'
+import { FindReplace, OutlinePanel } from './components/FindReplace'
+import SlashMenu from './components/SlashMenu'
+import TableMenu from './components/TableMenu'
 import Popover from './components/Popover'
 
 type UpdateInfo = { version: string; url?: string; status: 'available' | 'running' | 'failed' | 'completed' }
@@ -415,6 +420,12 @@ function App() {
     }
     window.addEventListener('mdoc-updated', syncDocument)
     return () => window.removeEventListener('mdoc-updated', syncDocument)
+  }, [])
+
+  useEffect(() => {
+    const openComments = () => { setRightTab('comments'); setShowRight(true) }
+    window.addEventListener('mdoc-open-comments', openComments)
+    return () => window.removeEventListener('mdoc-open-comments', openComments)
   }, [])
 
   useEffect(() => {
@@ -861,7 +872,7 @@ function App() {
             onSaveStatus={setSaveStatus}
             onAwareness={setCollaborators}
             onCollabStatus={setCollabStatus}
-            onSelection={(anchor) => { setCommentAnchor(anchor); setRightTab('comments'); setShowRight(true) }}
+            onSelection={(anchor) => { setCommentAnchor(anchor) }}
             onExport={(format) => void exportActive(format)}
             onLink={(range) => setLinkPrompt(range)}
           />
@@ -1269,6 +1280,12 @@ function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, o
   const [provider, setProvider] = useState<WebsocketProvider | null>(null)
   const [title, setTitle] = useState(doc.title)
   const [words, setWords] = useState(0)
+  const [imagePrompt, setImagePrompt] = useState(false)
+  const [findOpen, setFindOpen] = useState(false)
+  const [outlineOpen, setOutlineOpen] = useState(false)
+  const [imageUrl, setImageUrl] = useState('')
+  const [bubbleAnchor, setBubbleAnchor] = useState<{ left: number; top: number } | null>(null)
+  const [slash, setSlash] = useState<{ left: number; top: number; query: string; range: { from: number; to: number } } | null>(null)
   const statusTimer = useRef<number | undefined>(undefined)
 
   useEffect(() => { setTitle(doc.title) }, [doc.id, doc.title])
@@ -1337,9 +1354,19 @@ function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, o
       }
     },
     onCreate: ({ editor: instance }) => setWords(wordCount(instance.getText())),
+    onBlur: () => setBubbleAnchor(null),
     onSelectionUpdate: ({ editor: instance }) => {
       const { from, to } = instance.state.selection
-      if (to > from) onSelection({ from, to, text: instance.state.doc.textBetween(from, to, ' ').slice(0, 500) })
+      const { $from, $to } = instance.state.selection
+      const isNodeSelection = instance.state.selection.constructor.name === 'NodeSelection'
+      if (to > from && !isNodeSelection && $from.parent === $to.parent) {
+        onSelection({ from, to, text: instance.state.doc.textBetween(from, to, ' ').slice(0, 500) })
+        const start = instance.view.coordsAtPos(from)
+        const end = instance.view.coordsAtPos(to)
+        setBubbleAnchor({ left: Math.max(12, (start.left + end.left) / 2 - 150), top: Math.max(64, Math.min(start.top, end.top) - 52) })
+      } else {
+        setBubbleAnchor(null)
+      }
     },
     editorProps: { attributes: { class: 'tiptap-content' } },
   }, [doc.id, provider])
@@ -1353,6 +1380,24 @@ function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, o
     }
     window.addEventListener('mdoc-focus-anchor', reveal)
     return () => window.removeEventListener('mdoc-focus-anchor', reveal)
+  }, [editor])
+
+  useEffect(() => {
+    if (!editor) return
+    const update = () => {
+      const { $from } = editor.state.selection
+      const textBefore = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc')
+      const match = /(^|\s)\/([^\s/]*)$/.exec(textBefore)
+      if (match) {
+        const coords = editor.view.coordsAtPos($from.pos)
+        setSlash({ left: Math.max(12, Math.min(window.innerWidth - 280, coords.left)), top: coords.bottom + 6, query: match[2] || '', range: { from: $from.pos - (match[2] || '').length - 1, to: $from.pos } })
+      } else {
+        setSlash(null)
+      }
+    }
+    editor.on('update', update)
+    editor.on('selectionUpdate', update)
+    return () => { editor.off('update', update); editor.off('selectionUpdate', update) }
   }, [editor])
 
   useEffect(() => {
@@ -1380,6 +1425,35 @@ function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, o
     return () => window.removeEventListener('mdoc-force-save', handler)
   }, [provider, editor, doc.id, token, persist, onSaveStatus])
 
+  function rangeSelection() {
+    const selection = editor?.state.selection
+    onLink({ from: selection?.from ?? 0, to: selection?.to ?? 0 })
+  }
+
+  function commentSelection() {
+    const selection = editor?.state.selection
+    if (selection && selection.to > selection.from) onSelection({ from: selection.from, to: selection.to, text: editor.state.doc.textBetween(selection.from, selection.to, ' ').slice(0, 500) })
+  }
+
+  async function uploadImage(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    if (file.size > 20 * 1024 * 1024) { window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '图片不能超过 20 MB' })); return }
+    try {
+      const response = await fetch(API + '/api/v1/uploads', {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type || 'application/octet-stream', 'X-File-Name': file.name, Authorization: 'Bearer ' + token },
+        body: file,
+      })
+      const body = await response.json()
+      if (!response.ok) throw new Error(body.error?.message || '上传失败')
+      setImageUrl(API + body.file.url)
+    } catch (error) {
+      window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '图片上传失败：' + (error as Error).message }))
+    }
+  }
+
   async function saveTitle(next: string) {
     const clean = next.trim() || '未命名文档'
     setTitle(clean)
@@ -1394,30 +1468,18 @@ function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, o
   }
 
   return <>
-    <div className="editor-toolbar" role="toolbar" aria-label="格式工具">
-      <ToolButton title="加粗" onClick={() => editor?.chain().focus().toggleBold().run()} active={!!editor?.isActive('bold')}><Bold size={16} /></ToolButton>
-      <ToolButton title="斜体" onClick={() => editor?.chain().focus().toggleItalic().run()} active={!!editor?.isActive('italic')}><Italic size={16} /></ToolButton>
-      <ToolButton title="下划线" onClick={() => editor?.chain().focus().toggleUnderline().run()} active={!!editor?.isActive('underline')}><UnderlineIcon size={16} /></ToolButton>
-      <span className="tool-separator" />
-      <ToolButton title="项目符号列表" onClick={() => editor?.chain().focus().toggleBulletList().run()} active={!!editor?.isActive('bulletList')}><List size={16} /></ToolButton>
-      <ToolButton title="编号列表" onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={!!editor?.isActive('orderedList')}><ListOrdered size={16} /></ToolButton>
-      <ToolButton title="任务列表" onClick={() => editor?.chain().focus().toggleTaskList().run()} active={!!editor?.isActive('taskList')}><CheckSquare size={16} /></ToolButton>
-      <span className="tool-separator" />
-      <button className="toolbar-format" onClick={() => editor?.chain().focus().toggleHeading({ level: editor?.isActive('heading', { level: 1 }) ? 2 : 1 }).run()}>标题 <ChevronDown size={14} /></button>
-      <ToolButton title="插入表格" onClick={() => editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}><Table2 size={16} /></ToolButton>
-      <ToolButton title="添加链接" onClick={() => { const selection = editor?.state.selection; onLink({ from: selection?.from ?? 0, to: selection?.to ?? 0 }) }}><LinkIcon size={16} /></ToolButton>
-      <ToolButton title="高亮" onClick={() => editor?.chain().focus().toggleHighlight().run()} active={!!editor?.isActive('highlight')}><HighlightIcon size={16} /></ToolButton>
-      <ToolButton title="文字颜色" onClick={() => editor?.chain().focus().setColor('#3370ff').run()} active={!!editor?.isActive('textStyle', { color: '#3370ff' })}><Palette size={16} /></ToolButton>
-      <ToolButton title="对选中文本添加评论" onClick={() => {
-        const selection = editor?.state.selection
-        if (selection && selection.to > selection.from) onSelection({ from: selection.from, to: selection.to, text: editor.state.doc.textBetween(selection.from, selection.to, ' ').slice(0, 500) })
-      }}><MessageCircle size={16} /></ToolButton>
-      <div className="toolbar-spacer" />
-      <ToolButton title="撤销" onClick={() => editor?.chain().focus().undo().run()}><Undo2 size={16} /></ToolButton>
-      <ToolButton title="重做" onClick={() => editor?.chain().focus().redo().run()}><Redo2 size={16} /></ToolButton>
-      <button className="icon-btn" aria-label="导出 JSON" title="导出 JSON" onClick={() => onExport('json')}><ArrowDownToLine size={16} /></button>
-      <button className="icon-btn" aria-label="代码块" title="代码块" onClick={() => editor?.chain().focus().toggleCodeBlock().run()}><Code2 size={16} /></button>
-    </div>
+    <EditorToolbar
+      editor={editor}
+      onInteract={() => setBubbleAnchor(null)}
+      actions={{
+        onLink: () => { const selection = editor?.state.selection; onLink({ from: selection?.from ?? 0, to: selection?.to ?? 0 }) },
+        onImage: () => setImagePrompt(true),
+        onFind: () => setFindOpen(true),
+        onOutline: () => setOutlineOpen(true),
+        onExport: () => onExport('json'),
+        onComment: () => { commentSelection(); window.dispatchEvent(new Event('mdoc-open-comments')) },
+      }}
+    />
     <div className="paper">
       <div className="document-heading">
         <input
@@ -1431,6 +1493,26 @@ function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, o
       </div>
       <EditorContent editor={editor} />
     </div>
+    <SlashMenu editor={editor} anchor={slash} query={slash?.query || ''} range={slash?.range || null} onClose={() => setSlash(null)} onImage={() => setImagePrompt(true)} />
+    <TableMenu editor={editor} />
+    <BubbleToolbar editor={editor} anchor={bubbleAnchor} onLink={() => rangeSelection()} onComment={() => { commentSelection(); window.dispatchEvent(new Event('mdoc-open-comments')) }} />
+    {imagePrompt && <Dialog
+      title="插入图片"
+      description="粘贴图片地址，或上传本地图片（20 MB 以内）。"
+      confirmLabel="插入"
+      onConfirm={() => { if (imageUrl.trim()) { editor?.chain().focus().setImage({ src: imageUrl.trim() }).run(); setImageUrl(''); setBubbleAnchor(null) } setImagePrompt(false) }}
+      onClose={() => setImagePrompt(false)}
+    >
+      <div className="dialog-field">
+        <label htmlFor="image-url">图片地址</label>
+        <div className="image-insert-row">
+          <input id="image-url" placeholder="https://example.com/image.png" value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} />
+          <label className="image-upload-btn secondary-btn">上传<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" className="visually-hidden" onChange={(event) => void uploadImage(event)} /></label>
+        </div>
+      </div>
+    </Dialog>}
+    {findOpen && <FindReplace editor={editor} initial="" onClose={() => setFindOpen(false)} />}
+    {outlineOpen && <OutlinePanel editor={editor} onClose={() => setOutlineOpen(false)} />}
     <div className="editor-footer">
       <span>字数 {words}</span>
       <span className="meta-divider" />
@@ -1441,18 +1523,5 @@ function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, o
   </>
 }
 
-function ToolButton({ children, title, onClick, active }: { children: ReactNode; title: string; onClick?: () => void; active?: boolean }) {
-  return <button
-    type="button"
-    className={'tool-btn ' + (active ? 'tool-active' : '')}
-    title={title}
-    aria-label={title}
-    aria-pressed={active}
-    onMouseDown={(event) => event.preventDefault()}
-    onClick={() => {
-      try { onClick?.() } catch { window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: title + '操作失败，请刷新后重试' })) }
-    }}
-  >{children}</button>
-}
 
 export default App
