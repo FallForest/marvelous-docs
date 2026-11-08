@@ -8,6 +8,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.19] - 2026-11-08
+
+### Fixed
+
+- Declare `@tiptap/core` as a direct web dependency. The font-size extension
+  imports it, but it was only reachable through the local hoisted store, so a
+  clean checkout failed typecheck with "Cannot find module '@tiptap/core'".
+
 ## [0.1.18] - 2026-11-08
 
 ### Added

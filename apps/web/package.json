@@ -1,6 +1,6 @@
 {
   "name": "@marvelous-docs/web",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,6 +11,7 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
+    "@tiptap/core": "^2.27.3",
     "@tiptap/extension-bubble-menu": "^2.27.3",
     "@tiptap/extension-character-count": "^2.27.3",
     "@tiptap/extension-collaboration": "^2.11.5",

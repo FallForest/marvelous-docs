@@ -126,6 +126,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@tiptap/core':
+        specifier: ^2.27.3
+        version: 2.27.3(@tiptap/pm@2.27.3)
       '@tiptap/extension-bubble-menu':
         specifier: ^2.27.3
         version: 2.27.3(@tiptap/core@2.27.3(@tiptap/pm@2.27.3))(@tiptap/pm@2.27.3)
