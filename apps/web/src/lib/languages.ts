@@ -11,3 +11,10 @@ export const LANG_LABELS: Record<string, string> = {
 }
 
 export const LANGUAGES: string[] = Object.keys(LANG_LABELS)
+
+/** Human label for a language token, tolerant of case and aliases. */
+export function languageLabel(token: string | null | undefined): string {
+  if (!token) return '代码'
+  const key = token.trim().toLowerCase()
+  return LANG_LABELS[key] || token
+}

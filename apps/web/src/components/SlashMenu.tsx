@@ -14,7 +14,7 @@ type Props = {
   onImage: () => void
 }
 
-const ITEMS: SlashItem[] = [
+export const SLASH_ITEMS: SlashItem[] = [
   { id: 'text', label: '正文', hint: '普通文本段落', icon: Type, run: (editor) => editor.chain().focus().setParagraph().run() },
   { id: 'h1', label: '标题 1', hint: '大标题', icon: Heading1, run: (editor) => editor.chain().focus().setHeading({ level: 1 }).run() },
   { id: 'h2', label: '标题 2', hint: '章节标题', icon: Heading2, run: (editor) => editor.chain().focus().setHeading({ level: 2 }).run() },
@@ -33,10 +33,10 @@ export default function SlashMenu({ editor, anchor, query, range, onClose, onIma
   const [index, setIndex] = useState(0)
   const listRef = useRef<HTMLDivElement | null>(null)
   const filtered = useMemo(() => {
-    if (!query) return ITEMS
-    const byLabel = ITEMS.filter((item) => item.label.includes(query))
+    if (!query) return SLASH_ITEMS
+    const byLabel = SLASH_ITEMS.filter((item) => item.label.includes(query))
     if (byLabel.length) return byLabel
-    return ITEMS.filter((item) => item.hint.includes(query))
+    return SLASH_ITEMS.filter((item) => item.hint.includes(query))
   }, [query])
 
   useEffect(() => { setIndex(0) }, [query])

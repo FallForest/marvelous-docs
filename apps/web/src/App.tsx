@@ -14,7 +14,7 @@ import {
 import { API, request } from './lib/api'
 import { COLLAB_URL } from './lib/collab'
 import { buildEditorExtensions } from './lib/editor'
-import { LANG_LABELS as CODE_LANG_LABELS } from './lib/languages'
+import { languageLabel } from './lib/languages'
 import { buildDocTree, filterDocTree } from './lib/tree'
 import { formatDate, wordCount } from './lib/format'
 import { emptyContent } from './lib/types'
@@ -35,7 +35,7 @@ import { Dialog, PromptDialog } from './components/Dialog'
 import EditorToolbar from './components/EditorToolbar'
 import BubbleToolbar from './components/BubbleToolbar'
 import { FindReplace, OutlinePanel } from './components/FindReplace'
-import SlashMenu from './components/SlashMenu'
+import SlashMenu, { SLASH_ITEMS } from './components/SlashMenu'
 import TableMenu from './components/TableMenu'
 import Popover from './components/Popover'
 
@@ -1578,14 +1578,20 @@ function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, o
     if (!editor) return
     const update = () => {
       const { $from } = editor.state.selection
+      // Never trigger inside code blocks: file paths such as /usr/local/bin/xray
+      // are ordinary text there, not a command.
+      if ($from.parent.type.name === 'codeBlock') { setSlash(null); return }
+      // Only paragraphs and headings host the insertion command.
+      if ($from.parent.type.name !== 'paragraph' && $from.parent.type.name !== 'heading') { setSlash(null); return }
       const textBefore = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc')
       const match = /(^|\s)\/([^\s/]*)$/.exec(textBefore)
-      if (match) {
-        const coords = editor.view.coordsAtPos($from.pos)
-        setSlash({ left: Math.max(12, Math.min(window.innerWidth - 280, coords.left)), top: coords.bottom + 6, query: match[2] || '', range: { from: $from.pos - (match[2] || '').length - 1, to: $from.pos } })
-      } else {
-        setSlash(null)
-      }
+      if (!match) { setSlash(null); return }
+      const query = match[2] || ''
+      // Hide the menu when nothing matches so it cannot cover the document.
+      const hasMatch = SLASH_ITEMS.some((item) => !query || item.label.includes(query) || item.hint.includes(query))
+      if (!hasMatch) { setSlash(null); return }
+      const coords = editor.view.coordsAtPos($from.pos)
+      setSlash({ left: Math.max(12, Math.min(window.innerWidth - 280, coords.left)), top: coords.bottom + 6, query, range: { from: $from.pos - query.length - 1, to: $from.pos } })
     }
     editor.on('update', update)
     editor.on('selectionUpdate', update)
@@ -1692,7 +1698,7 @@ function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, o
         contentEditable={false}
         aria-hidden="false"
       >
-        <span className="code-overlay-lang">{CODE_LANG_LABELS[block.language] || block.language || '代码'}</span>
+        <span className="code-overlay-lang">{languageLabel(block.language)}</span>
         <button
           type="button"
           className={'code-overlay-copy' + (copiedCode === block.index ? ' copied' : '')}

@@ -8,6 +8,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.32] - 2026-11-09
+
+### Fixed
+
+- The slash insertion menu no longer opens inside code blocks. Typing a path
+  such as `/usr/local/bin/xray` was interpreted as a command and covered the
+  document. The menu now only triggers in paragraphs and headings.
+- The slash menu closes when the query matches nothing instead of showing an
+  empty panel over the content.
+- Code block language labels are resolved case-insensitively through a shared
+  `languageLabel` helper, so stored tokens like `Plain` display as 纯文本.
+
 ## [0.1.31] - 2026-11-09
 
 ### Fixed
