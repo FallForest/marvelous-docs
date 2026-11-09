@@ -8,6 +8,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.35] - 2026-11-09
+
+### Fixed
+
+- Release images are published for the deploy host's real architecture. The
+  0.1.34 tag shipped amd64 images while the Oracle Ampere host is aarch64, so
+  the web container crash-looped with `exec format error`. Archives built from
+  that release are unusable on the server; 0.1.33 remains the last good tag for
+  that host until this release is published.
+
+### Changed
+
+- Release workflow no longer builds images. Building arm64 on an amd64 runner
+  needs QEMU emulation and hung for 10+ minutes per tag. Images are now built
+  natively on the deploy host by `scripts/publish-images.sh`, and the workflow
+  verifies both images exist in GHCR before publishing the release entry.
+
 ## [0.1.34] - 2026-11-09
 
 ### Changed
