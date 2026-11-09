@@ -5,7 +5,9 @@ export const LANG_LABELS: Record<string, string> = {
   swift: 'Swift', kotlin: 'Kotlin', scala: 'Scala', html: 'HTML', css: 'CSS',
   scss: 'SCSS', json: 'JSON', yaml: 'YAML', toml: 'TOML', xml: 'XML', sql: 'SQL',
   bash: 'Bash', powershell: 'PowerShell', dockerfile: 'Dockerfile',
-  markdown: 'Markdown', plaintext: '纯文本',
+  markdown: 'Markdown', plaintext: '纯文本', plain: '纯文本', text: '纯文本',
+  js: 'JavaScript', ts: 'TypeScript', py: 'Python', sh: 'Shell', shell: 'Shell',
+  yml: 'YAML', md: 'Markdown', docker: 'Dockerfile', 'c++': 'C++', cs: 'C#',
 }
 
 export const LANGUAGES: string[] = Object.keys(LANG_LABELS)

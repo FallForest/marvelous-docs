@@ -976,15 +976,6 @@ html,body{max-width:100%}
 }
 
 /* 23. code block readability + root-folder button */
-.tiptap-content pre{
-  background:#f7f8fa;border:1px solid var(--border);border-radius:8px;
-  padding:14px 16px;overflow:auto;font-size:13px;line-height:1.65;
-  color:#1f2937;font-family:ui-monospace,SFMono-Regular,"JetBrains Mono",Menlo,Consolas,monospace;
-}
-.tiptap-content pre code{
-  background:none;border:0;padding:0;color:inherit;font-size:inherit;
-  font-family:inherit;white-space:pre;
-}
 .tiptap-content code{
   font-family:ui-monospace,SFMono-Regular,"JetBrains Mono",Menlo,Consolas,monospace;
   color:#b0453a;background:#f5f6f8;
@@ -1165,31 +1156,58 @@ html,body{max-width:100%}
   margin-top:32px;text-align:center;font-size:12px;color:var(--text-muted);
 }
 
-/* ===== 29. Code block overlay toolbar (never mutates ProseMirror DOM) ===== */
+/* ===== 29. Code block chrome ===== */
+/* One surface owns the block: border, radius and background live here only. */
+.tiptap-content pre{
+  position:relative;
+  margin:16px 0;
+  padding:0;
+  background:#f7f8fa;
+  border:1px solid var(--border);
+  border-radius:8px;
+  overflow:hidden;
+  font-family:ui-monospace,SFMono-Regular,"JetBrains Mono",Menlo,Consolas,monospace;
+}
+/* Reserve the top strip for the overlay toolbar so text never sits under it. */
+.tiptap-content pre code{
+  display:block;
+  padding:40px 16px 14px;
+  background:none;
+  border:0;
+  color:#1f2937;
+  font-size:13px;
+  line-height:1.7;
+  font-family:inherit;
+  white-space:pre;
+  overflow-x:auto;
+  scrollbar-width:thin;
+}
+/* Slim, unobtrusive horizontal scrollbar inside code blocks. */
+.tiptap-content pre code::-webkit-scrollbar{height:8px}
+.tiptap-content pre code::-webkit-scrollbar-track{background:transparent}
+.tiptap-content pre code::-webkit-scrollbar-thumb{background:#cbd2da;border-radius:4px}
+.tiptap-content pre code::-webkit-scrollbar-thumb:hover{background:#b3bcc7}
+/* Overlay toolbar sits inside the block's top strip, never above it. */
 .code-overlay{
   position:fixed;
-  transform:translateY(-100%);
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:8px;
-  padding:0 8px 0 0;
+  padding:0 8px 0 12px;
   height:30px;
-  margin-top:-1px;
   border-radius:8px 8px 0 0;
   background:#eef0f3;
   border:1px solid var(--border);
-  border-bottom:0;
+  border-bottom:1px solid var(--border);
   box-sizing:border-box;
   pointer-events:none;
   z-index:2;
 }
 .code-overlay-lang{
-  font-size:10.5px;
+  font-size:11px;
   font-weight:600;
-  letter-spacing:.03em;
   color:#6b7280;
-  padding-left:12px;
   font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 }
 .code-overlay-copy{
@@ -1208,4 +1226,3 @@ html,body{max-width:100%}
 }
 .code-overlay-copy:hover{background:#e2e5e9;color:#1f2937}
 .code-overlay-copy.copied{color:#059669;border-color:#05966955;background:#ecfdf5}
-.tiptap-content pre{margin-top:14px}

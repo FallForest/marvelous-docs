@@ -8,6 +8,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.31] - 2026-11-09
+
+### Fixed
+
+- Code block chrome no longer overlaps the preceding paragraph. The language /
+  copy toolbar now sits inside a reserved strip at the top of the block instead
+  of floating above it.
+- Removed doubled padding that produced a large empty band above the code, and
+  replaced the chunky native scrollbar with a slim 8px thumb.
+- Code block language labels read the ProseMirror node attribute instead of the
+  DOM class, and aliases such as `plain`, `js`, `py`, `yml` map to proper
+  display names instead of raw lowercase tokens.
+
 ## [0.1.30] - 2026-11-09
 
 ### Fixed

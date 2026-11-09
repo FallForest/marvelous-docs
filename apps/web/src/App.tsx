@@ -1538,11 +1538,17 @@ function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, o
     if (!dom) return
     const update = () => {
       const blocks = Array.from(dom.querySelectorAll('pre')) as HTMLElement[]
+      // Language lives on the ProseMirror node; the DOM class is only a hint.
+      const nodeLanguages: string[] = []
+      editor.state.doc.descendants((node) => {
+        if (node.type.name === 'codeBlock') nodeLanguages.push(String(node.attrs.language || ''))
+      })
       setCodeBlocks(blocks.map((node, index) => {
         const rect = node.getBoundingClientRect()
         const code = node.querySelector('code')
         const lc = [...(code?.classList || [])].find((c) => c.startsWith('language-'))
-        return { index, top: rect.top, bottom: rect.bottom, left: rect.left, width: rect.width, language: lc?.replace('language-', '') || '', text: code?.textContent || '' }
+        const fromClass = lc?.replace('language-', '') || ''
+        return { index, top: rect.top, bottom: rect.bottom, left: rect.left, width: rect.width, language: nodeLanguages[index] || fromClass || '', text: code?.textContent || '' }
       }))
     }
     update()
