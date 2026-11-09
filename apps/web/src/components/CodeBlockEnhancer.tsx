@@ -22,8 +22,10 @@ const CHECK_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" s
 export default function CodeBlockEnhancer({ editor }: { editor: Editor | null }) {
   const enhance = useCallback(() => {
     const root = document.querySelector('.ProseMirror') || document.querySelector('.tiptap-content') || editor?.view?.dom || null
-    if (!root) return
-    requestAnimationFrame(() => {
+    if (!root) { console.log('[code-enhance] no root found'); return }
+    const pres = root.querySelectorAll('pre');
+    console.log('[code-enhance] found', pres.length, 'pre elements');
+    if (pres.length === 0) return
     root.querySelectorAll('pre').forEach((pre) => {
       if (pre.dataset.enhanced) return
       pre.dataset.enhanced = 'true'
@@ -64,7 +66,6 @@ export default function CodeBlockEnhancer({ editor }: { editor: Editor | null })
         setTimeout(() => { copyBtn.innerHTML = COPY_SVG; copyBtn.classList.remove('copied') }, 1500)
       })
       pre.appendChild(copyBtn)
-    })
     })
   }, [editor])
 
