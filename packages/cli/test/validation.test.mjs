@@ -49,7 +49,7 @@ test('update without fields exits 2', async t => {
   const h = await createHarness(t);
   const result = await h.run(['update', IDS.doc, '--expected-version', '3']);
   assert.equal(result.status, 2);
-  assert.match(result.stderr, /at least one of --title, --parent, or --input/);
+  assert.match(result.stderr, /at least one of --title, --parent, --input, --markdown, or --append-/);
 });
 
 test('invalid export format exits 2', async t => {

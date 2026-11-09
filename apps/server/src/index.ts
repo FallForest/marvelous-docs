@@ -697,6 +697,71 @@ app.put('/api/v1/documents/:id/acl', authenticate, async (request, reply) => {
   return { ok: true };
 });
 
+
+/* ---- Document share links (public read-only URLs) ---- */
+app.post('/api/v1/documents/:id/share-link', authenticate, async (request, reply) => {
+  const auth = request as AuthRequest;
+  const params = parse(idParams, request.params);
+  if (!params) return fail(reply, 400, 'INVALID_ID', 'Document id must be a UUID.');
+  if (!await requireDoc(auth, reply, params.id, 'owner')) return;
+  const input = parse(z.object({
+    permission: z.enum(['viewer', 'commenter']).default('viewer'),
+    expiresInDays: z.number().int().positive().max(365).nullable().optional(),
+  }), request.body ?? {});
+  if (!input) return fail(reply, 400, 'INVALID_INPUT', 'Provide permission and optional expiresInDays.');
+  const token = randomBytes(24).toString('base64url');
+  const expiresAt = input.expiresInDays ? new Date(Date.now() + input.expiresInDays * 86400000).toISOString() : null;
+  const result = await pool.query(
+    'INSERT INTO document_share_links(document_id,token,permission,expires_at,created_by) VALUES ($1,$2,$3,$4,$5) RETURNING id,token,permission,expires_at AS "expiresAt",created_at AS "createdAt"',
+    [params.id, token, input.permission, expiresAt, auth.user.sub]
+  );
+  return reply.code(201).send({ shareLink: result.rows[0] });
+});
+
+app.get('/api/v1/documents/:id/share-link', authenticate, async (request, reply) => {
+  const auth = request as AuthRequest;
+  const params = parse(idParams, request.params);
+  if (!params) return fail(reply, 400, 'INVALID_ID', 'Document id must be a UUID.');
+  if (!await requireDoc(auth, reply, params.id, 'owner')) return;
+  const result = await pool.query(
+    'SELECT id,token,permission,expires_at AS "expiresAt",created_at AS "createdAt" FROM document_share_links WHERE document_id=$1 ORDER BY created_at DESC',
+    [params.id]
+  );
+  return { shareLinks: result.rows };
+});
+
+app.delete('/api/v1/documents/:id/share-link/:linkId', authenticate, async (request, reply) => {
+  const auth = request as AuthRequest;
+  const params = parse(idParams, request.params);
+  const linkParams = parse(z.object({ linkId: uuidSchema }), request.params);
+  if (!params || !linkParams) return fail(reply, 400, 'INVALID_ID', 'Invalid id.');
+  if (!await requireDoc(auth, reply, params.id, 'owner')) return;
+  await pool.query('DELETE FROM document_share_links WHERE id=$1 AND document_id=$2', [linkParams.linkId, params.id]);
+  return { ok: true };
+});
+
+/* ---- Public share access (no auth) ---- */
+
+/* ---- Markdown to Tiptap JSON conversion (used by CLI) ---- */
+app.post('/api/v1/markdown/convert', async (request, reply) => {
+  const input = parse(z.object({ markdown: z.string().min(1).max(500000) }), request.body);
+  if (!input) return fail(reply, 400, 'INVALID_INPUT', 'Provide markdown text.');
+  const { markdownToTiptap } = await import('./lib/markdown.js');
+  const doc = markdownToTiptap(input.markdown);
+  return { content: { schemaVersion: 1, doc } };
+});
+
+app.get('/api/v1/shared/:token', async (request, reply) => {
+  const tokenParams = parse(z.object({ token: z.string().min(10).max(200) }), request.params);
+  if (!tokenParams) return fail(reply, 400, 'INVALID_TOKEN', 'Invalid share token.');
+  const result = await pool.query(
+    'SELECT d.id,d.title,d.content,d.updated_at AS "updatedAt",sl.permission FROM document_share_links sl JOIN documents d ON d.id=sl.document_id WHERE sl.token=$1 AND (sl.expires_at IS NULL OR sl.expires_at>now()) AND d.deleted_at IS NULL',
+    [tokenParams.token]
+  );
+  if (!result.rowCount) return fail(reply, 404, 'SHARE_NOT_FOUND', 'Share link is invalid or expired.');
+  return { document: result.rows[0] };
+});
+
 app.get('/api/v1/documents/:id/comments', authenticate, async (request, reply) => {
   const auth=request as AuthRequest; const params=parse(idParams,request.params); if(!params) return fail(reply,400,'INVALID_ID','Document id must be a UUID.');
   if(!await requireDoc(auth,reply,params.id)) return;

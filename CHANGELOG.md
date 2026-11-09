@@ -8,6 +8,29 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.23] - 2026-11-09
+
+### Added
+
+- Code block language badge and one-click copy button: hover a code block to
+  reveal the copy button; the language tag shows in the top-left corner and
+  updates when changed from the toolbar language selector (27 languages).
+- Document share links: generate a public read-only URL from the share dialog,
+  copy it with one click, list active links and revoke them. A public page at
+  /shared/:token renders the document without authentication.
+- CLI rich content: `--append-h1/h2/h3`, `--append-text`, `--append-list`,
+  `--append-task`, `--append-table ROWSxCOLS`, `--append-image URL`,
+  `--append-code LANG --append-code-content CODE` on both `mdocs create` and
+  `mdocs update`. `mdocs update --markdown FILE` replaces content from
+  Markdown via the new `POST /markdown/convert` endpoint.
+- Code language selector appears in the toolbar whenever the cursor is inside a
+  code block.
+
+### Fixed
+
+- Rules-of-Hooks violation in the app router: shared-document routing moved to
+  an `AppRoot` wrapper so hooks are never called conditionally.
+
 ## [0.1.22] - 2026-11-08
 
 ### Fixed

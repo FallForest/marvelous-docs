@@ -35,6 +35,7 @@ import EditorToolbar from './components/EditorToolbar'
 import BubbleToolbar from './components/BubbleToolbar'
 import { FindReplace, OutlinePanel } from './components/FindReplace'
 import SlashMenu from './components/SlashMenu'
+import CodeBlockEnhancer from './components/CodeBlockEnhancer'
 import TableMenu from './components/TableMenu'
 import Popover from './components/Popover'
 
@@ -99,6 +100,94 @@ function printHtmlDocument(html: string) {
   }, 150)
 }
 
+function SharedDocumentPage({ token }: { token: string }) {
+  const [doc, setDoc] = useState<{id: string; title: string; content: Record<string, unknown>; updatedAt: string; permission: string} | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch(API + '/api/v1/shared/' + token)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.error) setError(data.error.message)
+        else setDoc(data.document)
+      })
+      .catch(() => setError('无法加载文档'))
+      .finally(() => setLoading(false))
+  }, [token])
+
+  if (loading) return <div className="shared-page"><div className="shared-header"><div className="shared-logo">M</div><h1>Marvelous Docs</h1></div><p style={{color:'var(--text-muted)',textAlign:'center'}}>加载中…</p></div>
+  if (error || !doc) return <div className="shared-page"><div className="shared-header"><div className="shared-logo">M</div><h1>Marvelous Docs</h1></div><div className="shared-content"><p style={{color:'var(--text-muted)',textAlign:'center'}}>{error || '文档不存在或链接已过期'}</p></div></div>
+
+  const content = doc.content as { doc?: { type: string; content?: unknown[] } }
+  return <div className="shared-page">
+    <div className="shared-header">
+      <div className="shared-logo">M</div>
+      <h1>Marvelous Docs</h1>
+      <span className="shared-badge">{doc.permission === 'commenter' ? '可评论' : '仅查看'}</span>
+    </div>
+    <div className="shared-content" dangerouslySetInnerHTML={{ __html: renderDocHTML(content.doc) }} />
+    <div className="shared-footer">由 Marvelous Docs 分享 · {new Date(doc.updatedAt).toLocaleDateString()}</div>
+  </div>
+}
+
+function renderDocHTML(node: Record<string, unknown> | undefined): string {
+  if (!node) return '<p>（空文档）</p>'
+  const type = node.type as string
+  const content = ((node.content || []) as Record<string, unknown>[])
+  const attrs = (node.attrs || {}) as Record<string, unknown>
+  const text = (n: Record<string, unknown>): string => {
+    if (n.type === 'text') {
+      let t = escapeHtml(n.text as string || '')
+      const marks = (n.marks || []) as Record<string, unknown>[]
+      for (const m of marks) {
+        if (m.type === 'bold') t = '<strong>' + t + '</strong>'
+        else if (m.type === 'italic') t = '<em>' + t + '</em>'
+        else if (m.type === 'underline') t = '<u>' + t + '</u>'
+        else if (m.type === 'strike') t = '<s>' + t + '</s>'
+        else if (m.type === 'code') t = '<code>' + t + '</code>'
+        else if (m.type === 'link') t = '<a href="' + escapeHtml((m.attrs as Record<string, string>)?.href || '#') + '" target="_blank">' + t + '</a>'
+      }
+      return t
+    }
+    return ((n.content || []) as Record<string, unknown>[]).map(text).join('')
+  }
+  const inner: string = content.map((child) => {
+    if (child.type === 'text') return text(child)
+    return renderDocHTML(child)
+  }).join('')
+
+  switch (type) {
+    case 'doc': return (content as Record<string, unknown>[]).map((c: Record<string, unknown>) => renderDocHTML(c)).join('')
+    case 'paragraph': return '<p>' + (inner || '<br>') + '</p>'
+    case 'heading': return '<h' + (attrs.level || 1) + '>' + inner + '</h' + (attrs.level || 1) + '>'
+    case 'codeBlock': return '<pre><code>' + escapeHtml((content as Record<string, unknown>[]).map((c: Record<string, unknown>) => (c.text as string) || '').join('')) + '</code></pre>'
+    case 'blockquote': return '<blockquote>' + inner + '</blockquote>'
+    case 'bulletList': return '<ul>' + inner + '</ul>'
+    case 'orderedList': return '<ol>' + inner + '</ol>'
+    case 'listItem': return '<li>' + inner + '</li>'
+    case 'taskList': return '<ul class="task-list">' + inner + '</ul>'
+    case 'taskItem': return '<li>' + inner + '</li>'
+    case 'horizontalRule': return '<hr>'
+    case 'image': return '<img src="' + escapeHtml(attrs.src as string || '') + '" alt="' + escapeHtml(attrs.alt as string || '') + '">'
+    case 'table': return '<table>' + inner + '</table>'
+    case 'tableRow': return '<tr>' + inner + '</tr>'
+    case 'tableHeader': return '<th>' + inner + '</th>'
+    case 'tableCell': return '<td>' + inner + '</td>'
+    default: return inner
+  }
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
+export function AppRoot() {
+  const sharedMatch = window.location.pathname.match(/^\/shared\/(.+)$/)
+  if (sharedMatch) return <SharedDocumentPage token={sharedMatch[1]!} />
+  return <App />
+}
+
 function App() {
   const [token, setToken] = useState(() => localStorage.getItem('mdocs-token') || '')
   const [user, setUser] = useState<User | null>(null)
@@ -120,6 +209,8 @@ function App() {
   const [documentPermissions, setDocumentPermissions] = useState<DocumentPermission[]>([])
   const [documentRestricted, setDocumentRestricted] = useState(false)
   const [shareBusy, setShareBusy] = useState(false)
+  const [shareLinks, setShareLinks] = useState<Array<{id: string; token: string; permission: string; expiresAt: string | null}>>([])
+  const [shareLinkCopied, setShareLinkCopied] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<'member' | 'admin'>('member')
   const [inviteLink, setInviteLink] = useState('')
@@ -639,6 +730,37 @@ function App() {
     return () => window.removeEventListener('mdoc-comment-status', handler)
   }, [comments, active])
 
+  async function loadShareLinks(docId: string) {
+    try {
+      const data = await request<{shareLinks: Array<{id: string; token: string; permission: string; expiresAt: string | null}>}>('/documents/' + docId + '/share-link', token)
+      setShareLinks(data.shareLinks)
+    } catch { setShareLinks([]) }
+  }
+
+  async function createShareLink(docId: string) {
+    setShareBusy(true)
+    try {
+      const data = await request<{shareLink: {id: string; token: string; permission: string}}>('/documents/' + docId + '/share-link', token, { method: 'POST', body: JSON.stringify({ permission: 'viewer' }) })
+      const url = window.location.origin + '/shared/' + data.shareLink.token
+      await navigator.clipboard.writeText(url).catch(() => {})
+      setShareLinkCopied(true)
+      setTimeout(() => setShareLinkCopied(false), 2000)
+      await loadShareLinks(docId)
+    } catch (error) {
+      window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '创建分享链接失败：' + (error as Error).message }))
+    } finally { setShareBusy(false) }
+  }
+
+  async function revokeShareLink(docId: string, linkId: string) {
+    setShareBusy(true)
+    try {
+      await request('/documents/' + docId + '/share-link/' + linkId, token, { method: 'DELETE' })
+      await loadShareLinks(docId)
+    } catch (error) {
+      window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '删除分享链接失败：' + (error as Error).message }))
+    } finally { setShareBusy(false) }
+  }
+
   async function openShareDialog() {
     if (!active || active.kind === 'folder') { setNotice('请先打开一个文档再设置共享权限'); return }
     setShowShare(true)
@@ -967,7 +1089,7 @@ function App() {
       />}
       {notice && <div className="notice-toast" role="status" aria-live="polite">{notice}<button aria-label="关闭提示" title="关闭提示" onClick={() => setNotice('')}><X size={13} /></button></div>}
     </main>
-    {showShare && active && <ShareDialog title={active.title} members={workspaceMembers} permissions={documentPermissions} restricted={documentRestricted} busy={shareBusy} onRestrictedChange={(value) => void toggleDocumentRestriction(value)} onPermissionChange={(member, role) => void saveDocumentPermission(member, role)} onClose={() => setShowShare(false)} />}
+    {showShare && active && <ShareDialog title={active.title} members={workspaceMembers} permissions={documentPermissions} restricted={documentRestricted} busy={shareBusy} shareLinks={shareLinks} shareLinkCopied={shareLinkCopied} onCreateShareLink={() => void createShareLink(active.id)} onRevokeShareLink={(linkId: string) => void revokeShareLink(active.id, linkId)} onRestrictedChange={(value) => void toggleDocumentRestriction(value)} onPermissionChange={(member, role) => void saveDocumentPermission(member, role)} onClose={() => setShowShare(false)} />}
     {showInvite && <InviteDialog email={inviteEmail} setEmail={setInviteEmail} role={inviteRole} setRole={setInviteRole} link={inviteLink} error={inviteError} busy={inviteBusy} copied={copied} onSubmit={createInvite} onCopy={copyInviteLink} onClose={() => setShowInvite(false)} />}
     {moveDoc && <MoveDialog doc={moveDoc} documents={documents} busy={busy} onMove={(parentId) => void moveDocument(moveDoc, parentId)} onClose={() => setMoveDoc(null)} />}
     {previewVersion && active && <VersionPreview token={token} documentId={active.id} version={previewVersion} onRestore={restoreVersion} onClose={() => setPreviewVersion(null)} />}
@@ -1235,12 +1357,30 @@ function Login({ onLogin, onAccepted, error, busy }: { onLogin: (email: string, 
   </div></div>
 }
 
-function ShareDialog({ title, members, permissions, restricted, busy, onRestrictedChange, onPermissionChange, onClose }: { title: string; members: WorkspaceMember[]; permissions: DocumentPermission[]; restricted: boolean; busy: boolean; onRestrictedChange: (restricted: boolean) => void; onPermissionChange: (member: WorkspaceMember, role: DocumentPermission['role'] | null) => void; onClose: () => void }) {
+function ShareDialog({ title, members, permissions, restricted, busy, shareLinks, shareLinkCopied, onCreateShareLink, onRevokeShareLink, onRestrictedChange, onPermissionChange, onClose }: { title: string; members: WorkspaceMember[]; permissions: DocumentPermission[]; restricted: boolean; busy: boolean; shareLinks: Array<{id: string; token: string; permission: string; expiresAt: string | null}>; shareLinkCopied: boolean; onCreateShareLink: () => void; onRevokeShareLink: (linkId: string) => void; onRestrictedChange: (restricted: boolean) => void; onPermissionChange: (member: WorkspaceMember, role: DocumentPermission['role'] | null) => void; onClose: () => void }) {
   const permissionMap = new Map(permissions.map((permission) => [permission.userId, permission]))
   return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
     <section className="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-title">
       <header><div><div className="invite-icon"><Share2 size={17} /></div><h2 id="share-title">共享文档</h2><p>{title}</p></div><button className="icon-btn" aria-label="关闭共享设置" title="关闭" onClick={onClose}><X size={17} /></button></header>
       <label className="share-restriction"><span><b>仅指定成员可访问</b><small>{restricted ? '只有下方名单中的成员可以打开此文档' : '工作区所有成员均可查看和编辑'}</small></span><input type="checkbox" checked={restricted} disabled={busy} onChange={(event) => onRestrictedChange(event.target.checked)} /></label>
+      <div className="share-link-section">
+        <b>分享链接</b>
+        <p className="share-link-hint">生成公开链接，任何拥有链接的人可查看文档。</p>
+        <div className="share-link-actions">
+          <button type="button" className="primary-btn" onClick={onCreateShareLink} disabled={busy}>
+            <Copy size={14} />{shareLinkCopied ? '已复制链接' : '生成并复制链接'}
+          </button>
+        </div>
+        {shareLinks.length > 0 && <div className="share-link-list">
+          {shareLinks.map((link) => <div key={link.id} className="share-link-item">
+            <div className="share-link-info">
+              <b>{link.permission === 'commenter' ? '可评论' : '仅查看'}</b>
+              {link.expiresAt && <small>到期：{new Date(link.expiresAt).toLocaleDateString()}</small>}
+            </div>
+            <button type="button" className="danger-btn" onClick={() => onRevokeShareLink(link.id)} disabled={busy}>撤销</button>
+          </div>)}
+        </div>}
+      </div>
       <div className="share-members-heading"><b>工作区成员</b><span>{members.length + ' 人'}</span></div>
       <div className="share-members">{members.map((member) => {
         const permission = permissionMap.get(member.id)
@@ -1506,6 +1646,7 @@ function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, o
         />
         <div className="doc-meta"><span>最后编辑于 {formatDate(doc.updatedAt) || '刚刚'}</span></div>
       </div>
+      <CodeBlockEnhancer editor={editor} />
       <EditorContent editor={editor} />
     </div>
     <SlashMenu editor={editor} anchor={slash} query={slash?.query || ''} range={slash?.range || null} onClose={() => setSlash(null)} onImage={() => setImagePrompt(true)} />

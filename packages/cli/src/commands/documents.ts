@@ -130,8 +130,16 @@ async function create(ctx: CommandContext): Promise<void> {
   if (templateId !== undefined && (input !== undefined || markdown !== undefined)) {
     throw usageError('--template cannot be combined with --input or --markdown.');
   }
+  const appendBlocks = buildAppendBlocks(ctx);
   const api = ctx.api();
   let document: Document;
+  if (appendBlocks.length > 0 && input === undefined && markdown === undefined) {
+    const content = { schemaVersion: 1, doc: { type: 'doc', content: appendBlocks } };
+    const response = await ctx.api().post<DocumentResponse>('/documents', { title, parentId, content });
+    document = requireDocument(response, 'create');
+    emitDocument(ctx, 'create', document, 'Created');
+    return;
+  }
   if (markdown !== undefined) {
     const body = await readInput(markdown, ctx.readStdin);
     const response = await api.post<DocumentResponse>('/documents/import', {
@@ -250,6 +258,70 @@ async function importFile(ctx: CommandContext): Promise<void> {
   emitDocument(ctx, 'import', document, 'Imported');
 }
 
+
+/* ---- Tiptap JSON block builders for --append-* flags ---- */
+function paragraph(text: string): Record<string, unknown> {
+  return { type: 'paragraph', content: text ? [{ type: 'text', text }] : [] };
+}
+function heading(level: number, text: string): Record<string, unknown> {
+  return { type: 'heading', attrs: { level }, content: [{ type: 'text', text }] };
+}
+function codeBlock(language: string, code: string): Record<string, unknown> {
+  return { type: 'codeBlock', attrs: { language }, content: code ? [{ type: 'text', text: code }] : [] };
+}
+function imageNode(src: string, alt: string): Record<string, unknown> {
+  return { type: 'image', attrs: { src, alt: alt || null, title: null } };
+}
+function bulletList(items: string[]): Record<string, unknown> {
+  return { type: 'bulletList', content: items.map((t) => ({ type: 'listItem', content: [paragraph(t)] })) };
+}
+function taskList(items: string[]): Record<string, unknown> {
+  return { type: 'taskList', content: items.map((t) => ({ type: 'taskItem', attrs: { checked: false }, content: [paragraph(t)] })) };
+}
+function tableNode(rows: number, cols: number): Record<string, unknown> {
+  const makeRow = (isHeader: boolean) => ({
+    type: 'tableRow',
+    content: Array.from({ length: cols }, () => ({
+      type: isHeader ? 'tableHeader' : 'tableCell',
+      content: [paragraph('')],
+    })),
+  });
+  return { type: 'table', content: [makeRow(true), ...Array.from({ length: rows - 1 }, () => makeRow(false))] };
+}
+
+function buildAppendBlocks(ctx: CommandContext): Record<string, unknown>[] {
+  const blocks: Record<string, unknown>[] = [];
+  const h1 = ctx.flags.str('append-h1');
+  if (h1 !== undefined) blocks.push(heading(1, h1));
+  const h2 = ctx.flags.str('append-h2');
+  if (h2 !== undefined) blocks.push(heading(2, h2));
+  const h3 = ctx.flags.str('append-h3');
+  if (h3 !== undefined) blocks.push(heading(3, h3));
+  const para = ctx.flags.str('append-text');
+  if (para !== undefined) blocks.push(paragraph(para));
+  const listItems = ctx.flags.str('append-list');
+  if (listItems !== undefined) blocks.push(bulletList(listItems.split(',').map((s) => s.trim()).filter(Boolean)));
+  const taskItems = ctx.flags.str('append-task');
+  if (taskItems !== undefined) blocks.push(taskList(taskItems.split(',').map((s) => s.trim()).filter(Boolean)));
+  const table = ctx.flags.str('append-table');
+  if (table !== undefined) {
+    const match = /^(\d+)x(\d+)$/i.exec(table.trim());
+    if (!match) throw usageError('--append-table expects ROWSxCOLS format, e.g. 3x3.');
+    blocks.push(tableNode(Number(match[1]), Number(match[2])));
+  }
+  const imgSrc = ctx.flags.str('append-image');
+  if (imgSrc !== undefined) {
+    const alt = ctx.flags.str('append-image-alt') || '';
+    blocks.push(imageNode(imgSrc, alt));
+  }
+  const codeLang = ctx.flags.str('append-code');
+  if (codeLang !== undefined) {
+    const codeContent = ctx.flags.str('append-code-content') || '';
+    blocks.push(codeBlock(codeLang, codeContent));
+  }
+  return blocks;
+}
+
 async function update(ctx: CommandContext): Promise<void> {
   const id = uuidArgument(requirePositional(ctx, 0, 'document id'), 'Document id');
   const expectedVersion = ctx.flags.integer('expected-version', { min: 1 });
@@ -262,9 +334,28 @@ async function update(ctx: CommandContext): Promise<void> {
   const parent = ctx.flags.str('parent');
   if (parent !== undefined) body.parentId = uuidArgument(parent, '--parent');
   const input = ctx.flags.str('input');
+  const markdown = ctx.flags.str('markdown');
+  const appendBlocks = buildAppendBlocks(ctx);
   if (input !== undefined) body.content = parseDocJson(await readInput(input, ctx.readStdin));
-  if (title === undefined && parent === undefined && input === undefined) {
-    throw usageError('update requires at least one of --title, --parent, or --input.');
+  else if (markdown !== undefined) {
+    const mdBody = await readInput(markdown, ctx.readStdin);
+    const converted = await ctx.api().post<{ content: Record<string, unknown> }>('/markdown/convert', { markdown: mdBody });
+    body.content = converted.content;
+  }
+  if (appendBlocks.length > 0) {
+    if (body.content === undefined) {
+      const current = await ctx.api().get<DocumentResponse>('/documents/' + encodeURIComponent(id));
+      const doc = requireDocument(current, 'update');
+      const existing = (doc.content as Record<string, unknown>)?.doc as Record<string, unknown> | undefined;
+      body.content = { schemaVersion: 1, doc: { type: 'doc', content: [...((existing?.content || []) as Record<string, unknown>[]), ...appendBlocks] } };
+    } else {
+      const content = body.content as { doc?: Record<string, unknown> };
+      content.doc = content.doc || { type: 'doc', content: [] };
+      content.doc.content = [...((content.doc.content || []) as Record<string, unknown>[]), ...appendBlocks];
+    }
+  }
+  if (title === undefined && parent === undefined && input === undefined && markdown === undefined && appendBlocks.length === 0) {
+    throw usageError('update requires at least one of --title, --parent, --input, --markdown, or --append-*.');
   }
   const response = await ctx.api().put<DocumentResponse>('/documents/' + encodeURIComponent(id), body);
   emitDocument(ctx, 'update', requireDocument(response, 'update'), 'Updated');
@@ -364,14 +455,27 @@ export const createCommand: CommandDefinition = {
     { name: 'parent', description: 'Parent folder id.', valueName: 'ID' },
     { name: 'template', description: 'Template id, for example meeting-notes.', valueName: 'ID' },
     { name: 'input', description: 'Tiptap JSON content file, or - for stdin.', valueName: 'FILE' },
-    { name: 'markdown', description: 'Markdown file converted by POST /documents/import, or - for stdin.', valueName: 'FILE' }
+    { name: 'markdown', description: 'Markdown file converted by POST /documents/import, or - for stdin.', valueName: 'FILE' },
+    { name: 'append-h1', description: 'Append a level-1 heading.', valueName: 'TEXT' },
+    { name: 'append-h2', description: 'Append a level-2 heading.', valueName: 'TEXT' },
+    { name: 'append-h3', description: 'Append a level-3 heading.', valueName: 'TEXT' },
+    { name: 'append-text', description: 'Append a paragraph.', valueName: 'TEXT' },
+    { name: 'append-list', description: 'Append a bullet list (comma-separated items).', valueName: 'ITEMS' },
+    { name: 'append-task', description: 'Append a task list (comma-separated items).', valueName: 'ITEMS' },
+    { name: 'append-table', description: 'Append a table, e.g. 3x3.', valueName: 'ROWSxCOLS' },
+    { name: 'append-image', description: 'Append an image from URL.', valueName: 'URL' },
+    { name: 'append-image-alt', description: 'Alt text for --append-image.', valueName: 'TEXT' },
+    { name: 'append-code', description: 'Append a code block with the given language.', valueName: 'LANG' },
+    { name: 'append-code-content', description: 'Code text for --append-code.', valueName: 'CODE' }
   ],
   positionals: [],
   examples: [
     'mdocs create --title "Project notes"',
     'mdocs create --title "Weekly report" --template weekly-report',
     'mdocs create --title "Notes" --markdown notes.md',
-    'mdocs create --title "Notes" --input document.json --parent FOLDER_ID'
+    'mdocs create --title "Notes" --input document.json --parent FOLDER_ID',
+    'mdocs create --title "Spec" --append-h1 "API Design" --append-text "Overview of the API."',
+    'mdocs create --title "Demo" --append-h2 "Results" --append-table 3x3 --append-code javascript --append-code-content "console.log(1)"'
   ],
   handler: create
 };
@@ -447,12 +551,28 @@ export const updateCommand: CommandDefinition = {
     { name: 'expected-version', description: 'Version the change is based on.', valueName: 'N' },
     { name: 'title', description: 'New title.', valueName: 'TITLE' },
     { name: 'parent', description: 'New parent folder id.', valueName: 'ID' },
-    { name: 'input', description: 'Tiptap JSON content file, or - for stdin.', valueName: 'FILE' }
+    { name: 'input', description: 'Tiptap JSON content file, or - for stdin.', valueName: 'FILE' },
+    { name: 'markdown', description: 'Markdown file to replace content (converted via /markdown/convert).', valueName: 'FILE' },
+    { name: 'append-h1', description: 'Append a level-1 heading.', valueName: 'TEXT' },
+    { name: 'append-h2', description: 'Append a level-2 heading.', valueName: 'TEXT' },
+    { name: 'append-h3', description: 'Append a level-3 heading.', valueName: 'TEXT' },
+    { name: 'append-text', description: 'Append a paragraph.', valueName: 'TEXT' },
+    { name: 'append-list', description: 'Append a bullet list (comma-separated items).', valueName: 'ITEMS' },
+    { name: 'append-task', description: 'Append a task list (comma-separated items).', valueName: 'ITEMS' },
+    { name: 'append-table', description: 'Append a table, e.g. 3x3.', valueName: 'ROWSxCOLS' },
+    { name: 'append-image', description: 'Append an image from URL.', valueName: 'URL' },
+    { name: 'append-image-alt', description: 'Alt text for --append-image.', valueName: 'TEXT' },
+    { name: 'append-code', description: 'Append a code block with the given language.', valueName: 'LANG' },
+    { name: 'append-code-content', description: 'Code text for --append-code.', valueName: 'CODE' }
   ],
   positionals: [{ name: 'ID', description: 'Document UUID.' }],
   examples: [
     'mdocs update DOCUMENT_ID --expected-version 3 --title "Renamed"',
-    'mdocs read DOCUMENT_ID --output doc.json && mdocs update DOCUMENT_ID --expected-version 3 --input doc.json'
+    'mdocs read DOCUMENT_ID --output doc.json && mdocs update DOCUMENT_ID --expected-version 3 --input doc.json',
+    'mdocs update DOCUMENT_ID --expected-version 3 --markdown notes.md',
+    'mdocs update DOCUMENT_ID --expected-version 3 --append-h2 "New Section" --append-table 2x3',
+    'mdocs update DOCUMENT_ID --expected-version 3 --append-image https://example.com/chart.png --append-image-alt "Q3 Chart"',
+    'mdocs update DOCUMENT_ID --expected-version 3 --append-code python --append-code-content "print(42)"'
   ],
   handler: update
 };
