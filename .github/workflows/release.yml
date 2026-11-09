@@ -24,18 +24,21 @@ jobs:
         run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
       - name: Compute image prefix
         id: image
         run: echo "prefix=ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/marvelous-docs" >> "$GITHUB_OUTPUT"
+      # Single-architecture builds only. Emulating arm64 through QEMU was what
+      # made these jobs hang for 10+ minutes; the deploy target is amd64.
       - name: Build and push API image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/server/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: true
+          provenance: false
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
           tags: |
             ${{ steps.image.outputs.prefix }}-api:${{ steps.version.outputs.version }}
             ${{ steps.image.outputs.prefix }}-api:latest
@@ -44,11 +47,14 @@ jobs:
         with:
           context: .
           file: apps/web/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           build-args: |
             VITE_API_URL=
             VITE_COLLAB_URL=
           push: true
+          provenance: false
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
           tags: |
             ${{ steps.image.outputs.prefix }}-web:${{ steps.version.outputs.version }}
             ${{ steps.image.outputs.prefix }}-web:latest

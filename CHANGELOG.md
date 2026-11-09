@@ -8,6 +8,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.34] - 2026-11-09
+
+### Changed
+
+- Release images are built for linux/amd64 only. Emulating arm64 through QEMU
+  made the release job hang for 10+ minutes on every tag; the deploy target is
+  amd64. QEMU setup was removed and GitHub Actions layer caching added, so
+  releases finish in a couple of minutes.
+- Dropped build provenance attestations on the release images to keep the push
+  step short.
+
 ## [0.1.33] - 2026-11-09
 
 ### Fixed
