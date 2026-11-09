@@ -893,7 +893,8 @@ function App() {
   return <div className="app-shell">
     <a className="skip-link" href="#main-content">跳到主要内容</a>
     {sidebarOpen && <aside className={'sidebar' + (narrow ? ' sidebar-floating' : '')} aria-label="文档导航">
-      <div className="brand-row"><div className="brand-mark"><Sparkles size={16} /></div><span>Marvelous Docs</span><button className="icon-btn push" aria-label="收起侧边栏" title="收起侧边栏" onClick={() => setSidebarOpen(false)}><PanelLeftClose size={17} /></button></div>
+      <div className="brand-row"><div className="brand-mark"><Sparkles size={16} /></div><span className="brand-name">Marvelous Docs</span><button className="icon-btn push" aria-label="收起侧边栏" title="收起侧边栏" onClick={() => setSidebarOpen(false)}><PanelLeftClose size={17} /></button></div>
+      <div className="sidebar-scroll">
       <div className="workspace-anchor">
         <button type="button" className="workspace" aria-haspopup="menu" aria-expanded={workspaceOpen} onClick={() => setWorkspaceOpen((value) => !value)}><div className="workspace-avatar">M</div><span className="workspace-copy"><b>Marvelous 团队</b><small>工作区</small></span><ChevronDown size={16} /></button>
         <Popover open={workspaceOpen} onClose={() => setWorkspaceOpen(false)} label="工作区菜单" align="left" className="workspace-menu">
@@ -918,15 +919,17 @@ function App() {
         }}
         onKeyDown={(event) => { if (event.key === 'Escape') { setQuery(''); setHomeView('home') } }}
       /><kbd>⌘ K</kbd></div></div>
-      <div className="nav-label">工作区</div>
-      <button type="button" className={'nav-row ' + (homeView === 'home' && !active && !selectedFolderId ? 'nav-active' : '')} aria-current={homeView === 'home' && !active && !selectedFolderId ? 'page' : undefined} onClick={() => { setHomeView('home'); setActive(null); setSelectedFolderId(null); setQuery(''); if (narrow) setSidebarOpen(false) }}><Home size={16} />首页</button>
-      {user.role === 'admin' && <button className="nav-row" onClick={() => { setWorkspaceView('admin'); if (narrow) setSidebarOpen(false) }}><ShieldCheck size={16} />管理中心</button>}
-      <button type="button" className="nav-row" aria-current={homeView === 'favorites' ? 'page' : undefined} onClick={() => { setHomeView('favorites'); setActive(null); setSelectedFolderId(null); setQuery(''); if (narrow) setSidebarOpen(false) }}><Star size={16} />收藏 <span className="nav-count">{favoriteIds.length || ''}</span></button>
-      <button type="button" className="nav-row" aria-current={homeView === 'trash' ? 'page' : undefined} onClick={() => { setHomeView('trash'); setActive(null); setSelectedFolderId(null); setQuery(''); if (narrow) setSidebarOpen(false) }}><Trash2 size={16} />回收站</button>
+      <div className="nav-label">导航</div>
+      <nav className="nav-list" aria-label="工作区导航">
+        <button type="button" className="nav-row" aria-current={homeView === 'home' && !active && !selectedFolderId ? 'page' : undefined} onClick={() => { setHomeView('home'); setActive(null); setSelectedFolderId(null); setQuery(''); if (narrow) setSidebarOpen(false) }}><Home size={16} />首页</button>
+        {user.role === 'admin' && <button type="button" className="nav-row" onClick={() => { setWorkspaceView('admin'); if (narrow) setSidebarOpen(false) }}><ShieldCheck size={16} />管理中心</button>}
+        <button type="button" className="nav-row" aria-current={homeView === 'favorites' ? 'page' : undefined} onClick={() => { setHomeView('favorites'); setActive(null); setSelectedFolderId(null); setQuery(''); if (narrow) setSidebarOpen(false) }}><Star size={16} />收藏 {favoriteIds.length > 0 && <span className="nav-count">{favoriteIds.length}</span>}</button>
+        <button type="button" className="nav-row" aria-current={homeView === 'trash' ? 'page' : undefined} onClick={() => { setHomeView('trash'); setActive(null); setSelectedFolderId(null); setQuery(''); if (narrow) setSidebarOpen(false) }}><Trash2 size={16} />回收站</button>
+      </nav>
       <div className="tree-heading">
-        <button aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>{expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}<span>文档</span></button>
+        <button type="button" className="tree-heading-toggle" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>{expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}<span>文档</span></button>
         <div className="new-menu-anchor">
-          <button className="new-doc-btn" aria-haspopup="menu" aria-expanded={newMenuOpen} title="新建" onClick={() => setNewMenuOpen((value) => !value)}><Plus size={14} /><span>新建</span><ChevronDown size={12} /></button>
+          <button type="button" className="new-doc-btn" aria-haspopup="menu" aria-expanded={newMenuOpen} title="新建" onClick={() => setNewMenuOpen((value) => !value)}><Plus size={14} /><span>新建</span><ChevronDown size={12} /></button>
           <TemplateMenu
             open={newMenuOpen}
             templates={templates}
@@ -939,7 +942,7 @@ function App() {
         </div>
       </div>
       {expanded && <div className="doc-tree">
-        <button className={'root-folder ' + (selectedFolderId === null ? 'selected' : '')} onClick={() => { setSelectedFolderId(null); setActive(null); setHomeView('home'); setQuery('') }}><Folder size={15} /><span>所有文档</span></button>
+        <button type="button" className={'root-folder' + (selectedFolderId === null && !active ? ' is-selected' : '')} onClick={() => { setSelectedFolderId(null); setActive(null); setHomeView('home'); setQuery('') }}><Folder size={14} /><span>所有文档</span></button>
         {visibleTree.map((node) => <TreeItem
           key={node.doc.id}
           node={node}
@@ -955,6 +958,7 @@ function App() {
         />)}
         {visibleTree.length === 0 && <div className="empty-tree">{treeQuery ? '没有匹配的文档' : '暂无文档或文件夹'}</div>}
       </div>}
+      </div>
       <div className="sidebar-bottom">
         <button type="button" className="help-row" onClick={() => setHelpOpen(true)}><span className="help-dot">?</span><span>帮助与快捷键</span></button>
         <div className="profile-row"><div className="avatar">{(user.name || user.email)[0].toUpperCase()}</div><div className="profile-copy"><b>{user.name || user.email.split('@')[0]}</b><small>{user.email}</small></div><button className="icon-btn" aria-label="退出登录" title="退出登录" onClick={clearToken}><LogOut size={16} /></button></div>
@@ -964,25 +968,34 @@ function App() {
     <main className="main-area" id="main-content" tabIndex={-1} onPointerDown={() => { if (narrow && sidebarOpen) setSidebarOpen(false) }}>
       <header className="topbar">
         {!sidebarOpen && <button className="icon-btn" aria-label="展开侧边栏" title="展开侧边栏" onClick={() => setSidebarOpen(true)}><PanelLeftClose size={17} /></button>}
-        <div className="breadcrumbs"><span>我的文档</span><ChevronRight size={14} /><strong>{active?.title || selectedFolder?.title || (showingSearch ? '搜索' : '所有文档')}</strong></div>
+        <div className="breadcrumbs">
+          <span className="crumb-root">我的文档</span>
+          <ChevronRight size={13} className="crumb-sep" />
+          <strong>{active?.title || selectedFolder?.title || (showingSearch ? '搜索' : '所有文档')}</strong>
+        </div>
         <div className="top-actions">
-          <span className={'save-state save-' + saveStatus} role="status" aria-live="polite"><span className="save-dot" />{saveStatus === 'saving' ? '正在保存…' : saveStatus === 'error' ? '保存失败' : '已保存'}</span>
+          <span className={'save-state save-' + saveStatus} role="status" aria-live="polite"><span className="save-dot" />{saveStatus === 'saving' ? '保存中…' : saveStatus === 'error' ? '保存失败' : '已保存'}</span>
+          <span className="top-divider" aria-hidden="true" />
           <div className="collaborators" role="group" aria-label="在线成员">
             <div className="presence-stack">
               <div className="mini-avatar green" title="你">{(user.name || user.email)[0].toUpperCase()}</div>
               {collaborators.slice(0, 3).map((person) => <div key={person.clientId} className="mini-avatar" title={person.name} style={{ background: person.color + '24', color: person.color }}>{person.name[0]?.toUpperCase()}</div>)}
               {collaborators.length > 3 && <span className="presence-more">{'+' + (collaborators.length - 3)}</span>}
             </div>
-            <span className={'connection-state ' + collabStatus} aria-live="polite">{collabStatus === 'connected' ? '已连接' : collabStatus === 'connecting' ? '连接中' : '已断开'}</span>
+            <span className={'connection-dot ' + collabStatus} aria-hidden="true" />
+            <span className="visually-hidden" role="status" aria-live="polite">{collabStatus === 'connected' ? '实时协作已连接' : collabStatus === 'connecting' ? '实时协作连接中' : '实时协作已断开'}</span>
           </div>
-          {active && <button type="button" className={'icon-btn favorite-btn' + (favoriteSet.has(active.id) ? ' is-favorite' : '')} aria-label={favoriteSet.has(active.id) ? '取消收藏' : '收藏文档'} aria-pressed={favoriteSet.has(active.id)} title={favoriteSet.has(active.id) ? '取消收藏' : '收藏文档'} onClick={() => void handleDocumentAction('favorite', active)}><Star size={17} fill={favoriteSet.has(active.id) ? 'currentColor' : 'none'} /></button>}
-          {active && <button className="share-btn" onClick={() => void openShareDialog()}><Share2 size={15} />共享</button>}
-          <div className="menu-anchor">
-            <button className="icon-btn" aria-label="导出文档" title="导出文档" aria-haspopup="menu" aria-expanded={exportMenuOpen} disabled={!active} onClick={() => setExportMenuOpen((value) => !value)}><ArrowDownToLine size={17} /></button>
-            <ExportMenu open={exportMenuOpen} onSelect={(format) => void exportActive(format)} onClose={() => setExportMenuOpen(false)} />
+          <span className="top-divider" aria-hidden="true" />
+          <div className="icon-group">
+            {active && <button type="button" className={'icon-btn favorite-btn' + (favoriteSet.has(active.id) ? ' is-favorite' : '')} aria-label={favoriteSet.has(active.id) ? '取消收藏' : '收藏文档'} aria-pressed={favoriteSet.has(active.id)} title={favoriteSet.has(active.id) ? '取消收藏' : '收藏文档'} onClick={() => void handleDocumentAction('favorite', active)}><Star size={16} fill={favoriteSet.has(active.id) ? 'currentColor' : 'none'} /></button>}
+            <div className="menu-anchor">
+              <button type="button" className="icon-btn" aria-label="导出文档" title="导出文档" aria-haspopup="menu" aria-expanded={exportMenuOpen} disabled={!active} onClick={() => setExportMenuOpen((value) => !value)}><ArrowDownToLine size={16} /></button>
+              <ExportMenu open={exportMenuOpen} onSelect={(format) => void exportActive(format)} onClose={() => setExportMenuOpen(false)} />
+            </div>
+            <button type="button" className="icon-btn" aria-label="版本历史" title="版本历史" onClick={() => { setRightTab('history'); setShowRight(true) }}><History size={16} /></button>
+            <button type="button" className="icon-btn" aria-label="评论" title="评论" onClick={() => { setRightTab('comments'); setShowRight(true) }}><MessageCircle size={16} /></button>
           </div>
-          <button className="icon-btn" aria-label="版本历史" title="版本历史" onClick={() => { setRightTab('history'); setShowRight(true) }}><History size={17} /></button>
-          <button className="icon-btn" aria-label="评论" title="评论" onClick={() => { setRightTab('comments'); setShowRight(true) }}><MessageCircle size={17} /></button>
+          {active && <button type="button" className="share-btn" onClick={() => void openShareDialog()}><Share2 size={14} />共享</button>}
         </div>
       </header>
       {active && COLLAB_URL && collabStatus === 'disconnected' && <div className="collab-banner" role="status"><AlertCircle size={14} />实时协作连接已断开，正在尝试重连，期间的修改会保存在本地。</div>}
