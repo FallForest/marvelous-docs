@@ -8,6 +8,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.33] - 2026-11-09
+
+### Fixed
+
+- Choosing an item in the slash menu now actually applies it. The typed
+  `/query` text was deleted in one transaction and the block command then ran
+  against a stale selection, so selecting 表格 produced an empty list item
+  instead of a table. Each slash command now deletes the query and applies the
+  block in a single chain.
+
 ## [0.1.32] - 2026-11-09
 
 ### Fixed

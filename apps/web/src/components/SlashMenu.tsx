@@ -3,7 +3,8 @@ import { CheckSquare, Code2, Heading1, Heading2, Heading3, ImagePlus, List, List
 import type { Editor } from '@tiptap/react'
 import type { LucideIcon } from 'lucide-react'
 
-type SlashItem = { id: string; label: string; hint: string; icon: LucideIcon; run: (editor: Editor) => void }
+type Range = { from: number; to: number }
+type SlashItem = { id: string; label: string; hint: string; icon: LucideIcon; run: (editor: Editor, range: Range) => void }
 
 type Props = {
   editor: Editor | null
@@ -15,18 +16,18 @@ type Props = {
 }
 
 export const SLASH_ITEMS: SlashItem[] = [
-  { id: 'text', label: '正文', hint: '普通文本段落', icon: Type, run: (editor) => editor.chain().focus().setParagraph().run() },
-  { id: 'h1', label: '标题 1', hint: '大标题', icon: Heading1, run: (editor) => editor.chain().focus().setHeading({ level: 1 }).run() },
-  { id: 'h2', label: '标题 2', hint: '章节标题', icon: Heading2, run: (editor) => editor.chain().focus().setHeading({ level: 2 }).run() },
-  { id: 'h3', label: '标题 3', hint: '小节标题', icon: Heading3, run: (editor) => editor.chain().focus().setHeading({ level: 3 }).run() },
-  { id: 'bullet', label: '无序列表', hint: '项目符号列表', icon: List, run: (editor) => editor.chain().focus().toggleBulletList().run() },
-  { id: 'ordered', label: '有序列表', hint: '编号列表', icon: ListOrdered, run: (editor) => editor.chain().focus().toggleOrderedList().run() },
-  { id: 'task', label: '任务列表', hint: '带勾选框的待办', icon: CheckSquare, run: (editor) => editor.chain().focus().toggleTaskList().run() },
-  { id: 'quote', label: '引用', hint: '引用一段内容', icon: Quote, run: (editor) => editor.chain().focus().toggleBlockquote().run() },
-  { id: 'code', label: '代码块', hint: '等宽代码区域', icon: Code2, run: (editor) => editor.chain().focus().toggleCodeBlock().run() },
-  { id: 'table', label: '表格', hint: '3×3 表格', icon: Table2, run: (editor) => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
-  { id: 'divider', label: '分割线', hint: '一条分隔线', icon: Minus, run: (editor) => editor.chain().focus().setHorizontalRule().run() },
-  { id: 'image', label: '图片', hint: '从网址或上传插入', icon: ImagePlus, run: () => undefined },
+  { id: 'text', label: '正文', hint: '普通文本段落', icon: Type, run: (editor, range) => editor.chain().focus().deleteRange(range).setParagraph().run() },
+  { id: 'h1', label: '标题 1', hint: '大标题', icon: Heading1, run: (editor, range) => editor.chain().focus().deleteRange(range).setHeading({ level: 1 }).run() },
+  { id: 'h2', label: '标题 2', hint: '章节标题', icon: Heading2, run: (editor, range) => editor.chain().focus().deleteRange(range).setHeading({ level: 2 }).run() },
+  { id: 'h3', label: '标题 3', hint: '小节标题', icon: Heading3, run: (editor, range) => editor.chain().focus().deleteRange(range).setHeading({ level: 3 }).run() },
+  { id: 'bullet', label: '无序列表', hint: '项目符号列表', icon: List, run: (editor, range) => editor.chain().focus().deleteRange(range).toggleBulletList().run() },
+  { id: 'ordered', label: '有序列表', hint: '编号列表', icon: ListOrdered, run: (editor, range) => editor.chain().focus().deleteRange(range).toggleOrderedList().run() },
+  { id: 'task', label: '任务列表', hint: '带勾选框的待办', icon: CheckSquare, run: (editor, range) => editor.chain().focus().deleteRange(range).toggleTaskList().run() },
+  { id: 'quote', label: '引用', hint: '引用一段内容', icon: Quote, run: (editor, range) => editor.chain().focus().deleteRange(range).toggleBlockquote().run() },
+  { id: 'code', label: '代码块', hint: '等宽代码区域', icon: Code2, run: (editor, range) => editor.chain().focus().deleteRange(range).toggleCodeBlock().run() },
+  { id: 'table', label: '表格', hint: '3×3 表格', icon: Table2, run: (editor, range) => editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
+  { id: 'divider', label: '分割线', hint: '一条分隔线', icon: Minus, run: (editor, range) => editor.chain().focus().deleteRange(range).setHorizontalRule().run() },
+  { id: 'image', label: '图片', hint: '从网址或上传插入', icon: ImagePlus, run: (editor, range) => editor.chain().focus().deleteRange(range).run() },
 ]
 
 export default function SlashMenu({ editor, anchor, query, range, onClose, onImage }: Props) {
@@ -59,9 +60,15 @@ export default function SlashMenu({ editor, anchor, query, range, onClose, onIma
 
   function run(item: SlashItem) {
     if (!editor || !range) return
-    editor.chain().focus().deleteRange(range).run()
-    if (item.id === 'image') { onImage(); onClose(); return }
-    item.run(editor)
+    if (item.id === 'image') {
+      editor.chain().focus().deleteRange(range).run()
+      onImage()
+      onClose()
+      return
+    }
+    // Delete the typed "/query" then apply the block command in one chain so the
+    // command runs against the corrected cursor position instead of the stale range.
+    item.run(editor, range)
     onClose()
   }
 
