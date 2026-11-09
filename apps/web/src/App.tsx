@@ -1527,6 +1527,58 @@ function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, o
     editorProps: { attributes: { class: 'tiptap-content' } },
   }, [doc.id, provider])
 
+  // Enhance code blocks with language badge and copy button
+  useEffect(() => {
+    if (!editor) return
+    const dom = editor.view?.dom as HTMLElement | undefined
+    if (!dom) return
+    const L: Record<string, string> = {
+      javascript: 'JavaScript', typescript: 'TypeScript', python: 'Python',
+      java: 'Java', go: 'Go', rust: 'Rust', c: 'C', cpp: 'C++', csharp: 'C#',
+      ruby: 'Ruby', php: 'PHP', swift: 'Swift', kotlin: 'Kotlin', scala: 'Scala',
+      html: 'HTML', css: 'CSS', scss: 'SCSS', json: 'JSON', yaml: 'YAML',
+      toml: 'TOML', xml: 'XML', sql: 'SQL', bash: 'Bash', powershell: 'PowerShell',
+      dockerfile: 'Dockerfile', markdown: 'Markdown', plaintext: '纯文本',
+    }
+    const SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
+    const CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>'
+    const enhancePre = (el: Element) => {
+      const p = el as HTMLElement
+      if (p.dataset.enhanced) return
+      p.dataset.enhanced = 'true'
+      const code = p.querySelector('code')
+      const lc = [...(code?.classList || [])].find((c) => c.startsWith('language-'))
+      const lang = lc?.replace('language-', '') || ''
+      p.dataset.language = lang
+      const badge = document.createElement('span')
+      badge.className = 'code-lang-badge'
+      badge.contentEditable = 'false'
+      badge.textContent = L[lang] || lang || '代码'
+      p.appendChild(badge)
+      const btn = document.createElement('button')
+      btn.className = 'code-copy-btn'
+      btn.type = 'button'
+      btn.setAttribute('aria-label', '复制代码')
+      btn.title = '复制代码'
+      btn.innerHTML = SVG
+      btn.contentEditable = 'false'
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault(); e.stopPropagation()
+        const text = p.querySelector('code')?.textContent || ''
+        try { await navigator.clipboard?.writeText(text) } catch {}
+        btn.innerHTML = CHECK; btn.classList.add('copied')
+        setTimeout(() => { btn.innerHTML = SVG; btn.classList.remove('copied') }, 1500)
+      })
+      p.appendChild(btn)
+    }
+    const enhanceAll = () => { dom.querySelectorAll('pre').forEach(enhancePre) }
+    enhanceAll()
+    const observer = new MutationObserver(enhanceAll)
+    observer.observe(dom, { childList: true, subtree: true })
+    const timer = setInterval(enhanceAll, 800)
+    return () => { observer.disconnect(); clearInterval(timer) }
+  }, [editor])
+
   // Reveal the quoted text when a comment anchor is clicked in the side panel.
   useEffect(() => {
     const reveal = (event: Event) => {
