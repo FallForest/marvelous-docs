@@ -21,10 +21,9 @@ const CHECK_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" s
  */
 export default function CodeBlockEnhancer({ editor }: { editor: Editor | null }) {
   const enhance = useCallback(() => {
-    if (!editor?.view?.dom) return
+    const root = document.querySelector('.ProseMirror') || document.querySelector('.tiptap-content') || editor?.view?.dom || null
+    if (!root) return
     requestAnimationFrame(() => {
-      if (!editor?.view?.dom) return
-    const root = editor.view.dom
     root.querySelectorAll('pre').forEach((pre) => {
       if (pre.dataset.enhanced) return
       pre.dataset.enhanced = 'true'

@@ -745,8 +745,10 @@ function App() {
       await navigator.clipboard.writeText(url).catch(() => {})
       setShareLinkCopied(true)
       setTimeout(() => setShareLinkCopied(false), 2000)
-      setShareLinks((prev) => [{ id: data.shareLink.id, token: data.shareLink.token, permission: data.shareLink.permission, expiresAt: null }, ...prev])
+      console.log('[share] created link, updating state', data.shareLink.id)
+      setShareLinks((prev) => { const next = [{ id: data.shareLink.id, token: data.shareLink.token, permission: data.shareLink.permission, expiresAt: null }, ...prev]; console.log('[share] new list length', next.length); return next })
     } catch (error) {
+      console.error('[share] create failed', error)
       window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '创建分享链接失败：' + (error as Error).message }))
     } finally { setShareBusy(false) }
   }

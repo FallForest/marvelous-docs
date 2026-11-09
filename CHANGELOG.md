@@ -8,6 +8,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.25] - 2026-11-09
+
+### Fixed
+
+- Code block enhancer now finds code blocks via the ProseMirror container
+  instead of a stale editor reference, so language badges and copy buttons
+  reliably appear on every code block.
+
 ## [0.1.24] - 2026-11-09
 
 ### Fixed
