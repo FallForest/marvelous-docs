@@ -20,12 +20,15 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 echo "==> architecture: $(uname -m)"
-for component in api web; do
+# image name -> source app directory
+for pair in api:server web:web; do
+  component="${pair%%:*}"
+  app="${pair##*:}"
   image="$REGISTRY/marvelous-docs-$component:$VERSION"
-  echo "==> building $image"
+  echo "==> building $image from apps/$app"
   docker build \
     --platform "linux/$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')" \
-    -f "apps/$component/Dockerfile" \
+    -f "apps/$app/Dockerfile" \
     -t "$image" \
     -t "$REGISTRY/marvelous-docs-$component:latest" \
     .
