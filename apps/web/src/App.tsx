@@ -35,7 +35,6 @@ import EditorToolbar from './components/EditorToolbar'
 import BubbleToolbar from './components/BubbleToolbar'
 import { FindReplace, OutlinePanel } from './components/FindReplace'
 import SlashMenu from './components/SlashMenu'
-import CodeBlockEnhancer from './components/CodeBlockEnhancer'
 import TableMenu from './components/TableMenu'
 import Popover from './components/Popover'
 
@@ -1648,7 +1647,7 @@ function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, o
         />
         <div className="doc-meta"><span>最后编辑于 {formatDate(doc.updatedAt) || '刚刚'}</span></div>
       </div>
-      <CodeBlockEnhancer editor={editor} />
+      {/* Code block enhancement: language badge + copy button */}
       <EditorContent editor={editor} />
     </div>
     <SlashMenu editor={editor} anchor={slash} query={slash?.query || ''} range={slash?.range || null} onClose={() => setSlash(null)} onImage={() => setImagePrompt(true)} />
