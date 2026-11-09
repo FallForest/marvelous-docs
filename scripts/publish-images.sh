@@ -6,7 +6,12 @@
 # minutes per tag. After it succeeds, push the tag and the Release workflow will
 # verify the images exist and publish the GitHub release entry.
 #
-# Usage: scripts/publish-images.sh 0.1.34 [--no-push]
+# Usage: scripts/publish-images.sh 0.1.34          # build only (default)
+#        scripts/publish-images.sh 0.1.34 --push   # also push to GHCR
+#
+# Pushing needs a token with write:packages; a plain "gh auth token" usually
+# lacks it, so building locally and running the containers from the local tags
+# is the normal path.
 set -euo pipefail
 
 VERSION="${1:-}"
@@ -15,6 +20,11 @@ if [ -z "$VERSION" ]; then
   exit 2
 fi
 PUSH="${2:-}"
+case "$PUSH" in
+  ""|--no-push) PUSH="" ;;
+  --push) PUSH="--push" ;;
+  *) echo "unknown option: $PUSH" >&2; exit 2 ;;
+esac
 REGISTRY="${REGISTRY:-ghcr.io/fallforest}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
@@ -32,7 +42,7 @@ for pair in api:server web:web; do
     -t "$image" \
     -t "$REGISTRY/marvelous-docs-$component:latest" \
     .
-  if [ "$PUSH" != "--no-push" ]; then
+  if [ "$PUSH" = "--push" ]; then
     echo "==> pushing $image"
     docker push "$image"
     docker push "$REGISTRY/marvelous-docs-$component:latest"

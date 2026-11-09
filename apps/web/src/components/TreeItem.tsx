@@ -16,31 +16,43 @@ type TreeItemProps = {
   onAction: (action: TreeAction, doc: Doc) => void
 }
 
+/**
+ * One tree row: [chevron slot][icon][label][overflow].
+ * The chevron is a sibling button rather than an absolutely positioned
+ * overlay, so folder and document rows share the exact same baselines and
+ * the label never slides underneath the toggle.
+ */
 export default function TreeItem(props: TreeItemProps) {
   const { node, depth, activeId, selectedFolderId, expandedFolders, favoriteIds, onToggle, onSelectFolder, onSelectDocument, onAction } = props
   const [menuOpen, setMenuOpen] = useState(false)
   const isFolder = node.doc.kind === 'folder'
   const expanded = expandedFolders.has(node.doc.id)
+  const selected = activeId === node.doc.id || selectedFolderId === node.doc.id
   const title = node.doc.title || (isFolder ? '未命名文件夹' : '未命名文档')
   const run = (action: TreeAction) => {
     setMenuOpen(false)
     onAction(action, node.doc)
   }
   return <div className="tree-node">
-    <div className={'tree-entry ' + (activeId === node.doc.id || selectedFolderId === node.doc.id ? 'selected' : '')} style={{ paddingLeft: depth * 15 + 'px' }}>
-      <button type="button" className={'tree-doc ' + (isFolder ? 'tree-folder' : '')} onClick={() => isFolder ? onSelectFolder(node.doc) : onSelectDocument(node.doc)}>
-        {!isFolder && <span className="tree-indent" />}
-        {isFolder ? <Folder size={15} /> : <FileText size={15} />}
-        <span>{title}</span>
-      </button>
-      {isFolder && <button
+    <div className={'tree-entry' + (selected ? ' is-selected' : '')} style={{ paddingLeft: depth * 14 + 'px' }}>
+      {isFolder
+        ? <button
+          type="button"
+          className="tree-chevron"
+          aria-label={expanded ? '收起文件夹 ' + title : '展开文件夹 ' + title}
+          aria-expanded={expanded}
+          onClick={(event) => { event.stopPropagation(); onToggle(node.doc.id) }}
+        >{expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}</button>
+        : <span className="tree-chevron is-leaf" aria-hidden="true" />}
+      <button
         type="button"
-        tabIndex={0}
-        className="tree-expand"
-        aria-label={expanded ? '收起文件夹 ' + title : '展开文件夹 ' + title}
-        aria-expanded={expanded}
-        onClick={(event) => { event.stopPropagation(); onToggle(node.doc.id) }}
-      >{expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}</button>}
+        className={'tree-doc' + (isFolder ? ' tree-folder' : '')}
+        title={title}
+        onClick={() => isFolder ? onSelectFolder(node.doc) : onSelectDocument(node.doc)}
+      >
+        {isFolder ? <Folder size={14} /> : <FileText size={14} />}
+        <span className="tree-label">{title}</span>
+      </button>
       <div className="tree-menu-anchor">
         <button
           type="button"
