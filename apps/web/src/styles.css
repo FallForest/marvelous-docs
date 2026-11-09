@@ -1164,3 +1164,48 @@ html,body{max-width:100%}
 .shared-page .shared-footer{
   margin-top:32px;text-align:center;font-size:12px;color:var(--text-muted);
 }
+
+/* ===== 29. Code block overlay toolbar (never mutates ProseMirror DOM) ===== */
+.code-overlay{
+  position:fixed;
+  transform:translateY(-100%);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:0 8px 0 0;
+  height:30px;
+  margin-top:-1px;
+  border-radius:8px 8px 0 0;
+  background:#eef0f3;
+  border:1px solid var(--border);
+  border-bottom:0;
+  box-sizing:border-box;
+  pointer-events:none;
+  z-index:2;
+}
+.code-overlay-lang{
+  font-size:10.5px;
+  font-weight:600;
+  letter-spacing:.03em;
+  color:#6b7280;
+  padding-left:12px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+.code-overlay-copy{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  height:22px;
+  padding:0 8px;
+  border:1px solid var(--border);
+  border-radius:5px;
+  background:#fff;
+  color:#4b5563;
+  font-size:11px;
+  cursor:pointer;
+  pointer-events:auto;
+}
+.code-overlay-copy:hover{background:#e2e5e9;color:#1f2937}
+.code-overlay-copy.copied{color:#059669;border-color:#05966955;background:#ecfdf5}
+.tiptap-content pre{margin-top:14px}

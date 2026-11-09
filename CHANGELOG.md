@@ -8,6 +8,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.30] - 2026-11-09
+
+### Fixed
+
+- The editor froze and stopped responding to clicks. Code block toolbars were
+  injected by appending nodes inside ProseMirror's own DOM, which made the
+  editor's MutationObserver loop and locked the main thread. Code block
+  language labels and copy buttons are now rendered as a React overlay
+  positioned above each code block, and ProseMirror's DOM is never mutated.
+- Removed the obsolete CodeBlockEnhancer component and moved the shared
+  language table to `apps/web/src/lib/languages.ts`.
+
 ## [0.1.25] - 2026-11-09
 
 ### Fixed

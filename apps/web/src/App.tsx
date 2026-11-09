@@ -5,8 +5,8 @@ import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
 import './update.css'
 import {
-  Activity, AlertCircle, ArrowDownToLine, ArrowLeft, ChevronDown, ChevronRight,
-  Clock3, Copy, FilePlus2, FileText, Folder, FolderPlus, History,
+  Activity, AlertCircle, ArrowDownToLine, ArrowLeft, Check, ChevronDown, ChevronRight,
+  Clock3, Copy, Copy as CopyIcon, FilePlus2, FileText, Folder, FolderPlus, History,
   Home, LayoutDashboard, LogOut, Mail, MessageCircle,
   PanelLeftClose, Plus, Search, Send, Share2, ShieldCheck, Sparkles, Star,
   Trash2, Upload, UserPlus, Users, X,
@@ -14,6 +14,7 @@ import {
 import { API, request } from './lib/api'
 import { COLLAB_URL } from './lib/collab'
 import { buildEditorExtensions } from './lib/editor'
+import { LANG_LABELS as CODE_LANG_LABELS } from './lib/languages'
 import { buildDocTree, filterDocTree } from './lib/tree'
 import { formatDate, wordCount } from './lib/format'
 import { emptyContent } from './lib/types'
@@ -1441,6 +1442,8 @@ function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, o
   const [outlineOpen, setOutlineOpen] = useState(false)
   const [imageUrl, setImageUrl] = useState('')
   const [bubbleAnchor, setBubbleAnchor] = useState<{ left: number; top: number } | null>(null)
+  const [codeBlocks, setCodeBlocks] = useState<Array<{ index: number; top: number; bottom: number; left: number; width: number; language: string; text: string }>>([])
+  const [copiedCode, setCopiedCode] = useState<number | null>(null)
   const [slash, setSlash] = useState<{ left: number; top: number; query: string; range: { from: number; to: number } } | null>(null)
   const statusTimer = useRef<number | undefined>(undefined)
 
@@ -1527,56 +1530,31 @@ function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, o
     editorProps: { attributes: { class: 'tiptap-content' } },
   }, [doc.id, provider])
 
-  // Enhance code blocks with language badge and copy button
+  // Track the hovered code block so an overlay toolbar can be rendered in React
+  // (never mutate ProseMirror's DOM: that breaks the editor and freezes the page).
   useEffect(() => {
     if (!editor) return
     const dom = editor.view?.dom as HTMLElement | undefined
     if (!dom) return
-    const L: Record<string, string> = {
-      javascript: 'JavaScript', typescript: 'TypeScript', python: 'Python',
-      java: 'Java', go: 'Go', rust: 'Rust', c: 'C', cpp: 'C++', csharp: 'C#',
-      ruby: 'Ruby', php: 'PHP', swift: 'Swift', kotlin: 'Kotlin', scala: 'Scala',
-      html: 'HTML', css: 'CSS', scss: 'SCSS', json: 'JSON', yaml: 'YAML',
-      toml: 'TOML', xml: 'XML', sql: 'SQL', bash: 'Bash', powershell: 'PowerShell',
-      dockerfile: 'Dockerfile', markdown: 'Markdown', plaintext: '纯文本',
+    const update = () => {
+      const blocks = Array.from(dom.querySelectorAll('pre')) as HTMLElement[]
+      setCodeBlocks(blocks.map((node, index) => {
+        const rect = node.getBoundingClientRect()
+        const code = node.querySelector('code')
+        const lc = [...(code?.classList || [])].find((c) => c.startsWith('language-'))
+        return { index, top: rect.top, bottom: rect.bottom, left: rect.left, width: rect.width, language: lc?.replace('language-', '') || '', text: code?.textContent || '' }
+      }))
     }
-    const SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
-    const CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>'
-    const enhancePre = (el: Element) => {
-      const p = el as HTMLElement
-      if (p.dataset.enhanced) return
-      p.dataset.enhanced = 'true'
-      const code = p.querySelector('code')
-      const lc = [...(code?.classList || [])].find((c) => c.startsWith('language-'))
-      const lang = lc?.replace('language-', '') || ''
-      p.dataset.language = lang
-      const badge = document.createElement('span')
-      badge.className = 'code-lang-badge'
-      badge.contentEditable = 'false'
-      badge.textContent = L[lang] || lang || '代码'
-      p.appendChild(badge)
-      const btn = document.createElement('button')
-      btn.className = 'code-copy-btn'
-      btn.type = 'button'
-      btn.setAttribute('aria-label', '复制代码')
-      btn.title = '复制代码'
-      btn.innerHTML = SVG
-      btn.contentEditable = 'false'
-      btn.addEventListener('click', async (e) => {
-        e.preventDefault(); e.stopPropagation()
-        const text = p.querySelector('code')?.textContent || ''
-        try { await navigator.clipboard?.writeText(text) } catch {}
-        btn.innerHTML = CHECK; btn.classList.add('copied')
-        setTimeout(() => { btn.innerHTML = SVG; btn.classList.remove('copied') }, 1500)
-      })
-      p.appendChild(btn)
+    update()
+    const observer = new MutationObserver(() => requestAnimationFrame(update))
+    observer.observe(dom, { childList: true, subtree: true, characterData: true })
+    window.addEventListener('scroll', update, true)
+    window.addEventListener('resize', update)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('scroll', update, true)
+      window.removeEventListener('resize', update)
     }
-    const enhanceAll = () => { dom.querySelectorAll('pre').forEach(enhancePre) }
-    enhanceAll()
-    const observer = new MutationObserver(enhanceAll)
-    observer.observe(dom, { childList: true, subtree: true })
-    const timer = setInterval(enhanceAll, 800)
-    return () => { observer.disconnect(); clearInterval(timer) }
   }, [editor])
 
   // Reveal the quoted text when a comment anchor is clicked in the side panel.
@@ -1701,6 +1679,35 @@ function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, o
       </div>
       {/* Code block enhancement: language badge + copy button */}
       <EditorContent editor={editor} />
+      {codeBlocks.map((block) => <div
+        key={block.index}
+        className="code-overlay"
+        style={{ top: block.top, left: block.left, width: block.width }}
+        contentEditable={false}
+        aria-hidden="false"
+      >
+        <span className="code-overlay-lang">{CODE_LANG_LABELS[block.language] || block.language || '代码'}</span>
+        <button
+          type="button"
+          className={'code-overlay-copy' + (copiedCode === block.index ? ' copied' : '')}
+          aria-label="复制代码"
+          title="复制代码"
+          onClick={async () => {
+            try { await navigator.clipboard?.writeText(block.text) } catch {
+              const ta = document.createElement('textarea')
+              ta.value = block.text
+              ta.style.position = 'fixed'
+              ta.style.opacity = '0'
+              document.body.appendChild(ta)
+              ta.select()
+              document.execCommand('copy')
+              document.body.removeChild(ta)
+            }
+            setCopiedCode(block.index)
+            setTimeout(() => setCopiedCode(null), 1500)
+          }}
+        >{copiedCode === block.index ? <Check size={13} /> : <CopyIcon size={13} />}<span>{copiedCode === block.index ? '已复制' : '复制'}</span></button>
+      </div>)}
     </div>
     <SlashMenu editor={editor} anchor={slash} query={slash?.query || ''} range={slash?.range || null} onClose={() => setSlash(null)} onImage={() => setImagePrompt(true)} />
     <TableMenu editor={editor} />

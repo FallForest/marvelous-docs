@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import type { Editor } from '@tiptap/react'
 import Popover from './Popover'
-import { LANGUAGES, LANG_LABELS } from './CodeBlockEnhancer'
+import { LANGUAGES, LANG_LABELS } from '../lib/languages'
 
 export type ToolbarActions = {
   onLink: () => void
