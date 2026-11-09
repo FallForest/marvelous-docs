@@ -745,7 +745,7 @@ function App() {
       await navigator.clipboard.writeText(url).catch(() => {})
       setShareLinkCopied(true)
       setTimeout(() => setShareLinkCopied(false), 2000)
-      await loadShareLinks(docId)
+      setShareLinks((prev) => [{ id: data.shareLink.id, token: data.shareLink.token, permission: data.shareLink.permission, expiresAt: null }, ...prev])
     } catch (error) {
       window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '创建分享链接失败：' + (error as Error).message }))
     } finally { setShareBusy(false) }
@@ -755,7 +755,7 @@ function App() {
     setShareBusy(true)
     try {
       await request('/documents/' + docId + '/share-link/' + linkId, token, { method: 'DELETE' })
-      await loadShareLinks(docId)
+      setShareLinks((prev) => prev.filter((l) => l.id !== linkId))
     } catch (error) {
       window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '删除分享链接失败：' + (error as Error).message }))
     } finally { setShareBusy(false) }
@@ -773,6 +773,7 @@ function App() {
       setWorkspaceMembers(members.members || [])
       setDocumentPermissions(access.permissions || [])
       setDocumentRestricted(access.restricted)
+      void loadShareLinks(active.id)
     } catch (error) {
       setNotice('共享设置加载失败：' + (error as Error).message)
       setShowShare(false)

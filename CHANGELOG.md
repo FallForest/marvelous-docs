@@ -8,6 +8,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.24] - 2026-11-09
+
+### Fixed
+
+- Share links now appear immediately in the dialog after creation: the list is
+  updated in-place instead of relying on a follow-up GET that was not firing.
+- Code block enhancer uses requestAnimationFrame and a 1s fallback poll so
+  language badges and copy buttons are guaranteed to appear on every code block.
+
 ## [0.1.23] - 2026-11-09
 
 ### Added
