@@ -8,6 +8,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.41] - 2026-11-11
+
+### Fixed
+
+- The language list was clipped by the code block's own `overflow:hidden`, so
+  only the first few entries were reachable. The list is now portaled to the
+  document body and positioned from the trigger's rect, flipping above the block
+  when there is no room below.
+
 ## [0.1.40] - 2026-11-11
 
 ### Changed

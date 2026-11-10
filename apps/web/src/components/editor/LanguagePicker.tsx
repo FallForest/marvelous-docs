@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Check, ChevronDown } from 'lucide-react'
 import { LANGUAGES, canonicalLanguage, languageLabel } from '../../lib/languages'
 
@@ -22,6 +23,27 @@ export default function LanguagePicker({ value, onChange }: Props) {
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
   const rootRef = useRef<HTMLDivElement | null>(null)
+  const buttonRef = useRef<HTMLButtonElement | null>(null)
+  const [panelPos, setPanelPos] = useState<{ top: number; left: number; maxHeight: number } | null>(null)
+
+  // The code block clips its own overflow, so the list is portaled to body and
+  // positioned from the button's rect, flipping up when there is no room below.
+  useLayoutEffect(() => {
+    if (!open) { setPanelPos(null); return }
+    const measure = () => {
+      const rect = buttonRef.current?.getBoundingClientRect()
+      if (!rect) return
+      const below = window.innerHeight - rect.bottom - 12
+      const above = rect.top - 12
+      const flip = below < 200 && above > below
+      const maxHeight = Math.max(120, Math.min(264, flip ? above : below))
+      setPanelPos({ top: flip ? Math.max(8, rect.top - Math.min(264, maxHeight) - 4) : rect.bottom + 4, left: rect.left, maxHeight })
+    }
+    measure()
+    window.addEventListener('scroll', measure, true)
+    window.addEventListener('resize', measure)
+    return () => { window.removeEventListener('scroll', measure, true); window.removeEventListener('resize', measure) }
+  }, [open])
   const canonical = canonicalLanguage(value)
   const label = languageLabel(value)
   const unknown = !canonical && Boolean(value && value.trim())
@@ -61,6 +83,7 @@ export default function LanguagePicker({ value, onChange }: Props) {
 
   return <div className="lang-picker" ref={rootRef}>
     <button
+      ref={buttonRef}
       type="button"
       className={'lang-picker-button' + (open ? ' is-open' : '')}
       aria-haspopup="listbox"
@@ -73,7 +96,7 @@ export default function LanguagePicker({ value, onChange }: Props) {
       {unknown && <span className="lang-picker-flag">未识别</span>}
       <ChevronDown size={12} />
     </button>
-    {open && <div className="lang-picker-panel" role="listbox" aria-label="选择代码语言">
+    {open && panelPos && createPortal(<div className="lang-picker-panel" role="listbox" aria-label="选择代码语言" style={{ top: panelPos.top, left: panelPos.left, maxHeight: panelPos.maxHeight }}>
       {LANGUAGES.map((entry, index) => <button
         key={entry.id}
         type="button"
@@ -86,6 +109,6 @@ export default function LanguagePicker({ value, onChange }: Props) {
         <span>{entry.label}</span>
         {entry.id === canonical && <Check size={13} />}
       </button>)}
-    </div>}
+    </div>, document.body)}
   </div>
 }
