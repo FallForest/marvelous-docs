@@ -136,6 +136,12 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
   const blocks = useBlockGeometry(editor)
   const codeBlocks = blocks.filter((block) => block.kind === 'codeBlock')
 
+  useEffect(() => {
+    // Diagnostic hook used by the browser tests to inspect editor state.
+    ;(window as unknown as Record<string, unknown>).__editor = editor
+    ;(window as unknown as Record<string, unknown>).__blocks = blocks
+  }, [editor, blocks])
+
 
   // Reveal the quoted text when a comment anchor is clicked in the side panel.
   useEffect(() => {
@@ -265,7 +271,7 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
       </div>
       {/* Code block enhancement: language badge and per-block actions */}
       <EditorContent editor={editor} />
-      {codeBlocks.map((block) => <div
+      {codeBlocks.map((block, blockIndex) => <div
         key={block.pos}
         className="code-overlay"
         style={{ top: block.top, left: block.left, width: block.width }}
@@ -275,20 +281,18 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
           value={block.language}
           onChange={(id) => {
             if (!editor) return
-            // Move the cursor into the block, then update its attributes through
-            // the normal command. setNodeAttribute on a node with content and
-            // setNodeSelection both misbehave here: the first is ignored for
-            // this node type, the second selects the whole block so the next
-            // keystroke would replace it.
+            // Locate the block by ordinal: the position captured in state can be
+            // stale, and a stale position would silently target the wrong node
+            // (or none at all). Then place the cursor inside and update through
+            // the command so the attribute change is part of the normal chain.
             const { doc } = editor.state
             let target = -1
-            let index = 0
+            let seen = 0
             doc.descendants((node, pos) => {
               if (node.type.name !== 'codeBlock') return
-              if (blocks[index]?.pos === block.pos) target = pos
-              index += 1
+              if (seen === blockIndex) target = pos
+              seen += 1
             })
-            if (target < 0) target = block.pos
             if (target < 0) return
             editor.chain().focus().setTextSelection(target + 1).updateAttributes('codeBlock', { language: id }).run()
           }}
