@@ -8,6 +8,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.46] - 2026-11-11
+
+### Fixed
+
+- Picking a language did nothing. The list is portaled to `document.body`, so
+  the outside-click handler (which tested `rootRef.contains`) treated every click
+  on the list as "outside", closing it before the item's handler could run. The
+  panel now has its own ref and is excluded from the outside check.
+- After changing the language the cursor landed at the start of the block, so the
+  next keystroke was prepended. It is now placed at the end of the block.
+
 ## [0.1.41] - 2026-11-11
 
 ### Fixed

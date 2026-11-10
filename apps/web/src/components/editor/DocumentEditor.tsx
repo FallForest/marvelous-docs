@@ -136,12 +136,6 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
   const blocks = useBlockGeometry(editor)
   const codeBlocks = blocks.filter((block) => block.kind === 'codeBlock')
 
-  useEffect(() => {
-    // Diagnostic hook used by the browser tests to inspect editor state.
-    ;(window as unknown as Record<string, unknown>).__editor = editor
-    ;(window as unknown as Record<string, unknown>).__blocks = blocks
-  }, [editor, blocks])
-
 
   // Reveal the quoted text when a comment anchor is clicked in the side panel.
   useEffect(() => {
@@ -287,7 +281,12 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
             // attribute update inside the normal command chain.
             const target = block.pos
             if (target < 0) return
-            editor.chain().focus().setTextSelection(target + 1).updateAttributes('codeBlock', { language: id }).run()
+            // Put the cursor at the end of the block's text so a subsequent
+            // keystroke appends instead of landing at the start, then update the
+            // attribute inside the same chain.
+            const node = editor.state.doc.nodeAt(target)
+            const end = target + 1 + (node?.content.size ?? 0)
+            editor.chain().focus().setTextSelection(end).updateAttributes('codeBlock', { language: id }).run()
           }}
         />
         <span className="code-overlay-actions">
