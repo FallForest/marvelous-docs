@@ -271,7 +271,7 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
       </div>
       {/* Code block enhancement: language badge and per-block actions */}
       <EditorContent editor={editor} />
-      {codeBlocks.map((block, blockIndex) => <div
+      {codeBlocks.map((block) => <div
         key={block.pos}
         className="code-overlay"
         style={{ top: block.top, left: block.left, width: block.width }}
@@ -281,18 +281,11 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
           value={block.language}
           onChange={(id) => {
             if (!editor) return
-            // Locate the block by ordinal: the position captured in state can be
-            // stale, and a stale position would silently target the wrong node
-            // (or none at all). Then place the cursor inside and update through
-            // the command so the attribute change is part of the normal chain.
-            const { doc } = editor.state
-            let target = -1
-            let seen = 0
-            doc.descendants((node, pos) => {
-              if (node.type.name !== 'codeBlock') return
-              if (seen === blockIndex) target = pos
-              seen += 1
-            })
+            // Update the block this picker belongs to. block.pos comes from the
+            // same doc.descendants pass that produced the overlay, so it is the
+            // node's own position; placing the cursor inside first keeps the
+            // attribute update inside the normal command chain.
+            const target = block.pos
             if (target < 0) return
             editor.chain().focus().setTextSelection(target + 1).updateAttributes('codeBlock', { language: id }).run()
           }}
