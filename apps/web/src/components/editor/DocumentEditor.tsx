@@ -15,7 +15,7 @@ import { COLLAB_URL } from '../../lib/collab'
 import { buildEditorExtensions } from '../../lib/editor'
 import { useBlockGeometry } from '../../hooks/useBlockGeometry'
 import { wordCount, formatDate } from '../../lib/format'
-import { languageLabel, LANGUAGES } from '../../lib/languages'
+import LanguagePicker from './LanguagePicker'
 import { emptyContent } from '../../lib/types'
 import type { CollabStatus } from '../../lib/app-types'
 import type { Doc, SaveStatus, User } from '../../lib/types'
@@ -271,22 +271,17 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
         style={{ top: block.top, left: block.left, width: block.width }}
         contentEditable={false}
       >
-        <label className="code-overlay-lang">
-          <select
-            aria-label="代码语言"
-            value={block.language || 'plaintext'}
-            onChange={(event) => {
-              if (!editor || block.pos < 0) return
-              // Set the attribute through a transaction at the node's position.
-              // setNodeSelection would select the whole block, so the next
-              // keystroke would replace it instead of typing into it.
-              const { tr } = editor.state
-              editor.view.dispatch(tr.setNodeAttribute(block.pos, 'language', event.target.value))
-            }}
-          >
-            {LANGUAGES.map((lang) => <option key={lang} value={lang}>{languageLabel(lang)}</option>)}
-          </select>
-        </label>
+        <LanguagePicker
+          value={block.language}
+          onChange={(id) => {
+            if (!editor || block.pos < 0) return
+            // Set the attribute through a transaction at the node's position.
+            // setNodeSelection would select the whole block, so the next
+            // keystroke would replace it instead of typing into it.
+            const { tr } = editor.state
+            editor.view.dispatch(tr.setNodeAttribute(block.pos, 'language', id))
+          }}
+        />
         <span className="code-overlay-actions">
           <button
             type="button"

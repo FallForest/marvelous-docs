@@ -8,6 +8,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.40] - 2026-11-11
+
+### Changed
+
+- The code block language picker is a custom listbox instead of a native
+  `<select>`. The OS draws a native select popup, so it could not match the
+  editor's surfaces and looked out of place.
+- The language list is deduplicated: 39 entries became 27 canonical languages.
+  Aliases (`js`, `ts`, `py`, `yml`, `sh`, `c++`…) are now resolved by
+  `canonicalLanguage()` for lookup only and never appear as separate rows.
+
+### Fixed
+
+- An unrecognised fence language (for example `objective-c` from an imported
+  Markdown file) is displayed verbatim and flagged 未识别 instead of leaving the
+  control blank and silently dropping the stored value.
+
 ## [0.1.39] - 2026-11-11
 
 ### Changed

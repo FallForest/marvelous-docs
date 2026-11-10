@@ -132,31 +132,6 @@
   pointer-events:none;
   z-index:2;
 }
-.code-overlay-lang{
-  display:inline-flex;
-  align-items:center;
-  font-size:11px;
-  font-weight:600;
-  color:#6b7280;
-  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  pointer-events:auto;
-}
-/* The language picker lives on the block itself, not in the top toolbar. */
-.code-overlay-lang select{
-  height:22px;
-  padding:0 4px;
-  margin-left:-4px;
-  border:1px solid transparent;
-  border-radius:5px;
-  background:transparent;
-  color:inherit;
-  font:inherit;
-  cursor:pointer;
-  appearance:none;
-  -webkit-appearance:none;
-}
-.code-overlay-lang select:hover{background:#e2e5e9;border-color:var(--border);color:#1f2937}
-.code-overlay-lang select:focus-visible{outline:2px solid var(--focus-ring);outline-offset:1px}
 .code-overlay-actions{
   display:inline-flex;
   align-items:center;
@@ -251,3 +226,71 @@
 .block-tool-panel button:hover{background:var(--surface-sunken);color:var(--text)}
 .block-tool-panel button.danger{color:var(--danger)}
 .block-tool-panel button.danger:hover{background:var(--danger-soft)}
+
+/* ===== 31. Language picker (code blocks) ===== */
+.lang-picker{position:relative;pointer-events:auto}
+.lang-picker-button{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  height:22px;
+  padding:0 7px;
+  border:1px solid transparent;
+  border-radius:5px;
+  background:transparent;
+  color:#6b7280;
+  font-size:11px;
+  font-weight:600;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  cursor:pointer;
+  transition:background .12s ease,color .12s ease;
+}
+.lang-picker-button:hover{background:#e2e5e9;border-color:var(--border);color:#1f2937}
+.lang-picker-button.is-open{background:#fff;border-color:var(--border);color:#1f2937;box-shadow:0 1px 3px #1118271a}
+.lang-picker-flag{
+  padding:0 4px;
+  border-radius:3px;
+  background:#fdf1ee;
+  color:#b0453a;
+  font-size:9.5px;
+  font-weight:500;
+  letter-spacing:0;
+}
+.lang-picker-panel{
+  position:absolute;
+  top:26px;
+  left:0;
+  z-index:6;
+  width:184px;
+  max-height:264px;
+  overflow-y:auto;
+  padding:4px;
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  box-shadow:0 10px 28px #11182726,0 2px 6px #1118270f;
+  scrollbar-width:thin;
+}
+.lang-picker-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-height:28px;
+  padding:0 8px;
+  border:0;
+  border-radius:5px;
+  background:transparent;
+  color:var(--text-secondary);
+  font-size:12px;
+  text-align:left;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.lang-picker-item.active{background:var(--surface-sunken);color:var(--text)}
+.lang-picker-item.selected{color:var(--accent-strong);font-weight:600}
+.lang-picker-item.selected.active{background:var(--accent-soft)}
+.lang-picker-item svg{flex:0 0 auto;color:var(--accent)}
