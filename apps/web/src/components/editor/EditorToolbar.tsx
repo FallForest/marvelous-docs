@@ -7,7 +7,6 @@ import {
 } from 'lucide-react'
 import type { Editor } from '@tiptap/react'
 import Popover from '../ui/Popover'
-import { LANGUAGES, LANG_LABELS } from '../../lib/languages'
 
 export type ToolbarActions = {
   onLink: () => void
@@ -84,17 +83,6 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
           </button>)}
         </Popover>
       </div>
-
-      {editor?.isActive('codeBlock') && <div className="tb-anchor">
-        <select
-          className="tb-lang-select"
-          aria-label="代码语言"
-          value={editor.getAttributes('codeBlock').language || 'plaintext'}
-          onChange={(event) => editor.chain().focus().updateAttributes('codeBlock', { language: event.target.value }).run()}
-        >
-          {LANGUAGES.map((l) => <option key={l} value={l}>{LANG_LABELS[l] || l}</option>)}
-        </select>
-      </div>}
 
       <div className="tb-anchor">
         <button type="button" className="tb-select tb-size" aria-haspopup="menu" aria-expanded={sizeOpen} onClick={() => setSizeOpen((value) => !value)}>

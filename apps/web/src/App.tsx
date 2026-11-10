@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { AlertCircle, X } from 'lucide-react'
 import { api } from './lib/endpoints'
+import { copyText } from './lib/clipboard'
 import { COLLAB_URL } from './lib/collab'
 import { downloadTextFile, EXPORT_MIME, printHtmlDocument } from './lib/download'
 import { buildDocTree, filterDocTree } from './lib/tree'
@@ -500,9 +501,12 @@ function App() {
       const data = await api.createShareLink(token, docId, 'viewer')
       const url = window.location.origin + '/shared/' + data.shareLink.token
       setShareLinks((prev) => [{ id: data.shareLink.id, token: data.shareLink.token, permission: data.shareLink.permission, expiresAt: null }, ...prev])
-      try { await navigator.clipboard?.writeText(url) } catch { /* clipboard unavailable */ }
-      setShareLinkCopied(true)
-      setTimeout(() => setShareLinkCopied(false), 2000)
+      // Plain-HTTP deployments have no navigator.clipboard, so use the helper
+      // and report the real outcome instead of claiming success.
+      const copied = await copyText(url)
+      setShareLinkCopied(copied)
+      if (!copied) window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '链接已生成，但浏览器阻止了自动复制，请手动复制。' }))
+      setTimeout(() => setShareLinkCopied(false), 2500)
     } catch (error) {
       console.error('[share] create failed', error)
       window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '创建分享链接失败：' + (error as Error).message }))
@@ -592,12 +596,12 @@ function App() {
 
   async function copyInviteLink() {
     if (!inviteLink) return
-    try {
-      await navigator.clipboard.writeText(inviteLink)
+    const ok = await copyText(inviteLink)
+    if (ok) {
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1800)
-    } catch {
-      setInviteError('无法访问剪贴板，请手动复制链接。')
+    } else {
+      setInviteError('浏览器阻止了自动复制，请手动选中链接复制。')
     }
   }
 

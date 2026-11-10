@@ -10,10 +10,11 @@ import SlashMenu, { SLASH_ITEMS } from './SlashMenu'
 import TableMenu from './TableMenu'
 import { Dialog } from '../ui/Dialog'
 import { API, request } from '../../lib/api'
+import { copyText } from '../../lib/clipboard'
 import { COLLAB_URL } from '../../lib/collab'
 import { buildEditorExtensions } from '../../lib/editor'
 import { wordCount, formatDate } from '../../lib/format'
-import { languageLabel } from '../../lib/languages'
+import { languageLabel, LANGUAGES } from '../../lib/languages'
 import { emptyContent } from '../../lib/types'
 import type { CollabStatus } from '../../lib/app-types'
 import type { Doc, SaveStatus, User } from '../../lib/types'
@@ -42,8 +43,8 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
   const [outlineOpen, setOutlineOpen] = useState(false)
   const [imageUrl, setImageUrl] = useState('')
   const [bubbleAnchor, setBubbleAnchor] = useState<{ left: number; top: number } | null>(null)
-  const [codeBlocks, setCodeBlocks] = useState<Array<{ index: number; top: number; bottom: number; left: number; width: number; language: string; text: string }>>([])
-  const [copiedCode, setCopiedCode] = useState<number | null>(null)
+  const [codeBlocks, setCodeBlocks] = useState<Array<{ index: number; pos: number; top: number; bottom: number; left: number; width: number; language: string; text: string }>>([])
+  const [copyState, setCopyState] = useState<{ index: number; ok: boolean } | null>(null)
   const [slash, setSlash] = useState<{ left: number; top: number; query: string; range: { from: number; to: number } } | null>(null)
   const statusTimer = useRef<number | undefined>(undefined)
 
@@ -139,16 +140,28 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
     const update = () => {
       const blocks = Array.from(dom.querySelectorAll('pre')) as HTMLElement[]
       // Language lives on the ProseMirror node; the DOM class is only a hint.
-      const nodeLanguages: string[] = []
-      editor.state.doc.descendants((node) => {
-        if (node.type.name === 'codeBlock') nodeLanguages.push(String(node.attrs.language || ''))
+      // Language lives on the ProseMirror node; the DOM class is only a hint.
+      // The document position lets the overlay toolbar edit that node directly.
+      const nodes: Array<{ language: string; pos: number }> = []
+      editor.state.doc.descendants((node, pos) => {
+        if (node.type.name === 'codeBlock') nodes.push({ language: String(node.attrs.language || ''), pos })
       })
       setCodeBlocks(blocks.map((node, index) => {
         const rect = node.getBoundingClientRect()
         const code = node.querySelector('code')
         const lc = [...(code?.classList || [])].find((c) => c.startsWith('language-'))
         const fromClass = lc?.replace('language-', '') || ''
-        return { index, top: rect.top, bottom: rect.bottom, left: rect.left, width: rect.width, language: nodeLanguages[index] || fromClass || '', text: code?.textContent || '' }
+        const meta = nodes[index]
+        return {
+          index,
+          pos: meta?.pos ?? -1,
+          top: rect.top,
+          bottom: rect.bottom,
+          left: rect.left,
+          width: rect.width,
+          language: meta?.language || fromClass || '',
+          text: code?.textContent || '',
+        }
       }))
     }
     update()
@@ -296,29 +309,35 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
         className="code-overlay"
         style={{ top: block.top, left: block.left, width: block.width }}
         contentEditable={false}
-        aria-hidden="false"
       >
-        <span className="code-overlay-lang">{languageLabel(block.language)}</span>
+        <label className="code-overlay-lang">
+          <select
+            aria-label="代码语言"
+            value={block.language || 'plaintext'}
+            onChange={(event) => {
+              if (!editor || block.pos < 0) return
+              // Update the node attribute in place so the badge and exports follow.
+              editor.chain().focus().setNodeSelection(block.pos).updateAttributes('codeBlock', { language: event.target.value }).run()
+            }}
+          >
+            {LANGUAGES.map((lang) => <option key={lang} value={lang}>{languageLabel(lang)}</option>)}
+          </select>
+        </label>
         <button
           type="button"
-          className={'code-overlay-copy' + (copiedCode === block.index ? ' copied' : '')}
+          className={'code-overlay-copy' + (copyState?.index === block.index ? (copyState.ok ? ' copied' : ' failed') : '')}
           aria-label="复制代码"
           title="复制代码"
           onClick={async () => {
-            try { await navigator.clipboard?.writeText(block.text) } catch {
-              const ta = document.createElement('textarea')
-              ta.value = block.text
-              ta.style.position = 'fixed'
-              ta.style.opacity = '0'
-              document.body.appendChild(ta)
-              ta.select()
-              document.execCommand('copy')
-              document.body.removeChild(ta)
-            }
-            setCopiedCode(block.index)
-            setTimeout(() => setCopiedCode(null), 1500)
+            const ok = await copyText(block.text)
+            setCopyState({ index: block.index, ok })
+            setTimeout(() => setCopyState(null), 1800)
           }}
-        >{copiedCode === block.index ? <Check size={13} /> : <CopyIcon size={13} />}<span>{copiedCode === block.index ? '已复制' : '复制'}</span></button>
+        >{copyState?.index === block.index
+          ? (copyState.ok
+            ? <><Check size={13} /><span>已复制</span></>
+            : <><CopyIcon size={13} /><span>复制失败</span></>)
+          : <><CopyIcon size={13} /><span>复制</span></>}</button>
       </div>)}
     </div>
     <SlashMenu editor={editor} anchor={slash} query={slash?.query || ''} range={slash?.range || null} onClose={() => setSlash(null)} onImage={() => setImagePrompt(true)} />

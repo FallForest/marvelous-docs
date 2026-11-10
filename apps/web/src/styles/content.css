@@ -194,11 +194,30 @@
   z-index:2;
 }
 .code-overlay-lang{
+  display:inline-flex;
+  align-items:center;
   font-size:11px;
   font-weight:600;
   color:#6b7280;
   font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  pointer-events:auto;
 }
+/* The language picker lives on the block itself, not in the top toolbar. */
+.code-overlay-lang select{
+  height:22px;
+  padding:0 4px;
+  margin-left:-4px;
+  border:1px solid transparent;
+  border-radius:5px;
+  background:transparent;
+  color:inherit;
+  font:inherit;
+  cursor:pointer;
+  appearance:none;
+  -webkit-appearance:none;
+}
+.code-overlay-lang select:hover{background:#e2e5e9;border-color:var(--border);color:#1f2937}
+.code-overlay-lang select:focus-visible{outline:2px solid var(--focus-ring);outline-offset:1px}
 .code-overlay-copy{
   display:inline-flex;
   align-items:center;
@@ -215,3 +234,4 @@
 }
 .code-overlay-copy:hover{background:#e2e5e9;color:#1f2937}
 .code-overlay-copy.copied{color:#059669;border-color:#05966955;background:#ecfdf5}
+.code-overlay-copy.failed{color:#b0453a;border-color:#b0453a55;background:#fdf1ee}

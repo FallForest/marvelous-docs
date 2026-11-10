@@ -8,6 +8,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.37] - 2026-11-11
+
+### Fixed
+
+- Copying silently did nothing when the app is served over plain HTTP on an IP
+  address: `navigator.clipboard` only exists in a secure context, and the
+  optional-chaining call skipped without throwing, so the UI reported success
+  while the clipboard stayed empty. Added `lib/clipboard.ts`, which tries the
+  Clipboard API and falls back to a hidden textarea plus `execCommand('copy')`,
+  and returns whether the text really landed. The code block copy button, the
+  share-link button and the invite-link button now report the true outcome
+  ("已复制" only on success, "复制失败" plus a notice otherwise).
+- The code block language picker moved onto the block itself. It was a control
+  in the top toolbar that only appeared while the cursor sat in a code block,
+  which made "change this block's language" hard to discover; the block toolbar
+  now owns both the language select and the copy button.
+- Code block toolbar feedback distinguishes success from failure with separate
+  colours instead of always claiming success.
+
 ## [0.1.36] - 2026-11-10
 
 ### Changed
