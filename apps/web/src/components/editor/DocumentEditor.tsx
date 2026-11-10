@@ -274,12 +274,23 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
         <LanguagePicker
           value={block.language}
           onChange={(id) => {
-            if (!editor || block.pos < 0) return
-            // Set the attribute through a transaction at the node's position.
-            // setNodeSelection would select the whole block, so the next
-            // keystroke would replace it instead of typing into it.
-            const { tr } = editor.state
-            editor.view.dispatch(tr.setNodeAttribute(block.pos, 'language', id))
+            if (!editor) return
+            // Move the cursor into the block, then update its attributes through
+            // the normal command. setNodeAttribute on a node with content and
+            // setNodeSelection both misbehave here: the first is ignored for
+            // this node type, the second selects the whole block so the next
+            // keystroke would replace it.
+            const { doc } = editor.state
+            let target = -1
+            let index = 0
+            doc.descendants((node, pos) => {
+              if (node.type.name !== 'codeBlock') return
+              if (blocks[index]?.pos === block.pos) target = pos
+              index += 1
+            })
+            if (target < 0) target = block.pos
+            if (target < 0) return
+            editor.chain().focus().setTextSelection(target + 1).updateAttributes('codeBlock', { language: id }).run()
           }}
         />
         <span className="code-overlay-actions">
