@@ -187,6 +187,7 @@ commit `.env` or backup files - both are ignored by git.
 
 - [docs/API.md](docs/API.md) - HTTP and WebSocket contract (authoritative)
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - components, data model, conflict model, extension points
+- [docs/STRUCTURE.md](docs/STRUCTURE.md) - directory map and the rules for where a new file belongs
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) - prerequisites, scripts, conventions, migrations, debugging
 - [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) - production, TLS, updates, backup, upgrades
 - [docs/SECURITY.md](docs/SECURITY.md) - auth, roles, uploads, rate limiting, hardening

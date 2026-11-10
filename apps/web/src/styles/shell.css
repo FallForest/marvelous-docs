@@ -1,0 +1,613 @@
+/*
+ * Shell layer: one source of truth for the sidebar and the topbar.
+ *
+ * Earlier sessions grew these two surfaces by accretion, so every chrome row
+ * ended up with several competing definitions (11px vs 12.5px type, gaps of 9
+ * vs 18, three different "selected" treatments, an absolutely positioned tree
+ * chevron sitting under the label). This layer normalises them and wins by
+ * load order, so no !important is needed.
+ */
+
+/* ── shared chrome tokens ─────────────────────────────────────── */
+.app-shell{
+  --side-w:264px;
+  --row-h:34px;
+  --row-pad:10px;
+  --row-radius:7px;
+  --row-fg:var(--text-secondary);
+  --row-fg-strong:var(--text);
+}
+
+/* ── sidebar shell: fixed brand, scrolling middle, pinned footer ─ */
+.sidebar{
+  width:var(--side-w);
+  flex:0 0 var(--side-w);
+  padding:0;
+  gap:0;
+  background:#f7f8fa;
+  border-right:1px solid var(--border);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+.sidebar-scroll{
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:0 12px 8px;
+  scrollbar-gutter:stable;
+}
+.sidebar-scroll::-webkit-scrollbar{width:8px}
+.sidebar-scroll::-webkit-scrollbar-thumb{background:#d6dae1;border-radius:4px;border:2px solid #f7f8fa}
+.sidebar-scroll::-webkit-scrollbar-thumb:hover{background:#c2c8d1}
+
+/* brand: one line, one weight, on the 12px padding grid */
+.brand-row{
+  height:56px;
+  flex:0 0 56px;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  font-size:13.5px;
+  font-weight:650;
+  letter-spacing:-.01em;
+  color:var(--text);
+}
+.sidebar .brand-row{padding:0 12px}
+.admin-sidebar .brand-row{padding:0 2px;height:44px;flex-basis:44px}
+.brand-mark{
+  width:26px;height:26px;flex:0 0 26px;
+  border-radius:8px;
+  background:var(--accent);
+  color:#fff;
+  box-shadow:0 1px 2px #bd523633;
+}
+.brand-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand-row .push{margin-left:auto;flex:0 0 auto}
+
+/* workspace switcher: the only boxed control, so it reads as
+   "current context" instead of one more nav row */
+.sidebar .workspace{
+  height:48px;
+  margin:4px 0 0;
+  padding:0 9px;
+  gap:9px;
+  border:1px solid var(--border);
+  border-radius:var(--row-radius);
+  background:#fff;
+  box-shadow:0 1px 1px #11182708;
+}
+.sidebar .workspace:hover{background:#fff;border-color:var(--border-strong)}
+.sidebar .workspace[aria-expanded="true"]{
+  background:#fff;
+  border-color:var(--border-strong);
+  box-shadow:0 0 0 2px var(--accent-soft);
+}
+.sidebar .workspace-avatar{
+  width:26px;height:26px;flex:0 0 26px;
+  border-radius:7px;
+  background:#eceef2;
+  border:0;
+  color:var(--text-secondary);
+  font-size:12px;
+  font-weight:700;
+}
+.sidebar .workspace-copy{gap:1px}
+.sidebar .workspace-copy b{font-size:12.5px;font-weight:600;line-height:1.25}
+.sidebar .workspace-copy small{font-size:11px;color:var(--text-muted);line-height:1.25}
+.sidebar .workspace>svg{flex:0 0 auto;color:var(--text-muted)}
+
+/* search: a real field affordance at the same height as a row */
+.sidebar .sidebar-actions{margin:10px 0 0}
+.sidebar .action-row{
+  height:var(--row-h);
+  min-height:var(--row-h);
+  padding:0 var(--row-pad);
+  gap:8px;
+  border:1px solid transparent;
+  border-radius:var(--row-radius);
+  background:var(--surface-sunken);
+  color:var(--text-muted);
+}
+.sidebar .action-row:hover{background:#eceef2}
+.sidebar .action-row:focus-within{
+  background:#fff;
+  border-color:var(--accent);
+  box-shadow:0 0 0 2px var(--accent-soft);
+}
+.sidebar .action-row svg{flex:0 0 auto}
+.sidebar .action-row input{height:100%;font-size:12.5px;color:var(--text)}
+.sidebar .action-row input::placeholder{color:var(--text-muted)}
+.sidebar .action-row kbd{
+  font-family:inherit;
+  font-size:10.5px;
+  font-weight:600;
+  letter-spacing:.02em;
+  color:var(--text-muted);
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:1px 4px;
+  line-height:1.4;
+}
+.sidebar .action-row:focus-within kbd{opacity:0}
+
+/* section label: one rhythm for both "导航" and "文档" */
+.sidebar .nav-label{
+  margin:16px var(--row-pad) 4px;
+  padding:0;
+  font-size:10.5px;
+  font-weight:600;
+  letter-spacing:.06em;
+  line-height:1.6;
+  text-transform:none;
+  color:var(--text-muted);
+}
+
+/* ── nav rows: identical metrics to tree rows ─────────────────── */
+.sidebar .nav-list{display:flex;flex-direction:column;gap:1px}
+.sidebar .nav-row{
+  height:var(--row-h);
+  min-height:var(--row-h);
+  padding:0 var(--row-pad);
+  gap:10px;
+  border:0;
+  border-radius:var(--row-radius);
+  background:transparent;
+  color:var(--row-fg);
+  font-size:12.5px;
+  font-weight:450;
+  text-align:left;
+}
+.sidebar .nav-row svg{width:16px;height:16px;color:var(--text-muted);flex:0 0 16px}
+.sidebar .nav-row:hover{background:var(--surface-sunken);color:var(--row-fg-strong)}
+.sidebar .nav-row:hover svg{color:var(--row-fg-strong)}
+/* selection = soft fill + weight; no left bar stacked on top of it */
+.sidebar .nav-row[aria-current="page"]::before{display:none}
+.sidebar .nav-row[aria-current="page"],
+.sidebar .nav-row.nav-active{
+  background:var(--accent-soft);
+  color:var(--accent-strong);
+  font-weight:600;
+}
+.sidebar .nav-row[aria-current="page"] svg,
+.sidebar .nav-row.nav-active svg{color:var(--accent-strong)}
+.sidebar .nav-count{
+  margin-left:auto;
+  min-width:18px;height:18px;
+  padding:0 5px;
+  border-radius:9px;
+  background:#fff;
+  color:var(--text-muted);
+  font-size:10.5px;
+  font-weight:600;
+  font-variant-numeric:tabular-nums;
+}
+.sidebar .nav-row[aria-current="page"] .nav-count{color:var(--accent-strong)}
+
+/* ── tree heading: label + the single primary action ──────────── */
+.sidebar .tree-heading{
+  height:32px;
+  margin:18px 0 2px;
+  padding:0 0 0 var(--row-pad);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  color:var(--text-muted);
+  font-size:10.5px;
+  font-weight:600;
+  letter-spacing:.06em;
+}
+.tree-heading-toggle{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  height:24px;
+  padding:0;
+  border:0;
+  border-radius:5px;
+  background:transparent;
+  color:inherit;
+  font:inherit;
+  letter-spacing:inherit;
+}
+.tree-heading-toggle:hover{color:var(--text)}
+.tree-heading-toggle svg{color:var(--text-muted)}
+.sidebar .new-menu-anchor{display:flex;flex:0 0 auto}
+.sidebar .new-doc-btn{
+  height:24px;
+  padding:0 7px;
+  gap:4px;
+  border:1px solid var(--border-strong);
+  border-radius:6px;
+  background:#fff;
+  color:var(--text-secondary);
+  font-size:11px;
+  font-weight:500;
+  box-shadow:0 1px 1px #11182708;
+}
+.sidebar .new-doc-btn:hover{background:var(--surface-sunken);border-color:var(--border-strong);color:var(--text)}
+.sidebar .new-doc-btn svg{flex:0 0 auto}
+
+/* ── tree rows: [chevron][icon][label][more], one baseline ────── */
+.sidebar .doc-tree{
+  flex:0 1 auto;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+  padding:0 0 6px;
+  overflow:visible;
+}
+.tree-node{display:flex;flex-direction:column;gap:1px}
+/* nesting is expressed by one wrapper, so rows keep the exact same height
+   and hit area at every depth */
+.tree-children{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+  padding-left:14px;
+}
+.tree-children::before{
+  content:"";
+  position:absolute;
+  left:19px;
+  top:2px;
+  bottom:2px;
+  width:1px;
+  background:#e1e5eb;
+}
+.tree-entry{
+  display:flex;
+  align-items:center;
+  gap:2px;
+  min-height:var(--row-h);
+  padding-right:2px;
+  border-radius:var(--row-radius);
+}
+.tree-entry:hover{background:var(--surface-sunken)}
+.tree-entry.is-selected{background:var(--accent-soft)}
+.tree-chevron{
+  width:18px;height:18px;flex:0 0 18px;
+  display:grid;place-items:center;
+  padding:0;
+  border:0;
+  border-radius:4px;
+  background:transparent;
+  color:var(--text-muted);
+}
+.tree-chevron:hover{background:#e4e7ec;color:var(--text)}
+.tree-chevron.is-leaf{pointer-events:none}
+/* the chevron column must not be visually re-created by the row padding */
+.tree-entry{padding-left:var(--row-pad)}
+.tree-entry .tree-doc,
+.tree-entry .tree-folder{
+  flex:1 1 auto;
+  min-width:0;
+  width:auto;
+  height:var(--row-h);
+  margin:0 !important;
+  padding:0 0 0 4px !important;
+  gap:8px;
+  border:0;
+  border-radius:var(--row-radius);
+  background:transparent;
+  color:var(--row-fg);
+  font-size:12.5px;
+  font-weight:450;
+  text-align:left;
+}
+.tree-entry:hover .tree-doc,
+.tree-entry .tree-doc.tree-folder:hover{background:transparent;color:var(--row-fg-strong)}
+.tree-entry .tree-doc svg{width:15px;height:15px;flex:0 0 15px;color:var(--text-muted)}
+.tree-entry:hover .tree-doc svg{color:var(--text-secondary)}
+.tree-label{
+  display:block;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.tree-entry.is-selected .tree-doc,
+.tree-entry.is-selected .tree-doc.tree-folder{
+  background:transparent;
+  color:var(--accent-strong);
+  font-weight:600;
+}
+.tree-entry.is-selected .tree-doc svg{color:var(--accent-strong)}
+.sidebar .tree-menu-anchor{margin-left:2px;display:flex;flex:0 0 auto}
+.sidebar .tree-more{
+  width:24px;height:24px;flex:0 0 24px;
+  margin:0;
+  border-radius:5px;
+  color:var(--text-muted);
+  opacity:0;
+}
+.tree-entry:hover .tree-more,
+.tree-entry.is-selected .tree-more,
+.tree-more:focus-visible,
+.tree-more[aria-expanded="true"]{opacity:1}
+.sidebar .tree-more:hover,
+.sidebar .tree-more[aria-expanded="true"]{background:#e4e7ec;color:var(--text)}
+
+/* touch and keyboard: the row action must never be hover-only */
+@media (hover:none){
+  .sidebar .tree-more{opacity:1}
+}
+.sidebar .tree-more:focus-visible,
+.sidebar .nav-row:focus-visible,
+.sidebar .root-folder:focus-visible,
+.sidebar .tree-doc:focus-visible,
+.sidebar .tree-chevron:focus-visible{outline-offset:-2px}
+
+/* "所有文档" behaves as a tree row, not a section header */
+.sidebar .root-folder,
+.sidebar .root-folder.selected{
+  height:var(--row-h);
+  padding:0 var(--row-pad);
+  gap:9px;
+  margin:0 0 2px;
+  border:0;
+  border-radius:var(--row-radius);
+  background:transparent;
+  color:var(--row-fg);
+  font-size:12.5px;
+  font-weight:500;
+}
+.sidebar .root-folder svg{width:15px;height:15px;color:var(--text-muted)}
+.sidebar .root-folder:hover{background:var(--surface-sunken);color:var(--row-fg-strong)}
+.sidebar .root-folder.is-selected,
+.sidebar .root-folder.is-selected:hover{
+  background:var(--accent-soft);
+  color:var(--accent-strong);
+  font-weight:600;
+}
+.sidebar .root-folder.is-selected svg{color:var(--accent-strong)}
+.sidebar .empty-tree{
+  padding:8px var(--row-pad);
+  font-size:11.5px;
+  color:var(--text-muted);
+}
+
+/* ── sidebar footer: one separated strip, two even rows ───────── */
+.sidebar .sidebar-bottom{
+  flex:0 0 auto;
+  margin-top:0;
+  padding:4px 12px 8px;
+  border-top:1px solid var(--border);
+  background:#f7f8fa;
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+}
+.sidebar .help-row{
+  height:32px;
+  padding:0 var(--row-pad);
+  gap:9px;
+  border:0;
+  border-radius:var(--row-radius);
+  background:transparent;
+  color:var(--text-muted);
+  font-size:11.5px;
+}
+.sidebar .help-row:hover{background:var(--surface-sunken);color:var(--text)}
+.sidebar .help-row svg{margin-left:auto}
+.sidebar .help-dot{
+  width:15px;height:15px;flex:0 0 15px;
+  display:grid;place-items:center;
+  border:1px solid #b7bdc7;
+  border-radius:50%;
+  font-size:10px;
+  font-weight:600;
+  line-height:1;
+}
+.sidebar .profile-row{
+  height:auto;
+  min-height:48px;
+  padding:4px var(--row-pad);
+  gap:9px;
+  border-radius:var(--row-radius);
+}
+.sidebar .profile-row:hover{background:var(--surface-sunken)}
+.sidebar .profile-row .avatar{
+  width:28px;height:28px;flex:0 0 28px;
+  font-size:11.5px;
+}
+.sidebar .profile-copy{gap:1px}
+.sidebar .profile-copy b{font-size:12px;font-weight:600;line-height:1.3}
+.sidebar .profile-copy small{font-size:10.5px;line-height:1.3}
+
+/* ══ topbar: bold surface, quiet internals ═══════════════════════ */
+.main-area>.topbar{
+  height:56px;
+  flex:0 0 56px;
+  padding:0 16px 0 18px;
+  gap:12px;
+  border-bottom:1px solid var(--border);
+  background:#fff;
+}
+.main-area>.topbar>.icon-btn{flex:0 0 auto;margin-left:-4px}
+.main-area>.topbar .breadcrumbs{
+  flex:1 1 auto;
+  min-width:0;
+  gap:6px;
+  font-size:12.5px;
+  color:var(--text-muted);
+}
+.breadcrumbs .crumb-root{white-space:nowrap}
+.breadcrumbs .crumb-sep{flex:0 0 auto;color:#c2c7cf}
+.breadcrumbs strong{
+  font-size:13px;
+  font-weight:600;
+  color:var(--text);
+  min-width:0;
+}
+.main-area>.topbar .top-actions{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:nowrap;
+}
+.top-divider{
+  width:1px;
+  height:18px;
+  flex:0 0 1px;
+  background:var(--border);
+}
+.main-area>.topbar .save-state{
+  font-size:11.5px;
+  color:var(--text-muted);
+  gap:5px;
+  padding-right:2px;
+}
+.save-dot{width:6px;height:6px}
+.icon-group{
+  display:flex;
+  align-items:center;
+  gap:1px;
+  padding:2px;
+  border-radius:8px;
+}
+.icon-group .icon-btn{
+  width:30px;height:30px;
+  border-radius:6px;
+  color:var(--text-secondary);
+}
+.icon-group .icon-btn:hover{background:var(--surface-sunken);color:var(--text)}
+.icon-group .icon-btn:disabled{color:#c2c7cf}
+.favorite-btn.is-favorite{color:#b8862f;background:#fdf6e3}
+.favorite-btn.is-favorite:hover{background:#faeecb}
+
+.main-area>.topbar .collaborators{
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+.presence-stack{gap:0}
+.presence-stack .mini-avatar{margin-left:-6px}
+.presence-stack .mini-avatar:first-child{margin-left:0}
+.mini-avatar{width:24px;height:24px;font-size:10.5px;border-width:1.5px}
+.connection-dot{
+  width:6px;height:6px;
+  flex:0 0 6px;
+  border-radius:50%;
+  margin-left:1px;
+  background:#c2c7cf;
+}
+.connection-dot.connected{background:#4f9d76}
+.connection-dot.connecting{background:#d3a24b}
+.connection-dot.disconnected{background:#c0564a}
+
+.main-area>.topbar .share-btn{
+  height:30px;
+  padding:0 11px;
+  gap:6px;
+  border:1px solid transparent;
+  border-radius:6px;
+  background:var(--accent);
+  color:#fff;
+  font-size:12px;
+  font-weight:600;
+  box-shadow:0 1px 2px #bd52362e;
+}
+.main-area>.topbar .share-btn:hover{background:var(--accent-strong);border-color:transparent;color:#fff}
+.main-area>.topbar .share-btn svg{flex:0 0 auto}
+.main-area>.topbar .share-btn:focus-visible{outline:2px solid var(--accent-strong);outline-offset:2px}
+
+/* ══ editor toolbar: same rhythm as the topbar ══════════════════ */
+.editor-toolbar{
+  height:46px;
+  flex:0 0 46px;
+  padding:0 12px;
+  gap:1px;
+  border-bottom:1px solid var(--border);
+  background:#fff;
+}
+.tb-group{gap:1px}
+.tb-separator{
+  width:1px;
+  height:16px;
+  margin:0 5px;
+  background:var(--border);
+}
+.tb-btn{
+  width:29px;
+  height:30px;
+  border-radius:6px;
+  color:var(--text-secondary);
+}
+.tb-btn:hover:not(:disabled){background:var(--surface-sunken);color:var(--text)}
+.tb-btn.is-active{background:var(--accent-soft);color:var(--accent-strong)}
+.tb-select{
+  height:30px;
+  padding:0 6px;
+  border-radius:6px;
+  color:var(--text-secondary);
+}
+.tb-select:hover{background:var(--surface-sunken);color:var(--text)}
+/* when the row is still wider than the column, cut it off deliberately:
+   fade to the canvas instead of slicing an icon in half */
+@media (max-width:1240px){
+  .editor-toolbar{mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent)}
+}
+
+/* admin shell shares the chrome grid: same 12px inset as the document
+   sidebar, so the brand, the section title and the back button stack on one
+   vertical line instead of three */
+.admin-shell{--side-w:264px;--row-radius:7px}
+.admin-sidebar{
+  width:var(--side-w);
+  flex:0 0 var(--side-w);
+  padding:14px 12px 10px;
+}
+.admin-sidebar-title{margin:22px 0 16px;padding:0 2px}
+.admin-back{width:100%;height:34px;border-radius:7px}
+.admin-sidebar-footer{padding-top:10px;margin-top:auto}
+
+/* ── responsive: same rhythm, tighter column counts ───────────── */
+@media (max-width:1024px){
+  .app-shell{--side-w:248px}
+}
+@media (max-width:820px){
+  .main-area>.topbar{padding:0 12px;gap:8px}
+  .main-area>.topbar .save-state,
+  .top-divider{display:none}
+  /* narrow breadcrumb: drop the root and its separator together, otherwise a
+     dangling ">" leads the toolbar */
+  .breadcrumbs .crumb-root,
+  .breadcrumbs .crumb-sep{display:none}
+  .sidebar-floating{
+    width:min(288px,86vw);
+    flex-basis:auto;
+    box-shadow:18px 0 44px #11182726;
+  }
+}
+@media (max-width:560px){
+  .app-shell{--row-h:44px;--row-pad:12px}
+  .main-area>.topbar{height:auto;min-height:56px;padding:0 10px;gap:6px}
+  .main-area>.topbar .top-actions{gap:6px}
+  .icon-group{gap:0;padding:0}
+  .icon-group .icon-btn{width:34px;height:36px;border-radius:7px}
+  .main-area>.topbar .share-btn{
+    width:34px;height:34px;
+    padding:0;
+    gap:0;
+    font-size:0;
+    justify-content:center;
+  }
+  .main-area>.topbar .share-btn svg{width:16px;height:16px}
+  .sidebar .tree-more{width:32px;height:32px;flex:0 0 32px;opacity:1}
+  .tree-chevron{width:24px;flex-basis:24px}
+  .sidebar .brand-row{height:52px;flex-basis:52px}
+  .sidebar .nav-row,
+  .sidebar .tree-entry .tree-doc,
+  .sidebar .tree-entry .tree-folder,
+  .sidebar .root-folder{font-size:13.5px}
+  .sidebar .profile-row{min-height:56px}
+}

@@ -125,14 +125,22 @@ gate.
 - **Formatting**: 2 spaces, LF, final newline, UTF-8 (`.editorconfig`,
   `.gitattributes`). Scripts are `sh` with `set -eu`; PowerShell helpers use CRLF.
 - **Server**: semicolons, single quotes, explicit error codes from the API
-  contract. Fastify routes live in `src/index.ts`; pure helpers go in `src/lib/`
-  so they can be unit-tested without PostgreSQL.
-- **Web**: no semicolons, single quotes, function components with hooks.
+  contract. `src/index.ts` only assembles the process; REST routes live one
+  resource per module in `src/routes/`, collaboration code in
+  `src/collaboration/`, and pure helpers in `src/lib/` so they can be
+  unit-tested without PostgreSQL.
+- **Web**: no semicolons, single quotes, function components with hooks. Screens
+  go in `src/pages/`, editor pieces in `src/components/editor/`, dialogs in
+  `src/components/dialogs/`, primitives in `src/components/ui/`, pure logic in
+  `src/lib/`, and styles in the matching `src/styles/*.css` layer.
 - **Imports**: Node built-ins with the `node:` prefix, ESM everywhere.
 - **Secrets**: never commit `.env`, tokens, dumps, or uploads; all of them are
   git-ignored.
 - **Scope**: do not run workspace-wide installs to fix a single package; edit the
   manifest and let the lockfile update once.
+
+Where a new file belongs, and which imports each layer may use, is in
+[STRUCTURE.md](STRUCTURE.md).
 
 ## Migrations
 

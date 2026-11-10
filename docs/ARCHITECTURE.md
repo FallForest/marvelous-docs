@@ -5,7 +5,8 @@ serves one workspace with several members; documents are organised in a tree,
 edited collaboratively, versioned on write, and shared through per-document ACLs.
 
 The wire contract is [API.md](API.md). This document explains how the pieces fit
-together and where to extend them.
+together and where to extend them. Directory ownership and the rules for where a
+new file belongs are in [STRUCTURE.md](STRUCTURE.md).
 
 ## Components
 
@@ -28,11 +29,13 @@ together and where to extend them.
 
 ### Web client (`apps/web`)
 
-React 18, Vite 6, Tiptap 2. `App.tsx` holds the workspace shell: document tree,
-editor, comments panel, history, templates, search, trash, favorites, admin, and
-the update dialog. Collaboration uses `@tiptap/extension-collaboration` with a
-`y-websocket` provider; when `VITE_COLLAB_URL` is empty the editor still edits
-locally and saves through the REST API with optimistic version checks.
+React 18, Vite 6, Tiptap 2. `App.tsx` is the workspace shell: it owns session,
+document list, and overlay state, and renders `pages/*` for route-level screens.
+The editor lives in `components/editor/`, dialogs in `components/dialogs/`, and
+styling in `styles/` as ordered CSS layers (see [STRUCTURE.md](STRUCTURE.md)).
+Collaboration uses `@tiptap/extension-collaboration` with a `y-websocket`
+provider; when `VITE_COLLAB_URL` is empty the editor still edits locally and
+saves through the REST API with optimistic version checks.
 
 The bundle is built into `apps/web/dist` and served by nginx, which also proxies
 `/api` to `api:3000` and `/collab` to `api:1234`.
@@ -46,6 +49,13 @@ A single Node.js process serves three surfaces:
 | REST | `PORT` (3000) | `/api/v1` document, comment, version, ACL, upload, and system routes; `/healthz`. |
 | WebSocket | `COLLAB_PORT` (1234) | y-websocket v2 rooms for live editing. |
 | Migrations | - | Applies `migrations/*.sql` at startup, idempotently. |
+
+`index.ts` only assembles the process. REST resources live one-per-module in
+`src/routes/` and are registered by `routes/index.ts`; room lifecycle and the
+socket protocol live in `src/collaboration/`. A route module receives the Fastify
+instance plus `RouteDeps`, so nothing in `routes/` imports `index.ts` and the
+module graph stays acyclic. `test/routes.test.ts` asserts that every documented
+endpoint is still registered after such a change.
 
 Content is versioned Tiptap JSON (`{ schemaVersion: 1, doc }`). The server keeps a
 Tiptap schema that mirrors the client extensions (StarterKit, underline, link,
@@ -193,11 +203,12 @@ output (production dependencies only).
 
 | Goal | Where to start |
 | --- | --- |
-| New REST resource | Add routes in `apps/server/src/index.ts`, extend the schema in a new `migrations/NNN_*.sql`, document it in [API.md](API.md). |
-| New editor node or mark | Add the Tiptap extension to the client schema and to the server schema in `apps/server/src/index.ts`, then handle it in Markdown import/export. |
-| New template | Extend the template list returned by `GET /templates`; documents accept `templateId`. |
-| New CLI command | Add a dispatch branch in `packages/cli/src/index.ts` and a test in `packages/cli/test`. |
-| Multiple API instances | Replace the in-memory room map with a shared store (for example a Redis-backed y-websocket persistence) and route by document id. |
-| Object storage for uploads | Swap the local filesystem in the upload handlers for an S3-compatible client and keep `GET /uploads/:name` as a redirect. |
-| Notifications or e-mail | Hook the invite creation path; tokens are already returned to the caller for delivery by the operator. |
-| Audit or metrics | Extend `document_activity`; add a `/metrics` route reading the same pool. |
+| New REST resource | Add a module in `apps/server/src/routes/`, register it in `routes/index.ts`, extend the schema in a new `migrations/NNN_*.sql`, add the route to `test/routes.test.ts`, document it in [API.md](API.md). |
+| New editor node or mark | Add the Tiptap extension to `apps/web/src/lib/editor.ts` and to the server schema in `apps/server/src/lib/schema.ts`, then handle it in Markdown import/export. |
+| New template | Extend `apps/server/src/lib/templates.ts`; documents accept `templateId`. |
+| New web screen | Add a file under `apps/web/src/pages/` and render it from `App.tsx`. |
+| New CLI command | Add a module under `packages/cli/src/commands/`, register it in `commands/index.ts`, and add a test in `packages/cli/test`. |
+| Multiple API instances | Replace the in-memory room map in `apps/server/src/collaboration/rooms.ts` with a shared store (for example Redis-backed y-websocket persistence) and route by document id. |
+| Object storage for uploads | Swap the local filesystem in `apps/server/src/routes/uploads.ts` for an S3-compatible client and keep `GET /uploads/:name` as a redirect. |
+| Notifications or e-mail | Hook `apps/server/src/routes/auth.ts` (invite creation); tokens are already returned to the caller for delivery by the operator. |
+| Audit or metrics | Extend `document_activity`; add a `/metrics` route in `routes/system.ts` reading the same pool. |

@@ -1,6 +1,6 @@
 import { ArrowDownToLine, Printer } from 'lucide-react'
-import Popover from './Popover'
-import type { ExportTarget } from '../lib/types'
+import Popover from '../ui/Popover'
+import type { ExportTarget } from '../../lib/types'
 
 const ITEMS: Array<{ format: ExportTarget; label: string; hint: string }> = [
   { format: 'markdown', label: 'Markdown', hint: '.md' },

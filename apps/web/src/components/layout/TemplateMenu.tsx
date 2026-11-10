@@ -1,6 +1,6 @@
 import { FilePlus2, FolderPlus, Upload } from 'lucide-react'
-import Popover from './Popover'
-import type { Template } from '../lib/types'
+import Popover from '../ui/Popover'
+import type { Template } from '../../lib/types'
 
 const TEMPLATE_ORDER = ['meeting-notes', 'weekly-report', 'project-plan', 'product-spec', 'release-notes']
 

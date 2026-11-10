@@ -6,8 +6,8 @@ import {
   Minus, Palette, Quote, Redo2, Strikethrough, Table2, Type, Underline, Undo2,
 } from 'lucide-react'
 import type { Editor } from '@tiptap/react'
-import Popover from './Popover'
-import { LANGUAGES, LANG_LABELS } from '../lib/languages'
+import Popover from '../ui/Popover'
+import { LANGUAGES, LANG_LABELS } from '../../lib/languages'
 
 export type ToolbarActions = {
   onLink: () => void

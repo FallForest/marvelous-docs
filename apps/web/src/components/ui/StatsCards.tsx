@@ -1,5 +1,5 @@
 import { FileText, Folder, MessageCircle, Trash2, Users } from 'lucide-react'
-import type { WorkspaceStats } from '../lib/types'
+import type { WorkspaceStats } from '../../lib/types'
 
 const CARDS: Array<{ key: keyof WorkspaceStats; label: string; icon: typeof FileText; tone: string }> = [
   { key: 'documents', label: '文档', icon: FileText, tone: 'doc' },

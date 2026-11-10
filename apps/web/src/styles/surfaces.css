@@ -1,0 +1,366 @@
+/*
+ * Surface layer: focus rings, popovers, dialogs, toasts, profile rows and the
+ * responsive/interaction refinements that apply across the whole app.
+ */
+
+/* ── 1. base refinements ───────────────────────────────────────── */
+:root{color:var(--text);background:var(--surface-muted)}
+body{color:var(--text);-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent-soft);color:var(--accent-strong)}
+button,[role="menuitem"],[role="button"],[role="tab"],a,.home-card,.search-hit,.folder-item,.tree-doc,.nav-row,.action-row,.workspace,.share-btn{cursor:pointer}
+
+/* paragraphs keep a readable rhythm */
+.tiptap-content{line-height:1.7}
+.tiptap-content p{line-height:1.6}
+.tiptap-content blockquote{line-height:1.6;color:var(--text-secondary)}
+.modal-copy p,.menu-item-copy small,.workspace-menu-user,.login-card>p{line-height:1.5}
+
+/* ── 2. focus ring (global, token driven) ──────────────────────── */
+:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+a:focus-visible,button:focus-visible,[role="menuitem"]:focus-visible,[role="tab"]:focus-visible,
+[role="button"]:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,
+.popover:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+/* inputs sit inside bordered boxes, so the ring is drawn on the box */
+.modal-field input:focus-visible,.dialog-field input:focus-visible{outline-offset:1px}
+button:focus:not(:focus-visible),[role="menuitem"]:focus:not(:focus-visible){outline:none}
+
+/* ── 3. disabled: muted but still legible (no opacity faking) ──── */
+button:disabled{opacity:1;cursor:not-allowed;color:var(--text-muted)}
+button:disabled:not(.icon-btn):not(.tiny-btn):not(.tree-more):not(.tool-btn):not(.send-btn){
+  background:var(--surface-sunken);border-color:var(--border);box-shadow:none}
+button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,button.tree-more:disabled{color:#6b7280;background:transparent}
+.primary-btn:disabled,.btn-danger:disabled{background:#a7adb9;color:#fff}
+.secondary-btn:disabled{background:var(--surface-sunken);color:var(--text-muted)}
+
+/* ── 4. anchors + popover surfaces ─────────────────────────────── */
+.menu-anchor,.new-menu-anchor,.workspace-anchor,.tree-entry,.tree-menu-anchor{position:relative}
+/* legacy scrim: markup is gone, keep the rule inert and harmless */
+.menu-scrim{display:none}
+
+.popover{
+  position:fixed;
+  z-index:var(--z-popover);
+  min-width:0;
+  max-width:min(320px,calc(100vw - 24px));
+  max-height:min(70vh,440px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  padding:6px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  box-shadow:var(--shadow-popover);
+  color:var(--text);
+  animation:popover-in .12s ease-out;
+}
+.popover-left{left:0;right:auto}
+.popover[role="menu"]{pointer-events:auto}
+/* dialog surfaces above every topbar/sidebar layer */
+.modal-backdrop{z-index:var(--z-modal)}
+.sidebar-floating{z-index:30}
+.right-panel{z-index:22}
+@keyframes popover-in{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+
+.popover-menu{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none}
+
+.menu-item{
+  width:100%;
+  min-height:32px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  border:0;
+  background:transparent;
+  border-radius:var(--radius-sm);
+  padding:0 8px;
+  font-size:12px;
+  line-height:1.4;
+  color:var(--text-secondary);
+  text-align:left;
+  transition:background .12s ease,color .12s ease;
+}
+.menu-item:hover{background:var(--surface-muted);color:var(--text)}
+.menu-item:active{background:var(--surface-sunken)}
+.menu-item svg{flex:0 0 auto;width:16px;height:16px;color:#6b7280}
+.menu-item:hover svg{color:var(--text-secondary)}
+.menu-item[aria-disabled="true"]{color:var(--text-muted);cursor:not-allowed}
+.menu-item-danger,.menu-item.menu-item-danger{color:var(--danger)}
+.menu-item-danger svg,.menu-item.menu-item-danger svg{color:var(--danger)}
+.menu-item-danger:hover,.menu-item.menu-item-danger:hover{background:var(--danger-soft);color:var(--danger-strong)}
+.menu-item-copy{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.menu-item-copy b{font-size:12px;font-weight:600;color:var(--text)}
+.menu-item-copy small{font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu-heading{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);padding:5px 8px 4px}
+.menu-hint{margin-left:auto;font-size:11px;color:var(--text-muted);white-space:nowrap}
+.menu-key{width:18px;height:18px;flex:0 0 18px;display:grid;place-items:center;border-radius:50%;border:1px solid var(--border-strong);color:var(--text-muted);font-size:11px;font-weight:600;line-height:1}
+.menu-divider{height:1px;background:var(--border);margin:5px 6px;border:0}
+.popover .menu-divider:first-child,.popover .menu-divider:last-child{display:none}
+
+/* keep legacy menu popovers on the same surface */
+.menu-popover{z-index:var(--z-popover);background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-popover);padding:6px}
+.tree-menu{min-width:180px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-popover);padding:6px;gap:2px}
+.tree-menu button{min-height:32px;border-radius:var(--radius-sm);font-size:12px;color:var(--text-secondary)}
+.tree-menu button:hover{background:var(--surface-muted);color:var(--text)}
+.tree-menu .menu-danger{color:var(--danger)}
+.tree-menu .menu-danger:hover{background:var(--danger-soft);color:var(--danger-strong)}
+
+/* ── 5. workspace switcher menu (must fit the 254px sidebar) ───── */
+.workspace-anchor{display:block}
+.workspace-menu{
+  left:0;
+  right:auto;
+  top:calc(100% + 6px);
+  width:100%;
+  min-width:0;
+  max-width:calc(100vw - 22px);
+  padding:6px;
+  gap:2px;
+}
+.workspace-menu-head{display:flex;align-items:center;gap:9px;padding:6px 8px 8px;border-bottom:1px solid var(--border);margin-bottom:4px}
+.workspace-menu-head .workspace-avatar{width:30px;height:30px;border-radius:7px;flex:0 0 30px}
+.workspace-menu-head>div:last-child{display:flex;flex-direction:column;gap:1px;min-width:0}
+.workspace-menu-head b{font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.workspace-menu-head small,.workspace-menu-head span{font-size:11px;color:var(--text-muted);line-height:1.35}
+.workspace-menu-user{display:flex;align-items:center;gap:9px;padding:6px 8px 8px;font-size:12px;color:var(--text-secondary);border-bottom:1px solid var(--border);margin-bottom:4px;min-width:0}
+.workspace-menu-user .avatar{width:26px;height:26px;flex:0 0 26px;border-radius:50%;display:grid;place-items:center;background:#dce6e4;color:#3f5f59;font-size:11px;font-weight:700}
+.workspace-menu-user>div{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.workspace-menu-user b{font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.workspace-menu-user small{font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:100%}
+.workspace-menu-actions{display:flex;flex-direction:column;gap:2px}
+.workspace-menu-actions button{justify-content:flex-start;width:100%}
+
+/* workspace trigger button gets a real affordance */
+.workspace{border-color:var(--border);cursor:pointer;transition:border-color .14s ease,background .14s ease,box-shadow .14s ease}
+.workspace:hover{border-color:var(--border-strong);background:#fcfcfd;box-shadow:0 1px 2px rgba(17,24,39,.04)}
+.workspace[aria-expanded="true"]{border-color:var(--border-strong);background:var(--surface)}
+.workspace-copy b{color:var(--text)}
+.workspace-copy small{color:var(--text-muted)}
+
+/* ── 6. dialogs: confirm / prompt / help ───────────────────────── */
+.confirm-modal,.prompt-modal,.help-modal{
+  position:relative;
+  width:min(100%,460px);
+  max-height:calc(100vh - 40px);
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  padding:24px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-modal);
+  color:var(--text);
+  animation:modal-in .16s ease-out;
+}
+@keyframes modal-in{from{opacity:0;transform:translateY(6px) scale(.99)}to{opacity:1;transform:none}}
+
+.confirm-modal>header,.prompt-modal>header,.help-modal>header{display:flex;align-items:flex-start;gap:12px;padding-right:28px}
+.confirm-modal h2,.prompt-modal h2,.help-modal h2{margin:0;font-size:16px;line-height:1.35;font-weight:650;color:var(--text)}
+.modal-icon{
+  width:36px;height:36px;flex:0 0 36px;
+  display:grid;place-items:center;
+  border-radius:10px;
+  background:var(--accent-soft);
+  color:var(--accent-strong);
+}
+.modal-icon.is-danger,.modal-icon.modal-icon-danger{background:var(--danger-soft);color:var(--danger)}
+.confirm-modal>header .icon-btn,.prompt-modal>header .icon-btn,.help-modal>header .icon-btn{margin-left:auto;flex:0 0 auto}
+.modal-dot{width:9px;height:9px;border-radius:50%;background:currentColor;display:block}
+.modal-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
+.modal-copy p,.modal-copy small{margin:0;font-size:12px;color:var(--text-muted);line-height:1.5}
+.modal-copy strong{color:var(--text);font-weight:600}
+.modal-field,.dialog-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.modal-field label,.dialog-field label{font-size:12px;font-weight:600;color:var(--text-secondary)}
+.modal-field input,.dialog-field input,.modal-field textarea,.dialog-field textarea,.modal-field select,.dialog-field select{
+  height:38px;
+  padding:0 11px;
+  border:1px solid var(--border-strong);
+  border-radius:var(--radius-sm);
+  background:var(--surface);
+  color:var(--text);
+  font-size:13px;
+  outline:none;
+  transition:border-color .14s ease,box-shadow .14s ease;
+}
+.modal-field textarea,.dialog-field textarea{height:auto;min-height:82px;padding:9px 11px;line-height:1.5;resize:vertical}
+.modal-field input:focus,.dialog-field input:focus,.modal-field textarea:focus,.dialog-field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(192,83,63,.16)}
+.modal-field input::placeholder,.dialog-field input::placeholder{color:#6b7280}
+.dialog-field input[aria-invalid="true"],.modal-field input[aria-invalid="true"],.dialog-field textarea[aria-invalid="true"]{border-color:var(--danger);box-shadow:0 0 0 3px rgba(176,69,58,.14)}
+.dialog-error,.modal-error{margin:0;font-size:12px;color:var(--danger);line-height:1.45}
+.modal-actions,.dialog-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:2px}
+.modal-actions button,.dialog-actions button{min-height:36px;font-size:12px;padding:0 14px;border-radius:var(--radius-sm)}
+.modal-danger{min-height:36px;padding:0 14px;border:0;border-radius:var(--radius-sm);background:var(--danger);color:#fff;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.modal-danger:hover{background:var(--danger-strong)}
+.modal-actions .modal-danger{align-self:auto}
+
+/* shared action buttons used by the new dialogs */
+.btn-danger{min-height:36px;padding:0 14px;border:0;border-radius:var(--radius-sm);background:var(--danger);color:#fff;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.btn-danger:hover{background:var(--danger-strong)}
+.btn-ghost{min-height:36px;padding:0 12px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--text-secondary);font-size:12px;display:inline-flex;align-items:center;gap:6px}
+.btn-ghost:hover{background:var(--surface-muted);color:var(--text)}
+
+/* help / shortcut dialog */
+.help-modal{width:min(100%,480px)}
+.shortcut-list{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none}
+.shortcut-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:34px;margin:0;padding:0 6px;border-radius:var(--radius-sm);font-size:12px;color:var(--text-secondary)}
+.shortcut-row:hover{background:var(--surface-muted)}
+.shortcut-row dt{margin:0;font-size:12px;color:var(--text-secondary)}
+.shortcut-row dd{margin:0;display:flex;align-items:center;gap:4px;justify-content:flex-end;flex-wrap:wrap}
+.shortcut-row kbd{font-family:inherit;font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--surface-sunken);border:1px solid var(--border);border-radius:4px;padding:2px 6px;white-space:nowrap;line-height:1.4}
+.help-note{margin:0;padding:10px 12px;border-radius:var(--radius-md);background:var(--surface-muted);font-size:12px;line-height:1.55;color:var(--text-muted)}
+.help-links{display:flex;flex-wrap:wrap;gap:10px 16px;padding-top:4px;border-top:1px solid var(--border);font-size:12px}
+.help-links a{color:var(--accent-strong);text-decoration:none}
+.help-links a:hover{text-decoration:underline}
+
+/* ── 7. toast ──────────────────────────────────────────────────── */
+.notice-toast{
+  position:fixed;
+  right:22px;
+  bottom:22px;
+  z-index:var(--z-toast);
+  max-width:min(360px,calc(100vw - 24px));
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:11px 12px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  font-size:12px;
+  line-height:1.45;
+  color:var(--text-secondary);
+  box-shadow:var(--shadow-toast);
+  animation:toast-in .2s ease-out;
+}
+@keyframes toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.notice-toast button{
+  flex:0 0 auto;
+  width:24px;height:24px;
+  margin:-2px -2px 0 auto;
+  border:0;background:transparent;border-radius:5px;
+  color:var(--text-muted);
+  display:grid;place-items:center;padding:0;
+}
+.notice-toast button:hover{background:var(--surface-muted);color:var(--text)}
+
+/* ── 8. sidebar profile row: clean circle + ellipsis ───────────── */
+.profile-row{
+  height:auto;
+  min-height:56px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 6px;
+  border-radius:var(--radius-md);
+}
+.profile-row .avatar,.profile-copy+.avatar{
+  width:30px;height:30px;
+  flex:0 0 30px;
+  aspect-ratio:1 / 1;
+  border-radius:50%;
+  overflow:hidden;
+  line-height:1;
+  display:grid;place-items:center;
+  background:#dce6e4;
+  color:#3f5f59;
+  font-size:12px;
+  font-weight:700;
+  box-shadow:inset 0 0 0 1px rgba(72,99,94,.16);
+}
+.profile-copy{min-width:0;gap:2px}
+.profile-copy b{font-size:12px;color:var(--text);display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.profile-copy small{display:block;max-width:100%;font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.profile-row>.icon-btn{flex:0 0 auto}
+.sidebar .profile-row,.admin-sidebar .profile-row{padding-left:8px}
+.help-row{width:100%;border:0;border-top:1px solid var(--border);background:transparent;color:var(--text-muted);text-align:left;cursor:pointer;border-radius:0}
+.help-row:hover{background:var(--surface-sunken);color:var(--text)}
+.help-row>svg{margin-left:auto}
+.help-dot{color:var(--text-muted);border-color:#8a919e;font-weight:600}
+
+/* ── 9. tree overflow button: visible without hover ────────────── */
+.tree-more{width:28px;height:28px;flex:0 0 28px;border-radius:6px;opacity:.7;color:#6b7280;transition:opacity .12s ease,background .12s ease,color .12s ease}
+.tree-entry:hover .tree-more,.tree-entry.selected .tree-more,.tree-more:focus-visible,.tree-more[aria-expanded="true"]{opacity:1}
+.tree-more[aria-expanded="true"]{background:var(--surface-sunken);color:var(--text-secondary)}
+.tree-entry.selected .tree-doc{color:var(--text)}
+
+/* ── 10. interactive rows ──────────────────────────────────────── */
+.nav-row,.action-row,.tree-doc,.tree-folder,.home-card,.search-hit,.folder-item,.share-btn,.new-doc-btn,.secondary-btn,.icon-btn,.tiny-btn,.tool-btn{
+  transition:background .12s ease,color .12s ease,border-color .12s ease,box-shadow .12s ease;
+}
+.nav-row:hover,.action-row:hover,.tree-folder:hover,.tree-doc:hover{background:var(--surface-sunken);color:var(--text)}
+.icon-btn:hover,.tiny-btn:hover,.tool-btn:hover{background:var(--surface-sunken);color:var(--text)}
+.secondary-btn:hover,.new-doc-btn:hover,.share-btn:hover{border-color:var(--border-strong);color:var(--text)}
+.nav-count{color:var(--text-muted)}
+.nav-label{color:var(--text-muted)}
+.empty-tree,.empty-tree:hover{color:var(--text-muted)}
+.toolbar-format,.save-state,.breadcrumbs,.doc-meta,.editor-footer,.comment-head small,.version-line small{color:var(--text-muted)}
+
+/* ── 11. responsive: no horizontal scroll, mobile touch targets ── */
+html,body{max-width:100%}
+@media (max-width:1024px){
+  .workspace-content{min-width:0}
+  .popover{max-width:min(300px,calc(100vw - 20px))}
+}
+@media (max-width:820px){
+  .topbar{flex-wrap:nowrap;min-width:0}
+  .breadcrumbs{flex:1 1 auto;min-width:0}
+  .top-actions{flex:0 0 auto;gap:6px;flex-wrap:nowrap}
+  .popover{max-width:calc(100vw - 20px)}
+  .presence-stack .mini-avatar:not(.green){display:none}
+}
+@media (max-width:560px){
+  .topbar{height:auto;min-height:56px;padding:0 10px;gap:4px}
+  .top-actions{gap:2px}
+  .icon-btn,.tiny-btn{width:40px;height:44px;border-radius:7px}
+  .top-actions .icon-btn{width:38px;height:44px}
+  .tree-more{width:44px;height:44px;flex:0 0 44px;opacity:1}
+  .tree-doc,.tree-folder{height:44px}
+  .nav-row{height:44px;font-size:13px}
+  .action-row{height:44px}
+  .help-row{height:44px}
+  .menu-item{min-height:44px;font-size:13px}
+  .menu-item svg{width:17px;height:17px}
+  .popover{min-width:min(240px,calc(100vw - 20px));max-width:calc(100vw - 20px);border-radius:12px}
+  .workspace-menu{width:min(240px, calc(100vw - 22px))}
+  .confirm-modal,.prompt-modal,.help-modal{padding:20px;border-radius:var(--radius-lg);max-height:calc(100vh - 24px)}
+  .modal-actions,.dialog-actions{flex-direction:column;align-items:stretch}
+  .modal-actions button,.dialog-actions button,.modal-danger,.btn-danger,.btn-ghost{width:100%;justify-content:center;min-height:44px}
+  .shortcut-row{flex-wrap:wrap;row-gap:2px;padding:6px}
+  .shortcut-row dd{width:100%;justify-content:flex-start}
+  .notice-toast{right:12px;left:12px;bottom:12px;max-width:none}
+  .notice-toast button{width:32px;height:32px}
+  .profile-row{min-height:60px}
+  .doc-meta{flex-wrap:wrap;row-gap:4px}
+  .collaborators .presence-stack{display:none}
+  .collaborators{gap:2px}
+  .editor-toolbar{padding:0 8px}
+  .breadcrumbs strong{max-width:112px}
+}
+@media (max-width:390px){
+  .topbar{padding:0 8px}
+  .breadcrumbs strong{max-width:104px}
+  .share-btn{width:34px}
+}
+
+/* touch devices: never hover-only affordances */
+@media (hover:none){
+  .tree-more{opacity:1}
+  .home-card:hover{transform:none}
+  .menu-item:hover,.nav-row:hover,.tree-doc:hover{background:transparent}
+  .menu-item:active,.nav-row:active,.tree-doc:active,.tree-folder:active,.action-row:active{background:var(--surface-sunken)}
+}
+
+/* ── 12. reduced motion ────────────────────────────────────────── */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+  .home-card:hover{transform:none}
+}

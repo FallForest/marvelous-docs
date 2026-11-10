@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Activity, RefreshCw } from 'lucide-react'
-import { request } from '../lib/api'
-import { relativeTime } from '../lib/format'
-import type { ActivityEntry } from '../lib/types'
+import { request } from '../../lib/api'
+import { relativeTime } from '../../lib/format'
+import type { ActivityEntry } from '../../lib/types'
 
 const ACTION_LABELS: Record<string, string> = { view: '查看了文档', edit: '编辑了文档', restore: '恢复了历史版本' }
 

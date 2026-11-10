@@ -1,0 +1,25 @@
+/*
+ * Style entry point.
+ *
+ * The layers are imported in cascade order, each one narrow enough to own a
+ * single concern:
+ *
+ *   base        tokens, reset, app shell geometry, admin shell, login
+ *   surfaces    focus rings, popovers, dialogs, toasts
+ *   editor      document chrome, toolbars, menus
+ *   navigation  sidebar / topbar rows, dropdown language, layer order
+ *   content     code blocks, share links, public share page
+ *   shell       sidebar + topbar consolidation (single source of truth)
+ *   updates     updater banner and links
+ *
+ * Import order matters: later layers deliberately override earlier ones, and
+ * shell.css is last because it normalises the two chrome surfaces.
+ */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+@import './base.css';
+@import './surfaces.css';
+@import './editor.css';
+@import './navigation.css';
+@import './content.css';
+@import './shell.css';
+@import './updates.css';

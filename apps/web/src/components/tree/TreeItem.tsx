@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, FileText, Folder, MoreHorizontal } from 'lucide-react'
-import Popover from './Popover'
-import type { Doc, DocNode, TreeAction } from '../lib/types'
+import Popover from '../ui/Popover'
+import type { Doc, DocNode, TreeAction } from '../../lib/types'
 
 type TreeItemProps = {
   node: DocNode
@@ -27,14 +27,16 @@ export default function TreeItem(props: TreeItemProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const isFolder = node.doc.kind === 'folder'
   const expanded = expandedFolders.has(node.doc.id)
-  const selected = activeId === node.doc.id || selectedFolderId === node.doc.id
+  /** A folder is only highlighted when it is the selection itself — opening a
+   *  document inside it must not light up two rows at once. */
+  const selected = activeId ? activeId === node.doc.id : selectedFolderId === node.doc.id
   const title = node.doc.title || (isFolder ? '未命名文件夹' : '未命名文档')
   const run = (action: TreeAction) => {
     setMenuOpen(false)
     onAction(action, node.doc)
   }
   return <div className="tree-node">
-    <div className={'tree-entry' + (selected ? ' is-selected' : '')} style={{ paddingLeft: depth * 14 + 'px' }}>
+    <div className={'tree-entry' + (selected ? ' is-selected' : '')}>
       {isFolder
         ? <button
           type="button"
@@ -72,7 +74,7 @@ export default function TreeItem(props: TreeItemProps) {
         </Popover>
       </div>
     </div>
-    {isFolder && expanded && node.children.map((child) => <TreeItem
+    {isFolder && expanded && <div className="tree-children">{node.children.map((child) => <TreeItem
       key={child.doc.id}
       node={child}
       depth={depth + 1}
@@ -84,6 +86,6 @@ export default function TreeItem(props: TreeItemProps) {
       onSelectFolder={onSelectFolder}
       onSelectDocument={onSelectDocument}
       onAction={onAction}
-    />)}
+    />)}</div>}
   </div>
 }

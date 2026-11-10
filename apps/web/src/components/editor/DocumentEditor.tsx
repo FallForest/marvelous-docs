@@ -1,0 +1,352 @@
+import { useEffect, useRef, useState } from 'react'
+import { EditorContent, useEditor } from '@tiptap/react'
+import * as Y from 'yjs'
+import { WebsocketProvider } from 'y-websocket'
+import { Check, Copy as CopyIcon } from 'lucide-react'
+import EditorToolbar from './EditorToolbar'
+import BubbleToolbar from './BubbleToolbar'
+import { FindReplace, OutlinePanel } from './FindReplace'
+import SlashMenu, { SLASH_ITEMS } from './SlashMenu'
+import TableMenu from './TableMenu'
+import { Dialog } from '../ui/Dialog'
+import { API, request } from '../../lib/api'
+import { COLLAB_URL } from '../../lib/collab'
+import { buildEditorExtensions } from '../../lib/editor'
+import { wordCount, formatDate } from '../../lib/format'
+import { languageLabel } from '../../lib/languages'
+import { emptyContent } from '../../lib/types'
+import type { CollabStatus } from '../../lib/app-types'
+import type { Doc, SaveStatus, User } from '../../lib/types'
+
+type DocumentEditorProps = {
+  doc: Doc
+  token: string
+  persist: (json: Record<string, unknown>, immediate?: boolean) => void
+  user: User
+  saveStatus: SaveStatus
+  onSaveStatus: (status: SaveStatus) => void
+  onAwareness: (users: Array<{ clientId: number; name: string; color: string }>) => void
+  onCollabStatus: (status: CollabStatus) => void
+  onSelection: (anchor: { from: number; to: number; text: string }) => void
+  onExport: (format: 'markdown' | 'html' | 'json') => void
+  onLink: (range: { from: number; to: number }) => void
+}
+
+export default function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, onAwareness, onCollabStatus, onSelection, onExport, onLink }: DocumentEditorProps) {
+  const [ydoc, setYdoc] = useState<Y.Doc | null>(null)
+  const [provider, setProvider] = useState<WebsocketProvider | null>(null)
+  const [title, setTitle] = useState(doc.title)
+  const [words, setWords] = useState(0)
+  const [imagePrompt, setImagePrompt] = useState(false)
+  const [findOpen, setFindOpen] = useState(false)
+  const [outlineOpen, setOutlineOpen] = useState(false)
+  const [imageUrl, setImageUrl] = useState('')
+  const [bubbleAnchor, setBubbleAnchor] = useState<{ left: number; top: number } | null>(null)
+  const [codeBlocks, setCodeBlocks] = useState<Array<{ index: number; top: number; bottom: number; left: number; width: number; language: string; text: string }>>([])
+  const [copiedCode, setCopiedCode] = useState<number | null>(null)
+  const [slash, setSlash] = useState<{ left: number; top: number; query: string; range: { from: number; to: number } } | null>(null)
+  const statusTimer = useRef<number | undefined>(undefined)
+
+  useEffect(() => { setTitle(doc.title) }, [doc.id, doc.title])
+
+  // The provider owns a live socket, so it must be created inside an effect.
+  // Memoising it would reuse a destroyed provider after React StrictMode's
+  // development remount and leave the room stuck in "connecting".
+  useEffect(() => {
+    if (!COLLAB_URL) { onCollabStatus('disconnected'); setYdoc(null); setProvider(null); return }
+    const document = new Y.Doc()
+    const connection = new WebsocketProvider(COLLAB_URL, doc.id, document, { params: { token } })
+    setYdoc(document)
+    setProvider(connection)
+    return () => {
+      onAwareness([])
+      connection.destroy()
+      document.destroy()
+      setProvider((current) => current === connection ? null : current)
+      setYdoc((current) => current === document ? null : current)
+    }
+  }, [doc.id, token, onAwareness, onCollabStatus])
+
+  useEffect(() => {
+    if (!provider) return
+    const color = ['#4677c8', '#b15c9b', '#4b8b6b', '#c17a3c'][Math.abs(user.id.split('').reduce((sum, character) => sum + character.charCodeAt(0), 0)) % 4]
+    provider.awareness.setLocalStateField('user', { name: user.name || user.email.split('@')[0], color })
+    const publish = () => {
+      const people: Array<{ clientId: number; name: string; color: string }> = []
+      provider.awareness.getStates().forEach((state, clientId) => {
+        const person = state.user as { name?: string; color?: string } | undefined
+        if (clientId !== provider.awareness.clientID && person?.name) people.push({ clientId, name: person.name, color: person.color || '#64748b' })
+      })
+      onAwareness(people)
+    }
+    const status = (event: { status: string }) => onCollabStatus(event.status === 'connected' ? 'connected' : event.status === 'connecting' ? 'connecting' : 'disconnected')
+    provider.on('status', status)
+    provider.awareness.on('change', publish)
+    publish()
+    return () => {
+      provider.off('status', status)
+      provider.awareness.off('change', publish)
+    }
+  }, [provider, user.id, user.name, user.email, onAwareness, onCollabStatus])
+
+  useEffect(() => {
+    const preserveSelection = (event: MouseEvent) => {
+      if ((event.target as HTMLElement).closest('.toolbar-format')) event.preventDefault()
+    }
+    document.addEventListener('mousedown', preserveSelection)
+    return () => document.removeEventListener('mousedown', preserveSelection)
+  }, [])
+
+
+
+  const editor = useEditor({
+    extensions: buildEditorExtensions({ ydoc: provider ? ydoc : null, placeholder: '从这里开始写作…' }),
+    content: doc.content?.doc || emptyContent.doc,
+    onUpdate: ({ editor: instance }) => {
+      setWords(wordCount(instance.getText()))
+      if (provider) {
+        onSaveStatus('saving')
+        window.clearTimeout(statusTimer.current)
+        statusTimer.current = window.setTimeout(() => onSaveStatus('saved'), 900)
+      } else {
+        persist(instance.getJSON())
+      }
+    },
+    onCreate: ({ editor: instance }) => setWords(wordCount(instance.getText())),
+    onBlur: () => setBubbleAnchor(null),
+    onSelectionUpdate: ({ editor: instance }) => {
+      const { from, to } = instance.state.selection
+      const { $from, $to } = instance.state.selection
+      const isNodeSelection = instance.state.selection.constructor.name === 'NodeSelection'
+      if (to > from && !isNodeSelection && $from.parent === $to.parent) {
+        onSelection({ from, to, text: instance.state.doc.textBetween(from, to, ' ').slice(0, 500) })
+        const start = instance.view.coordsAtPos(from)
+        const end = instance.view.coordsAtPos(to)
+        setBubbleAnchor({ left: Math.max(12, (start.left + end.left) / 2 - 150), top: Math.max(64, Math.min(start.top, end.top) - 52) })
+      } else {
+        setBubbleAnchor(null)
+      }
+    },
+    editorProps: { attributes: { class: 'tiptap-content' } },
+  }, [doc.id, provider])
+
+  // Track the hovered code block so an overlay toolbar can be rendered in React
+  // (never mutate ProseMirror's DOM: that breaks the editor and freezes the page).
+  useEffect(() => {
+    if (!editor) return
+    const dom = editor.view?.dom as HTMLElement | undefined
+    if (!dom) return
+    const update = () => {
+      const blocks = Array.from(dom.querySelectorAll('pre')) as HTMLElement[]
+      // Language lives on the ProseMirror node; the DOM class is only a hint.
+      const nodeLanguages: string[] = []
+      editor.state.doc.descendants((node) => {
+        if (node.type.name === 'codeBlock') nodeLanguages.push(String(node.attrs.language || ''))
+      })
+      setCodeBlocks(blocks.map((node, index) => {
+        const rect = node.getBoundingClientRect()
+        const code = node.querySelector('code')
+        const lc = [...(code?.classList || [])].find((c) => c.startsWith('language-'))
+        const fromClass = lc?.replace('language-', '') || ''
+        return { index, top: rect.top, bottom: rect.bottom, left: rect.left, width: rect.width, language: nodeLanguages[index] || fromClass || '', text: code?.textContent || '' }
+      }))
+    }
+    update()
+    const observer = new MutationObserver(() => requestAnimationFrame(update))
+    observer.observe(dom, { childList: true, subtree: true, characterData: true })
+    window.addEventListener('scroll', update, true)
+    window.addEventListener('resize', update)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('scroll', update, true)
+      window.removeEventListener('resize', update)
+    }
+  }, [editor])
+
+  // Reveal the quoted text when a comment anchor is clicked in the side panel.
+  useEffect(() => {
+    const reveal = (event: Event) => {
+      const anchor = (event as CustomEvent<{ from?: number; to?: number }>).detail
+      if (!anchor || !editor || typeof anchor.from !== 'number' || typeof anchor.to !== 'number') return
+      editor.chain().focus().setTextSelection({ from: anchor.from, to: anchor.to }).scrollIntoView().run()
+    }
+    window.addEventListener('mdoc-focus-anchor', reveal)
+    return () => window.removeEventListener('mdoc-focus-anchor', reveal)
+  }, [editor])
+
+  useEffect(() => {
+    if (!editor) return
+    const update = () => {
+      const { $from } = editor.state.selection
+      // Never trigger inside code blocks: file paths such as /usr/local/bin/xray
+      // are ordinary text there, not a command.
+      if ($from.parent.type.name === 'codeBlock') { setSlash(null); return }
+      // Only paragraphs and headings host the insertion command.
+      if ($from.parent.type.name !== 'paragraph' && $from.parent.type.name !== 'heading') { setSlash(null); return }
+      const textBefore = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc')
+      const match = /(^|\s)\/([^\s/]*)$/.exec(textBefore)
+      if (!match) { setSlash(null); return }
+      const query = match[2] || ''
+      // Hide the menu when nothing matches so it cannot cover the document.
+      const hasMatch = SLASH_ITEMS.some((item) => !query || item.label.includes(query) || item.hint.includes(query))
+      if (!hasMatch) { setSlash(null); return }
+      const coords = editor.view.coordsAtPos($from.pos)
+      setSlash({ left: Math.max(12, Math.min(window.innerWidth - 280, coords.left)), top: coords.bottom + 6, query, range: { from: $from.pos - query.length - 1, to: $from.pos } })
+    }
+    editor.on('update', update)
+    editor.on('selectionUpdate', update)
+    return () => { editor.off('update', update); editor.off('selectionUpdate', update) }
+  }, [editor])
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ from: number; to: number; href: string }>).detail
+      if (!detail || !editor) return
+      editor.chain().focus().setTextSelection({ from: detail.from, to: detail.to }).extendMarkRange('link').setLink({ href: detail.href }).run()
+    }
+    window.addEventListener('mdoc-insert-link', handler)
+    return () => window.removeEventListener('mdoc-insert-link', handler)
+  }, [editor])
+
+  useEffect(() => {
+    const handler = () => {
+      if (provider) {
+        onSaveStatus('saving')
+        request('/documents/' + doc.id, token)
+          .then(() => onSaveStatus('saved'))
+          .catch(() => onSaveStatus('error'))
+        return
+      }
+      if (editor) persist(editor.getJSON(), true)
+    }
+    window.addEventListener('mdoc-force-save', handler)
+    return () => window.removeEventListener('mdoc-force-save', handler)
+  }, [provider, editor, doc.id, token, persist, onSaveStatus])
+
+  function rangeSelection() {
+    const selection = editor?.state.selection
+    onLink({ from: selection?.from ?? 0, to: selection?.to ?? 0 })
+  }
+
+  function commentSelection() {
+    const selection = editor?.state.selection
+    if (selection && selection.to > selection.from) onSelection({ from: selection.from, to: selection.to, text: editor.state.doc.textBetween(selection.from, selection.to, ' ').slice(0, 500) })
+  }
+
+  async function uploadImage(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    if (file.size > 20 * 1024 * 1024) { window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '图片不能超过 20 MB' })); return }
+    try {
+      const response = await fetch(API + '/api/v1/uploads', {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type || 'application/octet-stream', 'X-File-Name': file.name, Authorization: 'Bearer ' + token },
+        body: file,
+      })
+      const body = await response.json()
+      if (!response.ok) throw new Error(body.error?.message || '上传失败')
+      setImageUrl(API + body.file.url)
+    } catch (error) {
+      window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '图片上传失败：' + (error as Error).message }))
+    }
+  }
+
+  async function saveTitle(next: string) {
+    const clean = next.trim() || '未命名文档'
+    setTitle(clean)
+    try {
+      const latest = await request<{ document: Doc }>('/documents/' + doc.id, token)
+      const result = await request<{ document: Doc }>('/documents/' + doc.id, token, { method: 'PUT', body: JSON.stringify({ title: clean, expectedVersion: latest.document.version }) })
+      window.dispatchEvent(new CustomEvent('mdoc-updated', { detail: result.document }))
+    } catch (error) {
+      setTitle(doc.title)
+      window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '标题保存失败：' + (error as Error).message }))
+    }
+  }
+
+  return <>
+    <EditorToolbar
+      editor={editor}
+      onInteract={() => setBubbleAnchor(null)}
+      actions={{
+        onLink: () => { const selection = editor?.state.selection; onLink({ from: selection?.from ?? 0, to: selection?.to ?? 0 }) },
+        onImage: () => setImagePrompt(true),
+        onFind: () => setFindOpen(true),
+        onOutline: () => setOutlineOpen(true),
+        onExport: () => onExport('json'),
+        onComment: () => { commentSelection(); window.dispatchEvent(new Event('mdoc-open-comments')) },
+      }}
+    />
+    <div className="paper">
+      <div className="document-heading">
+        <input
+          aria-label="文档标题"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          onBlur={(event) => { if (event.target.value !== doc.title) void saveTitle(event.target.value) }}
+          onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur() }}
+        />
+        <div className="doc-meta"><span>最后编辑于 {formatDate(doc.updatedAt) || '刚刚'}</span></div>
+      </div>
+      {/* Code block enhancement: language badge + copy button */}
+      <EditorContent editor={editor} />
+      {codeBlocks.map((block) => <div
+        key={block.index}
+        className="code-overlay"
+        style={{ top: block.top, left: block.left, width: block.width }}
+        contentEditable={false}
+        aria-hidden="false"
+      >
+        <span className="code-overlay-lang">{languageLabel(block.language)}</span>
+        <button
+          type="button"
+          className={'code-overlay-copy' + (copiedCode === block.index ? ' copied' : '')}
+          aria-label="复制代码"
+          title="复制代码"
+          onClick={async () => {
+            try { await navigator.clipboard?.writeText(block.text) } catch {
+              const ta = document.createElement('textarea')
+              ta.value = block.text
+              ta.style.position = 'fixed'
+              ta.style.opacity = '0'
+              document.body.appendChild(ta)
+              ta.select()
+              document.execCommand('copy')
+              document.body.removeChild(ta)
+            }
+            setCopiedCode(block.index)
+            setTimeout(() => setCopiedCode(null), 1500)
+          }}
+        >{copiedCode === block.index ? <Check size={13} /> : <CopyIcon size={13} />}<span>{copiedCode === block.index ? '已复制' : '复制'}</span></button>
+      </div>)}
+    </div>
+    <SlashMenu editor={editor} anchor={slash} query={slash?.query || ''} range={slash?.range || null} onClose={() => setSlash(null)} onImage={() => setImagePrompt(true)} />
+    <TableMenu editor={editor} />
+    <BubbleToolbar editor={editor} anchor={bubbleAnchor} onLink={() => rangeSelection()} onComment={() => { commentSelection(); window.dispatchEvent(new Event('mdoc-open-comments')) }} />
+    {imagePrompt && <Dialog
+      title="插入图片"
+      description="粘贴图片地址，或上传本地图片（20 MB 以内）。"
+      confirmLabel="插入"
+      onConfirm={() => { if (imageUrl.trim()) { editor?.chain().focus().setImage({ src: imageUrl.trim() }).run(); setImageUrl(''); setBubbleAnchor(null) } setImagePrompt(false) }}
+      onClose={() => setImagePrompt(false)}
+    >
+      <div className="dialog-field">
+        <label htmlFor="image-url">图片地址</label>
+        <div className="image-insert-row">
+          <input id="image-url" placeholder="https://example.com/image.png" value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} />
+          <label className="image-upload-btn secondary-btn">上传<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" className="visually-hidden" onChange={(event) => void uploadImage(event)} /></label>
+        </div>
+      </div>
+    </Dialog>}
+    {findOpen && <FindReplace editor={editor} initial="" onClose={() => setFindOpen(false)} />}
+    {outlineOpen && <OutlinePanel editor={editor} onClose={() => setOutlineOpen(false)} />}
+    <div className="editor-footer">
+      <span>字数 {words}</span>
+      <span className="meta-divider" />
+      <span className={'footer-save ' + saveStatus}>{saveStatus === 'saving' ? '正在保存…' : saveStatus === 'error' ? '保存失败' : '已保存'}</span>
+      <span className="footer-spacer" />
+      <span className="footer-hint">{provider ? '实时协作已开启 · Ctrl/⌘+S 强制保存' : 'Ctrl/⌘+S 保存 · Ctrl/⌘+Shift+E 导出 Markdown'}</span>
+    </div>
+  </>
+}

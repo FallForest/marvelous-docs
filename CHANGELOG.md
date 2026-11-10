@@ -8,6 +8,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.36] - 2026-11-10
+
+### Changed
+
+- Restructured both applications into responsibility-based modules. The API
+  entry point now only assembles the process (server, plugins, route table,
+  collaboration socket, shutdown) while behaviour lives in `routes/*` (one file
+  per domain), `collaboration/*` and `lib/*`. The web client split the
+  1,400-line `App.tsx` into `pages/*`, `components/{editor,dialogs,layout,panels,tree,ui}`
+  and `hooks/*`, and the 1,700-line stylesheet into ordered layers under
+  `styles/`.
+- Added `docs/STRUCTURE.md` documenting where a new file belongs and which
+  layer may import from which; `docs/ARCHITECTURE.md` points to it.
+
+### Tests
+
+- Added `apps/server/test/routes.test.ts` and `apps/web/test/structure.test.ts`
+  covering the new module layout. Total suite is now 113 tests.
+
 ## [0.1.35] - 2026-11-09
 
 ### Fixed

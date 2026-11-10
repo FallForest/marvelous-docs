@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { EditorContent, useEditor } from '@tiptap/react'
 import { Clock3, RefreshCw, X } from 'lucide-react'
-import { request } from '../lib/api'
-import { buildEditorExtensions } from '../lib/editor'
-import { formatDate } from '../lib/format'
-import { emptyContent } from '../lib/types'
-import type { Version } from '../lib/types'
+import { request } from '../../lib/api'
+import { buildEditorExtensions } from '../../lib/editor'
+import { formatDate } from '../../lib/format'
+import { emptyContent } from '../../lib/types'
+import type { Version } from '../../lib/types'
 
 type VersionPreviewProps = {
   token: string

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Folder, X } from 'lucide-react'
-import { buildDocTree, descendantIds, flatten, treeDepth } from '../lib/tree'
-import type { Doc } from '../lib/types'
+import { buildDocTree, descendantIds, flatten, treeDepth } from '../../lib/tree'
+import type { Doc } from '../../lib/types'
 
 type MoveDialogProps = {
   doc: Doc
