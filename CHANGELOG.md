@@ -8,6 +8,28 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.38] - 2026-11-11
+
+### Fixed
+
+- Changing a code block's language no longer selects the whole block. The
+  handler used `setNodeSelection`, so the next keystroke replaced the block
+  instead of typing into it; the attribute is now set through a transaction.
+- Copy failures are announced to screen readers (`role="status"`,
+  `aria-live="polite"`) and raise a notice, instead of silently claiming success.
+
+### Added
+
+- Code block toolbar gains move up, move down and delete, so a block can be
+  repositioned or removed without moving back to the top toolbar or using only
+  the keyboard.
+
+### Changed
+
+- Removed dead CSS left behind by the earlier code-block implementations
+  (`.code-lang-badge`, `.code-copy-btn`, `.code-lang-selector`,
+  `.tb-lang-select`).
+
 ## [0.1.37] - 2026-11-11
 
 ### Fixed

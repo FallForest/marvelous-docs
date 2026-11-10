@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { EditorContent, useEditor } from '@tiptap/react'
 import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
-import { Check, Copy as CopyIcon } from 'lucide-react'
+import { ArrowDown, ArrowUp, Check, Copy as CopyIcon, Trash2 } from 'lucide-react'
 import EditorToolbar from './EditorToolbar'
 import BubbleToolbar from './BubbleToolbar'
 import { FindReplace, OutlinePanel } from './FindReplace'
@@ -302,7 +302,7 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
         />
         <div className="doc-meta"><span>最后编辑于 {formatDate(doc.updatedAt) || '刚刚'}</span></div>
       </div>
-      {/* Code block enhancement: language badge + copy button */}
+      {/* Code block enhancement: language badge and per-block actions */}
       <EditorContent editor={editor} />
       {codeBlocks.map((block) => <div
         key={block.index}
@@ -316,13 +316,66 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
             value={block.language || 'plaintext'}
             onChange={(event) => {
               if (!editor || block.pos < 0) return
-              // Update the node attribute in place so the badge and exports follow.
-              editor.chain().focus().setNodeSelection(block.pos).updateAttributes('codeBlock', { language: event.target.value }).run()
+              // Set the attribute through a transaction at the node's position.
+              // setNodeSelection would select the whole block, so the next
+              // keystroke would replace it instead of typing into it.
+              const { tr } = editor.state
+              editor.view.dispatch(tr.setNodeAttribute(block.pos, 'language', event.target.value))
             }}
           >
             {LANGUAGES.map((lang) => <option key={lang} value={lang}>{languageLabel(lang)}</option>)}
           </select>
         </label>
+        <span className="code-overlay-actions">
+          <button
+            type="button"
+            className="code-overlay-icon"
+            aria-label="上移代码块"
+            title="上移"
+            onClick={() => {
+              if (!editor || block.pos < 0) return
+              const { doc, tr } = editor.state
+              const node = doc.nodeAt(block.pos)
+              if (!node) return
+              const before = doc.resolve(block.pos).nodeBefore
+              if (!before) return
+              const from = block.pos - before.nodeSize
+              const start = from < 0 ? 0 : from
+              tr.delete(block.pos, block.pos + node.nodeSize).insert(start, node)
+              editor.view.dispatch(tr)
+            }}
+          ><ArrowUp size={13} /></button>
+          <button
+            type="button"
+            className="code-overlay-icon"
+            aria-label="下移代码块"
+            title="下移"
+            onClick={() => {
+              if (!editor || block.pos < 0) return
+              const { doc, tr } = editor.state
+              const node = doc.nodeAt(block.pos)
+              if (!node) return
+              const after = doc.resolve(block.pos + node.nodeSize).nodeAfter
+              if (!after) return
+              const at = block.pos + node.nodeSize + after.nodeSize
+              tr.delete(block.pos, block.pos + node.nodeSize).insert(at, node)
+              editor.view.dispatch(tr)
+            }}
+          ><ArrowDown size={13} /></button>
+          <button
+            type="button"
+            className="code-overlay-icon danger"
+            aria-label="删除代码块"
+            title="删除代码块"
+            onClick={() => {
+              if (!editor || block.pos < 0) return
+              const { doc, tr } = editor.state
+              const node = doc.nodeAt(block.pos)
+              if (!node) return
+              editor.view.dispatch(tr.delete(block.pos, block.pos + node.nodeSize))
+            }}
+          ><Trash2 size={13} /></button>
+        </span>
         <button
           type="button"
           className={'code-overlay-copy' + (copyState?.index === block.index ? (copyState.ok ? ' copied' : ' failed') : '')}
@@ -331,13 +384,18 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
           onClick={async () => {
             const ok = await copyText(block.text)
             setCopyState({ index: block.index, ok })
+            if (!ok) window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '浏览器阻止了自动复制，请手动选中代码复制。' }))
             setTimeout(() => setCopyState(null), 1800)
           }}
         >{copyState?.index === block.index
           ? (copyState.ok
             ? <><Check size={13} /><span>已复制</span></>
             : <><CopyIcon size={13} /><span>复制失败</span></>)
-          : <><CopyIcon size={13} /><span>复制</span></>}</button>
+          : <><CopyIcon size={13} /><span>复制</span></>}
+        </button>
+        <span className="visually-hidden" role="status" aria-live="polite">
+          {copyState?.index === block.index ? (copyState.ok ? '代码已复制到剪贴板' : '复制失败') : ''}
+        </span>
       </div>)}
     </div>
     <SlashMenu editor={editor} anchor={slash} query={slash?.query || ''} range={slash?.range || null} onClose={() => setSlash(null)} onImage={() => setImagePrompt(true)} />
