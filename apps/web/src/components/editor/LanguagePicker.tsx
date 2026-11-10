@@ -24,6 +24,10 @@ export default function LanguagePicker({ value, onChange }: Props) {
   const [active, setActive] = useState(0)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const buttonRef = useRef<HTMLButtonElement | null>(null)
+  // The list is portaled to body, so it is outside rootRef; track it separately
+  // or every click inside the panel counts as "outside" and closes it before
+  // the item's click handler can run.
+  const panelRef = useRef<HTMLDivElement | null>(null)
   const [panelPos, setPanelPos] = useState<{ top: number; left: number; maxHeight: number } | null>(null)
 
   // The code block clips its own overflow, so the list is portaled to body and
@@ -61,7 +65,10 @@ export default function LanguagePicker({ value, onChange }: Props) {
   useEffect(() => {
     if (!open) return
     const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+      const target = event.target as Node
+      if (rootRef.current?.contains(target)) return
+      if (panelRef.current?.contains(target)) return
+      setOpen(false)
     }
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { event.stopPropagation(); setOpen(false); return }
@@ -96,7 +103,7 @@ export default function LanguagePicker({ value, onChange }: Props) {
       {unknown && <span className="lang-picker-flag">未识别</span>}
       <ChevronDown size={12} />
     </button>
-    {open && panelPos && createPortal(<div className="lang-picker-panel" role="listbox" aria-label="选择代码语言" style={{ top: panelPos.top, left: panelPos.left, maxHeight: panelPos.maxHeight }}>
+    {open && panelPos && createPortal(<div ref={panelRef} className="lang-picker-panel" role="listbox" aria-label="选择代码语言" style={{ top: panelPos.top, left: panelPos.left, maxHeight: panelPos.maxHeight }}>
       {LANGUAGES.map((entry, index) => <button
         key={entry.id}
         type="button"
