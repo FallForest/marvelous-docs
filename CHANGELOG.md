@@ -8,6 +8,28 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.39] - 2026-11-11
+
+### Changed
+
+- Toolbars that belong to a block now ride on that block. `useBlockGeometry`
+  measures every toolbar-bearing node (code block, table, image, divider) from
+  the document model and re-measures on transactions, scroll, resize and
+  `ResizeObserver` — the last one matters because opening the comments panel
+  changes the editor width without firing a window resize, which used to leave
+  the code block toolbar misaligned.
+- The table action menu is anchored to the table under the cursor instead of
+  sitting permanently in the canvas corner, where in a long document it could be
+  hundreds of pixels from the table being edited.
+
+### Fixed
+
+- Code block toolbars are keyed by document position rather than array index, so
+  deleting a block no longer shifts another block's toolbar state onto the wrong
+  block.
+- Code block toolbars are skipped when their block is scrolled out of view,
+  instead of floating over the top chrome.
+
 ## [0.1.38] - 2026-11-11
 
 ### Fixed

@@ -13,6 +13,7 @@ import { API, request } from '../../lib/api'
 import { copyText } from '../../lib/clipboard'
 import { COLLAB_URL } from '../../lib/collab'
 import { buildEditorExtensions } from '../../lib/editor'
+import { useBlockGeometry } from '../../hooks/useBlockGeometry'
 import { wordCount, formatDate } from '../../lib/format'
 import { languageLabel, LANGUAGES } from '../../lib/languages'
 import { emptyContent } from '../../lib/types'
@@ -43,8 +44,7 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
   const [outlineOpen, setOutlineOpen] = useState(false)
   const [imageUrl, setImageUrl] = useState('')
   const [bubbleAnchor, setBubbleAnchor] = useState<{ left: number; top: number } | null>(null)
-  const [codeBlocks, setCodeBlocks] = useState<Array<{ index: number; pos: number; top: number; bottom: number; left: number; width: number; language: string; text: string }>>([])
-  const [copyState, setCopyState] = useState<{ index: number; ok: boolean } | null>(null)
+  const [copyState, setCopyState] = useState<{ pos: number; ok: boolean } | null>(null)
   const [slash, setSlash] = useState<{ left: number; top: number; query: string; range: { from: number; to: number } } | null>(null)
   const statusTimer = useRef<number | undefined>(undefined)
 
@@ -131,50 +131,11 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
     editorProps: { attributes: { class: 'tiptap-content' } },
   }, [doc.id, provider])
 
-  // Track the hovered code block so an overlay toolbar can be rendered in React
-  // (never mutate ProseMirror's DOM: that breaks the editor and freezes the page).
-  useEffect(() => {
-    if (!editor) return
-    const dom = editor.view?.dom as HTMLElement | undefined
-    if (!dom) return
-    const update = () => {
-      const blocks = Array.from(dom.querySelectorAll('pre')) as HTMLElement[]
-      // Language lives on the ProseMirror node; the DOM class is only a hint.
-      // Language lives on the ProseMirror node; the DOM class is only a hint.
-      // The document position lets the overlay toolbar edit that node directly.
-      const nodes: Array<{ language: string; pos: number }> = []
-      editor.state.doc.descendants((node, pos) => {
-        if (node.type.name === 'codeBlock') nodes.push({ language: String(node.attrs.language || ''), pos })
-      })
-      setCodeBlocks(blocks.map((node, index) => {
-        const rect = node.getBoundingClientRect()
-        const code = node.querySelector('code')
-        const lc = [...(code?.classList || [])].find((c) => c.startsWith('language-'))
-        const fromClass = lc?.replace('language-', '') || ''
-        const meta = nodes[index]
-        return {
-          index,
-          pos: meta?.pos ?? -1,
-          top: rect.top,
-          bottom: rect.bottom,
-          left: rect.left,
-          width: rect.width,
-          language: meta?.language || fromClass || '',
-          text: code?.textContent || '',
-        }
-      }))
-    }
-    update()
-    const observer = new MutationObserver(() => requestAnimationFrame(update))
-    observer.observe(dom, { childList: true, subtree: true, characterData: true })
-    window.addEventListener('scroll', update, true)
-    window.addEventListener('resize', update)
-    return () => {
-      observer.disconnect()
-      window.removeEventListener('scroll', update, true)
-      window.removeEventListener('resize', update)
-    }
-  }, [editor])
+  // Geometry for every block that hosts its own toolbar (code, table, image,
+  // divider). The hook re-measures on transactions and layout changes.
+  const blocks = useBlockGeometry(editor)
+  const codeBlocks = blocks.filter((block) => block.kind === 'codeBlock')
+
 
   // Reveal the quoted text when a comment anchor is clicked in the side panel.
   useEffect(() => {
@@ -305,7 +266,7 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
       {/* Code block enhancement: language badge and per-block actions */}
       <EditorContent editor={editor} />
       {codeBlocks.map((block) => <div
-        key={block.index}
+        key={block.pos}
         className="code-overlay"
         style={{ top: block.top, left: block.left, width: block.width }}
         contentEditable={false}
@@ -378,28 +339,28 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
         </span>
         <button
           type="button"
-          className={'code-overlay-copy' + (copyState?.index === block.index ? (copyState.ok ? ' copied' : ' failed') : '')}
+          className={'code-overlay-copy' + (copyState?.pos === block.pos ? (copyState.ok ? ' copied' : ' failed') : '')}
           aria-label="复制代码"
           title="复制代码"
           onClick={async () => {
             const ok = await copyText(block.text)
-            setCopyState({ index: block.index, ok })
+            setCopyState({ pos: block.pos, ok })
             if (!ok) window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '浏览器阻止了自动复制，请手动选中代码复制。' }))
             setTimeout(() => setCopyState(null), 1800)
           }}
-        >{copyState?.index === block.index
+        >{copyState?.pos === block.pos
           ? (copyState.ok
             ? <><Check size={13} /><span>已复制</span></>
             : <><CopyIcon size={13} /><span>复制失败</span></>)
           : <><CopyIcon size={13} /><span>复制</span></>}
         </button>
         <span className="visually-hidden" role="status" aria-live="polite">
-          {copyState?.index === block.index ? (copyState.ok ? '代码已复制到剪贴板' : '复制失败') : ''}
+          {copyState?.pos === block.pos ? (copyState.ok ? '代码已复制到剪贴板' : '复制失败') : ''}
         </span>
       </div>)}
     </div>
     <SlashMenu editor={editor} anchor={slash} query={slash?.query || ''} range={slash?.range || null} onClose={() => setSlash(null)} onImage={() => setImagePrompt(true)} />
-    <TableMenu editor={editor} />
+    <TableMenu editor={editor} table={blocks.find((block) => block.kind === 'table') ?? null} />
     <BubbleToolbar editor={editor} anchor={bubbleAnchor} onLink={() => rangeSelection()} onComment={() => { commentSelection(); window.dispatchEvent(new Event('mdoc-open-comments')) }} />
     {imagePrompt && <Dialog
       title="插入图片"

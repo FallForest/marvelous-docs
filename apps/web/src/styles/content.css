@@ -195,3 +195,59 @@
 .code-overlay-copy:hover{background:#e2e5e9;color:#1f2937}
 .code-overlay-copy.copied{color:#059669;border-color:#05966955;background:#ecfdf5}
 .code-overlay-copy.failed{color:#b0453a;border-color:#b0453a55;background:#fdf1ee}
+
+/* ===== 30. Block-anchored toolbars ===== */
+/* A toolbar that rides on a block's own rect instead of the canvas corner. */
+.block-tool{
+  position:fixed;
+  z-index:3;
+  pointer-events:none;
+}
+.block-tool-trigger{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  height:26px;
+  padding:0 8px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:var(--surface);
+  color:var(--text-secondary);
+  font-size:11.5px;
+  cursor:pointer;
+  pointer-events:auto;
+  box-shadow:0 1px 3px #11182714;
+}
+.block-tool-trigger:hover{background:var(--surface-sunken);color:var(--text)}
+.block-tool-trigger.is-open{background:var(--accent-soft);border-color:#c0533f33;color:var(--accent-strong)}
+.block-tool-scrim{position:fixed;inset:0;z-index:4;background:transparent;border:0}
+.block-tool-panel{
+  position:fixed;
+  z-index:5;
+  width:184px;
+  padding:5px;
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  box-shadow:var(--shadow-popover);
+}
+.block-tool-panel button{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:30px;
+  padding:0 8px;
+  border:0;
+  border-radius:5px;
+  background:transparent;
+  color:var(--text-secondary);
+  font-size:12px;
+  text-align:left;
+  cursor:pointer;
+}
+.block-tool-panel button:hover{background:var(--surface-sunken);color:var(--text)}
+.block-tool-panel button.danger{color:var(--danger)}
+.block-tool-panel button.danger:hover{background:var(--danger-soft)}
