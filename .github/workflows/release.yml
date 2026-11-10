@@ -1,11 +1,13 @@
 name: Release
 
-# Images are built natively on the deploy host (Oracle Ampere, aarch64) and
-# pushed to GHCR by scripts/publish-images.sh. Building arm64 on an amd64 runner
-# requires QEMU emulation, which repeatedly hung for 10+ minutes.
+# Images are built on GitHub's native arm64 runner (ubuntu-24.04-arm), which
+# matches the deploy host (Oracle Ampere, aarch64). Building arm64 on an amd64
+# runner needs QEMU emulation and hung for 10+ minutes per tag; a native arm64
+# runner needs no emulation at all.
 #
-# This workflow therefore only publishes the GitHub release entry and the
-# latest.json manifest, and fails fast if the images for the tag are missing.
+# If the arm runner is unavailable for the repository, fall back to building on
+# the deploy host with scripts/publish-images.sh and run this workflow manually
+# with workflow_dispatch once the images exist in GHCR.
 
 on:
   push:
@@ -13,16 +15,16 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing tag to publish, e.g. v0.1.34
+        description: Existing tag to publish, e.g. v0.1.36
         required: true
 
 permissions:
   contents: write
-  packages: read
+  packages: write
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
       - name: Resolve tag
@@ -32,20 +34,46 @@ jobs:
           if [ -z "$tag" ]; then tag="${GITHUB_REF_NAME}"; fi
           echo "name=$tag" >> "$GITHUB_OUTPUT"
           echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
-      - name: Verify images were published
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
-          version='${{ steps.tag.outputs.version }}'
-          for image in api web; do
-            if ! docker manifest inspect "ghcr.io/$owner/marvelous-docs-$image:$version" > /dev/null 2>&1; then
-              echo "::error::ghcr.io/$owner/marvelous-docs-$image:$version is not published yet."
-              echo "Build it on the deploy host with: scripts/publish-images.sh $version"
-              exit 1
-            fi
-          done
-          echo "Both images present for $version."
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Compute image prefix
+        id: image
+        run: echo "prefix=ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/marvelous-docs" >> "$GITHUB_OUTPUT"
+      - name: Build and push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/server/Dockerfile
+          platforms: linux/arm64
+          push: true
+          provenance: false
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+          tags: |
+            ${{ steps.image.outputs.prefix }}-api:${{ steps.tag.outputs.version }}
+            ${{ steps.image.outputs.prefix }}-api:latest
+      - name: Build and push web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          platforms: linux/arm64
+          build-args: |
+            VITE_API_URL=
+            VITE_COLLAB_URL=
+          push: true
+          provenance: false
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+          tags: |
+            ${{ steps.image.outputs.prefix }}-web:${{ steps.tag.outputs.version }}
+            ${{ steps.image.outputs.prefix }}-web:latest
       - name: Create release manifest
         run: |
           version='${{ steps.tag.outputs.version }}'
