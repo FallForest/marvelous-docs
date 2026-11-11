@@ -151,7 +151,12 @@ export default function Sidebar(props: SidebarProps) {
         </div>
       </div>
 
-      {props.treeExpanded && <div
+      {props.treeExpanded && <div className="doc-tree-shell">
+        {/* The "所有文档" shortcut is a sibling action, not a node of the tree,
+            so it lives outside role="tree" — a tree may only contain treeitems
+            and groups. */}
+        <button type="button" className="root-folder" onClick={props.onHome}><Folder size={15} /><span>所有文档</span></button>
+        <div
         className="doc-tree"
         ref={treeRef}
         role="tree"
@@ -165,7 +170,6 @@ export default function Sidebar(props: SidebarProps) {
           moveFocus(id, event.key === 'ArrowDown' ? 1 : -1)
         }}
       >
-        <button type="button" role="none" className="root-folder" onClick={props.onHome}><Folder size={15} /><span>所有文档</span></button>
         {tree.map((node, rowIndex) => <TreeItem
           key={node.doc.id}
           node={node}
@@ -185,6 +189,7 @@ export default function Sidebar(props: SidebarProps) {
           onFocusRow={setFocusId}
         />)}
         {tree.length === 0 && <div className="empty-tree">{props.emptyMessage}</div>}
+        </div>
       </div>}
     </div>
 

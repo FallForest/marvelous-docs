@@ -56,27 +56,28 @@ export default function TreeItem(props: TreeItemProps) {
     onAction(action, node.doc)
   }
   const tabStop = focusId ? focusId === node.doc.id : activeId === node.doc.id || (!activeId && selectedFolderId === node.doc.id)
-  return <div className="tree-node stagger" style={staggerStyle(Math.min(index, STAGGER_LIMIT))} role="none">
-    <div
-      className={'tree-entry' + (selected ? ' is-selected' : '') + (checked ? ' is-checked' : '') + (selecting ? ' is-selecting' : '')}
-      role="treeitem"
-      data-doc-id={node.doc.id}
-      aria-level={level}
-      aria-selected={selected}
-      aria-expanded={isFolder ? expanded : undefined}
-      tabIndex={tabStop ? 0 : -1}
-      onFocus={() => onFocusRow?.(node.doc.id)}
-      onKeyDown={(event) => {
+  return <div
+    className="tree-node stagger"
+    style={staggerStyle(Math.min(index, STAGGER_LIMIT))}
+    role="treeitem"
+    data-doc-id={node.doc.id}
+    aria-level={level}
+    aria-selected={selected}
+    aria-expanded={isFolder ? expanded : undefined}
+    tabIndex={tabStop ? 0 : -1}
+    onFocus={() => onFocusRow?.(node.doc.id)}
+    onKeyDown={(event) => {
         if (event.key === 'ArrowRight' && isFolder && !expanded) { event.preventDefault(); onToggle(node.doc.id); return }
         if (event.key === 'ArrowLeft' && isFolder && expanded) { event.preventDefault(); onToggle(node.doc.id); return }
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          if (selecting) onToggleChecked(node.doc)
-          else if (isFolder) onSelectFolder(node.doc)
-          else onSelectDocument(node.doc)
-        }
-      }}
-    >
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault()
+        if (selecting) onToggleChecked(node.doc)
+        else if (isFolder) onSelectFolder(node.doc)
+        else onSelectDocument(node.doc)
+      }
+    }}
+  >
+    <div className={'tree-entry' + (selected ? ' is-selected' : '') + (checked ? ' is-checked' : '') + (selecting ? ' is-selecting' : '')}>
       {selecting
         ? <input
           type="checkbox"
@@ -130,7 +131,7 @@ export default function TreeItem(props: TreeItemProps) {
         </Popover>
       </div>}
     </div>
-    {isFolder && expanded && <div className="tree-children">{node.children.map((child, childIndex) => <TreeItem
+    {isFolder && expanded && <div className="tree-children" role="group">{node.children.map((child, childIndex) => <TreeItem
       key={child.doc.id}
       node={child}
       depth={depth + 1}

@@ -8,6 +8,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.56] - 2026-11-12
+
+### Fixed
+
+- The tree's own children are now only `treeitem` and `group`, which is what
+  `role="tree"` allows. The "所有文档" shortcut moved out of the container and the
+  `treeitem` role moved onto the row wrapper instead of an inner element. axe
+  reports zero WCAG A/AA violations on the workspace.
+
 ## [0.1.55] - 2026-11-12
 
 ### Fixed
