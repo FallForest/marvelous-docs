@@ -24,17 +24,29 @@ export function Dialog({ title, description, children, confirmLabel = '确定', 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null
     const node = panel.current
-    const focusables = () => node ? Array.from(node.querySelectorAll<HTMLElement>('button, input, select, textarea, [tabindex="0"]')).filter(el => !el.hasAttribute('disabled')) : []
+    /* `a[href]` belongs in the list: a dialog with only a link would otherwise
+       trap focus on the close button and make the link unreachable. */
+    const focusables = () => node
+      ? Array.from(node.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+        .filter((el) => !el.hasAttribute('disabled') && !el.closest('[inert]') && el.offsetParent !== null)
+      : []
     focusables()[0]?.focus({ preventScroll: true })
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { event.stopPropagation(); requestClose(); return }
+      /* capture-and-stop: the shell also listens for Escape to close overlays,
+         and without this the dialog would close twice (the second call hit an
+         already-unmounting panel). */
+      if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); requestClose(); return }
       if (event.key !== 'Tab') return
       const items = focusables()
-      if (!items.length) return
+      if (!items.length) { event.preventDefault(); return }
       const first = items[0]!
       const last = items[items.length - 1]!
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
+      const active = document.activeElement
+      /* Focus can also land outside the panel (browser chrome, or a click on the
+         backdrop), so treat "outside" the same as "past the last element". */
+      if (!node?.contains(active)) { event.preventDefault(); first.focus(); return }
+      if (event.shiftKey && active === first) { event.preventDefault(); last.focus() }
+      else if (!event.shiftKey && active === last) { event.preventDefault(); first.focus() }
     }
     document.addEventListener('keydown', onKeyDown)
     return () => {

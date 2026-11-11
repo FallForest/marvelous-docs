@@ -24,6 +24,14 @@ type TreeItemProps = {
   /** Multi-select: when non-null, rows render a checkbox instead of opening. */
   checkedIds: Set<string> | null
   onToggleChecked: (doc: Doc) => void
+  /**
+   * Roving tabindex: only one row in the tree is a tab stop, so Tab moves past
+   * the tree instead of through three buttons per document. Arrow keys move
+   * between rows, as a tree widget is expected to behave.
+   */
+  focusId?: string | null
+  onFocusRow?: (id: string) => void
+  level?: number
 }
 
 /**
@@ -33,7 +41,7 @@ type TreeItemProps = {
  * the label never slides underneath the toggle.
  */
 export default function TreeItem(props: TreeItemProps) {
-  const { node, depth, index = 0, activeId, selectedFolderId, expandedFolders, favoriteIds, onToggle, onSelectFolder, onSelectDocument, onAction, checkedIds, onToggleChecked } = props
+  const { node, depth, index = 0, activeId, selectedFolderId, expandedFolders, favoriteIds, onToggle, onSelectFolder, onSelectDocument, onAction, checkedIds, onToggleChecked, focusId, onFocusRow, level = 1 } = props
   const selecting = checkedIds !== null
   const checked = checkedIds?.has(node.doc.id) ?? false
   const [menuOpen, setMenuOpen] = useState(false)
@@ -47,8 +55,28 @@ export default function TreeItem(props: TreeItemProps) {
     setMenuOpen(false)
     onAction(action, node.doc)
   }
-  return <div className="tree-node stagger" style={staggerStyle(Math.min(index, STAGGER_LIMIT))}>
-    <div className={'tree-entry' + (selected ? ' is-selected' : '') + (checked ? ' is-checked' : '') + (selecting ? ' is-selecting' : '')}>
+  const tabStop = focusId ? focusId === node.doc.id : activeId === node.doc.id || (!activeId && selectedFolderId === node.doc.id)
+  return <div className="tree-node stagger" style={staggerStyle(Math.min(index, STAGGER_LIMIT))} role="none">
+    <div
+      className={'tree-entry' + (selected ? ' is-selected' : '') + (checked ? ' is-checked' : '') + (selecting ? ' is-selecting' : '')}
+      role="treeitem"
+      data-doc-id={node.doc.id}
+      aria-level={level}
+      aria-selected={selected}
+      aria-expanded={isFolder ? expanded : undefined}
+      tabIndex={tabStop ? 0 : -1}
+      onFocus={() => onFocusRow?.(node.doc.id)}
+      onKeyDown={(event) => {
+        if (event.key === 'ArrowRight' && isFolder && !expanded) { event.preventDefault(); onToggle(node.doc.id); return }
+        if (event.key === 'ArrowLeft' && isFolder && expanded) { event.preventDefault(); onToggle(node.doc.id); return }
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          if (selecting) onToggleChecked(node.doc)
+          else if (isFolder) onSelectFolder(node.doc)
+          else onSelectDocument(node.doc)
+        }
+      }}
+    >
       {selecting
         ? <input
           type="checkbox"
@@ -64,6 +92,7 @@ export default function TreeItem(props: TreeItemProps) {
           className="tree-chevron"
           aria-label={expanded ? '收起文件夹 ' + title : '展开文件夹 ' + title}
           aria-expanded={expanded}
+          tabIndex={-1}
           onClick={(event) => { event.stopPropagation(); onToggle(node.doc.id) }}
         ><ChevronRight size={12} className="chevron-rotate" /></button>
         : <span className="tree-chevron is-leaf" aria-hidden="true" />}
@@ -71,6 +100,7 @@ export default function TreeItem(props: TreeItemProps) {
         type="button"
         className={'tree-doc' + (isFolder ? ' tree-folder' : '')}
         title={title}
+        tabIndex={-1}
         onClick={() => {
           if (selecting) { onToggleChecked(node.doc); return }
           if (isFolder) onSelectFolder(node.doc)
@@ -84,6 +114,7 @@ export default function TreeItem(props: TreeItemProps) {
         <button
           type="button"
           className="tree-more"
+          tabIndex={-1}
           aria-label={title + ' 更多操作'}
           title="更多操作"
           aria-haspopup="menu"
@@ -114,6 +145,9 @@ export default function TreeItem(props: TreeItemProps) {
       onAction={onAction}
       checkedIds={checkedIds}
       onToggleChecked={onToggleChecked}
+      focusId={focusId}
+      onFocusRow={onFocusRow}
+      level={level + 1}
     />)}</div>}
   </div>
 }

@@ -903,9 +903,20 @@ function App() {
         onCreate={() => { setCommandOpen(false); void createDocument('document') }}
         onHome={() => { setActive(null); setSelectedFolderId(null); setHomeView('home'); setQuery(''); setCommandOpen(false) }}
       />}
-      {/* Keyed on the message: a second toast replaces the first, so the
-          entry animation must replay rather than being muted by React reuse. */}
-      {notice && <div className="notice-toast" role="status" aria-live="polite" key={notice}>{notice}<button aria-label="关闭提示" title="关闭提示" onClick={() => setNotice('')}><X size={13} /></button></div>}
+      {/*
+        Announcements need a live region that is present *before* the text
+        changes: replacing the whole node (an old `key` on the message) means
+        screen readers see a new element rather than an update, and most stay
+        silent. The container is therefore always mounted and only its text
+        swaps, while the visible toast is a child that animates in and out.
+      */}
+      <div className="notice-live" role="status" aria-live="polite" aria-atomic="true">
+        {notice ? notice : ''}
+      </div>
+      {notice && <div className="notice-toast">
+        {notice}
+        <button aria-label="关闭提示" title="关闭提示" onClick={() => setNotice('')}><X size={13} /></button>
+      </div>}
     </main>
     {conflictDoc && <Dialog
       title="文档已在别处更新"

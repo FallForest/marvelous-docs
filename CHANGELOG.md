@@ -8,6 +8,28 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.54] - 2026-11-12
+
+### Accessibility
+
+- Toasts announce themselves. The live region used to be the toast itself with
+  `key={notice}`, so each message replaced the element; screen readers see a new
+  node rather than an update and most stay silent. The region is now mounted
+  permanently, visually hidden, with only its text swapped.
+- The closed right panel is `inert`. It stays mounted so it can slide out, which
+  meant its buttons were still reachable by Tab while invisible. `inert` removes
+  the subtree from the tab order and the accessibility tree without breaking the
+  transition. It is set through the DOM because React 18 does not treat `inert`
+  as a boolean attribute.
+- Dialogs keep focus inside. The trap now treats "focus outside the panel" as
+  "past the last control" (a backdrop click used to escape it), includes
+  `a[href]`, and stops Escape from reaching the shell so a dialog cannot close
+  twice.
+- The document tree is a real `tree` widget: `role="tree"` / `role="treeitem"`
+  with `aria-level` and `aria-selected`, one tab stop instead of three per
+  document (roving tabindex), arrow keys to move between rows, Left/Right to
+  collapse and expand, Enter/Space to open.
+
 ## [0.1.53] - 2026-11-12
 
 ### Added

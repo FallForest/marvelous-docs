@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import { ChevronDown, ChevronRight, Folder, Home, LogOut, PanelLeftClose, Plus, Search, ShieldCheck, Sparkles, Star, Trash2 } from 'lucide-react'
 import TemplateMenu from '../layout/TemplateMenu'
 import TreeItem from '../tree/TreeItem'
@@ -54,6 +55,25 @@ type SidebarProps = {
  * callback, so the shell stays the only place that mutates state.
  */
 export default function Sidebar(props: SidebarProps) {
+  /**
+   * Roving focus for the tree. A document row is a single tab stop; arrow keys
+   * move between rows, so a long tree does not put hundreds of stops in the tab
+   * order.
+   */
+  const [focusId, setFocusId] = useState<string | null>(null)
+  const treeRef = useRef<HTMLDivElement | null>(null)
+
+  /** Moves focus to the next or previous focusable row in DOM order. */
+  const moveFocus = (from: string, delta: number) => {
+    const root = treeRef.current
+    if (!root) return
+    const rows = Array.from(root.querySelectorAll<HTMLElement>('[role="treeitem"]'))
+    const index = rows.findIndex((row: HTMLElement) => row.getAttribute('data-doc-id') === from)
+    const next = rows[Math.min(Math.max(index + delta, 0), rows.length - 1)]
+    const id = next?.getAttribute('data-doc-id')
+    if (id) { setFocusId(id); next?.focus() }
+  }
+
   const { user, tree, favoriteSet, activeId, selectedFolderId, expandedFolders, homeView, floating } = props
   const initial = (user.name || user.email)[0]!.toUpperCase()
 
@@ -131,7 +151,20 @@ export default function Sidebar(props: SidebarProps) {
         </div>
       </div>
 
-      {props.treeExpanded && <div className="doc-tree">
+      {props.treeExpanded && <div
+        className="doc-tree"
+        ref={treeRef}
+        role="tree"
+        aria-label="文档树"
+        onKeyDown={(event) => {
+          if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
+          const active = document.activeElement
+          const id = active?.getAttribute('data-doc-id')
+          if (!id) return
+          event.preventDefault()
+          moveFocus(id, event.key === 'ArrowDown' ? 1 : -1)
+        }}
+      >
         <button type="button" className="root-folder" onClick={props.onHome}><Folder size={15} /><span>所有文档</span></button>
         {tree.map((node, rowIndex) => <TreeItem
           key={node.doc.id}
@@ -148,6 +181,8 @@ export default function Sidebar(props: SidebarProps) {
           onAction={props.onDocumentAction}
           checkedIds={props.checkedIds}
           onToggleChecked={props.onToggleChecked}
+          focusId={focusId}
+          onFocusRow={setFocusId}
         />)}
         {tree.length === 0 && <div className="empty-tree">{props.emptyMessage}</div>}
       </div>}

@@ -56,7 +56,26 @@ export default function DocumentPanel(props: DocumentPanelProps) {
     return () => window.clearTimeout(timer)
   }, [comments, reduced])
 
+  const panelRef = useRef<HTMLElement | null>(null)
+  /**
+   * inert, not just aria-hidden: the panel stays mounted so it can slide out, and
+   * a mounted-but-hidden panel would still expose its buttons to Tab. `inert`
+   * removes the whole subtree from the tab order and the accessibility tree,
+   * which is what `display:none` would do without breaking the transition.
+   *
+   * Set through the DOM rather than JSX: React 18 does not recognise `inert` as a
+   * boolean attribute, so a JSX prop of `false` would still render `inert=""`
+   * and disable the open panel.
+   */
+  useEffect(() => {
+    const node = panelRef.current
+    if (!node) return
+    if (open) node.removeAttribute('inert')
+    else node.setAttribute('inert', '')
+  }, [open])
+
   return <aside
+    ref={panelRef}
     className={'right-panel' + (open ? ' is-open' : ' is-closed')}
     aria-label="文档侧边栏"
     aria-hidden={open ? undefined : true}
