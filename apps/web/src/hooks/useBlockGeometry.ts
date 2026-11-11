@@ -81,6 +81,9 @@ export function useBlockGeometry(editor: Editor | null, enabled = true): BlockGe
     }
 
     measure()
+    // Motion tokens animate layout changes, so a single measurement can capture
+    // a mid-transition width. Re-measure once the longest duration has elapsed.
+    const settleTimers = [120, 260, 460].map((delay) => window.setTimeout(schedule, delay))
     editor.on('update', schedule)
     editor.on('selectionUpdate', schedule)
     window.addEventListener('scroll', schedule, true)
@@ -92,6 +95,7 @@ export function useBlockGeometry(editor: Editor | null, enabled = true): BlockGe
     if (shell) observer?.observe(shell)
 
     return () => {
+      settleTimers.forEach((id) => window.clearTimeout(id))
       if (frame) cancelAnimationFrame(frame)
       editor.off('update', schedule)
       editor.off('selectionUpdate', schedule)

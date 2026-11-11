@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { EditorContent, useEditor } from '@tiptap/react'
 import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
@@ -265,7 +266,8 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
       </div>
       {/* Code block enhancement: language badge and per-block actions */}
       <EditorContent editor={editor} />
-      {codeBlocks.map((block) => <div
+      {createPortal(<>
+        {codeBlocks.map((block) => <div
         key={block.pos}
         className="code-overlay"
         // The overlay is re-measured on every scroll frame, so animating top
@@ -363,7 +365,7 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
           {copyState?.pos === block.pos ? (copyState.ok ? '代码已复制到剪贴板' : '复制失败') : ''}
         </span>
       </div>)}
-    </div>
+      </>, document.body)}    </div>
     <SlashMenu editor={editor} anchor={slash} query={slash?.query || ''} range={slash?.range || null} onClose={() => setSlash(null)} onImage={() => setImagePrompt(true)} />
     <TableMenu editor={editor} table={blocks.find((block) => block.kind === 'table') ?? null} />
     <BubbleToolbar editor={editor} anchor={bubbleAnchor} onLink={() => rangeSelection()} onComment={() => { commentSelection(); window.dispatchEvent(new Event('mdoc-open-comments')) }} />
