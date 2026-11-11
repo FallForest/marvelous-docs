@@ -8,6 +8,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.55] - 2026-11-12
+
+### Fixed
+
+- `role="tree"` contained a non-`treeitem` child: the "所有文档" shortcut sat
+  inside the container and made axe report `aria-required-children`. It is a
+  sibling action rather than a node of the tree, so it is marked
+  `role="none"`.
+
 ## [0.1.54] - 2026-11-12
 
 ### Accessibility

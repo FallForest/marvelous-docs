@@ -165,7 +165,7 @@ export default function Sidebar(props: SidebarProps) {
           moveFocus(id, event.key === 'ArrowDown' ? 1 : -1)
         }}
       >
-        <button type="button" className="root-folder" onClick={props.onHome}><Folder size={15} /><span>所有文档</span></button>
+        <button type="button" role="none" className="root-folder" onClick={props.onHome}><Folder size={15} /><span>所有文档</span></button>
         {tree.map((node, rowIndex) => <TreeItem
           key={node.doc.id}
           node={node}
