@@ -133,6 +133,10 @@ gate.
   go in `src/pages/`, editor pieces in `src/components/editor/`, dialogs in
   `src/components/dialogs/`, primitives in `src/components/ui/`, pure logic in
   `src/lib/`, and styles in the matching `src/styles/*.css` layer.
+- **Motion**: animation is a design token, not a literal. Values come from
+  `styles/tokens.css`, primitives from `styles/motion.css`, and JS timings from
+  `lib/motion.ts`; a hard-coded `0.2s` or `ease-out` fails `pnpm test:web`.
+  Read [MOTION.md](MOTION.md) before adding an animation.
 - **Imports**: Node built-ins with the `node:` prefix, ESM everywhere.
 - **Secrets**: never commit `.env`, tokens, dumps, or uploads; all of them are
   git-ignored.

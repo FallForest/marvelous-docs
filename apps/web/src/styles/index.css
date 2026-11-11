@@ -1,25 +1,35 @@
 /*
  * Style entry point.
  *
- * The layers are imported in cascade order, each one narrow enough to own a
- * single concern:
+ * Layers load from broadest to most specific, so the cascade reads like the
+ * architecture: values first, then primitives, then chrome, then screens.
  *
- *   base        tokens, reset, app shell geometry, admin shell, login
- *   surfaces    focus rings, popovers, dialogs, toasts
- *   editor      document chrome, toolbars, menus
- *   navigation  sidebar / topbar rows, dropdown language, layer order
+ *   tokens      design values only: colour, type, radii, motion, layering
+ *   base        reset + shell geometry; no screen styling
+ *   motion      keyframes and motion utilities (.motion-rise, .stagger, ...)
+ *   surfaces    shared primitives: buttons, backdrop, toast, stacking
+ *   dialogs     every modal surface, one definition each
+ *   navigation  sidebar / topbar rows, tree row, breadcrumbs
+ *   panels      right-hand panel, code overlay, block toolbars
+ *   editor      toolbar, menus, find/outline, responsive compaction
  *   content     code blocks, share links, public share page
  *   shell       sidebar + topbar consolidation (single source of truth)
+ *   pages       home, folder, search, palette, login, admin
  *   updates     updater banner and links
  *
- * Import order matters: later layers deliberately override earlier ones, and
- * shell.css is last because it normalises the two chrome surfaces.
+ * A new file belongs in an existing layer; if it needs a new layer, add it
+ * here and to docs/STRUCTURE.md in the same change.
  */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+@import './tokens.css';
 @import './base.css';
+@import './motion.css';
 @import './surfaces.css';
-@import './editor.css';
+@import './dialogs.css';
 @import './navigation.css';
+@import './panels.css';
+@import './editor.css';
 @import './content.css';
 @import './shell.css';
+@import './pages.css';
 @import './updates.css';

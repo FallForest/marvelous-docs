@@ -1,30 +1,48 @@
 /*
  * Content layer: code blocks, share-link section and the public share page.
+ *
+ * Code-block chrome moves in two places only:
+ *   - the overlay toolbar arrives with the shared rise animation, because its
+ *     top/left are re-measured on every scroll frame (a transition would fire
+ *     per frame; an animation fires once);
+ *   - the copy button acknowledges a press with .is-acknowledged and lets its
+ *     colour settle through --transition-colors instead of jumping to green.
  */
 
-/* ===== 26. Code block: language badge + copy button ===== */
+/* ===== 26. Code block: language badge + copy button =====
+ * The block's border, radius and background used to be declared twice (here
+ * and again in section 29, which wins). They are declared once now, with the
+ * winning values from section 29: margin 16px, padding 0, mono font on the
+ * <pre>, tighter line spacing, and the 40px top strip reserved for the overlay.
+ */
 .tiptap-content pre{
   position:relative;
-  margin:14px 0;
+  margin:16px 0;
+  padding:0;
   border:1px solid var(--border);
   border-radius:8px;
   background:#f7f8fa;
   overflow:hidden;
+  font-family:ui-monospace,SFMono-Regular,"JetBrains Mono",Menlo,Consolas,monospace;
 }
 .tiptap-content pre code{
   display:block;
-  padding:34px 16px 14px;
+  padding:40px 16px 14px;
   color:#1f2937;
-  font-family:ui-monospace,SFMono-Regular,"JetBrains Mono",Menlo,Consolas,monospace;
   font-size:13px;
-  line-height:1.65;
+  line-height:1.7;
+  font-family:inherit;
   white-space:pre;
   overflow-x:auto;
   background:none;
   border:0;
+  scrollbar-width:thin;
 }
-
-/* Toolbar language selector for code blocks */
+/* Slim, unobtrusive horizontal scrollbar inside code blocks. */
+.tiptap-content pre code::-webkit-scrollbar{height:8px}
+.tiptap-content pre code::-webkit-scrollbar-track{background:transparent}
+.tiptap-content pre code::-webkit-scrollbar-thumb{background:#cbd2da;border-radius:4px}
+.tiptap-content pre code::-webkit-scrollbar-thumb:hover{background:#b3bcc7}
 
 /* ===== 27. Share link section ===== */
 .share-link-section{
@@ -45,8 +63,10 @@
 .danger-btn{
   height:28px;padding:0 10px;border:1px solid var(--danger-soft);border-radius:5px;
   background:transparent;color:var(--danger);font-size:12px;cursor:pointer;
+  transition:var(--transition-colors),transform var(--duration-instant) var(--ease-spring-snappy);
 }
 .danger-btn:hover{background:var(--danger-soft)}
+.danger-btn:active{transform:scale(.97)}
 
 /* ===== 28. Public share page ===== */
 .shared-page{
@@ -72,6 +92,8 @@
 .shared-page .shared-content h2,
 .shared-page .shared-content h3{margin-top:1.2em}
 .shared-page .shared-content img{max-width:100%;border-radius:8px}
+/* The public page has no language badge or copy button, so its code block keeps
+   the flat 16px frame instead of inheriting the editor's 40px overlay strip. */
 .shared-page .shared-content pre{
   background:#f7f8fa;border:1px solid var(--border);border-radius:8px;
   padding:16px;overflow:auto;font-size:13px;line-height:1.6;
@@ -85,36 +107,7 @@
 }
 
 /* ===== 29. Code block chrome ===== */
-/* One surface owns the block: border, radius and background live here only. */
-.tiptap-content pre{
-  position:relative;
-  margin:16px 0;
-  padding:0;
-  background:#f7f8fa;
-  border:1px solid var(--border);
-  border-radius:8px;
-  overflow:hidden;
-  font-family:ui-monospace,SFMono-Regular,"JetBrains Mono",Menlo,Consolas,monospace;
-}
-/* Reserve the top strip for the overlay toolbar so text never sits under it. */
-.tiptap-content pre code{
-  display:block;
-  padding:40px 16px 14px;
-  background:none;
-  border:0;
-  color:#1f2937;
-  font-size:13px;
-  line-height:1.7;
-  font-family:inherit;
-  white-space:pre;
-  overflow-x:auto;
-  scrollbar-width:thin;
-}
-/* Slim, unobtrusive horizontal scrollbar inside code blocks. */
-.tiptap-content pre code::-webkit-scrollbar{height:8px}
-.tiptap-content pre code::-webkit-scrollbar-track{background:transparent}
-.tiptap-content pre code::-webkit-scrollbar-thumb{background:#cbd2da;border-radius:4px}
-.tiptap-content pre code::-webkit-scrollbar-thumb:hover{background:#b3bcc7}
+/* One surface owns the block: border, radius and background live in section 26. */
 /* Overlay toolbar sits inside the block's top strip, never above it. */
 .code-overlay{
   position:fixed;
@@ -150,8 +143,10 @@
   background:transparent;
   color:#6b7280;
   cursor:pointer;
+  transition:var(--transition-colors),transform var(--duration-instant) var(--ease-spring-snappy);
 }
 .code-overlay-icon:hover{background:#e2e5e9;border-color:var(--border);color:#1f2937}
+.code-overlay-icon:active{transform:scale(.97)}
 .code-overlay-icon.danger:hover{background:#fdf1ee;border-color:#b0453a55;color:#b0453a}
 .code-overlay-copy{
   display:inline-flex;
@@ -166,9 +161,31 @@
   font-size:11px;
   cursor:pointer;
   pointer-events:auto;
+  /* Colour only: the button swaps label and tone on click, and a cross-fade
+     between "复制" and "已复制" is calmer than a hard palette flip. */
+  transition:var(--transition-colors),transform var(--duration-instant) var(--ease-spring-snappy);
 }
 .code-overlay-copy:hover{background:#e2e5e9;color:#1f2937}
-.code-overlay-copy.copied{color:#059669;border-color:#05966955;background:#ecfdf5}
+.code-overlay-copy:active{transform:scale(.97)}
+/*
+ * Success state. The green lettering arrives through --transition-colors above,
+ * so the label swap settles instead of flipping.
+ *
+ * The acknowledgement ring is driven from .copied rather than from a class the
+ * editor adds on click: DocumentEditor owns this markup and is frozen for this
+ * change, and `copied` already means exactly "this button just acknowledged".
+ * The state is cleared after ~1.8s, so removing and re-adding it replays the
+ * animation on every copy. .is-acknowledged is listed too, so the shared
+ * motion utility and this rule cannot disagree if the markup catches up.
+ *
+ * The ring is a box-shadow, not a layout box, so the reserved 30px strip never
+ * measures differently mid-animation.
+ */
+.code-overlay-copy.copied,
+.code-overlay-copy.is-acknowledged{
+  color:#059669;border-color:#05966955;background:#ecfdf5;
+  animation:motion-acknowledge var(--duration-slow) var(--ease-decelerate);
+}
 .code-overlay-copy.failed{color:#b0453a;border-color:#b0453a55;background:#fdf1ee}
 
 /* ===== 30. Block-anchored toolbars ===== */
@@ -192,10 +209,21 @@
   cursor:pointer;
   pointer-events:auto;
   box-shadow:0 1px 3px #11182714;
+  transition:var(--transition-colors),transform var(--duration-instant) var(--ease-spring-snappy);
 }
 .block-tool-trigger:hover{background:var(--surface-sunken);color:var(--text)}
-.block-tool-trigger.is-open{background:var(--accent-soft);border-color:#c0533f33;color:var(--accent-strong)}
+.block-tool-trigger:active{transform:scale(.97)}
+.block-tool-trigger.is-open{
+  background:var(--accent-soft);border-color:#c0533f33;color:var(--accent-strong);
+  transition:background-color var(--duration-base) var(--ease-spring-snappy),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-instant) var(--ease-spring-snappy);
+}
 .block-tool-scrim{position:fixed;inset:0;z-index:4;background:transparent;border:0}
+/* Its top/left come from the block rect, which is re-measured on scroll, so it
+   arrives with the shared .motion-rise animation (component-side class) rather
+   than a transition, which would re-fire on every re-measure. */
 .block-tool-panel{
   position:fixed;
   z-index:5;
@@ -204,10 +232,15 @@
   display:flex;
   flex-direction:column;
   gap:1px;
-  background:var(--surface);
+  background:var(--surface-glass);
   border:1px solid var(--border);
   border-radius:8px;
   box-shadow:var(--shadow-popover);
+  backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+}
+@supports not (backdrop-filter:blur(1px)){
+  .block-tool-panel{background:var(--surface)}
 }
 .block-tool-panel button{
   display:flex;
@@ -222,8 +255,10 @@
   font-size:12px;
   text-align:left;
   cursor:pointer;
+  transition:var(--transition-colors);
 }
 .block-tool-panel button:hover{background:var(--surface-sunken);color:var(--text)}
+.block-tool-panel button:active{transform:scale(.97)}
 .block-tool-panel button.danger{color:var(--danger)}
 .block-tool-panel button.danger:hover{background:var(--danger-soft)}
 
@@ -243,9 +278,10 @@
   font-weight:600;
   font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   cursor:pointer;
-  transition:background .12s ease,color .12s ease;
+  transition:var(--transition-colors),transform var(--duration-instant) var(--ease-spring-snappy);
 }
 .lang-picker-button:hover{background:#e2e5e9;border-color:var(--border);color:#1f2937}
+.lang-picker-button:active{transform:scale(.97)}
 .lang-picker-button.is-open{background:#fff;border-color:var(--border);color:#1f2937;box-shadow:0 1px 3px #1118271a}
 .lang-picker-flag{
   padding:0 4px;
@@ -256,6 +292,7 @@
   font-weight:500;
   letter-spacing:0;
 }
+/* Portaled to <body> and re-measured on scroll, so: animation, never transition. */
 .lang-picker-panel{
   position:fixed;
   z-index:var(--z-popover);
@@ -266,11 +303,17 @@
   display:flex;
   flex-direction:column;
   gap:1px;
-  background:var(--surface);
+  background:var(--surface-glass);
   border:1px solid var(--border);
   border-radius:8px;
   box-shadow:0 10px 28px #11182726,0 2px 6px #1118270f;
   scrollbar-width:thin;
+  overscroll-behavior:contain;
+  backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+}
+@supports not (backdrop-filter:blur(1px)){
+  .lang-picker-panel{background:var(--surface)}
 }
 .lang-picker-item{
   display:flex;
@@ -287,8 +330,36 @@
   text-align:left;
   cursor:pointer;
   white-space:nowrap;
+  /* The highlighted row follows the pointer/keyboard; the cross-fade stops it
+     from blinking on a 28px row and stays under the key-repeat interval. */
+  transition:background-color var(--duration-fast) var(--ease-standard),color var(--duration-fast) var(--ease-standard);
 }
 .lang-picker-item.active{background:var(--surface-sunken);color:var(--text)}
 .lang-picker-item.selected{color:var(--accent-strong);font-weight:600}
 .lang-picker-item.selected.active{background:var(--accent-soft)}
 .lang-picker-item svg{flex:0 0 auto;color:var(--accent)}
+/*
+ * Selection acknowledgement. Both the trigger and the row that just became the
+ * block's language carry the shared .is-acknowledged class for one beat
+ * (LanguagePicker toggles it on a committed change, not on hover).
+ *
+ * The ring keyframes and the reduced-motion opt-out live in motion.css, so
+ * nothing is restated here. The panel scrolls, so the ring is clipped by its own
+ * overflow box — which is the desired reading: the flash stays inside the list
+ * it belongs to instead of bleeding over the code block behind it.
+ */
+
+/* motion.css collapses .motion-rise to a fade and switches .is-acknowledged off
+   under reduced motion; .copied mirrors the utility, so it opts out as well. */
+@media (prefers-reduced-motion:reduce){
+  .code-overlay-copy.copied{animation:none}
+}
+/* The trigger now wraps its label in a span so the text can be truncated
+   independently of the flag and the chevron. */
+.lang-picker-label{
+  display:block;
+  max-width:88px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}

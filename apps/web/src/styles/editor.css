@@ -1,15 +1,30 @@
 /*
  * Editor layer: document chrome, toolbar, bubble menu, slash menu, table menu
  * and the responsive compaction of those controls.
+ *
+ * Motion rules this layer follows (same language as styles/motion.css):
+ *   press    transform:scale(.97) on :active only, --duration-instant. Hover
+ *            never translates, so a 28px icon row stays optically still.
+ *   arrive   `animation`, never `transition`, for any surface whose position is
+ *            rewritten by JS (bubble menu follows the selection every frame; a
+ *            transition would restart on each write, an animation runs once).
+ *   colour   --transition-colors, so a toggled state settles instead of snapping.
+ *   only transform/opacity — no animated width/height/top/left for the same
+ *            reason motion.css gives: layout-free frames.
  */
 
 /* 13. interaction fixes */
 .tree-menu-anchor{position:relative;display:flex;flex:0 0 auto}
+/* `.help-row` is a clickable row; cursor and hover are one rule so the row
+   cannot end up half-styled when one of the two declarations is edited. */
+.help-row{cursor:pointer}
 .help-row:hover{background:var(--surface-muted);color:var(--text)}
 .help-row:focus-visible{outline:2px solid var(--focus-ring);outline-offset:-2px}
 
-.skip-link{position:absolute;left:12px;top:-48px;z-index:var(--z-toast);padding:8px 12px;border-radius:8px;background:var(--text);color:#fff;font-size:12px;text-decoration:none;transition:top .15s ease}
-.skip-link:focus{top:12px}
+/* Parked off-screen with a transform, not a negative top: the link slides in
+   on Tab, and translating it keeps the reveal off the layout path. */
+.skip-link{position:absolute;left:12px;top:12px;transform:translate3d(0,-60px,0);z-index:var(--z-toast);padding:8px 12px;border-radius:8px;background:var(--text);color:#fff;font-size:12px;text-decoration:none;transition:transform var(--duration-base) var(--ease-spring-snappy)}
+.skip-link:focus{transform:translate3d(0,0,0)}
 
 /* tree row layout lives in section 30 (chevron is an inline flex slot) */
 .tree-entry{position:relative}
@@ -29,7 +44,7 @@
 .workspace-menu .workspace-menu-user small{font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .menu-key{width:15px;height:15px;border:1px solid currentColor;border-radius:50%;display:grid;place-items:center;font-size:10px;line-height:1}
 
-.new-menu-anchor,.menu-anchor,.workspace-anchor,.tree-menu-anchor{position:relative}
+.new-menu-anchor,.menu-anchor,.workspace-anchor{position:relative}
 
 /* 15. polish: consistent controls */
 .tree-more{width:26px;height:26px;flex:0 0 26px;margin-right:2px;color:#6b7280}
@@ -41,22 +56,10 @@
 .menu-item-danger:hover{background:#fff2ef;color:#a1362a}
 .workspace{height:52px}
 .workspace:hover{border-color:#d8dce2;background:#fff}
-.help-row{cursor:pointer}
 .sidebar{overflow-y:auto;overflow-x:hidden}
 .doc-tree{flex:0 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding-bottom:6px}
 
 .nav-row[aria-current="page"]{background:var(--accent-soft);color:var(--accent-strong);font-weight:600}
-
-/* 16. mobile toolbar: keep essentials, allow scroll */
-@media (max-width:560px){
-  .editor-toolbar{gap:2px;padding:0 8px;scrollbar-width:none}
-  .editor-toolbar::-webkit-scrollbar{display:none}
-  .top-actions{gap:6px}
-  .top-actions .icon-btn{width:32px;height:32px}
-  .breadcrumbs{font-size:12px}
-  .paper{padding:26px 18px 72px}
-  .document-heading input{font-size:24px}
-}
 
 /* 17. panel tabbar */
 .panel-tabbar{display:flex;align-items:center;gap:4px;border-bottom:1px solid var(--border);padding:0 8px 0 10px;min-height:46px}
@@ -72,21 +75,48 @@
 .editor-toolbar::-webkit-scrollbar{display:none}
 .tb-group{display:flex;align-items:center;gap:1px;flex:0 0 auto}
 .tb-separator{width:1px;height:18px;background:var(--border);margin:0 6px;flex:0 0 1px}
-.tb-spacer{flex:1 1 auto;min-width:8px}
+
+/*
+ * Toolbar buttons. The transition list is deliberately split: colour settles
+ * on the flat curve, transform is reserved for press feedback at
+ * --duration-instant so releasing a button feels crisp rather than springy.
+ * Nothing here touches hover, which is why the icon never shifts under the
+ * pointer (a nudged icon reads as an accidental hover state on a 28px target).
+ */
 .tb-btn{
   width:28px;height:28px;display:grid;place-items:center;border:0;border-radius:5px;
   background:transparent;color:#4b5563;cursor:pointer;flex:0 0 auto;position:relative;
+  transition:var(--transition-colors),transform var(--duration-instant) var(--ease-spring-snappy);
 }
 .tb-btn:hover{background:var(--surface-sunken);color:var(--text)}
-.tb-btn.is-active{background:var(--accent-soft);color:var(--accent-strong)}
-.tb-btn:disabled{color:#b8bdc6}
+/* A toggled format is a state change the eye should catch, so its ground
+   arrives on the spring curve instead of the flat colour curve. */
+.tb-btn.is-active{
+  background:var(--accent-soft);color:var(--accent-strong);
+  transition:background-color var(--duration-base) var(--ease-spring-snappy),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-instant) var(--ease-spring-snappy);
+}
+.tb-btn:disabled{color:#b8bdc6;cursor:default}
+/* Press tint is an inset shadow rather than a background swap: it darkens
+   whatever is underneath, so an already-active button does not flash grey. */
+.tb-btn:active:not(:disabled){transform:scale(.97);box-shadow:inset 0 0 0 999px rgba(17,24,39,.05)}
+/* An open menu keeps its trigger lit, mirroring the active format state; the
+   ARIA attribute is already there for assistive tech, so it drives the style
+   too instead of duplicating the state in a class. */
+.tb-btn[aria-expanded="true"],
+.tb-select[aria-expanded="true"]{background:var(--surface-sunken);color:var(--text)}
 .tb-select{
   height:28px;display:inline-flex;align-items:center;gap:4px;padding:0 8px;border:0;border-radius:5px;
   background:transparent;color:var(--text-secondary);font-size:12px;cursor:pointer;flex:0 0 auto;min-width:56px;justify-content:space-between;
+  transition:var(--transition-colors),transform var(--duration-instant) var(--ease-spring-snappy);
 }
 .tb-select:hover{background:var(--surface-sunken)}
+.tb-select:active{transform:scale(.97);box-shadow:inset 0 0 0 999px rgba(17,24,39,.05)}
 .tb-size{min-width:44px;color:var(--text-secondary)}
 .tb-anchor{position:relative;display:flex;flex:0 0 auto}
+.tb-spacer{flex:1 1 auto;min-width:8px}
 .tb-color{position:relative;display:grid;place-items:center;width:100%;height:100%}
 .tb-color i{position:absolute;left:6px;right:6px;bottom:3px;height:3px;border-radius:2px;background:#1f2937}
 .tb-highlight i{background:#ffe58a}
@@ -94,7 +124,7 @@
 .tb-task{font-size:13px;line-height:1}
 .tb-menu{min-width:180px}
 .tb-size-menu{min-width:88px}
-.tb-menu-item{width:100%;min-height:32px;display:flex;align-items:center;gap:9px;border:0;background:transparent;border-radius:5px;padding:0 9px;font-size:12px;color:var(--text-secondary);cursor:pointer;text-align:left}
+.tb-menu-item{width:100%;min-height:32px;display:flex;align-items:center;gap:9px;border:0;background:transparent;border-radius:5px;padding:0 9px;font-size:12px;color:var(--text-secondary);cursor:pointer;text-align:left;transition:var(--transition-colors)}
 .tb-menu-item:hover{background:var(--surface-sunken);color:var(--text)}
 .tb-menu-item.is-active{background:var(--accent-soft);color:var(--accent-strong)}
 .tb-menu-item small{margin-left:auto;font-size:11px;color:var(--text-muted)}
@@ -104,23 +134,62 @@
 .tb-menu-preview.h3{font-size:14px}
 .tb-color-menu{min-width:180px;padding:8px}
 .tb-swatches{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:6px}
-.tb-swatch{width:26px;height:26px;border-radius:50%;border:1px solid #0000001a;cursor:pointer;padding:0}
+.tb-swatch{width:26px;height:26px;border-radius:50%;border:1px solid #0000001a;cursor:pointer;padding:0;transition:transform var(--duration-fast) var(--ease-spring-snappy),box-shadow var(--duration-fast) var(--ease-standard)}
 .tb-swatch:hover{transform:scale(1.08)}
+.tb-swatch:active{transform:scale(.97)}
 .tb-align-menu{min-width:150px}
 
-/* bubble toolbar */
+/* ══ bubble toolbar ══════════════════════════════════════════════
+ * The bar is position:fixed and React rewrites top/left on every selection
+ * update. That is exactly why the entrance is an animation: it plays once on
+ * mount and is untouched by the per-frame style writes, whereas a transition
+ * on the same element would be re-triggered by each positioning pass.
+ * The animation starts from the edge that touches the text, so it grows out of
+ * the selection instead of sliding over it.
+ */
+@keyframes editor-bubble-in{
+  from{opacity:0;transform:scale(.9)}
+  to{opacity:1;transform:scale(1)}
+}
+@keyframes editor-bubble-out{
+  from{opacity:1;transform:scale(1)}
+  to{opacity:0;transform:scale(.96)}
+}
 .bubble-toolbar{
   position:fixed;z-index:var(--z-popover);display:flex;align-items:center;gap:1px;
-  padding:4px;background:#fff;border:1px solid var(--border);border-radius:8px;
-  box-shadow:var(--shadow-popover);
+  padding:4px;background:var(--surface-glass);border:1px solid var(--border);border-radius:8px;
+  box-shadow:var(--shadow-popover);transform-origin:50% 100%;
+  backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);
+  animation:editor-bubble-in var(--duration-base) var(--ease-spring-snappy) both;
 }
-.bubble-btn{height:28px;min-width:28px;padding:0 6px;border:0;border-radius:5px;background:transparent;color:#4b5563;display:grid;place-items:center;cursor:pointer}
+/* Flipped placement (bar pinned under the line) grows from its top edge. */
+.bubble-toolbar[data-origin="top"]{transform-origin:50% 0}
+/* Leaving is faster than arriving, per the shared duration rule. */
+.bubble-toolbar.is-leaving{animation:editor-bubble-out var(--duration-fast) var(--ease-accelerate) both;pointer-events:none}
+@supports not (backdrop-filter:blur(1px)){
+  .bubble-toolbar{background:var(--surface)}
+}
+.bubble-btn{
+  height:28px;min-width:28px;padding:0 6px;border:0;border-radius:5px;background:transparent;color:#4b5563;display:grid;place-items:center;cursor:pointer;
+  transition:var(--transition-colors),transform var(--duration-instant) var(--ease-spring-snappy);
+}
 .bubble-btn:hover{background:var(--surface-sunken);color:var(--text)}
-.bubble-btn.is-active{background:var(--accent-soft);color:var(--accent-strong)}
+.bubble-btn.is-active{
+  background:var(--accent-soft);color:var(--accent-strong);
+  transition:background-color var(--duration-base) var(--ease-spring-snappy),
+    color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-instant) var(--ease-spring-snappy);
+}
+.bubble-btn:active{transform:scale(.97);box-shadow:inset 0 0 0 999px rgba(17,24,39,.05)}
 .bubble-divider{width:1px;height:16px;background:var(--border);margin:0 3px}
 .bubble-comment{font-size:12px;padding:0 8px}
+@media (prefers-reduced-motion:reduce){
+  /* Reduced motion keeps the acknowledgement but drops the scale travel. */
+  .bubble-toolbar{animation:motion-fade-in var(--duration-fast) linear both}
+  .bubble-toolbar.is-leaving{animation:motion-fade-out var(--duration-fast) linear both}
+}
 
-/* find + outline */
+/* ══ find + outline ══════════════════════════════════════════════ */
 .find-panel,.outline-panel{
   position:absolute;right:24px;top:56px;z-index:var(--z-popover);width:300px;
   background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-popover);
@@ -128,19 +197,36 @@
 }
 .outline-panel{width:260px;max-height:60vh;overflow:auto}
 .find-head{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--text)}
-.find-field{display:flex;align-items:center;gap:7px;height:34px;padding:0 9px;border:1px solid var(--border-strong);border-radius:6px;background:#fff;color:var(--text-muted)}
+.find-field{display:flex;align-items:center;gap:7px;height:34px;padding:0 9px;border:1px solid var(--border-strong);border-radius:6px;background:#fff;color:var(--text-muted);transition:var(--transition-colors)}
 .find-field input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:12px;color:var(--text)}
-.find-count{font-size:11px;color:var(--text-muted)}
+/* Miss state: the border carries the error, the shake adds one beat of
+   "nothing here" without moving the input itself out from under the caret. */
+.find-field.is-empty{border-color:var(--danger);background:var(--danger-soft)}
+.find-field.is-shaking{animation:editor-shake var(--duration-slow) var(--ease-accelerate)}
+@keyframes editor-shake{
+  0%,100%{transform:translate3d(0,0,0)}
+  20%{transform:translate3d(-3px,0,0)}
+  45%{transform:translate3d(3px,0,0)}
+  70%{transform:translate3d(-2px,0,0)}
+  90%{transform:translate3d(1px,0,0)}
+}
+.find-count{font-size:11px;color:var(--text-muted);display:inline-block}
+/* One-shot pulse on the counter when the hit count changes. */
+.find-count.is-bumped{animation:motion-pop var(--duration-base) var(--ease-spring-snappy)}
 .find-actions{display:flex;align-items:center;gap:6px}
 .find-case{display:flex;align-items:center;gap:5px;margin-left:auto;font-size:11px;color:var(--text-muted)}
 .outline-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
-.outline-list button{width:100%;text-align:left;border:0;background:transparent;border-radius:5px;padding:6px 8px;font-size:12px;color:var(--text-secondary);cursor:pointer}
+.outline-list button{width:100%;text-align:left;border:0;background:transparent;border-radius:5px;padding:6px 8px;font-size:12px;color:var(--text-secondary);cursor:pointer;transition:var(--transition-colors)}
 .outline-list button:hover{background:var(--surface-sunken);color:var(--text)}
 .outline-empty{font-size:12px;color:var(--text-muted);line-height:1.6;margin:4px 0}
+@media (prefers-reduced-motion:reduce){
+  .find-field.is-shaking{animation:none}
+  .find-count.is-bumped{animation:none}
+}
 
 /* images */
-.tiptap-content img{max-width:100%;height:auto;border-radius:6px;display:block;margin:10px 0}
-.tiptap-content img.ProseMirror-selectednode{outline:2px solid var(--accent)}
+.tiptap-content img{max-width:100%;height:auto;border-radius:6px;display:block;margin:10px 0;border:1px solid transparent}
+.tiptap-content img.ProseMirror-selectednode{outline:2px solid var(--accent);outline-offset:2px}
 .image-insert-row{display:flex;gap:8px;align-items:center}
 .image-insert-row input{flex:1;height:36px;border:1px solid var(--border-strong);border-radius:5px;padding:0 9px;font-size:12px}
 .image-upload-btn{height:36px;display:inline-flex;align-items:center;padding:0 10px;cursor:pointer;white-space:nowrap}
@@ -150,12 +236,65 @@
 .tiptap-content [style*="text-align:right"]{text-align:right}
 .tiptap-content [style*="text-align:justify"]{text-align:justify}
 
-@media(max-width:820px){
-  .editor-toolbar{padding:0 6px;gap:0}
-  .tb-separator{margin:0 3px}
-  .tb-group-extra{display:none}
-  .find-panel,.outline-panel{right:12px;left:12px;width:auto;top:52px}
+/* ══ slash menu ══════════════════════════════════════════════════
+ * Same fixed-position story as the bubble bar: it is re-anchored as the caret
+ * moves, so the panel uses the shared .motion-rise animation (once per mount)
+ * and only the highlight colour transitions.
+ */
+.slash-menu{
+  position:fixed;z-index:var(--z-popover);width:280px;max-height:360px;display:flex;flex-direction:column;
+  background:var(--surface-glass);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-popover);overflow:hidden;
+  backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);
 }
+@supports not (backdrop-filter:blur(1px)){
+  .slash-menu{background:var(--surface)}
+}
+.slash-head{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text)}
+.slash-head small{font-size:11px;color:var(--text-muted);font-weight:400}
+.slash-list{overflow:auto;padding:5px;display:flex;flex-direction:column;gap:1px;overscroll-behavior:contain}
+.slash-item{
+  display:flex;align-items:center;gap:9px;border:0;background:transparent;border-radius:6px;padding:6px 8px;text-align:left;cursor:pointer;min-height:40px;
+  /* The highlight moves as the user types/arrow-keys; a cross-fade keeps the
+     list from blinking, and stopping at --duration-fast keeps it under the key
+     repeat rate so two moves never overlap into a smear. */
+  transition:background-color var(--duration-fast) var(--ease-standard)
+}
+/* 20ms between rows, tighter than the generic .stagger step: a slash menu is
+   read at typing speed, and a 28ms cascade is still landing when the query
+   narrows for the second time. Declared after .stagger so it wins the tie. */
+.slash-menu .slash-item.stagger{animation-delay:calc(var(--i,0) * 20ms)}
+.slash-item.active{background:var(--accent-soft)}
+.slash-item span:nth-child(2){display:flex;flex-direction:column;gap:1px;min-width:0}
+.slash-item b{font-size:12px;font-weight:600;color:var(--text)}
+.slash-item small{font-size:11px;color:var(--text-muted)}
+.slash-icon{width:28px;height:28px;flex:0 0 28px;border-radius:6px;background:var(--surface-muted);display:grid;place-items:center;color:var(--text-secondary)}
+.slash-empty{padding:18px;text-align:center;font-size:12px;color:var(--text-muted)}
+.slash-foot{padding:7px 12px;border-top:1px solid var(--border);font-size:10px;color:var(--text-muted);background:var(--surface-muted)}
+
+/* ══ table contextual menu ══════════════════════════════════════
+ * Merged from two later overrides: the menu kept moving around the canvas
+ * (16/16 -> 24/52) and only the last position is ever visible, so the winning
+ * coordinates are declared once.
+ *
+ * Note this class is the legacy corner-pinned menu; the table UI in use today is
+ * .block-tool-panel in content.css, which anchors to the table's own rect.
+ */
+.table-menu{position:absolute;right:24px;bottom:52px;z-index:var(--z-menu)}
+.table-menu-trigger{height:30px;padding:0 10px;border:1px solid var(--border-strong);border-radius:6px;background:#fff;font-size:12px;color:var(--text-secondary);cursor:pointer;box-shadow:var(--shadow-popover);transition:var(--transition-colors),transform var(--duration-instant) var(--ease-spring-snappy)}
+.table-menu-trigger:hover{background:var(--surface-muted)}
+.table-menu-trigger:active{transform:scale(.97)}
+.table-menu-scrim{position:fixed;inset:0;z-index:calc(var(--z-menu) - 1);background:transparent;border:0}
+.table-menu-panel{position:absolute;right:0;bottom:36px;width:190px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-popover);padding:5px;display:flex;flex-direction:column;gap:1px}
+.table-menu-panel button{display:flex;align-items:center;gap:8px;min-height:30px;border:0;background:transparent;border-radius:5px;padding:0 8px;font-size:12px;color:var(--text-secondary);cursor:pointer;text-align:left;transition:var(--transition-colors)}
+.table-menu-panel button:hover{background:var(--surface-muted);color:var(--text)}
+.table-menu-panel button.danger{color:var(--danger)}
+.table-menu-panel button.danger:hover{background:var(--danger-soft)}
+
+/* Feishu-like heading anchor + code block language */
+.tiptap-content h1,.tiptap-content h2,.tiptap-content h3{position:relative}
+.tiptap-content h1:hover::before,.tiptap-content h2:hover::before,.tiptap-content h3:hover::before{content:"";position:absolute;left:-18px;top:6px;bottom:6px;width:3px;border-radius:2px;background:var(--accent-soft)}
+.tiptap-content a{color:var(--accent-strong);text-decoration:none;border-bottom:1px solid currentColor}
+.tiptap-content a:hover{color:var(--accent)}
 
 /* Editor focus ring should not box the whole canvas */
 .ProseMirror:focus,.ProseMirror:focus-visible,.tiptap-content:focus,.tiptap-content:focus-visible{outline:none}
@@ -186,45 +325,11 @@
 .tiptap-content ul[data-type="taskList"] li>label{margin-top:5px}
 .tiptap-content p.is-editor-empty:first-child::before{color:#9aa0aa;content:attr(data-placeholder);float:left;height:0;pointer-events:none}
 
-/* selected image should not show a red box; use subtle outline */
-.tiptap-content img.ProseMirror-selectednode{outline:2px solid var(--accent);outline-offset:2px}
-.tiptap-content img{border:1px solid transparent}
-
-/* slash menu */
-.slash-menu{position:fixed;z-index:var(--z-popover);width:280px;max-height:360px;display:flex;flex-direction:column;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-popover);overflow:hidden}
-.slash-head{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text)}
-.slash-head small{font-size:11px;color:var(--text-muted);font-weight:400}
-.slash-list{overflow:auto;padding:5px;display:flex;flex-direction:column;gap:1px}
-.slash-item{display:flex;align-items:center;gap:9px;border:0;background:transparent;border-radius:6px;padding:6px 8px;text-align:left;cursor:pointer;min-height:40px}
-.slash-item.active{background:var(--accent-soft)}
-.slash-item span:nth-child(2){display:flex;flex-direction:column;gap:1px;min-width:0}
-.slash-item b{font-size:12px;font-weight:600;color:var(--text)}
-.slash-item small{font-size:11px;color:var(--text-muted)}
-.slash-icon{width:28px;height:28px;flex:0 0 28px;border-radius:6px;background:var(--surface-muted);display:grid;place-items:center;color:var(--text-secondary)}
-.slash-empty{padding:18px;text-align:center;font-size:12px;color:var(--text-muted)}
-.slash-foot{padding:7px 12px;border-top:1px solid var(--border);font-size:10px;color:var(--text-muted);background:var(--surface-muted)}
-
-/* table contextual menu */
-.table-menu{position:absolute;right:16px;bottom:16px;z-index:var(--z-menu)}
-.table-menu-trigger{height:30px;padding:0 10px;border:1px solid var(--border-strong);border-radius:6px;background:#fff;font-size:12px;color:var(--text-secondary);cursor:pointer;box-shadow:var(--shadow-popover)}
-.table-menu-trigger:hover{background:var(--surface-muted)}
-.table-menu-scrim{position:fixed;inset:0;z-index:calc(var(--z-menu) - 1);background:transparent;border:0}
-.table-menu-panel{position:absolute;right:0;bottom:36px;width:190px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-popover);padding:5px;display:flex;flex-direction:column;gap:1px}
-.table-menu-panel button{display:flex;align-items:center;gap:8px;min-height:30px;border:0;background:transparent;border-radius:5px;padding:0 8px;font-size:12px;color:var(--text-secondary);cursor:pointer;text-align:left}
-.table-menu-panel button:hover{background:var(--surface-muted);color:var(--text)}
-.table-menu-panel button.danger{color:var(--danger)}
-.table-menu-panel button.danger:hover{background:var(--danger-soft)}
-
-/* table bubbles should not float over menus; place near editor bottom */
-.table-menu{position:absolute;right:24px;bottom:52px}
-
-/* Feishu-like heading anchor + code block language */
-.tiptap-content h1,.tiptap-content h2,.tiptap-content h3{position:relative}
-.tiptap-content h1:hover::before,.tiptap-content h2:hover::before,.tiptap-content h3:hover::before{content:"";position:absolute;left:-18px;top:6px;bottom:6px;width:3px;border-radius:2px;background:var(--accent-soft)}
-.tiptap-content a{color:var(--accent-strong);text-decoration:none;border-bottom:1px solid currentColor}
-.tiptap-content a:hover{color:var(--accent)}
-
-/* 19. toolbar responsive compaction */
+/* ── responsive compaction ──────────────────────────────────────
+ * Breakpoint blocks are grouped so each width has exactly one rule set; when
+ * two blocks at the same width both touched .editor-toolbar the later one won
+ * by accident, which is how the padding silently diverged between them.
+ */
 @media (max-width:1180px){
   .tb-group-insert .tb-anchor:last-child .tb-btn{padding:0}
   .tb-group-extra{display:none}
@@ -233,19 +338,32 @@
   .tb-separator:nth-of-type(n+7){display:none}
   .editor-toolbar{gap:0;padding:0 8px}
 }
+@media (max-width:820px){
+  .editor-toolbar{padding:0 6px;gap:0}
+  .tb-separator{margin:0 3px}
+  .tb-group-extra{display:none}
+  .find-panel,.outline-panel{right:12px;left:12px;width:auto;top:52px}
+}
 @media (max-width:760px){
   .tb-group-history .tb-btn:last-child,.tb-group .tb-btn[aria-label="行内代码"]{display:none}
 }
 @media (max-width:560px){
+  .editor-toolbar{
+    gap:2px;padding:0 8px;height:42px;flex-basis:42px;
+    scrollbar-width:none;overflow-x:auto;
+    /* fade to the canvas instead of slicing an icon in half */
+    mask-image:linear-gradient(90deg,#000 calc(100% - 18px),transparent);
+  }
+  .editor-toolbar::-webkit-scrollbar{display:none}
   .tb-select{min-width:44px;padding:0 5px}
   .tb-size{min-width:36px}
-  .editor-toolbar{height:42px;flex-basis:42px}
+  .top-actions{gap:6px}
+  .top-actions .icon-btn{width:32px;height:32px}
+  .breadcrumbs{font-size:12px}
+  .paper{padding:26px 18px 72px}
+  .document-heading input{font-size:24px}
 }
 
-/* mobile: keep toolbar scrollable and fade right edge */
-@media (max-width:560px){
-  .editor-toolbar{overflow-x:auto;mask-image:linear-gradient(90deg,#000 calc(100% - 18px),transparent)}
-}
-
-.popover-above{animation:popover-in-up .12s ease-out}
-@keyframes popover-in-up{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+/* Feishu-style popovers that open upward get the shared rise keyframes; the
+   literal `.12s ease-out` this used to carry predates the token layer. */
+.popover-above{animation:motion-sink-in var(--duration-base) var(--ease-spring-snappy)}

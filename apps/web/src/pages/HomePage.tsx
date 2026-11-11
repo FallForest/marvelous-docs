@@ -1,9 +1,51 @@
+import { useEffect, useRef } from 'react'
+import type { RefObject } from 'react'
 import {
   ChevronRight, Clock3, FilePlus2, FileText, Folder, FolderPlus, Star, Trash2, Upload,
 } from 'lucide-react'
 import StatsCards from '../components/ui/StatsCards'
+import { staggerItemProps } from '../components/ui/Stagger'
+import { useReducedMotion } from '../hooks/useReducedMotion'
 import { formatDate } from '../lib/format'
 import type { Doc, WorkspaceStats } from '../lib/types'
+
+/**
+ * Counter-drift for the hero decoration.
+ *
+ * Each page scrolls inside its own box, so the offset comes from that element
+ * rather than the window. Only a decorative layer reads the resulting variable:
+ * sliding the text under a fixed reading position is what makes parallax look
+ * cheap. The listener is skipped under reduced motion, where no CSS fallback
+ * can stand in for a JS-driven offset.
+ */
+function useHeroShift(reduced: boolean, key: string): RefObject<HTMLDivElement> {
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root || reduced) return
+    let frame = 0
+    const apply = () => {
+      frame = 0
+      // A few pixels reads as depth; more turns a short hero into a moving target.
+      root.style.setProperty('--hero-shift', Math.min(root.scrollTop * 0.06, 8).toFixed(2) + 'px')
+    }
+    const onScroll = () => { if (!frame) frame = window.requestAnimationFrame(apply) }
+    apply()
+    root.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      root.removeEventListener('scroll', onScroll)
+      if (frame) window.cancelAnimationFrame(frame)
+    }
+  }, [reduced, key])
+
+  return rootRef
+}
+
+/** Eyebrow, title and subtitle enter one step apart, so the hero reads as a block. */
+function heroLine(index: number, className = '') {
+  return staggerItemProps(index, className)
+}
 
 export type HomeDashboardProps = {
   documents: Doc[]
@@ -21,23 +63,26 @@ export type HomeDashboardProps = {
 }
 
 export default function HomeDashboard({ documents, favorites, query, trash, favoritesView, stats, onOpen, onCreate, onImport, onCreateFolder, onRestore, onPermanentDelete }: HomeDashboardProps) {
+  const reduced = useReducedMotion()
+  const view = trash ? 'trash' : favoritesView ? 'favorites' : 'home'
+  const rootRef = useHeroShift(reduced, view)
   const visible = documents.filter((doc) => !query || doc.title.toLowerCase().includes(query.toLowerCase()))
-  if (trash) return <div className="home-dashboard">
-    <div className="home-hero"><div><span className="eyebrow">文档管理</span><h1>回收站</h1><p>恢复误删的文档，或永久清理不再需要的内容。</p></div></div>
+  if (trash) return <div className="home-dashboard" ref={rootRef}>
+    <div className="home-hero"><div><span {...heroLine(0, 'eyebrow')}>文档管理</span><h1 {...heroLine(1)}>回收站</h1><p {...heroLine(2)}>恢复误删的文档，或永久清理不再需要的内容。</p></div></div>
     <section className="home-section">
       <div className="home-section-head"><h2><Trash2 size={16} />已删除文档</h2><span>{visible.length + ' 项'}</span></div>
-      {visible.length ? <div className="home-grid">{visible.map((doc) => <div className="home-card" key={doc.id}>
+      {visible.length ? <div className="home-grid">{visible.map((doc, index) => <div {...staggerItemProps(index, 'home-card')} key={doc.id}>
         <button className="home-card-main" onClick={() => onOpen(doc)}><span className="home-card-icon"><FileText size={17} /></span><span><b>{doc.title}</b><small>已移入回收站</small></span></button>
         <span className="home-card-actions"><button onClick={() => void onRestore(doc)}>恢复</button><button onClick={() => void onPermanentDelete(doc)}>删除</button></span>
       </div>)}</div> : <div className="home-empty">回收站为空</div>}
     </section>
   </div>
   const favoriteDocs = visible.filter((doc) => favorites.has(doc.id))
-  if (favoritesView) return <div className="home-dashboard">
-    <div className="home-hero"><div><span className="eyebrow">我的收藏</span><h1>收藏</h1><p>标星过的文档和文件夹集中在这里，方便随时回到常用内容。</p></div></div>
+  if (favoritesView) return <div className="home-dashboard" ref={rootRef}>
+    <div className="home-hero"><div><span {...heroLine(0, 'eyebrow')}>我的收藏</span><h1 {...heroLine(1)}>收藏</h1><p {...heroLine(2)}>标星过的文档和文件夹集中在这里，方便随时回到常用内容。</p></div></div>
     <section className="home-section">
       <div className="home-section-head"><h2><Star size={16} />已收藏</h2><span>{favoriteDocs.length + ' 项'}</span></div>
-      {favoriteDocs.length ? <div className="home-grid">{favoriteDocs.map((doc) => <button className="home-card" key={doc.id} onClick={() => onOpen(doc)}>
+      {favoriteDocs.length ? <div className="home-grid">{favoriteDocs.map((doc, index) => <button {...staggerItemProps(index, 'home-card')} key={doc.id} onClick={() => onOpen(doc)}>
         <span className={'home-card-icon ' + (doc.kind === 'folder' ? 'folder' : '')}>{doc.kind === 'folder' ? <Folder size={17} /> : <FileText size={17} />}</span>
         <span><b>{doc.title || '未命名文档'}</b><small>{doc.kind === 'folder' ? '文件夹' : '更新于 ' + (formatDate(doc.updatedAt) || '刚刚')}</small></span>
         <ChevronRight size={15} />
@@ -50,9 +95,9 @@ export default function HomeDashboard({ documents, favorites, query, trash, favo
     { title: '收藏', icon: Star, items: favoriteDocs },
     { title: '我创建的', icon: FileText, items: visible.filter((doc) => doc.kind !== 'folder').slice(0, 6) },
   ]
-  return <div className="home-dashboard">
+  return <div className="home-dashboard" ref={rootRef}>
     <div className="home-hero">
-      <div><span className="eyebrow">工作区</span><h1>欢迎回来</h1><p>继续处理你的文档，或创建一个新的知识空间。</p></div>
+      <div><span {...heroLine(0, 'eyebrow')}>工作区</span><h1 {...heroLine(1)}>欢迎回来</h1><p {...heroLine(2)}>继续处理你的文档，或创建一个新的知识空间。</p></div>
       <div className="hero-actions">
         <button className="secondary-btn" onClick={onImport}><Upload size={15} />导入 Markdown</button>
         <button className="secondary-btn" onClick={onCreateFolder}><FolderPlus size={15} />新建文件夹</button>
@@ -62,7 +107,7 @@ export default function HomeDashboard({ documents, favorites, query, trash, favo
     <StatsCards stats={stats} />
     {sections.map(({ title, icon: Icon, items }) => <section className="home-section" key={title}>
       <div className="home-section-head"><h2><Icon size={16} />{title}</h2><span>{items.length + ' 项'}</span></div>
-      {items.length ? <div className="home-grid">{items.map((doc) => <button className="home-card" key={doc.id} onClick={() => onOpen(doc)}>
+      {items.length ? <div className="home-grid">{items.map((doc, index) => <button {...staggerItemProps(index, 'home-card')} key={doc.id} onClick={() => onOpen(doc)}>
         <span className={'home-card-icon ' + (doc.kind === 'folder' ? 'folder' : '')}>{doc.kind === 'folder' ? <Folder size={17} /> : <FileText size={17} />}</span>
         <span><b>{doc.title || '未命名文档'}</b><small>{doc.kind === 'folder' ? '文件夹' : '更新于 ' + (formatDate(doc.updatedAt) || '刚刚')}</small></span>
         <ChevronRight size={15} />
@@ -72,16 +117,17 @@ export default function HomeDashboard({ documents, favorites, query, trash, favo
 }
 
 export function FolderOverview({ folder, items, onCreate, onImport, onCreateFolder, onOpen }: { folder: Doc; items: Doc[]; onCreate: () => void; onImport: () => void; onCreateFolder: () => void; onOpen: (doc: Doc) => void }) {
-  return <div className="folder-overview">
+  const rootRef = useHeroShift(useReducedMotion(), folder.id)
+  return <div className="folder-overview" ref={rootRef}>
     <div className="folder-overview-head">
       <div className="folder-large-icon"><Folder size={23} /></div>
-      <div><h1>{folder.title}</h1><p>{items.length + ' 个项目'}</p></div>
+      <div><h1 {...heroLine(1)}>{folder.title}</h1><p {...heroLine(2)}>{items.length + ' 个项目'}</p></div>
       <div className="folder-head-actions">
         <button className="secondary-btn" onClick={onImport}><Upload size={15} />导入 Markdown</button>
         <button className="primary-btn" onClick={onCreate}><FilePlus2 size={15} />新建文档</button>
       </div>
     </div>
-    {items.length ? <div className="folder-items">{items.map((child) => <button key={child.id} className="folder-item" onClick={() => onOpen(child)}>
+    {items.length ? <div className="folder-items">{items.map((child, index) => <button {...staggerItemProps(index, 'folder-item')} key={child.id} onClick={() => onOpen(child)}>
       <span className={'folder-item-icon ' + (child.kind === 'folder' ? 'is-folder' : '')}>{child.kind === 'folder' ? <Folder size={17} /> : <FileText size={17} />}</span>
       <span>{child.title}</span>
       <ChevronRight size={15} />

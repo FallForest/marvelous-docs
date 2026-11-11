@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
+import { staggerDelay } from '../../lib/motion'
 
 type PopoverProps = {
   open: boolean
@@ -15,6 +16,8 @@ type Position = { top: number; left: number; minWidth: number; maxHeight: number
 
 const GAP = 6
 const EDGE = 8
+/** Rows past this index all share the last delay, so a long menu stays synchronous. */
+const STAGGER_LIMIT = 8
 
 /**
  * Non-modal popover rendered in a portal on document.body with fixed
@@ -94,11 +97,27 @@ export default function Popover({ open, onClose, children, align = 'right', clas
     first?.focus({ preventScroll: true })
   }, [open])
 
+  // Stagger lives on the rows, not on a wrapper: the menu itself slides in as
+  // one surface while its rows settle 20ms apart, like a UIKit contextual menu.
+  // Layout effect, so the class lands before the first paint and the rows never
+  // flash fully opaque for a frame before animating.
+  useLayoutEffect(() => {
+    if (!open) return
+    const node = panel.current
+    if (!node) return
+    const rows = Array.from(node.querySelectorAll<HTMLElement>('.menu-item, .tb-menu-item, [role="menuitem"], [role="option"]'))
+    rows.forEach((row, index) => {
+      if (index >= STAGGER_LIMIT) return
+      row.style.animationDelay = staggerDelay(index, 20, 140) + 'ms'
+      row.classList.add('popover-item-enter')
+    })
+  }, [open])
+
   return <>
     <span ref={marker} hidden aria-hidden="true" />
     {open && createPortal(<div
       ref={panel}
-      className={'popover popover-' + align + (className ? ' ' + className : '') + (position?.placement === 'above' ? ' popover-above' : '')}
+      className={'popover popover-' + align + ' popover-' + (position?.placement ?? 'below') + (className ? ' ' + className : '')}
       role="menu"
       aria-label={label}
       style={position ? { top: position.top, left: position.left, minWidth: position.minWidth, maxHeight: position.maxHeight } : { visibility: 'hidden', top: 0, left: 0 }}

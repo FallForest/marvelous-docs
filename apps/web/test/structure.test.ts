@@ -129,11 +129,58 @@ test('styles are layered and the entry point imports them in order', () => {
   const order = [...index.matchAll(/@import\s+'\.\/([a-z-]+)\.css'/g)].map((match) => match[1])
   assert.deepEqual(
     order,
-    ['base', 'surfaces', 'editor', 'navigation', 'content', 'shell', 'updates'],
+    ['tokens', 'base', 'motion', 'surfaces', 'dialogs', 'navigation', 'panels', 'editor', 'content', 'shell', 'pages', 'updates'],
     'style layers must load from broadest to most specific',
   )
   for (const layer of order) {
     assert.ok(statSync(join(SRC, 'styles', `${layer}.css`)).isFile(), `${layer}.css is missing`)
+  }
+})
+
+test('tokens load first and motion loads before any layer that animates', () => {
+  const index = readFileSync(join(SRC, 'styles/index.css'), 'utf8')
+  const order = [...index.matchAll(/@import\s+'\.\/([a-z-]+)\.css'/g)].map((match) => match[1])
+  assert.equal(order[0], 'tokens', 'values must be defined before anything references them')
+  assert.ok(order.indexOf('motion') < order.indexOf('surfaces'), 'motion utilities must exist before surfaces use them')
+})
+
+test('no stylesheet hard-codes a duration or an easing keyword', () => {
+  // A literal 0.12s or ease-out is a value that will not be retuned with the
+  // rest of the app. tokens.css defines them; motion.css composes them;
+  // everywhere else must reference the token.
+  const DEFINITIONS = new Set(['tokens.css', 'motion.css'])
+  const timeLiteral = /(?:^|[^\w-])(\d*\.?\d+)m?s\b/g
+  const easing = /(?:^|[^\w-])(?:ease|ease-in|ease-out|ease-in-out)(?![\w-])/
+  // Sub-millisecond durations are the reduced-motion collapse idiom ("finish
+  // instantly"), not a styling choice, so they are allowed everywhere.
+  const INSTANT = 1
+  const offenders: string[] = []
+  for (const name of readdirSync(join(SRC, 'styles'))) {
+    if (!name.endsWith('.css') || DEFINITIONS.has(name)) continue
+    const text = readFileSync(join(SRC, 'styles', name), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+    for (const [lineNumber, line] of text.split('\n').entries()) {
+      const stripped = line.replace(/var\([^)]*\)/g, '')
+      // A stagger step (animation-delay) is not a duration: it is the gap
+      // between list items, and each list picks the gap that suits its density.
+      // motion.css owns the default; the cap and the per-list step are local.
+      const timed = /animation-delay/.test(stripped) ? '' : stripped
+      const durations = [...timed.matchAll(timeLiteral)]
+        .map((match) => Number(match[1]))
+        .filter((value) => value > INSTANT)
+      if (durations.length) offenders.push(name + ':' + (lineNumber + 1) + ' duration -> ' + line.trim().slice(0, 70))
+      else if (easing.test(stripped)) offenders.push(name + ':' + (lineNumber + 1) + ' easing -> ' + line.trim().slice(0, 70))
+    }
+  }
+  assert.deepEqual(offenders, [], 'use the --duration-* / --ease-* tokens instead')
+})
+
+test('the motion guide names every style layer', () => {
+  // The guide is where someone learns which layer a new rule belongs to; it
+  // drifts the moment a layer is added without a matching entry.
+  const guide = readFileSync(resolve(import.meta.dirname, '../../../docs/MOTION.md'), 'utf8')
+  const index = readFileSync(join(SRC, 'styles/index.css'), 'utf8')
+  for (const layer of [...index.matchAll(/@import\s+'\.\/([a-z-]+)\.css'/g)].map((match) => match[1])) {
+    assert.ok(guide.includes(layer + '.css'), 'docs/MOTION.md must name ' + layer + '.css')
   }
 })
 

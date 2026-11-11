@@ -1,4 +1,5 @@
 import { FileText, Folder, Search } from 'lucide-react'
+import { staggerItemProps } from '../components/ui/Stagger'
 import { excerpt, formatDate, snippetText } from '../lib/format'
 import type { Doc, SearchHit, SearchScope } from '../lib/types'
 
@@ -20,9 +21,9 @@ type SearchPageProps = {
 export default function SearchPage({ query, scope, onScope, results, loading, onOpen }: SearchPageProps) {
   return <div className="search-page">
     <div className="search-hero">
-      <span className="eyebrow">搜索</span>
-      <h1>{'搜索“' + query + '”'}</h1>
-      <p>{loading ? '正在检索工作区…' : '共找到 ' + results.length + ' 条结果，包含标题和正文匹配。'}</p>
+      <span {...staggerItemProps(0, 'eyebrow')}>搜索</span>
+      <h1 {...staggerItemProps(1)}>{'搜索“' + query + '”'}</h1>
+      <p {...staggerItemProps(2)}>{loading ? '正在检索工作区…' : '共找到 ' + results.length + ' 条结果，包含标题和正文匹配。'}</p>
       <div className="search-scope" role="group" aria-label="搜索范围">
         {SCOPES.map((item) => <button
           key={item.value}
@@ -33,7 +34,7 @@ export default function SearchPage({ query, scope, onScope, results, loading, on
       </div>
     </div>
     {results.length === 0 ? <div className="home-empty"><Search size={16} />{loading ? '正在搜索…' : '没有找到匹配的文档，试试换一个关键词。'}</div>
-      : <div className="search-results">{results.map((hit) => <button className="search-hit" key={hit.id} onClick={() => onOpen(hit)}>
+      : <div className="search-results">{results.map((hit, index) => <button {...staggerItemProps(index, 'search-hit')} key={hit.id} onClick={() => onOpen(hit)}>
         <span className={'home-card-icon ' + (hit.kind === 'folder' ? 'folder' : '')}>{hit.kind === 'folder' ? <Folder size={17} /> : <FileText size={17} />}</span>
         <span className="search-hit-copy">
           <b>{hit.title || '未命名文档'}</b>

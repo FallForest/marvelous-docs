@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { CheckSquare, Code2, Heading1, Heading2, Heading3, ImagePlus, List, ListOrdered, Minus, Quote, Table2, Type } from 'lucide-react'
 import type { Editor } from '@tiptap/react'
 import type { LucideIcon } from 'lucide-react'
+import { staggerStyle } from '../../lib/motion'
+import { useReducedMotion } from '../../hooks/useReducedMotion'
 
 type Range = { from: number; to: number }
 type SlashItem = { id: string; label: string; hint: string; icon: LucideIcon; run: (editor: Editor, range: Range) => void }
@@ -14,6 +16,9 @@ type Props = {
   onClose: () => void
   onImage: () => void
 }
+
+/** The shared .stagger utility stops being readable past ~10 rows. */
+const STAGGER_LIMIT = 10
 
 export const SLASH_ITEMS: SlashItem[] = [
   { id: 'text', label: '正文', hint: '普通文本段落', icon: Type, run: (editor, range) => editor.chain().focus().deleteRange(range).setParagraph().run() },
@@ -33,6 +38,7 @@ export const SLASH_ITEMS: SlashItem[] = [
 export default function SlashMenu({ editor, anchor, query, range, onClose, onImage }: Props) {
   const [index, setIndex] = useState(0)
   const listRef = useRef<HTMLDivElement | null>(null)
+  const reduced = useReducedMotion()
   const filtered = useMemo(() => {
     if (!query) return SLASH_ITEMS
     const byLabel = SLASH_ITEMS.filter((item) => item.label.includes(query))
@@ -58,6 +64,22 @@ export default function SlashMenu({ editor, anchor, query, range, onClose, onIma
     return () => document.removeEventListener('keydown', onKey, true)
   }, [anchor, filtered, index, onClose]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  /*
+   * Keep the highlighted row visible while arrowing through a filtered list.
+   *
+   * 'nearest' is the whole point: it is a no-op when the row is already fully
+   * visible, so holding ArrowDown advances one row at a time instead of
+   * re-centring the list under the pointer (which reads as the menu jumping).
+   * Smooth scrolling is dropped under reduced motion, where a gliding list is
+   * exactly the travel the user asked not to see.
+   */
+  useEffect(() => {
+    if (!anchor) return
+    const list = listRef.current
+    const active = list?.children[index] as HTMLElement | undefined
+    active?.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' })
+  }, [index, anchor, reduced, filtered.length])
+
   function run(item: SlashItem) {
     if (!editor || !range) return
     if (item.id === 'image') {
@@ -73,12 +95,23 @@ export default function SlashMenu({ editor, anchor, query, range, onClose, onIma
   }
 
   if (!anchor) return null
-  return <div className="slash-menu" style={{ left: anchor.left, top: anchor.top }} role="listbox" aria-label="插入内容">
+  return <div className="slash-menu motion-rise" style={{ left: anchor.left, top: anchor.top }} role="listbox" aria-label="插入内容">
     <div className="slash-head">插入内容 <small>输入以筛选</small></div>
     <div className="slash-list" ref={listRef}>
       {filtered.map((item, position) => {
         const Icon = item.icon
-        return <button key={item.id} type="button" role="option" aria-selected={position === index} className={'slash-item' + (position === index ? ' active' : '')} onMouseEnter={() => setIndex(position)} onClick={() => run(item)}>
+        return <button
+          key={item.id}
+          type="button"
+          role="option"
+          aria-selected={position === index}
+          className={'slash-item' + (position === index ? ' active' : '') + (position < STAGGER_LIMIT ? ' stagger' : '')}
+          // Only the first screenful staggers; a 12-row cascade would still be
+          // landing by the time the user has typed a second character.
+          style={position < STAGGER_LIMIT ? staggerStyle(position) : undefined}
+          onMouseEnter={() => setIndex(position)}
+          onClick={() => run(item)}
+        >
           <span className="slash-icon"><Icon size={16} /></span>
           <span><b>{item.label}</b><small>{item.hint}</small></span>
         </button>

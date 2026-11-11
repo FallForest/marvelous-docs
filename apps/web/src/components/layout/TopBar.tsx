@@ -1,4 +1,5 @@
 import { ArrowDownToLine, ChevronRight, History, MessageCircle, PanelLeftClose, Share2, Star } from 'lucide-react'
+import type { CSSProperties } from 'react'
 import ExportMenu from '../layout/ExportMenu'
 import type { CollabStatus } from '../../lib/app-types'
 import type { ExportTarget, SaveStatus } from '../../lib/types'
@@ -46,7 +47,14 @@ export default function TopBar(props: TopBarProps) {
       <div className="collaborators" role="group" aria-label="在线成员">
         <div className="presence-stack">
           <div className="mini-avatar green" title="你">{props.userInitial}</div>
-          {props.collaborators.slice(0, 3).map((person) => <div key={person.clientId} className="mini-avatar" title={person.name} style={{ background: person.color + '24', color: person.color }}>{person.name[0]?.toUpperCase()}</div>)}
+          {props.collaborators.slice(0, 3).map((person, index) => <div
+            key={person.clientId}
+            className="mini-avatar presence-enter"
+            title={person.name}
+            // Arriving collaborators pop in one step apart; a stable key means
+            // only the new avatar animates, not the whole stack.
+            style={{ background: person.color + '24', color: person.color, '--i': index } as CSSProperties}
+          >{person.name[0]?.toUpperCase()}</div>)}
           {props.collaborators.length > 3 && <span className="presence-more">{'+' + (props.collaborators.length - 3)}</span>}
         </div>
         <span className={'connection-dot ' + props.collabStatus} aria-hidden="true" />

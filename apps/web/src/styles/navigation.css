@@ -1,14 +1,31 @@
 /*
- * Navigation layer: dropdown visual language, sidebar rows, topbar grouping,
- * popover width discipline and the stacking order of layered sidebars.
+ * Navigation layer: dropdown visual language, the motion of the status
+ * indicators in the topbar, and the stacking order of layered sidebars.
+ *
+ * Two boundaries keep this file honest:
+ *   1. Row geometry and row motion (nav row, tree row, selected indicator) live
+ *      in shell.css with the layout that owns them. This file only owns what
+ *      floats above the page: menus, the scrim, the sidebar sheet.
+ *   2. Every selector is defined once. The previous version of this file
+ *      re-declared .popover widths, .root-folder, .nav-row and the toolbar
+ *      buttons several times over; the later block silently won and nobody
+ *      could tell which number was live.
  */
 
+/* ══ 1. popover surface ═════════════════════════════════════════ *
+ * Position and stacking come from surfaces.css; this layer tunes the density
+ * and pins the width so a menu never stretches to the viewport edge.
+ * Direction (below/above) and the 20ms row cascade are driven by
+ * ui/Popover.tsx + surfaces.css .popover-item-enter, so nothing here repeats
+ * that animation.
+ */
 .popover{
+  width:max-content;
   padding:6px;
   border-radius:10px;
   border:1px solid var(--border);
   background:var(--surface);
-  box-shadow:0 12px 32px #1118271f,0 2px 6px #11182710;
+  box-shadow:var(--shadow-popover);
 }
 .popover .menu-heading{
   padding:6px 9px 5px;font-size:11px;font-weight:600;letter-spacing:.02em;
@@ -17,6 +34,7 @@
 .popover .menu-item,.popover .tb-menu-item{
   min-height:32px;border-radius:6px;padding:0 9px;font-size:12.5px;gap:9px;
   color:var(--text-secondary);
+  transition:var(--transition-colors),transform var(--duration-fast) var(--ease-spring-snappy);
 }
 .popover .menu-item:hover,.popover .tb-menu-item:hover{background:var(--surface-sunken);color:var(--text)}
 .popover .menu-item.is-active,.popover .tb-menu-item.is-active{background:var(--accent-soft);color:var(--accent-strong)}
@@ -25,136 +43,178 @@
 .popover .menu-divider{height:1px;background:var(--border);margin:5px 4px}
 .popover .menu-item-danger{color:var(--danger)}
 .popover .menu-item-danger:hover{background:var(--danger-soft);color:var(--danger-strong)}
-.tb-size-menu{min-width:96px}
+.popover .menu-item{white-space:nowrap}
+/* press: the row gives under the finger and springs back, nothing moves */
+.popover .menu-item:active:not(:disabled),
+.popover .tb-menu-item:active:not(:disabled){
+  transform:scale(.97);
+  transition-duration:var(--duration-instant);
+}
+
+/* Width per menu kind: one block, the last value wins, no second copy below. */
+.popover.tb-menu{width:180px;max-width:240px}
+.popover.tb-size-menu{width:104px;max-width:104px}
+.popover.tb-color-menu{width:196px;max-width:210px}
+.popover.tb-align-menu{width:150px;max-width:160px}
+.popover.template-menu{width:min(236px,calc(100vw - 24px));max-width:236px}
+.popover.tree-menu{width:184px;max-width:184px}
+.popover.workspace-menu{width:min(242px,calc(100vw - 24px));max-width:242px}
+.popover.export-menu{width:190px;max-width:190px}
+
 .tb-size-menu .tb-menu-item{justify-content:center;font-variant-numeric:tabular-nums}
 .tb-color-menu .tb-swatches{grid-template-columns:repeat(5,30px);justify-content:start}
 .tb-swatch{width:26px;height:26px;border-radius:50%;box-shadow:inset 0 0 0 1px #1118271a}
 .tb-swatch:hover{box-shadow:inset 0 0 0 1px #1118271a,0 0 0 2px var(--accent-soft)}
 .tb-menu-preview{min-width:52px}
-.tb-align-menu{min-width:132px}
-.template-menu{width:min(236px,calc(100vw - 24px))}
-.tree-menu{width:184px}
-.workspace-menu{width:min(242px,calc(100vw - 24px))}
 
-/* sidebar nav polish */
-.nav-row{
-  height:34px;border-radius:6px;padding:0 9px;gap:10px;font-size:12.5px;
-  color:var(--text-secondary);transition:background .12s ease,color .12s ease;
+/* A menu that arrives from the edge it is anchored to must not cross-fade as a
+   block on top of its own rows; reduced motion keeps the position and drops
+   only the travel, so the panel becomes a plain fade. */
+@media (prefers-reduced-motion:reduce){
+  .popover.popover-below,.popover.popover-above,.popover-item-enter{
+    animation:motion-fade-in var(--duration-fast) linear both;
+  }
 }
-.nav-row svg{color:var(--text-muted);flex:0 0 auto}
-.nav-row:hover{background:var(--surface-sunken);color:var(--text)}
-.nav-row:hover svg{color:var(--text)}
-.nav-row.nav-active,.nav-row[aria-current="page"]{
-  background:var(--accent-soft);color:var(--accent-strong);font-weight:600;
+
+/* ══ 2. topbar status: save state + live connection ══════════════ *
+ * Geometry and colour live in shell.css. This block owns only how those dots
+ * behave over time: breathe while work is in flight, acknowledge once when it
+ * lands, shake once when it fails.
+ */
+.save-state.save-saving .save-dot{animation:motion-breathe calc(var(--duration-lazy) * 3) var(--ease-standard) infinite}
+.save-state.save-saved .save-dot{background:var(--success)}
+.save-state.save-error .save-dot{background:var(--danger);animation:save-shake var(--duration-slow) var(--ease-standard)}
+.save-state.save-error{color:var(--danger)}
+
+/* The success ring is drawn from the dot, not from the label: a halo around
+   text reads as a focus ring, a halo around a dot reads as "done". */
+.save-dot.is-acknowledged{animation:save-acknowledge var(--duration-slow) var(--ease-decelerate)}
+
+/* The dot is 6px, so 2px of travel is already a visible shake. */
+@keyframes save-shake{
+  0%,100%{transform:translate3d(0,0,0)}
+  20%{transform:translate3d(-2px,0,0)}
+  40%{transform:translate3d(2px,0,0)}
+  60%{transform:translate3d(-1px,0,0)}
+  80%{transform:translate3d(1px,0,0)}
 }
-.nav-row[aria-current="page"] svg{color:var(--accent-strong)}
-.nav-count{
-  margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:9px;
-  background:var(--surface-sunken);color:var(--text-muted);font-size:10.5px;
-  font-weight:600;display:inline-flex;align-items:center;justify-content:center;
+@keyframes save-acknowledge{
+  0%{box-shadow:0 0 0 0 var(--success-soft)}
+  100%{box-shadow:0 0 0 9px transparent}
 }
-.nav-row[aria-current="page"] .nav-count{background:#fff;color:var(--accent-strong)}
-.nav-label{margin:19px 9px 6px;font-size:10.5px;font-weight:600;letter-spacing:.04em;color:var(--text-muted)}
+@media (prefers-reduced-motion:reduce){
+  .save-state.save-saving .save-dot,
+  .save-state.save-error .save-dot,
+  .save-dot.is-acknowledged{animation:none}
+}
 
-/* toolbar polish */
-.editor-toolbar{gap:1px;padding:0 10px;background:linear-gradient(#fff,#fdfdfe)}
-.tb-separator{height:16px;background:var(--border);margin:0 5px}
-.tb-btn{border-radius:6px;color:#4b5563;transition:background .12s ease,color .12s ease}
-.tb-btn:hover:not(:disabled){background:var(--surface-sunken);color:var(--text)}
-.tb-btn.is-active{background:var(--accent-soft);color:var(--accent-strong)}
-.tb-select{font-weight:500;color:var(--text-secondary);border-radius:6px}
-.tb-select:hover{background:var(--surface-sunken);color:var(--text)}
-.tb-color i{bottom:4px;height:2.5px;border-radius:2px}
+/* Live collaboration: "connecting" is the only indeterminate state, so it is
+   the only one that breathes. A steady dot means steady. */
+.connection-dot.connecting{animation:motion-breathe calc(var(--duration-lazy) * 3) var(--ease-standard) infinite}
+@media (prefers-reduced-motion:reduce){
+  .connection-dot.connecting{animation:none}
+}
 
-.favorite-btn.is-favorite{color:#c8892a}
-.favorite-btn:hover{background:var(--surface-sunken)}
-
-/* topbar favorites & action grouping */
-.top-actions{gap:10px}
-.top-actions .icon-btn{color:var(--text-secondary)}
+/* ══ 3. topbar actions ═══════════════════════════════════════════ */
+.top-actions .icon-btn{color:var(--text-secondary);transition:var(--transition-colors),transform var(--duration-fast) var(--ease-spring-snappy)}
 .top-actions .icon-btn:hover{background:var(--surface-sunken);color:var(--text)}
-.favorite-btn{width:30px;height:30px;border-radius:6px}
+.top-actions .icon-btn:active:not(:disabled){transform:scale(.94);transition-duration:var(--duration-instant)}
 .favorite-btn.is-favorite{color:#b8862f;background:#fdf6e3}
-/* breadcrumb polish */
-.breadcrumbs{color:var(--text-muted);font-size:12.5px}
-.breadcrumbs strong{color:var(--text);font-weight:600}
-/* sidebar sections */
-.tree-heading{margin-top:16px;padding:0 6px;color:var(--text-secondary);font-size:12px;font-weight:600}
-.tree-heading>button:hover{color:var(--text)}
-.doc-tree{padding:2px 0 4px}
-.tree-doc{height:32px;border-radius:6px;font-size:12.5px;color:var(--text-secondary)}
-.tree-doc:hover{background:var(--surface-sunken);color:var(--text)}
-.tree-doc.selected{background:var(--accent-soft);color:var(--accent-strong);font-weight:600}
-.root-folder{height:32px;border-radius:6px;font-size:12.5px}
-.root-folder.selected{background:var(--surface-sunken);color:var(--text);font-weight:600}
 
-/* 21. popover width discipline: never stretch to the viewport */
-.popover{width:max-content}
-.popover.tb-menu{width:auto;max-width:240px}
-.popover.tb-size-menu{width:100px;max-width:100px}
-.popover.tb-color-menu{width:auto;max-width:210px}
-.popover.tb-align-menu{width:auto;max-width:160px}
-.popover.template-menu{width:min(236px,calc(100vw - 24px));max-width:236px}
-.popover.tree-menu{width:184px;max-width:184px}
-.popover.workspace-menu{width:min(242px,calc(100vw - 24px));max-width:242px}
-.popover.export-menu{width:190px;max-width:190px}
-.popover .menu-item{white-space:nowrap}
-.popover.tb-menu{width:180px}
-.popover.tb-size-menu{width:104px}
-.popover.tb-color-menu{width:196px}
-.popover.tb-align-menu{width:150px}
 /* focus ring only for keyboard users; avoid red box on mouse click */
 .top-actions .icon-btn:focus:not(:focus-visible),
 .top-actions .share-btn:focus:not(:focus-visible),
 .favorite-btn:focus:not(:focus-visible){outline:none}
-:focus-visible{outline-offset:2px}
 
+/* ══ 4. sidebar sheet on narrow screens ═════════════════════════ *
+ * App.tsx mounts the sidebar and its scrim together, so the entrance is a real
+ * transition (@starting-style gives the browser a first frame to move away
+ * from). The exit is a straight unmount: keeping the aside mounted just to play
+ * 140ms of exit would leave an inert 264px overlay above the page and is not
+ * worth the pointer-events and focus-trap work it drags in.
+ */
 @media (max-width:820px){
-  .sidebar.sidebar-floating{z-index:30}
-  .sidebar-scrim{z-index:29}
-}
-
-/* 22. layered sidebar: scrim closes it, popovers stay above it */
-@media (max-width:820px){
-  .sidebar.sidebar-floating{z-index:30;width:min(280px,86vw);flex-basis:auto}
-  .sidebar-scrim{display:block;position:fixed;inset:0;z-index:29;background:#11182740;backdrop-filter:blur(1px)}
+  .sidebar.sidebar-floating{
+    z-index:30;
+    width:min(280px,86vw);
+    flex-basis:auto;
+    transition:transform var(--duration-base) var(--ease-spring-snappy),
+      box-shadow var(--duration-base) var(--ease-standard);
+  }
+  .sidebar-scrim{
+    display:block;
+    position:fixed;
+    inset:0;
+    z-index:29;
+    background:#11182740;
+    backdrop-filter:blur(2px);
+    transition:opacity var(--duration-base) var(--ease-standard),
+      backdrop-filter var(--duration-base) var(--ease-standard);
+  }
   .popover{z-index:60}
 }
-
-/* 23. code block readability + root-folder button */
-.tiptap-content code{
-  font-family:ui-monospace,SFMono-Regular,"JetBrains Mono",Menlo,Consolas,monospace;
-  color:#b0453a;background:#f5f6f8;
+@media (max-width:820px) and (prefers-reduced-motion:no-preference){
+  @starting-style{
+    .sidebar.sidebar-floating{transform:translate3d(-100%,0,0);box-shadow:0 0 0 rgba(17,24,39,0)}
+    .sidebar-scrim{opacity:0;backdrop-filter:blur(0)}
+  }
 }
-/* “所有文档” row: full-width ghost button, no boxy outline */
-.root-folder{
-  width:100%;display:flex;align-items:center;gap:9px;height:34px;
-  padding:0 9px;border:0;border-radius:6px;background:transparent;
-  color:var(--text-secondary);font-size:12.5px;text-align:left;cursor:pointer;
+
+/* ══ 5. presence avatars ════════════════════════════════════════
+ * A collaborator joining is the one place where an overshoot is welcome: the
+ * new avatar is a social signal, so it lands with a small bounce instead of
+ * sliding politely into the stack. --i keeps the arrival order readable when
+ * two people connect within the same frame.
+ */
+.presence-stack .presence-enter{
+  animation:motion-pop var(--duration-base) var(--ease-spring-bouncy) both;
+  animation-delay:calc(var(--i,0) * 40ms);
 }
-.root-folder svg{color:var(--text-muted);flex:0 0 auto}
-.root-folder:hover{background:var(--surface-sunken);color:var(--text)}
-.root-folder:hover svg{color:var(--text)}
-.root-folder.selected{background:var(--accent-soft);color:var(--accent-strong);font-weight:600}
-.root-folder.selected svg{color:var(--accent-strong)}
-.tree-heading>button{height:28px;border-radius:5px;padding:0 6px}
-.tree-heading>button:hover{background:var(--surface-sunken)}
-
-/* 24. sidebar refinements */
-.nav-count:empty{display:none}
-.nav-row{position:relative}
-.nav-row[aria-current="page"]::before{
-  content:"";position:absolute;left:-9px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;
-  background:var(--accent);
+@media (prefers-reduced-motion:reduce){
+  .presence-stack .presence-enter{animation:motion-fade-in var(--duration-fast) linear both;animation-delay:0ms}
 }
-.root-folder{font-weight:500}
-.root-folder.selected{font-weight:600}
-.tree-heading>button>span{letter-spacing:.01em}
-.doc-tree{padding-top:4px}
 
-/* 25. avoid double-highlighting both nav and tree root */
-.sidebar .root-folder.selected{background:var(--surface-sunken);color:var(--text);font-weight:600}
-.sidebar .root-folder.selected svg{color:var(--text-secondary)}
+/* ══ 6. floating sidebar surface ════════════════════════════════
+ * As a fixed column the sidebar sits beside the page and can stay opaque. As a
+ * sheet it sits *over* the page, so the edges of the content behind it would
+ * otherwise show through as clutter; glass keeps the context visible without
+ * making the labels unreadable.
+ */
+@media (max-width:820px){
+  .sidebar.sidebar-floating{
+    background:var(--surface-glass);
+    -webkit-backdrop-filter:blur(24px) saturate(180%);
+    backdrop-filter:blur(24px) saturate(180%);
+  }
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  @media (max-width:820px){
+    .sidebar.sidebar-floating{background:#f7f8fa}
+  }
+}
 
-.sidebar .root-folder,.sidebar .root-folder.selected{background:transparent;color:var(--text-secondary);font-weight:500}
-.sidebar .root-folder:hover{background:var(--surface-sunken);color:var(--text)}
+/* ══ 7. tree disclosure ════════════════════════════════════════
+ * Opening a folder used to insert its children in one frame, which made the
+ * rows below jump by their full height with no visual connection to the
+ * chevron that caused it. The children now fade down from the folder; each row
+ * also carries the entry stagger, so a folder with eight documents opens as a
+ * short cascade rather than a solid block.
+ *
+ * The delay is capped at eight rows (motion layer) because the ninth row
+ * onwards arriving late just feels laggy.
+ */
+.tree-node{animation-fill-mode:backwards}
+
+.tree-entry .tree-chevron svg{
+  transition:transform var(--duration-fast) var(--ease-spring-snappy);
+}
+.tree-chevron[aria-expanded="true"] .chevron-rotate{transform:rotate(90deg)}
+.tree-chevron[aria-expanded="false"] .chevron-rotate{transform:rotate(0deg)}
+
+.tree-children{animation:motion-disclose var(--duration-fast) var(--ease-standard) both}
+
+/* Reduced motion: the children still appear, they just do not travel. */
+@media (prefers-reduced-motion:reduce){
+  .tree-children{animation:motion-fade-in var(--duration-fast) linear both}
+  .tree-entry .tree-chevron svg{transition:none}
+}

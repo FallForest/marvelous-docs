@@ -5,6 +5,7 @@ import { request } from '../../lib/api'
 import { buildEditorExtensions } from '../../lib/editor'
 import { formatDate } from '../../lib/format'
 import { emptyContent } from '../../lib/types'
+import { usePresence } from '../ui/usePresence'
 import type { Version } from '../../lib/types'
 
 type VersionPreviewProps = {
@@ -21,6 +22,7 @@ export default function VersionPreview({ token, documentId, version, onRestore, 
   const [error, setError] = useState('')
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(false)
+  const { closing, requestClose, onAnimationEnd } = usePresence(onClose)
 
   useEffect(() => {
     let live = true
@@ -44,20 +46,26 @@ export default function VersionPreview({ token, documentId, version, onRestore, 
     setBusy(true)
     const restored = await onRestore(version.id)
     setBusy(false)
-    if (restored) onClose()
+    if (restored) requestClose()
   }
 
-  return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
-    <section className="version-modal" role="dialog" aria-modal="true" aria-labelledby="version-title">
+  return <div className={'modal-backdrop' + (closing ? ' is-closing' : '')} onMouseDown={(event) => { if (event.target === event.currentTarget) requestClose() }}>
+    <section
+      className={'version-modal modal-panel' + (closing ? ' is-closing' : '')}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="version-title"
+      onAnimationEnd={onAnimationEnd}
+    >
       <header>
         <div>
           <div className="version-modal-icon"><Clock3 size={17} /></div>
           <h2 id="version-title">版本 {version.version}</h2>
           <p>{detail?.createdByName || version.createdByName || version.createdBy || '成员'} · {formatDate(detail?.createdAt || version.createdAt) || '历史快照'}</p>
         </div>
-        <button className="icon-btn" aria-label="关闭版本预览" title="关闭" onClick={onClose}><X size={17} /></button>
+        <button className="icon-btn" aria-label="关闭版本预览" title="关闭" onClick={requestClose}><X size={17} /></button>
       </header>
-      <div className="version-modal-body">
+      <div className="version-modal-body motion-enter">
         {loading ? <div className="version-state"><RefreshCw size={16} />正在加载版本内容…</div>
           : error ? <div className="version-state version-error">版本加载失败：{error}</div>
             : <EditorContent editor={editor} />}
@@ -72,7 +80,7 @@ export default function VersionPreview({ token, documentId, version, onRestore, 
         </> : <>
           <span>只读预览，不会修改文档。</span>
           <div>
-            <button className="secondary-btn" onClick={onClose}>关闭</button>
+            <button className="secondary-btn" onClick={requestClose}>关闭</button>
             <button className="primary-btn" disabled={busy || loading || !!error} onClick={() => setConfirming(true)}>恢复此版本</button>
           </div>
         </>}

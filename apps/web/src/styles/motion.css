@@ -1,0 +1,152 @@
+/*
+ * Motion layer: the primitives, not the components.
+ *
+ * This file owns three things and nothing else:
+ *   1. keyframes           — named, reusable, GPU-friendly (transform/opacity)
+ *   2. motion utilities    — .motion-rise, .motion-pop, .motion-fade, .stagger
+ *   3. the global contract — reduced motion, and the transition baseline that
+ *                            tells the browser what to animate cheaply
+ *
+ * Component layers (surfaces, shell, editor, navigation, pages) may reference
+ * these names, but the numbers live in tokens.css. That way "make everything
+ * 20% snappier" is one edit, and no component invents its own easing.
+ *
+ * Why transform/opacity only: every animation here runs on the compositor, so
+ * opening a menu never triggers layout.
+ */
+
+/* ══ 1. keyframes ═══════════════════════════════════════════════ */
+
+/* Surfaces that arrive from a direction. Used by menus, popovers, toasts. */
+@keyframes motion-rise-in{
+  from{opacity:0;transform:translate3d(0,6px,0) scale(.985)}
+  to{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+@keyframes motion-sink-in{
+  from{opacity:0;transform:translate3d(0,-6px,0) scale(.985)}
+  to{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+/* Dialogs scale from the centre, like a UIKit sheet presenting. */
+@keyframes motion-sheet-in{
+  from{opacity:0;transform:translate3d(0,10px,0) scale(.97)}
+  to{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+@keyframes motion-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes motion-fade-out{from{opacity:1}to{opacity:0}}
+
+/* List entries: the workhorse for "content appeared". */
+@keyframes motion-enter{
+  from{opacity:0;transform:translate3d(0,8px,0)}
+  to{opacity:1;transform:translate3d(0,0,0)}
+}
+/* A row that expands into view (tree children, disclosure). */
+@keyframes motion-disclose{
+  from{opacity:0;transform:translate3d(0,-4px,0)}
+  to{opacity:1;transform:translate3d(0,0,0)}
+}
+
+/* Feedback: things that acknowledge a press without moving the layout. */
+@keyframes motion-pop{
+  0%{transform:scale(1)}
+  45%{transform:scale(.94)}
+  100%{transform:scale(1)}
+}
+@keyframes motion-acknowledge{
+  0%{box-shadow:0 0 0 0 var(--accent-ring)}
+  100%{box-shadow:0 0 0 10px transparent}
+}
+/* Ambient: the live-collaboration dot, the save dot. */
+@keyframes motion-breathe{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.45;transform:scale(.82)}
+}
+@keyframes motion-pulse-ring{
+  0%{transform:scale(.9);opacity:.7}
+  70%{transform:scale(1.9);opacity:0}
+  100%{transform:scale(1.9);opacity:0}
+}
+/* Progress: indeterminate work (saving, connecting). */
+@keyframes motion-sheen{
+  from{transform:translate3d(-100%,0,0)}
+  to{transform:translate3d(100%,0,0)}
+}
+@keyframes motion-spin{to{transform:rotate(360deg)}}
+
+/* ══ 2. utilities ═══════════════════════════════════════════════ */
+
+.motion-rise{animation:motion-rise-in var(--duration-base) var(--ease-spring-snappy) both}
+.motion-sink{animation:motion-sink-in var(--duration-base) var(--ease-spring-snappy) both}
+.motion-sheet{animation:motion-sheet-in var(--duration-base) var(--ease-spring-snappy) both}
+.motion-enter{animation:motion-enter var(--duration-base) var(--ease-decelerate) both}
+.motion-fade{animation:motion-fade-in var(--duration-fast) var(--ease-standard) both}
+.motion-disclose{animation:motion-disclose var(--duration-fast) var(--ease-standard) both}
+
+/* Staggered list entry. The index is the CSS variable --i, so the stagger
+   works without a runtime loop and without per-item inline delays. */
+.stagger{animation:motion-enter var(--duration-base) var(--ease-decelerate) both;animation-delay:calc(var(--i,0) * 28ms)}
+
+/* Interactive acknowledgement, applied to a control that was just pressed. */
+.is-acknowledged{animation:motion-acknowledge var(--duration-slow) var(--ease-decelerate)}
+
+/* ══ 3. the global contract ═════════════════════════════════════ */
+
+/* Promote the surfaces that animate, so the first frame is not a layout pass. */
+.popover,.modal-backdrop,.right-panel,.notice-toast,.sidebar{
+  will-change:transform,opacity;
+  backface-visibility:hidden;
+}
+/* ...but not forever: a permanent will-change wastes a compositor layer. */
+.popover,.notice-toast{will-change:auto}
+
+/*
+ * Reduced motion is not "no feedback", it is "no travel". Anything that
+ * changes position collapses to a cross-fade so the user still sees that
+ * something changed, but nothing sweeps across the screen.
+ */
+@media (prefers-reduced-motion:reduce){
+  .motion-rise,.motion-sink,.motion-sheet,.motion-enter,.motion-disclose,.stagger{
+    animation:motion-fade-in var(--duration-fast) linear both !important;
+  }
+  .is-acknowledged{animation:none !important}
+}
+
+/* Devices without hover get press feedback instead of hover feedback. */
+@media (hover:none){
+  .press-feedback:active{transform:scale(.975)}
+}
+
+/* ══ 4. view transitions ════════════════════════════════════════
+ * Switching documents, views or the admin screen is a navigation, so it gets
+ * the iOS tab-switch treatment: the content cross-fades with a small rise, and
+ * the chrome around it does not move at all.
+ *
+ * Only elements with a view-transition-name are lifted out of the root
+ * snapshot, so the sidebar and topbar stay unnamed and simply do not move
+ * while .main-area's contents swap.
+ */
+/* One of these is mounted at a time, so the name stays unique per snapshot.
+   The topbar and sidebar are deliberately left unnamed: they should not move
+   while the content under them changes. */
+.workspace-content,.home-dashboard,.search-page,.folder-overview,.admin-shell,.login-screen{
+  view-transition-name:main-content;
+}
+
+::view-transition-old(main-content){
+  animation:motion-fade-out var(--duration-fast) var(--ease-standard) both;
+}
+::view-transition-new(main-content){
+  animation:motion-fade-in var(--duration-base) var(--ease-standard) both;
+}
+/* The root snapshot would otherwise cross-fade the whole app, including the
+   chrome that is supposed to hold still. */
+::view-transition-old(root),::view-transition-new(root){animation:none}
+
+/* A page that is being swapped by a view transition must not also play its own
+   entry animation, or the content arrives twice. */
+html:active-view-transition .motion-enter,
+html:active-view-transition .stagger{animation:none !important}
+
+@media (prefers-reduced-motion:reduce){
+  /* withViewTransition() already skips the call; this covers the CSS-only path. */
+  ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none !important}
+}

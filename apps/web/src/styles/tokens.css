@@ -1,0 +1,135 @@
+/*
+ * Token layer: every design decision that the other layers consume.
+ *
+ * Two rules keep this file honest:
+ *   1. Nothing here may declare layout, selectors with descendants, or state.
+ *      Tokens only: values that are named, grouped, and reused.
+ *   2. Values are grouped by what they describe, not by which component
+ *      happened to need them first. A component that needs a new value adds a
+ *      token here instead of hard-coding a hex, a duration, or a curve.
+ *
+ * Motion tokens follow the iOS HIG vocabulary: a spring-ish response curve for
+ * spatial movement, a decelerate curve for things that appear, an accelerate
+ * curve for things that leave, and explicit durations so a hover and a modal
+ * never share the same timing by accident.
+ */
+
+:root{
+  /* ── surfaces ───────────────────────────────────────────────── */
+  --surface:#ffffff;
+  --surface-muted:#f7f8fa;
+  --surface-sunken:#f2f3f6;
+  --surface-raised:#ffffff;
+  --surface-glass:rgba(255,255,255,.72);
+  --scrim:rgba(17,24,39,.42);
+
+  /* ── lines ──────────────────────────────────────────────────── */
+  --border:#e8eaee;
+  --border-strong:#d5d9e0;
+  --border-subtle:#eff1f4;
+
+  /* ── text ───────────────────────────────────────────────────── */
+  --text:#1f2937;
+  --text-secondary:#4b5563;
+  --text-muted:#5f6673;
+  --text-faint:#8a919e;
+  --text-on-accent:#ffffff;
+
+  /* ── brand accent (AA-safe with white text) ─────────────────── */
+  --accent:#c0533f;
+  --accent-strong:#a8473a;
+  --accent-soft:#f7ece8;
+  --accent-ring:rgba(192,83,63,.16);
+  --accent-tint:rgba(192,83,63,.08);
+
+  /* ── status ─────────────────────────────────────────────────── */
+  --danger:#b0453a;
+  --danger-strong:#943a30;
+  --danger-soft:#fff2ef;
+  --success:#3d7a54;
+  --success-soft:#e8f3ec;
+  --warning:#8a6a26;
+  --warning-soft:#fff8e8;
+
+  /* ── focus ──────────────────────────────────────────────────── */
+  --focus-ring:#c0533f;
+  --focus-ring-width:2px;
+  --focus-ring-offset:2px;
+
+  /* ── radii (iOS continuous-corner feel: generous, never pill) ── */
+  --radius-xs:4px;
+  --radius-sm:6px;
+  --radius-md:9px;
+  --radius-lg:13px;
+  --radius-xl:18px;
+  --radius-pill:999px;
+
+  /* ── elevation: layered, low-contrast, iOS-style depth ──────── */
+  --shadow-hairline:0 0 0 1px rgba(17,24,39,.06);
+  --shadow-control:0 1px 2px rgba(17,24,39,.06),0 0 0 1px rgba(17,24,39,.04);
+  --shadow-popover:0 12px 30px rgba(17,24,39,.14),0 2px 6px rgba(17,24,39,.06);
+  --shadow-modal:0 24px 64px rgba(17,24,39,.24),0 2px 8px rgba(17,24,39,.08);
+  --shadow-toast:0 10px 26px rgba(17,24,39,.16);
+  --shadow-lift:0 4px 14px rgba(40,50,68,.07);
+
+  /* ── layering ───────────────────────────────────────────────── */
+  --z-menu:40;
+  --z-popover:60;
+  --z-modal:70;
+  --z-toast:80;
+
+  /* ── motion: duration ───────────────────────────────────────────
+     Named by intent, not by number, so a component picks the feel it
+     wants and a global retune stays in one place.
+       instant  state flips that must not animate (checkbox paint)
+       fast     hover, press, colour
+       base     the default for a surface that arrives
+       slow     large surfaces (sheet, page change)
+       lazy     staggered list entries                                */
+  --duration-instant:80ms;
+  --duration-fast:140ms;
+  --duration-base:220ms;
+  --duration-slow:320ms;
+  --duration-lazy:420ms;
+
+  /* ── motion: easing ─────────────────────────────────────────────
+     The two spring curves are sampled from a damped harmonic oscillator
+     (lib/motion.ts, springValue), so transform overshoot reads like UIKit
+     rather than like a cubic-bezier imitation.
+
+     Each one is declared twice on purpose: the cubic-bezier is the fallback
+     for engines without linear() support, and the linear() immediately after
+     overrides it where supported. Without the fallback an unsupported linear()
+     would be dropped and the animation would run with no easing at all. */
+  --ease-standard:cubic-bezier(.32,.72,0,1);
+  --ease-decelerate:cubic-bezier(.16,1,.3,1);
+  --ease-accelerate:cubic-bezier(.4,0,1,1);
+  --ease-spring-snappy:cubic-bezier(.22,1.16,.36,1);
+  --ease-spring-snappy:linear(0, 0.1846 5%, 0.4831 10%, 0.7219 15%, 0.8717 20%, 0.9517 25%, 0.9883 30%, 1.0018 35%, 1.005 40%, 1.0043 45%, 1.0028 50%, 1.0016 55%, 1.0007 60%, 1.0003 65%, 1.0001 70%, 1 75%, 1 80%, 1 85%, 1 90%, 1 95%, 1);
+  --ease-spring-bouncy:cubic-bezier(.3,1.42,.4,1);
+  --ease-spring-bouncy:linear(0, 0.2004 5%, 0.5492 10%, 0.833 15%, 0.9953 20%, 1.0569 25%, 1.0601 30%, 1.0407 35%, 1.0195 40%, 1.005 45%, 0.9979 50%, 0.996 55%, 0.9967 60%, 0.9981 65%, 0.9992 70%, 0.9999 75%, 1.0002 80%, 1.0002 85%, 1.0002 90%, 1.0001 95%, 1);
+
+  /* ── motion: composed transitions ─────────────────────────────── */
+  --transition-colors:background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+  --transition-surface:background-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-base) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-base) var(--ease-spring-snappy);
+
+  /* ── base typography ────────────────────────────────────────── */
+  font-family:'DM Sans','Noto Sans SC',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  color:var(--text);
+  background:var(--surface-muted);
+  font-synthesis:none;
+  text-rendering:optimizeLegibility;
+  font-weight:400;
+  font-size:14px;
+  /* system-level knobs the motion layer reads */
+  --motion-scale:1;
+}
+
+@media (prefers-reduced-motion:reduce){
+  :root{--motion-scale:0}
+}

@@ -19,8 +19,8 @@ export default function SharedDocumentPage({ token }: { token: string }) {
       .finally(() => setLoading(false))
   }, [token])
 
-  if (loading) return <div className="shared-page"><div className="shared-header"><div className="shared-logo">M</div><h1>Marvelous Docs</h1></div><p style={{color:'var(--text-muted)',textAlign:'center'}}>加载中…</p></div>
-  if (error || !doc) return <div className="shared-page"><div className="shared-header"><div className="shared-logo">M</div><h1>Marvelous Docs</h1></div><div className="shared-content"><p style={{color:'var(--text-muted)',textAlign:'center'}}>{error || '文档不存在或链接已过期'}</p></div></div>
+  if (loading) return <div className="shared-page"><div className="shared-header"><div className="shared-logo">M</div><h1>Marvelous Docs</h1></div><p className="shared-state"><span className="login-spinner" aria-hidden="true" />正在加载文档…</p></div>
+  if (error || !doc) return <div className="shared-page"><div className="shared-header"><div className="shared-logo">M</div><h1>Marvelous Docs</h1></div><div className="shared-content"><p className="shared-state">{error || '文档不存在或链接已过期'}</p></div></div>
 
   const content = doc.content as { doc?: { type: string; content?: unknown[] } }
   return <div className="shared-page">
@@ -29,7 +29,9 @@ export default function SharedDocumentPage({ token }: { token: string }) {
       <h1>Marvelous Docs</h1>
       <span className="shared-badge">{doc.permission === 'commenter' ? '可评论' : '仅查看'}</span>
     </div>
-    <div className="shared-content" dangerouslySetInnerHTML={{ __html: renderDocHTML(content.doc) }} />
+    {/* Keyed on the token so a second share link replays the entry instead of
+        silently swapping the text in place. */}
+    <div className="shared-content motion-enter" key={token} dangerouslySetInnerHTML={{ __html: renderDocHTML(content.doc) }} />
     <div className="shared-footer">由 Marvelous Docs 分享 · {new Date(doc.updatedAt).toLocaleDateString()}</div>
   </div>
 }

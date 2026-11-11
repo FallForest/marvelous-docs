@@ -268,6 +268,9 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
       {codeBlocks.map((block) => <div
         key={block.pos}
         className="code-overlay"
+        // The overlay is re-measured on every scroll frame, so animating top
+        // would queue a transition per frame. Position it, then fade the chrome
+        // in once so it does not flash while the block scrolls into view.
         style={{ top: block.top, left: block.left, width: block.width }}
         contentEditable={false}
       >

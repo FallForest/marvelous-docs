@@ -39,7 +39,15 @@ function currentBlockLabel(editor: Editor) {
   return '正文'
 }
 
-/** Feishu-style grouped formatting toolbar. */
+/**
+ * Feishu-style grouped formatting toolbar.
+ *
+ * All motion lives in styles/editor.css: press feedback is :active only, the
+ * active-state ground springs in, and menu panels animate from the shared
+ * popover keyframes. The markup therefore stays declarative — no per-button
+ * animation state is tracked here, so a re-render caused by the document does
+ * not restart anything.
+ */
 export default function EditorToolbar({ editor, actions, onInteract }: { editor: Editor | null; actions: ToolbarActions; onInteract?: () => void }) {
   const [blockOpen, setBlockOpen] = useState(false)
   const [sizeOpen, setSizeOpen] = useState(false)

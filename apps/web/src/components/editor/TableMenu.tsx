@@ -10,6 +10,12 @@ import type { BlockGeometry } from '../../hooks/useBlockGeometry'
  * canvas (`right:24px; bottom:52px`), which in a long document sat hundreds of
  * pixels away from the table being edited. It now rides on the table's own rect
  * and only appears while the cursor is inside a table.
+ *
+ * Motion: the trigger and the panel both live at coordinates that are
+ * recomputed as the document scrolls, so the panel's entrance is the shared
+ * .motion-rise animation (plays once on mount) rather than a transition, which
+ * would re-fire on every re-measure. The rows stay still on hover; only their
+ * ground changes colour.
  */
 export default function TableMenu({ editor, table }: { editor: Editor | null; table: BlockGeometry | null }) {
   const [open, setOpen] = useState(false)
@@ -44,9 +50,9 @@ export default function TableMenu({ editor, table }: { editor: Editor | null; ta
       ><Table2 size={13} /><span>表格</span></button>
     </div>
     {open && <>
-      <button type="button" className="block-tool-scrim" aria-label="关闭表格菜单" onClick={() => setOpen(false)} />
+      <button type="button" className="block-tool-scrim motion-fade" aria-label="关闭表格菜单" onClick={() => setOpen(false)} />
       <div
-        className="block-tool-panel"
+        className="block-tool-panel motion-rise"
         role="menu"
         aria-label="表格操作"
         style={{ top: top + 30, left: Math.max(8, Math.min(left, window.innerWidth - 200)) }}

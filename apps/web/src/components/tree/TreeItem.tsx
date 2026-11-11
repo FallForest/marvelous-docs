@@ -1,11 +1,18 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, FileText, Folder, MoreHorizontal } from 'lucide-react'
+import { ChevronRight, FileText, Folder, MoreHorizontal } from 'lucide-react'
 import Popover from '../ui/Popover'
+import { staggerStyle } from '../../lib/motion'
 import type { Doc, DocNode, TreeAction } from '../../lib/types'
+
+/** Past this index every row shares the last delay, so a deep folder still
+ *  finishes opening as one gesture instead of a long trailing ribbon. */
+const STAGGER_LIMIT = 8
 
 type TreeItemProps = {
   node: DocNode
   depth: number
+  /** Position among its siblings; only feeds the entry stagger. */
+  index?: number
   activeId: string | null
   selectedFolderId: string | null
   expandedFolders: Set<string>
@@ -23,7 +30,7 @@ type TreeItemProps = {
  * the label never slides underneath the toggle.
  */
 export default function TreeItem(props: TreeItemProps) {
-  const { node, depth, activeId, selectedFolderId, expandedFolders, favoriteIds, onToggle, onSelectFolder, onSelectDocument, onAction } = props
+  const { node, depth, index = 0, activeId, selectedFolderId, expandedFolders, favoriteIds, onToggle, onSelectFolder, onSelectDocument, onAction } = props
   const [menuOpen, setMenuOpen] = useState(false)
   const isFolder = node.doc.kind === 'folder'
   const expanded = expandedFolders.has(node.doc.id)
@@ -35,7 +42,7 @@ export default function TreeItem(props: TreeItemProps) {
     setMenuOpen(false)
     onAction(action, node.doc)
   }
-  return <div className="tree-node">
+  return <div className="tree-node stagger" style={staggerStyle(Math.min(index, STAGGER_LIMIT))}>
     <div className={'tree-entry' + (selected ? ' is-selected' : '')}>
       {isFolder
         ? <button
@@ -44,7 +51,7 @@ export default function TreeItem(props: TreeItemProps) {
           aria-label={expanded ? '收起文件夹 ' + title : '展开文件夹 ' + title}
           aria-expanded={expanded}
           onClick={(event) => { event.stopPropagation(); onToggle(node.doc.id) }}
-        >{expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}</button>
+        ><ChevronRight size={12} className="chevron-rotate" /></button>
         : <span className="tree-chevron is-leaf" aria-hidden="true" />}
       <button
         type="button"
@@ -74,10 +81,11 @@ export default function TreeItem(props: TreeItemProps) {
         </Popover>
       </div>
     </div>
-    {isFolder && expanded && <div className="tree-children">{node.children.map((child) => <TreeItem
+    {isFolder && expanded && <div className="tree-children">{node.children.map((child, childIndex) => <TreeItem
       key={child.doc.id}
       node={child}
       depth={depth + 1}
+      index={childIndex}
       activeId={activeId}
       selectedFolderId={selectedFolderId}
       expandedFolders={expandedFolders}

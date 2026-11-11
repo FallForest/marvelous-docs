@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Activity, RefreshCw } from 'lucide-react'
 import { request } from '../../lib/api'
 import { relativeTime } from '../../lib/format'
+import { staggerDelay } from '../../lib/motion'
 import type { ActivityEntry } from '../../lib/types'
 
 const ACTION_LABELS: Record<string, string> = { view: '查看了文档', edit: '编辑了文档', restore: '恢复了历史版本' }
@@ -26,7 +27,7 @@ export default function ActivityPanel({ token, documentId }: { token: string; do
 
   useEffect(() => { void load() }, [load])
 
-  return <div className="panel-body">
+  return <div className="panel-body motion-enter">
     <div className="panel-intro">
       <b>动态</b>
       <span className="panel-intro-actions">
@@ -37,7 +38,13 @@ export default function ActivityPanel({ token, documentId }: { token: string; do
     {loading ? <div className="panel-empty"><RefreshCw size={21} /><b>正在加载动态</b><span>稍等一下</span></div>
       : error ? <div className="panel-empty"><Activity size={21} /><b>动态加载失败</b><span>{error}</span></div>
         : entries.length === 0 ? <div className="panel-empty"><Activity size={21} /><b>还没有动态</b><span>打开或编辑文档后会记录在这里</span></div>
-          : <ol className="activity-list">{entries.map((entry) => <li className="activity-item" key={entry.id}>
+          : <ol className="activity-list">{entries.map((entry, index) => <li
+            className="activity-item stagger"
+            // Inline delay rather than --i: it is a real CSS property, and the
+            // staggerDelay cap keeps a 20-row list from trailing in late.
+            style={{ animationDelay: staggerDelay(index) + 'ms' }}
+            key={entry.id}
+          >
             <span className="activity-avatar">{(entry.userName || '?').slice(0, 1).toUpperCase()}</span>
             <div className="activity-copy">
               <b>{entry.userName || '成员'}</b>

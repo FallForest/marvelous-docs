@@ -2,6 +2,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, ChevronDown } from 'lucide-react'
 import { LANGUAGES, canonicalLanguage, languageLabel } from '../../lib/languages'
+import { DURATION } from '../../lib/motion'
+import { useReducedMotion } from '../../hooks/useReducedMotion'
 
 type Props = {
   /** Current language token as stored on the node (may be an alias or unknown). */
@@ -18,6 +20,10 @@ type Props = {
  * languages only; the current value may be an alias (`js`) or an unknown fence
  * language, in which case it is displayed verbatim and marked as unrecognised
  * instead of leaving the control blank.
+ *
+ * Motion: the panel is portaled to <body> and re-measured on every scroll, so
+ * it enters with the shared .motion-rise animation rather than a transition.
+ * When the chosen language changes, the button acknowledges the commit once.
  */
 export default function LanguagePicker({ value, onChange }: Props) {
   const [open, setOpen] = useState(false)
@@ -29,6 +35,12 @@ export default function LanguagePicker({ value, onChange }: Props) {
   // the item's click handler can run.
   const panelRef = useRef<HTMLDivElement | null>(null)
   const [panelPos, setPanelPos] = useState<{ top: number; left: number; maxHeight: number } | null>(null)
+  const reduced = useReducedMotion()
+  // True for one beat after a commit. The ring has to come off again or the
+  // shared .is-acknowledged rule would be a permanent halo instead of feedback.
+  const [ack, setAck] = useState(false)
+  const ackTimer = useRef<number | undefined>(undefined)
+  const previousValue = useRef(value)
 
   // The code block clips its own overflow, so the list is portaled to body and
   // positioned from the button's rect, flipping up when there is no room below.
@@ -48,6 +60,7 @@ export default function LanguagePicker({ value, onChange }: Props) {
     window.addEventListener('resize', measure)
     return () => { window.removeEventListener('scroll', measure, true); window.removeEventListener('resize', measure) }
   }, [open])
+
   const canonical = canonicalLanguage(value)
   const label = languageLabel(value)
   const unknown = !canonical && Boolean(value && value.trim())
@@ -61,6 +74,36 @@ export default function LanguagePicker({ value, onChange }: Props) {
   useEffect(() => {
     if (open) setActive(selectedIndex)
   }, [open, selectedIndex])
+
+  /*
+   * Acknowledge the commit, not the hover: when `value` actually changes, the
+   * trigger plays a ring once so the choice lands even though the panel closes
+   * in the same tick. The timer clears the class again, otherwise a second
+   * identical pick would reuse the finished animation and show nothing.
+   */
+  useEffect(() => {
+    if (previousValue.current === value) return
+    previousValue.current = value
+    // Under reduced motion the ring is suppressed by motion.css, but the flag is
+    // still set so the acknowledgement does not linger for a later motion-on frame.
+    setAck(true)
+    window.clearTimeout(ackTimer.current)
+    ackTimer.current = window.setTimeout(() => setAck(false), DURATION.slow)
+    return () => window.clearTimeout(ackTimer.current)
+  }, [value])
+
+  /*
+   * The panel is scrolled while the pointer travels down a long language list,
+   * so the highlighted row is kept fully visible with block:'nearest'. It is a
+   * no-op when the row is already in view, which is what stops the list from
+   * jumping under the cursor; smooth scrolling is dropped under reduced motion.
+   */
+  useEffect(() => {
+    if (!open) return
+    const panel = panelRef.current
+    const row = panel?.children[active] as HTMLElement | undefined
+    row?.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' })
+  }, [open, active, reduced])
 
   useEffect(() => {
     if (!open) return
@@ -92,7 +135,7 @@ export default function LanguagePicker({ value, onChange }: Props) {
     <button
       ref={buttonRef}
       type="button"
-      className={'lang-picker-button' + (open ? ' is-open' : '')}
+      className={'lang-picker-button' + (open ? ' is-open' : '') + (ack ? ' is-acknowledged' : '')}
       aria-haspopup="listbox"
       aria-expanded={open}
       aria-label={'代码语言：' + label}
@@ -103,13 +146,13 @@ export default function LanguagePicker({ value, onChange }: Props) {
       {unknown && <span className="lang-picker-flag">未识别</span>}
       <ChevronDown size={12} />
     </button>
-    {open && panelPos && createPortal(<div ref={panelRef} className="lang-picker-panel" role="listbox" aria-label="选择代码语言" style={{ top: panelPos.top, left: panelPos.left, maxHeight: panelPos.maxHeight }}>
+    {open && panelPos && createPortal(<div ref={panelRef} className="lang-picker-panel motion-rise" role="listbox" aria-label="选择代码语言" style={{ top: panelPos.top, left: panelPos.left, maxHeight: panelPos.maxHeight }}>
       {LANGUAGES.map((entry, index) => <button
         key={entry.id}
         type="button"
         role="option"
         aria-selected={entry.id === canonical}
-        className={'lang-picker-item' + (index === active ? ' active' : '') + (entry.id === canonical ? ' selected' : '')}
+        className={'lang-picker-item' + (index === active ? ' active' : '') + (entry.id === canonical ? ' selected' : '') + (entry.id === canonical && ack ? ' is-acknowledged' : '')}
         onMouseEnter={() => setActive(index)}
         onClick={() => { onChange(entry.id); setOpen(false) }}
       >

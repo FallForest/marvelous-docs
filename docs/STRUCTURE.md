@@ -31,6 +31,7 @@ App.tsx                   Workspace shell: wires hooks to layout and pages
 
 hooks/                    State and data ownership that outlives one screen
   useWorkspaceData.ts     Session, documents, comments, versions, search, stats
+  useReducedMotion.ts     Live prefers-reduced-motion, for JS-driven animation
 
 
 pages/                    One file per route-level screen
@@ -82,19 +83,34 @@ lib/                      Pure logic and browser helpers (no JSX)
   format.ts               Dates, word count, excerpting
   languages.ts            Code-block language list and labels
   render-html.ts          Tiptap JSON → static HTML for share pages
+  motion.ts               Motion contract: durations, spring presets, stagger
   tree.ts                 Tree building, filtering, depth helpers
   types.ts                API payload types
 
 styles/                   CSS layers, imported in cascade order by index.css
-  index.css               Entry point: font import + layer imports
-  base.css                Tokens, reset, shell geometry, login, admin
-  surfaces.css            Focus rings, popovers, dialogs, toasts
+  index.css               Entry point: font import + ordered layer imports
+  tokens.css              Design values only: colour, type, radii, shadows,
+                          z-index, and every duration / easing / spring curve
+  base.css                Reset + shell geometry; styles no specific screen
+  motion.css              Keyframes and motion utilities (.motion-rise,
+                          .motion-sheet, .stagger, ...) + reduced-motion rules
+  surfaces.css            Shared primitives: buttons, backdrop, toast, stacking
+  dialogs.css             Modal surfaces (confirm, share, move, version, invite)
+  navigation.css          Sidebar/topbar rows, breadcrumbs, presence stack
+  panels.css              Right-hand panel, code overlay, block toolbars
   editor.css              Editor chrome, toolbars, menus
-  navigation.css          Sidebar/topbar rows, dropdown language
   content.css             Code blocks, share links, public share page
   shell.css               Sidebar + topbar consolidation (single source)
+  pages.css               Home, folder, search, palette, login, admin screens
   updates.css             Updater banner and links
 ```
+
+Each layer answers one question. `tokens.css` owns *what a value is*,
+`motion.css` owns *how a surface arrives*, and every other layer owns *one
+region of the app*. A rule that needs a new hex, duration, or curve adds a token
+first; a rule that needs a new animation adds a keyframe to `motion.css` first.
+That is what keeps "make it feel snappier" a one-file change — see
+[`docs/MOTION.md`](./MOTION.md).
 
 ### Where a new file goes
 
@@ -109,6 +125,10 @@ styles/                   CSS layers, imported in cascade order by index.css
 | A new API call | Add it to `lib/endpoints.ts` |
 | A type shared by more than one page | `lib/types.ts` or `lib/app-types.ts` |
 | Styling for an existing component | The matching layer in `styles/` |
+| A new screen's styles | `styles/pages.css`, scoped to that screen's root class |
+| A new design value (colour, duration, curve) | A token in `styles/tokens.css` |
+| A new animation | A keyframe + utility in `styles/motion.css` |
+| A new modal | `components/dialogs/`, styled by `styles/dialogs.css` |
 
 Rules that keep the layers honest:
 

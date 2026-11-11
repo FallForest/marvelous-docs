@@ -1,4 +1,5 @@
 import { Copy, Share2, X } from 'lucide-react'
+import { usePresence } from '../ui/usePresence'
 import type { DocumentPermission, WorkspaceMember } from '../../lib/types'
 
 type ShareDialogProps = {
@@ -19,9 +20,16 @@ type ShareDialogProps = {
 /** Per-document ACL editor plus public share-link management. */
 export default function ShareDialog({ title, members, permissions, restricted, busy, shareLinks, shareLinkCopied, onCreateShareLink, onRevokeShareLink, onRestrictedChange, onPermissionChange, onClose }: ShareDialogProps) {
   const permissionMap = new Map(permissions.map((permission) => [permission.userId, permission]))
-  return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
-    <section className="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-title">
-      <header><div><div className="invite-icon"><Share2 size={17} /></div><h2 id="share-title">共享文档</h2><p>{title}</p></div><button className="icon-btn" aria-label="关闭共享设置" title="关闭" onClick={onClose}><X size={17} /></button></header>
+  const { closing, requestClose, onAnimationEnd } = usePresence(onClose)
+  return <div className={'modal-backdrop' + (closing ? ' is-closing' : '')} onMouseDown={(event) => { if (event.target === event.currentTarget) requestClose() }}>
+    <section
+      className={'share-modal modal-panel' + (closing ? ' is-closing' : '')}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="share-title"
+      onAnimationEnd={onAnimationEnd}
+    >
+      <header><div><div className="invite-icon"><Share2 size={17} /></div><h2 id="share-title">共享文档</h2><p>{title}</p></div><button className="icon-btn" aria-label="关闭共享设置" title="关闭" onClick={requestClose}><X size={17} /></button></header>
       <label className="share-restriction"><span><b>仅指定成员可访问</b><small>{restricted ? '只有下方名单中的成员可以打开此文档' : '工作区所有成员均可查看和编辑'}</small></span><input type="checkbox" checked={restricted} disabled={busy} onChange={(event) => onRestrictedChange(event.target.checked)} /></label>
       <div className="share-link-section">
         <b>分享链接</b>
@@ -56,7 +64,7 @@ export default function ShareDialog({ title, members, permissions, restricted, b
           </select>}
         </div>
       })}{members.length === 0 && <div className="share-empty">工作区暂无其他成员</div>}</div>
-      <footer><span>权限更改会立即生效</span><button className="primary-btn" onClick={onClose}>完成</button></footer>
+      <footer><span>权限更改会立即生效</span><button className="primary-btn" onClick={requestClose}>完成</button></footer>
     </section>
   </div>
 }

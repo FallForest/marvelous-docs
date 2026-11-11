@@ -1,6 +1,8 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { FileText, Folder, Home, Plus, Search } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { staggerItemProps } from '../components/ui/Stagger'
+import { useReducedMotion } from '../hooks/useReducedMotion'
 import { excerpt, snippetText } from '../lib/format'
 import type { Doc, SearchHit, SearchScope } from '../lib/types'
 
@@ -28,6 +30,8 @@ type CommandPaletteProps = {
 }
 
 export default function CommandPalette({ query, onQuery, scope, onScope, index, onIndex, results, loading, onClose, onOpen, onCreate, onHome }: CommandPaletteProps) {
+  const reduced = useReducedMotion()
+  const listRef = useRef<HTMLDivElement>(null)
   const items = useMemo<PaletteItem[]>(() => {
     const base: PaletteItem[] = [
       { key: 'home', label: '打开首页', icon: Home },
@@ -42,6 +46,14 @@ export default function CommandPalette({ query, onQuery, scope, onScope, index, 
     }))
     return base
   }, [results])
+
+  // Keep the highlighted row inside the list without scrolling the page behind
+  // it; 'nearest' is what stops arrow-key navigation from jumping a long list.
+  useEffect(() => {
+    const list = listRef.current
+    const active = list?.querySelector<HTMLElement>('[aria-selected="true"]')
+    active?.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' })
+  }, [index, items.length, reduced])
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -83,14 +95,17 @@ export default function CommandPalette({ query, onQuery, scope, onScope, index, 
         >{item.label}</button>)}
         <span className="command-scope-hint">{loading ? '检索中…' : results.length ? results.length + ' 条结果' : ''}</span>
       </div>
-      <div className="command-list" id="command-results" role="listbox" aria-label="搜索结果">
+      <div className="command-list" id="command-results" role="listbox" aria-label="搜索结果" ref={listRef}>
         {items.map((item, itemIndex) => {
           const Icon = item.icon
+          const entry = staggerItemProps(itemIndex, itemIndex === index ? 'active' : '')
+          // Keyed by item so a highlight change is a class swap, not a remount:
+          // a remount would restart the entry animation on every arrow key.
           return <button
+            {...entry}
             key={item.key}
             type="button"
             role="option"
-            className={itemIndex === index ? 'active' : ''}
             aria-selected={itemIndex === index}
             onMouseEnter={() => onIndex(itemIndex)}
             onClick={() => activate(item)}

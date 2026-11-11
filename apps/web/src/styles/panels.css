@@ -1,0 +1,180 @@
+/*
+ * Panels layer: the right-hand document panel (comments, history, activity),
+ * the code-block overlay, block-anchored toolbars and the language picker.
+ *
+ * Panel visibility is a slide, not a mount: DocumentPanel stays in the tree and
+ * toggles .is-open/.is-closed, so opening and closing read as one continuous
+ * movement instead of a hard cut. Only transform and opacity animate; the
+ * geometry (304px / 92vw on narrow screens) stays exactly as base.css set it.
+ */
+
+/* ── 1. the panel container ─────────────────────────────────────── */
+.right-panel{
+  transition:
+    transform var(--duration-base) var(--ease-spring-snappy),
+    opacity var(--duration-fast) var(--ease-standard),
+    visibility 0s linear 0s;
+}
+.right-panel.is-open{
+  transform:translate3d(0,0,0);
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
+/* Hidden means off-canvas, not unmounted. visibility flips at the END of the
+   exit (the 0s delay runs after the 140ms transform), so the panel is painted
+   while it slides away and is out of the tab order — and out of the scrollbars
+   — the moment it is gone. */
+.right-panel.is-closed{
+  transform:translate3d(100%,0,0);
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition:
+    transform var(--duration-fast) var(--ease-accelerate),
+    opacity var(--duration-fast) var(--ease-accelerate),
+    visibility 0s linear var(--duration-fast);
+}
+/* On desktop the panel is a flex sibling, so its 304px has to go back to the
+   canvas. Width is layout, so it is never animated: opening snaps it back in
+   the same frame (the closed style is the only one that lists margin-right in
+   its transition), and closing releases it after the slide, when the panel is
+   already gone and the reflow cannot be seen under a moving surface. */
+@media (min-width:981px){
+  .right-panel.is-closed{
+    margin-right:-304px;
+    transition:
+      transform var(--duration-fast) var(--ease-accelerate),
+      opacity var(--duration-fast) var(--ease-accelerate),
+      visibility 0s linear var(--duration-fast),
+      margin-right 0s linear var(--duration-fast);
+  }
+}
+
+@media (prefers-reduced-motion:reduce){
+  .right-panel.is-open,.right-panel.is-closed{
+    transform:none;
+    transition:opacity var(--duration-fast) linear,visibility 0s linear 0s;
+  }
+  .right-panel.is-closed{margin-right:0}
+}
+
+/* ── 2. panel chrome ───────────────────────────────────────────── */
+.panel-intro-actions{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted)}
+.panel-intro-actions .icon-btn{width:22px;height:22px}
+/* the tab strip is chrome that sits over the scrolling body */
+.panel-tabbar{
+  background:var(--surface-glass);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  backdrop-filter:blur(20px) saturate(180%);
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .panel-tabbar{background:var(--surface)}
+}
+.panel-tabs>button:not(.icon-btn){transition:color var(--duration-fast) var(--ease-standard),border-color var(--duration-fast) var(--ease-standard)}
+.panel-tabs>button:not(.icon-btn):active{transform:scale(.97);transition-duration:var(--duration-instant)}
+
+/* ── 3. comments ───────────────────────────────────────────────── */
+.comment-list,.version-list{overflow:auto;padding:0 15px;flex:1}
+
+.comment{padding:14px 1px;border-bottom:1px solid var(--border-subtle)}
+
+.comment-head{display:flex;gap:8px;align-items:center}
+
+.small-avatar{width:25px;height:25px;font-size:11px}
+
+.comment-head>div:last-child,.version-line>div{display:flex;flex-direction:column;gap:3px}
+
+.comment-head b,.version-line b{font-size:11px;font-weight:600}
+
+.comment-head small,.version-line small{font-size:11px;color:var(--text-muted)}
+
+.comment p{font-size:11px;color:var(--text-secondary);line-height:1.6;margin:9px 0 0 33px;white-space:pre-wrap;overflow-wrap:anywhere}
+
+.comment-compose{border-top:1px solid var(--border-subtle);padding:12px}
+
+.comment-compose textarea{width:100%;height:82px;resize:vertical;outline:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px;font-size:11px;color:var(--text-secondary);transition:border-color var(--duration-fast) var(--ease-standard),box-shadow var(--duration-fast) var(--ease-standard)}
+.comment-compose textarea:focus{border-color:var(--border-strong);box-shadow:0 0 0 3px var(--accent-ring)}
+
+.comment-compose>div{display:flex;align-items:center;justify-content:space-between;margin-top:7px}
+
+.comment-compose span{font-size:11px;color:var(--text-muted)}
+
+.send-btn{height:27px;width:29px;border:0;background:var(--accent);color:#fff;border-radius:var(--radius-xs);display:grid;place-items:center;transition:var(--transition-colors)}
+.send-btn:hover:not(:disabled){background:var(--accent-strong)}
+/* the send control is the one press that deserves a beat: it acknowledges that
+   the comment is on its way before the list re-renders */
+.send-btn:active:not(:disabled){transform:scale(.92);transition-duration:var(--duration-instant)}
+.send-btn:disabled{background:#9aa1ad;color:#fff}
+
+/* ── 4. versions ───────────────────────────────────────────────── */
+.version-item{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border-subtle)}
+
+.version-line{flex:1;min-width:0;display:flex;align-items:flex-start;gap:9px;border:0;background:transparent;padding:0;text-align:left}
+
+.version-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;margin-top:3px}
+
+.version-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+.version-copy b{font-size:11px;font-weight:600;color:var(--text-secondary)}
+.version-copy small{font-size:11px;color:var(--text-muted)}
+
+.version-actions{display:flex;gap:6px}
+.version-actions button{border:1px solid var(--border);background:var(--surface);border-radius:var(--radius-xs);padding:4px 7px;font-size:11px;color:var(--text-muted);transition:var(--transition-colors)}
+.version-actions button:hover{border-color:var(--border-strong);color:var(--accent-strong)}
+.version-actions button:active{transform:scale(.95);transition-duration:var(--duration-instant)}
+.version-item>button:hover{background:var(--surface-muted)}
+
+/* ── 5. presence + connection state ────────────────────────────── */
+.presence-stack{display:flex;align-items:center}
+.presence-stack .mini-avatar{margin-left:-7px;margin-right:0}
+.presence-stack .mini-avatar:first-child{margin-left:0}
+.presence-more{font-size:11px;color:var(--text-muted);background:var(--surface-sunken);border-radius:var(--radius-pill);padding:5px 6px;margin-left:3px}
+.connection-state{font-size:11px;color:var(--text-muted);margin:0 3px;transition:color var(--duration-fast) var(--ease-standard)}
+.connection-state.connected{color:var(--success)}
+.connection-state.disconnected{color:var(--danger)}
+
+/* ── 6. comment actions + anchors ──────────────────────────────── */
+.comment-actions{display:flex;gap:10px;margin:8px 0 0 33px}
+.comment-actions button{border:0;background:transparent;color:var(--text-muted);font-size:11px;padding:0;transition:var(--transition-colors)}
+.comment-actions button:hover{color:var(--accent-strong)}
+
+/* Staggered rows use fill-mode "backwards": they start invisible during their
+   delay, then hand control back to the base styles so :active still presses. */
+.comment.stagger,.version-item.stagger,.activity-item.stagger{animation-fill-mode:backwards}
+
+.comment-resolved{opacity:.65}
+
+.comment-anchor{display:block;border:0;background:#faf3e9;color:#8a5a2b;border-left:2px solid #d6a369;text-align:left;font-size:11px;line-height:1.5;margin:9px 0 0 33px;padding:5px 7px;max-width:calc(100% - 33px);overflow:hidden;text-overflow:ellipsis;transition:var(--transition-colors)}
+.comment-anchor:hover{background:#f7ecdb}
+.comment-anchor:active{transform:scale(.99);transition-duration:var(--duration-instant)}
+
+.anchor-preview{display:flex;align-items:center;gap:5px;background:#faf3e9;color:#8a5a2b;border-left:2px solid #d6a369;padding:5px 7px;font-size:11px;margin-bottom:7px}
+
+.anchor-preview button{margin-left:auto;border:0;background:transparent;display:grid;place-items:center;color:#8a5a2b;transition:var(--transition-colors)}
+.anchor-preview button:active{transform:scale(.9);transition-duration:var(--duration-instant)}
+
+.collab-status{z-index:var(--z-menu)}
+
+/* ── 7. activity ───────────────────────────────────────────────── */
+.activity-list{list-style:none;margin:0;padding:0 15px 16px;flex:1;overflow:auto}
+
+.activity-item{display:flex;gap:9px;padding:12px 0;border-bottom:1px solid var(--border-subtle)}
+
+.activity-avatar{width:25px;height:25px;flex:0 0 25px;border-radius:50%;display:grid;place-items:center;background:#eef1f4;color:#5e7387;font-size:11px;font-weight:700}
+
+.activity-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+
+.activity-copy b{font-size:11px;font-weight:600;color:var(--text-secondary)}
+.activity-copy span{font-size:11px;color:var(--text-muted)}
+.activity-copy small{font-size:11px;color:var(--text-muted)}
+
+/* ── 8. narrow screens: the panel covers the canvas ────────────── */
+@media (max-width:560px){
+  .comment-list,.version-list,.activity-list{padding:0 12px}
+  .comment p,.comment-actions{margin-left:0}
+  .comment-anchor{max-width:100%}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .send-btn:active,.version-actions button:active,.comment-anchor:active,.anchor-preview button:active,.panel-tabs>button:not(.icon-btn):active{transform:none}
+}

@@ -56,6 +56,9 @@ export default function Sidebar(props: SidebarProps) {
       <button type="button" className="icon-btn push" aria-label="收起侧边栏" title="收起侧边栏" onClick={props.onClose}><PanelLeftClose size={17} /></button>
     </div>
 
+    {/* Floating on a narrow viewport, the sidebar overlaps the page instead of
+        shrinking it, so it needs its own readable surface rather than the
+        translucent one it has as a static column. */}
     <div className="sidebar-scroll">
       <div className="workspace-anchor">
         <button type="button" className="workspace" aria-haspopup="menu" aria-expanded={props.workspaceOpen} onClick={() => props.onWorkspaceMenu(!props.workspaceOpen)}>
@@ -115,10 +118,11 @@ export default function Sidebar(props: SidebarProps) {
 
       {props.treeExpanded && <div className="doc-tree">
         <button type="button" className="root-folder" onClick={props.onHome}><Folder size={15} /><span>所有文档</span></button>
-        {tree.map((node) => <TreeItem
+        {tree.map((node, rowIndex) => <TreeItem
           key={node.doc.id}
           node={node}
           depth={0}
+          index={rowIndex}
           activeId={activeId}
           selectedFolderId={selectedFolderId}
           expandedFolders={expandedFolders}

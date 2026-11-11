@@ -19,7 +19,10 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
   render() {
     if (!this.state.error) return this.props.children
     return <div className="error-screen" role="alert">
-      <div className="error-card">
+      {/* The recovery screen is the last thing a broken render shows, so it
+          arrives with the same entrance as any other surface instead of
+          snapping into place behind a blank frame. */}
+      <div className="error-card motion-sheet">
         <div className="error-icon"><AlertCircle size={20} /></div>
         <h1>界面出现异常</h1>
         <p>刚才的操作没有完成。重新加载页面可以恢复工作区，未同步的内容可能需要在历史版本中找回。</p>

@@ -8,6 +8,30 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.47] - 2026-11-12
+
+### Changed
+
+- Introduced a motion and token system modelled on iOS restraint: springs only
+  for movement through space, cross-fades for state changes, and nothing that
+  makes the user wait. `styles/tokens.css` owns every duration, easing, shadow
+  and radius; `styles/motion.css` owns keyframes and utilities;
+  `lib/motion.ts` exposes the same numbers to JS. Other layers only reference
+  these names, and `structure.test.ts` fails a rule that hard-codes a duration.
+- Split the stylesheet into narrower layers (`tokens`, `motion`, `dialogs`,
+  `panels`, `pages`) so each file answers one question. Load order and the rule
+  for adding a layer are documented in `styles/index.css` and
+  `docs/STRUCTURE.md`.
+- Added `useReducedMotion`, `Stagger` and `usePresence` so enter/exit animation
+  respects `prefers-reduced-motion` and unmounts after the exit transition.
+- Documented the vocabulary, the decision table and the "don't add" rules in
+  `docs/MOTION.md`.
+
+### Tests
+
+- `structure.test.ts` now also enforces that style layers reference motion tokens
+  instead of literal durations. Suite is 116 tests.
+
 ## [0.1.46] - 2026-11-11
 
 ### Fixed

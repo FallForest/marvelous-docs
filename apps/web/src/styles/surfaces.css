@@ -1,6 +1,16 @@
 /*
- * Surface layer: focus rings, popovers, dialogs, toasts, profile rows and the
- * responsive/interaction refinements that apply across the whole app.
+ * Surfaces layer: the generic chrome primitives that every screen reuses —
+ * action buttons, the modal backdrop, the toast, and the layer/z-index rules
+ * that let a menu float above a panel.
+ *
+ * Appending new shared primitives is correct here; anything that belongs to a
+ * single screen goes to that screen's layer instead.
+ *
+ * One selector, one definition. This file used to carry two waves of overrides
+ * for .menu-item, .tree-more, .notice-toast and .modal-backdrop; they are
+ * merged below so "which rule wins" is answerable by reading, not by counting
+ * lines. Values that are tokens elsewhere (colour, easing, duration, radius)
+ * are referenced, never repeated as literals.
  */
 
 /* ── 1. base refinements ───────────────────────────────────────── */
@@ -29,13 +39,11 @@ button:disabled{opacity:1;cursor:not-allowed;color:var(--text-muted)}
 button:disabled:not(.icon-btn):not(.tiny-btn):not(.tree-more):not(.tool-btn):not(.send-btn){
   background:var(--surface-sunken);border-color:var(--border);box-shadow:none}
 button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,button.tree-more:disabled{color:#6b7280;background:transparent}
-.primary-btn:disabled,.btn-danger:disabled{background:#a7adb9;color:#fff}
+.primary-btn:disabled,.btn-danger:disabled{background:#a7adb9;color:#fff;transform:none}
 .secondary-btn:disabled{background:var(--surface-sunken);color:var(--text-muted)}
 
 /* ── 4. anchors + popover surfaces ─────────────────────────────── */
-.menu-anchor,.new-menu-anchor,.workspace-anchor,.tree-entry,.tree-menu-anchor{position:relative}
-/* legacy scrim: markup is gone, keep the rule inert and harmless */
-.menu-scrim{display:none}
+.menu-anchor,.new-menu-anchor,.workspace-anchor,.tree-entry,.tree-menu-anchor{position:relative;display:block}
 
 .popover{
   position:fixed;
@@ -54,15 +62,24 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
   border-radius:10px;
   box-shadow:var(--shadow-popover);
   color:var(--text);
-  animation:popover-in .12s ease-out;
+  /* The panel itself never fades in: its rows do. A menu that cross-fades as a
+     block and then re-staggers its items reads as two animations, not one. */
 }
+/* Direction is owned by the placement class Popover.tsx writes (below/above),
+   so a menu always arrives from the edge it was anchored to. */
+.popover.popover-below{animation:motion-rise-in var(--duration-base) var(--ease-spring-snappy) both}
+.popover.popover-above{animation:motion-sink-in var(--duration-base) var(--ease-spring-snappy) both}
 .popover-left{left:0;right:auto}
 .popover[role="menu"]{pointer-events:auto}
-/* dialog surfaces above every topbar/sidebar layer */
-.modal-backdrop{z-index:var(--z-modal)}
-.sidebar-floating{z-index:30}
-.right-panel{z-index:22}
-@keyframes popover-in{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+
+/* Staggered rows: 20ms apart, capped at eight so a long menu stays synchronous.
+   Popover.tsx adds the class and the inline delay; the animation lives here. */
+/* backwards, not both: the row must return to its base styles once it has
+   arrived, otherwise the retained final keyframe would swallow :active's scale. */
+.popover-item-enter{animation:motion-enter var(--duration-fast) var(--ease-decelerate) backwards}
+
+/* the template picker is a scrollable list, not a tall menu */
+.template-menu{max-height:min(70vh,420px)}
 
 .popover-menu{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none}
 
@@ -80,10 +97,12 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
   line-height:1.4;
   color:var(--text-secondary);
   text-align:left;
-  transition:background .12s ease,color .12s ease;
+  transition:var(--transition-colors);
 }
 .menu-item:hover{background:var(--surface-muted);color:var(--text)}
-.menu-item:active{background:var(--surface-sunken)}
+/* Press feedback is scale-only, and only while pressed: a row that shifts on
+   hover makes a menu feel like it is dodging the pointer. */
+.menu-item:active{background:var(--surface-sunken);transform:scale(.97);transition-duration:var(--duration-instant)}
 .menu-item svg{flex:0 0 auto;width:16px;height:16px;color:#6b7280}
 .menu-item:hover svg{color:var(--text-secondary)}
 .menu-item[aria-disabled="true"]{color:var(--text-muted);cursor:not-allowed}
@@ -99,16 +118,13 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
 .menu-divider{height:1px;background:var(--border);margin:5px 6px;border:0}
 .popover .menu-divider:first-child,.popover .menu-divider:last-child{display:none}
 
-/* keep legacy menu popovers on the same surface */
-.menu-popover{z-index:var(--z-popover);background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-popover);padding:6px}
-.tree-menu{min-width:180px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-popover);padding:6px;gap:2px}
+/* the tree overflow menu keeps only its own width; the surface comes from .popover */
+.tree-menu{min-width:180px}
 .tree-menu button{min-height:32px;border-radius:var(--radius-sm);font-size:12px;color:var(--text-secondary)}
-.tree-menu button:hover{background:var(--surface-muted);color:var(--text)}
 .tree-menu .menu-danger{color:var(--danger)}
 .tree-menu .menu-danger:hover{background:var(--danger-soft);color:var(--danger-strong)}
 
 /* ── 5. workspace switcher menu (must fit the 254px sidebar) ───── */
-.workspace-anchor{display:block}
 .workspace-menu{
   left:0;
   right:auto;
@@ -133,33 +149,73 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
 .workspace-menu-actions button{justify-content:flex-start;width:100%}
 
 /* workspace trigger button gets a real affordance */
-.workspace{border-color:var(--border);cursor:pointer;transition:border-color .14s ease,background .14s ease,box-shadow .14s ease}
+.workspace{border-color:var(--border);transition:var(--transition-surface)}
 .workspace:hover{border-color:var(--border-strong);background:#fcfcfd;box-shadow:0 1px 2px rgba(17,24,39,.04)}
+.workspace:active{transform:scale(.99)}
 .workspace[aria-expanded="true"]{border-color:var(--border-strong);background:var(--surface)}
 .workspace-copy b{color:var(--text)}
 .workspace-copy small{color:var(--text-muted)}
 
-/* ── 6. dialogs: confirm / prompt / help ───────────────────────── */
-.confirm-modal,.prompt-modal,.help-modal{
-  position:relative;
-  width:min(100%,460px);
-  max-height:calc(100vh - 40px);
-  overflow:auto;
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  padding:24px;
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-  box-shadow:var(--shadow-modal);
-  color:var(--text);
-  animation:modal-in .16s ease-out;
-}
-@keyframes modal-in{from{opacity:0;transform:translateY(6px) scale(.99)}to{opacity:1;transform:none}}
+/* ── 6. shared buttons ──────────────────────────────────────────
+ * One press language for every control: colour on hover, one-off scale on
+ * press. --duration-instant keeps the scale shorter than the click.
+ */
+.primary-btn{background:var(--accent);color:#fff;border:0;border-radius:5px;min-height:36px;padding:0 13px;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:12px;font-weight:600;transition:var(--transition-colors)}
+.primary-btn:hover{background:var(--accent-strong)}
+.primary-btn:active:not(:disabled){transform:scale(.97);transition-duration:var(--duration-instant)}
 
-.confirm-modal>header,.prompt-modal>header,.help-modal>header{display:flex;align-items:flex-start;gap:12px;padding-right:28px}
-.confirm-modal h2,.prompt-modal h2,.help-modal h2{margin:0;font-size:16px;line-height:1.35;font-weight:650;color:var(--text)}
+.btn-danger{min-height:36px;padding:0 14px;border:0;border-radius:var(--radius-sm);background:var(--danger);color:#fff;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:var(--transition-colors)}
+.btn-danger:hover{background:var(--danger-strong)}
+.btn-danger:active:not(:disabled){transform:scale(.97);transition-duration:var(--duration-instant)}
+
+.btn-ghost{min-height:36px;padding:0 12px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--text-secondary);font-size:12px;display:inline-flex;align-items:center;gap:6px;transition:var(--transition-colors)}
+.btn-ghost:hover{background:var(--surface-muted);color:var(--text)}
+.btn-ghost:active:not(:disabled){transform:scale(.97);transition-duration:var(--duration-instant)}
+
+/* ── 7. modal presentation (iOS sheet) ──────────────────────────
+ * Every modal in the app is <backdrop><panel class="modal-panel">. The
+ * backdrop owns the scrim and the dim, the panel owns the entrance, and
+ * usePresence owns the exit. Nothing else may re-declare these.
+ */
+.modal-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:var(--z-modal);
+  display:grid;
+  place-items:center;
+  padding:20px;
+  overflow:auto;
+  background:var(--scrim);
+  /* the blur is what sells "the app receded"; 8px is the point where text
+     behind stops being readable without turning the backdrop into fog */
+  -webkit-backdrop-filter:blur(8px) saturate(140%);
+  backdrop-filter:blur(8px) saturate(140%);
+  animation:motion-fade-in var(--duration-fast) var(--ease-standard) both;
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .modal-backdrop{background:rgba(17,24,39,.46)}
+}
+/* Exit is always the reverse and always shorter than the entrance. */
+.modal-backdrop.is-closing{animation:motion-fade-out var(--duration-fast) var(--ease-accelerate) both;pointer-events:none}
+
+.modal-panel{
+  animation:motion-sheet-in var(--duration-base) var(--ease-spring-snappy) both;
+  transform-origin:center 60%;
+}
+.modal-panel.is-closing{animation:modal-leave var(--duration-fast) var(--ease-accelerate) both;pointer-events:none}
+@keyframes modal-leave{
+  from{opacity:1;transform:translate3d(0,0,0) scale(1)}
+  to{opacity:0;transform:translate3d(0,6px,0) scale(.975)}
+}
+
+/* "先播退场再卸载" is the same keyframes for every surface; only the name of the
+   end event differs, and usePresence listens for modal-leave on the panel. */
+@media (prefers-reduced-motion:reduce){
+  .modal-backdrop,.modal-backdrop.is-closing{animation:motion-fade-in var(--duration-fast) linear both}
+  .modal-panel,.modal-panel.is-closing{animation:motion-fade-in var(--duration-fast) linear both}
+}
+
+/* dialog internals that every modal shares */
 .modal-icon{
   width:36px;height:36px;flex:0 0 36px;
   display:grid;place-items:center;
@@ -168,11 +224,10 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
   color:var(--accent-strong);
 }
 .modal-icon.is-danger,.modal-icon.modal-icon-danger{background:var(--danger-soft);color:var(--danger)}
-.confirm-modal>header .icon-btn,.prompt-modal>header .icon-btn,.help-modal>header .icon-btn{margin-left:auto;flex:0 0 auto}
-.modal-dot{width:9px;height:9px;border-radius:50%;background:currentColor;display:block}
 .modal-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
 .modal-copy p,.modal-copy small{margin:0;font-size:12px;color:var(--text-muted);line-height:1.5}
 .modal-copy strong{color:var(--text);font-weight:600}
+.modal-dot{width:9px;height:9px;border-radius:50%;background:currentColor;display:block}
 .modal-field,.dialog-field{display:flex;flex-direction:column;gap:6px;min-width:0}
 .modal-field label,.dialog-field label{font-size:12px;font-weight:600;color:var(--text-secondary)}
 .modal-field input,.dialog-field input,.modal-field textarea,.dialog-field textarea,.modal-field select,.dialog-field select{
@@ -184,39 +239,25 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
   color:var(--text);
   font-size:13px;
   outline:none;
-  transition:border-color .14s ease,box-shadow .14s ease;
+  transition:border-color var(--duration-fast) var(--ease-standard),box-shadow var(--duration-fast) var(--ease-standard);
 }
 .modal-field textarea,.dialog-field textarea{height:auto;min-height:82px;padding:9px 11px;line-height:1.5;resize:vertical}
-.modal-field input:focus,.dialog-field input:focus,.modal-field textarea:focus,.dialog-field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(192,83,63,.16)}
+.modal-field input:focus,.dialog-field input:focus,.modal-field textarea:focus,.dialog-field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
 .modal-field input::placeholder,.dialog-field input::placeholder{color:#6b7280}
 .dialog-field input[aria-invalid="true"],.modal-field input[aria-invalid="true"],.dialog-field textarea[aria-invalid="true"]{border-color:var(--danger);box-shadow:0 0 0 3px rgba(176,69,58,.14)}
 .dialog-error,.modal-error{margin:0;font-size:12px;color:var(--danger);line-height:1.45}
 .modal-actions,.dialog-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:2px}
 .modal-actions button,.dialog-actions button{min-height:36px;font-size:12px;padding:0 14px;border-radius:var(--radius-sm)}
-.modal-danger{min-height:36px;padding:0 14px;border:0;border-radius:var(--radius-sm);background:var(--danger);color:#fff;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.modal-danger{min-height:36px;padding:0 14px;border:0;border-radius:var(--radius-sm);background:var(--danger);color:#fff;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:var(--transition-colors)}
 .modal-danger:hover{background:var(--danger-strong)}
+.modal-danger:active{transform:scale(.97);transition-duration:var(--duration-instant)}
 .modal-actions .modal-danger{align-self:auto}
 
-/* shared action buttons used by the new dialogs */
-.btn-danger{min-height:36px;padding:0 14px;border:0;border-radius:var(--radius-sm);background:var(--danger);color:#fff;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
-.btn-danger:hover{background:var(--danger-strong)}
-.btn-ghost{min-height:36px;padding:0 12px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--text-secondary);font-size:12px;display:inline-flex;align-items:center;gap:6px}
-.btn-ghost:hover{background:var(--surface-muted);color:var(--text)}
-
-/* help / shortcut dialog */
-.help-modal{width:min(100%,480px)}
-.shortcut-list{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none}
-.shortcut-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:34px;margin:0;padding:0 6px;border-radius:var(--radius-sm);font-size:12px;color:var(--text-secondary)}
-.shortcut-row:hover{background:var(--surface-muted)}
-.shortcut-row dt{margin:0;font-size:12px;color:var(--text-secondary)}
-.shortcut-row dd{margin:0;display:flex;align-items:center;gap:4px;justify-content:flex-end;flex-wrap:wrap}
-.shortcut-row kbd{font-family:inherit;font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--surface-sunken);border:1px solid var(--border);border-radius:4px;padding:2px 6px;white-space:nowrap;line-height:1.4}
-.help-note{margin:0;padding:10px 12px;border-radius:var(--radius-md);background:var(--surface-muted);font-size:12px;line-height:1.55;color:var(--text-muted)}
-.help-links{display:flex;flex-wrap:wrap;gap:10px 16px;padding-top:4px;border-top:1px solid var(--border);font-size:12px}
-.help-links a{color:var(--accent-strong);text-decoration:none}
-.help-links a:hover{text-decoration:underline}
-
-/* ── 7. toast ──────────────────────────────────────────────────── */
+/* ── 8. toast ───────────────────────────────────────────────────
+ * App.tsx keys the toast on its message, so it re-mounts per notice and this
+ * animation replays without any JS. It floats over scrolling content, hence
+ * the glass surface; the fallback keeps the contrast when blur is missing.
+ */
 .notice-toast{
   position:fixed;
   right:22px;
@@ -227,16 +268,20 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
   align-items:flex-start;
   gap:10px;
   padding:11px 12px;
-  background:var(--surface);
+  background:var(--surface-glass);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  backdrop-filter:blur(20px) saturate(180%);
   border:1px solid var(--border);
-  border-radius:10px;
+  border-radius:var(--radius-lg);
   font-size:12px;
   line-height:1.45;
   color:var(--text-secondary);
   box-shadow:var(--shadow-toast);
-  animation:toast-in .2s ease-out;
+  animation:motion-rise-in var(--duration-base) var(--ease-spring-snappy) both;
 }
-@keyframes toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .notice-toast{background:var(--surface)}
+}
 .notice-toast button{
   flex:0 0 auto;
   width:24px;height:24px;
@@ -244,10 +289,12 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
   border:0;background:transparent;border-radius:5px;
   color:var(--text-muted);
   display:grid;place-items:center;padding:0;
+  transition:var(--transition-colors);
 }
 .notice-toast button:hover{background:var(--surface-muted);color:var(--text)}
+.notice-toast button:active{transform:scale(.92);transition-duration:var(--duration-instant)}
 
-/* ── 8. sidebar profile row: clean circle + ellipsis ───────────── */
+/* ── 9. sidebar profile row: clean circle + ellipsis ───────────── */
 .profile-row{
   height:auto;
   min-height:56px;
@@ -281,25 +328,41 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
 .help-row>svg{margin-left:auto}
 .help-dot{color:var(--text-muted);border-color:#8a919e;font-weight:600}
 
-/* ── 9. tree overflow button: visible without hover ────────────── */
-.tree-more{width:28px;height:28px;flex:0 0 28px;border-radius:6px;opacity:.7;color:#6b7280;transition:opacity .12s ease,background .12s ease,color .12s ease}
+/* ── 10. tree overflow button: visible without hover ───────────── */
+.tree-more{width:28px;height:28px;flex:0 0 28px;margin-right:4px;border:0;background:transparent;border-radius:6px;color:#6b7280;display:grid;place-items:center;padding:0;opacity:.7;transition:var(--transition-colors),opacity var(--duration-fast) var(--ease-standard)}
 .tree-entry:hover .tree-more,.tree-entry.selected .tree-more,.tree-more:focus-visible,.tree-more[aria-expanded="true"]{opacity:1}
+.tree-more:hover{background:#e4e7eb;color:var(--text-secondary)}
+.tree-more:active{transform:scale(.9);transition-duration:var(--duration-instant)}
 .tree-more[aria-expanded="true"]{background:var(--surface-sunken);color:var(--text-secondary)}
 .tree-entry.selected .tree-doc{color:var(--text)}
 
-/* ── 10. interactive rows ──────────────────────────────────────── */
-.nav-row,.action-row,.tree-doc,.tree-folder,.home-card,.search-hit,.folder-item,.share-btn,.new-doc-btn,.secondary-btn,.icon-btn,.tiny-btn,.tool-btn{
-  transition:background .12s ease,color .12s ease,border-color .12s ease,box-shadow .12s ease;
+/* ── 11. interactive rows ──────────────────────────────────────── */
+.nav-row,.action-row,.tree-doc,.tree-folder,.home-card,.search-hit,.folder-item,.share-btn,.secondary-btn,.icon-btn,.tiny-btn,.tool-btn{
+  transition:var(--transition-colors);
 }
 .nav-row:hover,.action-row:hover,.tree-folder:hover,.tree-doc:hover{background:var(--surface-sunken);color:var(--text)}
 .icon-btn:hover,.tiny-btn:hover,.tool-btn:hover{background:var(--surface-sunken);color:var(--text)}
-.secondary-btn:hover,.new-doc-btn:hover,.share-btn:hover{border-color:var(--border-strong);color:var(--text)}
+.secondary-btn:hover,.share-btn:hover{border-color:var(--border-strong);color:var(--text)}
+/* press: one scale, never a hover displacement */
+.icon-btn:active:not(:disabled),.tiny-btn:active:not(:disabled),.tool-btn:active:not(:disabled),
+.secondary-btn:active:not(:disabled),.new-doc-btn:active:not(:disabled),
+.nav-row:active,.action-row:active,.tree-doc:active,.tree-folder:active{
+  transform:scale(.97);
+  transition-duration:var(--duration-instant);
+}
+/* .new-doc-btn's box comes from shell.css (.sidebar .new-doc-btn); only the
+   interaction states live here, so the two files never fight over the size. */
+.new-doc-btn:hover{border-color:var(--border-strong);color:var(--accent-strong)}
+.collab-banner{min-height:32px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:7px;background:var(--warning-soft);border-bottom:1px solid #f1dfb0;color:var(--warning);font-size:11px}
+.tool-active{background:var(--accent-soft);color:var(--accent-strong)}
+.save-state.save-saving .save-dot{background:#d3a24b}
+.save-state.save-saved .save-dot{background:#68ae89}
 .nav-count{color:var(--text-muted)}
 .nav-label{color:var(--text-muted)}
 .empty-tree,.empty-tree:hover{color:var(--text-muted)}
 .toolbar-format,.save-state,.breadcrumbs,.doc-meta,.editor-footer,.comment-head small,.version-line small{color:var(--text-muted)}
 
-/* ── 11. responsive: no horizontal scroll, mobile touch targets ── */
+/* ── 12. responsive: no horizontal scroll, mobile touch targets ── */
 html,body{max-width:100%}
 @media (max-width:1024px){
   .workspace-content{min-width:0}
@@ -326,11 +389,9 @@ html,body{max-width:100%}
   .menu-item svg{width:17px;height:17px}
   .popover{min-width:min(240px,calc(100vw - 20px));max-width:calc(100vw - 20px);border-radius:12px}
   .workspace-menu{width:min(240px, calc(100vw - 22px))}
-  .confirm-modal,.prompt-modal,.help-modal{padding:20px;border-radius:var(--radius-lg);max-height:calc(100vh - 24px)}
+  .modal-backdrop{padding:12px}
   .modal-actions,.dialog-actions{flex-direction:column;align-items:stretch}
   .modal-actions button,.dialog-actions button,.modal-danger,.btn-danger,.btn-ghost{width:100%;justify-content:center;min-height:44px}
-  .shortcut-row{flex-wrap:wrap;row-gap:2px;padding:6px}
-  .shortcut-row dd{width:100%;justify-content:flex-start}
   .notice-toast{right:12px;left:12px;bottom:12px;max-width:none}
   .notice-toast button{width:32px;height:32px}
   .profile-row{min-height:60px}
@@ -354,7 +415,7 @@ html,body{max-width:100%}
   .menu-item:active,.nav-row:active,.tree-doc:active,.tree-folder:active,.action-row:active{background:var(--surface-sunken)}
 }
 
-/* ── 12. reduced motion ────────────────────────────────────────── */
+/* ── 13. reduced motion ────────────────────────────────────────── */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{
     animation-duration:.001ms !important;
@@ -363,4 +424,48 @@ html,body{max-width:100%}
     scroll-behavior:auto !important;
   }
   .home-card:hover{transform:none}
+  .menu-item:active,.icon-btn:active,.secondary-btn:active,.primary-btn:active,.btn-danger:active,.btn-ghost:active,.modal-danger:active,.notice-toast button:active{transform:none}
+}
+
+/* ── 14. dialog internals: one definition for every modal ─────────
+ * Moved here when dialogs.css stopped owning the confirm/prompt boxes, so the
+ * shared pieces (icon chip, field, error, action row) live next to the shell
+ * that renders them.
+ */
+.confirm-modal,.prompt-modal,.help-modal{
+  position:relative;
+  width:min(100%,460px);
+  max-height:calc(100vh - 40px);
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  padding:24px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-modal);
+  color:var(--text);
+}
+/* help is the widest of the three; the shortcut list needs the room */
+.confirm-modal>header,.prompt-modal>header,.help-modal>header{display:flex;align-items:flex-start;gap:12px;padding-right:28px}
+.confirm-modal h2,.prompt-modal h2,.help-modal h2{margin:0;font-size:16px;line-height:1.35;font-weight:650;color:var(--text)}
+.confirm-modal>header .icon-btn,.prompt-modal>header .icon-btn,.help-modal>header .icon-btn{margin-left:auto;flex:0 0 auto}
+
+/* shortcut sheet rendered inside the help dialog */
+.shortcut-list{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none}
+.shortcut-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:34px;margin:0;padding:0 6px;border-radius:var(--radius-sm);font-size:12px;color:var(--text-secondary);transition:var(--transition-colors)}
+.shortcut-row:hover{background:var(--surface-muted)}
+.shortcut-row dt{margin:0;font-size:12px;color:var(--text-secondary)}
+.shortcut-row dd{margin:0;display:flex;align-items:center;gap:4px;justify-content:flex-end;flex-wrap:wrap}
+.shortcut-row kbd{font-family:inherit;font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--surface-sunken);border:1px solid var(--border);border-radius:var(--radius-xs);padding:2px 6px;white-space:nowrap;line-height:1.4}
+.help-note{margin:0;padding:10px 12px;border-radius:var(--radius-md);background:var(--surface-muted);font-size:12px;line-height:1.55;color:var(--text-muted)}
+.help-links{display:flex;flex-wrap:wrap;gap:10px 16px;padding-top:4px;border-top:1px solid var(--border);font-size:12px}
+.help-links a{color:var(--accent-strong);text-decoration:none}
+.help-links a:hover{text-decoration:underline}
+
+@media (max-width:560px){
+  .confirm-modal,.prompt-modal,.help-modal{padding:20px;max-height:calc(100vh - 24px)}
+  .shortcut-row{flex-wrap:wrap;row-gap:2px;padding:6px}
+  .shortcut-row dd{width:100%;justify-content:flex-start}
 }

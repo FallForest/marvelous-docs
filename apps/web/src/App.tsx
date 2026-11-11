@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent } from 'react'
 import { AlertCircle, X } from 'lucide-react'
 import { api } from './lib/endpoints'
 import { copyText } from './lib/clipboard'
+import { withViewTransition } from './lib/motion'
 import { COLLAB_URL } from './lib/collab'
 import { downloadTextFile, EXPORT_MIME, printHtmlDocument } from './lib/download'
 import { buildDocTree, filterDocTree } from './lib/tree'
@@ -671,18 +672,18 @@ function App() {
         if (value.trim()) { setHomeView('search'); setActive(null); setSelectedFolderId(null) }
         else if (homeView === 'search') setHomeView('home')
       }}
-      onHome={() => { setHomeView('home'); setActive(null); setSelectedFolderId(null); setQuery(''); setShowRight(false); if (narrow) setSidebarOpen(false) }}
-      onAdmin={() => { setWorkspaceView('admin'); if (narrow) setSidebarOpen(false) }}
-      onFavorites={() => { setHomeView('favorites'); setActive(null); setSelectedFolderId(null); setQuery(''); if (narrow) setSidebarOpen(false) }}
-      onTrash={() => { setHomeView('trash'); setActive(null); setSelectedFolderId(null); setQuery(''); if (narrow) setSidebarOpen(false) }}
+      onHome={() => { withViewTransition(() => { setHomeView('home'); setActive(null); setSelectedFolderId(null); setQuery(''); setShowRight(false) }); if (narrow) setSidebarOpen(false) }}
+      onAdmin={() => { withViewTransition(() => setWorkspaceView('admin')); if (narrow) setSidebarOpen(false) }}
+      onFavorites={() => { withViewTransition(() => { setHomeView('favorites'); setActive(null); setSelectedFolderId(null); setQuery('') }); if (narrow) setSidebarOpen(false) }}
+      onTrash={() => { withViewTransition(() => { setHomeView('trash'); setActive(null); setSelectedFolderId(null); setQuery('') }); if (narrow) setSidebarOpen(false) }}
       onToggleTree={() => setExpanded((value) => !value)}
       onNewMenu={setNewMenuOpen}
       onCreateDocument={(templateId) => void createDocument('document', templateId)}
       onCreateFolder={() => void createDocument('folder')}
       onImport={() => importInput.current?.click()}
       onToggleFolder={(id) => setExpandedFolders((folders) => { const next = new Set(folders); if (next.has(id)) next.delete(id); else next.add(id); return next })}
-      onSelectFolder={(folder) => { setSelectedFolderId(folder.id); setActive(null); setHomeView('home'); setQuery(''); setShowRight(false); if (narrow) setSidebarOpen(false) }}
-      onSelectDocument={(doc) => { setActive(doc); setSelectedFolderId(doc.parentId || null); setHomeView('home'); setQuery(''); setShowRight(false); if (narrow) setSidebarOpen(false) }}
+      onSelectFolder={(folder) => { withViewTransition(() => { setSelectedFolderId(folder.id); setActive(null); setHomeView('home'); setQuery(''); setShowRight(false) }); if (narrow) setSidebarOpen(false) }}
+      onSelectDocument={(doc) => { withViewTransition(() => { setActive(doc); setSelectedFolderId(doc.parentId || null); setHomeView('home'); setQuery(''); setShowRight(false) }); if (narrow) setSidebarOpen(false) }}
       onDocumentAction={(action, doc) => void handleDocumentAction(action, doc)}
       onHelp={() => { setWorkspaceOpen(false); setHelpOpen(true) }}
       onLogout={() => { setWorkspaceOpen(false); clearToken() }}
@@ -708,9 +709,11 @@ function App() {
         onComments={() => { setRightTab('comments'); setShowRight(true) }}
         onShare={() => void openShareDialog()}
       />
-      {active && COLLAB_URL && collabStatus === 'disconnected' && <div className="collab-banner" role="status"><AlertCircle size={14} />实时协作连接已断开，正在尝试重连，期间的修改会保存在本地。</div>}
+      {active && COLLAB_URL && collabStatus === 'disconnected' && <div className="collab-banner motion-sink" role="status"><AlertCircle size={14} />实时协作连接已断开，正在尝试重连，期间的修改会保存在本地。</div>}
       {active ? <div className="workspace-content">
-        <section className="editor-column">
+        {/* Keyed on the document so switching documents replays the canvas
+            entry animation instead of silently swapping content in place. */}
+        <section className="editor-column motion-enter" key={active.id}>
           <DocumentEditor
             key={active.id}
             doc={active}
@@ -745,6 +748,9 @@ function App() {
           onPreviewVersion={setPreviewVersion}
         />}
       </div> : selectedFolder ? <FolderOverview
+        // Remounting per folder replays the entry animation, so opening another
+        // folder reads as a navigation instead of a silent content swap.
+        key={selectedFolder.id}
         folder={selectedFolder}
         items={folderChildren}
         onCreate={() => void createDocument('document')}
@@ -759,6 +765,9 @@ function App() {
         loading={searchLoading}
         onOpen={(doc) => { if (doc.kind === 'folder') setSelectedFolderId(doc.id); else setActive(doc); setSelectedFolderId(doc.parentId || null) }}
       /> : <HomeDashboard
+        // One component serves home, favorites and trash; the key makes each
+        // view a fresh mount so its cards stagger in on arrival.
+        key={homeView}
         documents={homeView === 'trash' ? trashDocuments : documents}
         favorites={favoriteSet}
         query={query === '__favorites__' ? '' : query}
@@ -792,7 +801,9 @@ function App() {
         onCreate={() => { setCommandOpen(false); void createDocument('document') }}
         onHome={() => { setActive(null); setSelectedFolderId(null); setHomeView('home'); setQuery(''); setCommandOpen(false) }}
       />}
-      {notice && <div className="notice-toast" role="status" aria-live="polite">{notice}<button aria-label="关闭提示" title="关闭提示" onClick={() => setNotice('')}><X size={13} /></button></div>}
+      {/* Keyed on the message: a second toast replaces the first, so the
+          entry animation must replay rather than being muted by React reuse. */}
+      {notice && <div className="notice-toast" role="status" aria-live="polite" key={notice}>{notice}<button aria-label="关闭提示" title="关闭提示" onClick={() => setNotice('')}><X size={13} /></button></div>}
     </main>
     {showShare && active && <ShareDialog title={active.title} members={workspaceMembers} permissions={documentPermissions} restricted={documentRestricted} busy={shareBusy} shareLinks={shareLinks} shareLinkCopied={shareLinkCopied} onCreateShareLink={() => void createShareLink(active.id)} onRevokeShareLink={(linkId: string) => void revokeShareLink(active.id, linkId)} onRestrictedChange={(value) => void toggleDocumentRestriction(value)} onPermissionChange={(member, role) => void saveDocumentPermission(member, role)} onClose={() => setShowShare(false)} />}
     {showInvite && <InviteDialog email={inviteEmail} setEmail={setInviteEmail} role={inviteRole} setRole={setInviteRole} link={inviteLink} error={inviteError} busy={inviteBusy} copied={copied} onSubmit={createInvite} onCopy={copyInviteLink} onClose={() => setShowInvite(false)} />}

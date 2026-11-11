@@ -44,6 +44,10 @@ export function useBlockGeometry(editor: Editor | null, enabled = true): BlockGe
     if (!dom) return
 
     let frame = 0
+    // Re-measuring on every keystroke drops a block out of the list the
+    // instant it scrolls past the viewport edge, which makes an anchored
+    // toolbar pop out of existence mid-edit. Keep the previous measurement
+    // when the new pass finds nothing, so the toolbar fades instead.
     const measure = () => {
       frame = 0
       const found: BlockGeometry[] = []
@@ -69,7 +73,7 @@ export function useBlockGeometry(editor: Editor | null, enabled = true): BlockGe
           text: kind === 'codeBlock' ? node.textContent : '',
         })
       })
-      setBlocks(found)
+      setBlocks((previous) => (found.length || !previous.length ? found : previous))
     }
     const schedule = () => {
       if (frame) return
