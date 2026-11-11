@@ -56,6 +56,8 @@ const ALIASES: Record<string, string> = {
   ps: 'powershell', ps1: 'powershell',
   docker: 'dockerfile',
   text: 'plaintext', plain: 'plaintext', txt: 'plaintext', none: 'plaintext',
+  // Stored grammar names that differ from the picker id.
+  ini: 'toml',
 }
 
 /** Resolves any spelling (canonical or alias) to a canonical id, or null. */

@@ -17,13 +17,25 @@ import FontFamily from '@tiptap/extension-font-family'
 import TextAlign from '@tiptap/extension-text-align'
 import Image from '@tiptap/extension-image'
 import { FontSize } from './font-size'
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { lowlight } from './highlight'
 
 export type EditorExtensionOptions = { ydoc?: YDoc | null; placeholder?: string }
 
 export function buildEditorExtensions(options: EditorExtensionOptions = {}) {
   const { ydoc, placeholder } = options
   return [
-    StarterKit.configure(ydoc ? { history: false } : {}),
+    // The code block comes from CodeBlockLowlight instead of StarterKit, so the
+    // node carries syntax tokens; the node type and `language` attribute are
+    // identical, which is what keeps the server schema in step.
+    StarterKit.configure({ ...(ydoc ? { history: false } : {}), codeBlock: false }),
+    CodeBlockLowlight.configure({
+      lowlight,
+      // The node stores our own language id (`csharp`), while the grammar is
+      // looked up through grammarFor. Passing the id straight through would leave
+      // the aliases unhighlighted.
+      languageClassPrefix: 'language-',
+    }),
     Underline,
     Link.configure({ openOnClick: false, autolink: true, HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' } }),
     TextStyle,

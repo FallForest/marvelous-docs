@@ -363,3 +363,37 @@
   text-overflow:ellipsis;
   white-space:nowrap;
 }
+
+/* ===== 32. Code block syntax highlighting =====
+   Lowlight emits <span class="hljs-*">. The palette is deliberately muted and
+   warm-neutral so it reads as part of the document rather than as an IDE: four
+   hues for structure, one for literals, one for comments. Contrast against
+   #f7f8fa stays above 4.5:1 for body text. */
+.tiptap-content pre code .hljs-comment,
+.tiptap-content pre code .hljs-quote{color:#7c8593;font-style:italic}
+.tiptap-content pre code .hljs-keyword,
+.tiptap-content pre code .hljs-selector-tag,
+.tiptap-content pre code .hljs-literal,
+.tiptap-content pre code .hljs-doctag{color:#8c4a9f}
+.tiptap-content pre code .hljs-string,
+.tiptap-content pre code .hljs-regexp,
+.tiptap-content pre code .hljs-addition{color:#3d7a54}
+.tiptap-content pre code .hljs-number,
+.tiptap-content pre code .hljs-built_in,
+.tiptap-content pre code .hljs-symbol{color:#b0553a}
+.tiptap-content pre code .hljs-title,
+.tiptap-content pre code .hljs-section,
+.tiptap-content pre code .hljs-name,
+.tiptap-content pre code .hljs-selector-id,
+.tiptap-content pre code .hljs-selector-class{color:#2f6fb3}
+.tiptap-content pre code .hljs-attr,
+.tiptap-content pre code .hljs-attribute,
+.tiptap-content pre code .hljs-variable,
+.tiptap-content pre code .hljs-template-variable{color:#a06a1e}
+.tiptap-content pre code .hljs-type,
+.tiptap-content pre code .hljs-class .hljs-title{color:#1f6f6b}
+.tiptap-content pre code .hljs-meta,
+.tiptap-content pre code .hljs-tag{color:#6b7280}
+.tiptap-content pre code .hljs-deletion{color:#b0453a}
+.tiptap-content pre code .hljs-emphasis{font-style:italic}
+.tiptap-content pre code .hljs-strong{font-weight:600}

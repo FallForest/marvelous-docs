@@ -25,3 +25,6 @@ coverage/
 
 # Local tool state
 .claude/settings.local.json
+
+# Vite debug output
+apps/web/vite-out.txt

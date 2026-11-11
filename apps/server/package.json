@@ -1,6 +1,6 @@
 {
   "name": "@marvelous-docs/server",
-  "version": "0.1.56",
+  "version": "0.1.57",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,6 +15,7 @@
     "@fastify/cors": "^10.0.2",
     "@fastify/jwt": "^9.1.0",
     "@tiptap/core": "^2.27.3",
+    "@tiptap/extension-code-block-lowlight": "^2.27.3",
     "@tiptap/extension-color": "^2.27.3",
     "@tiptap/extension-font-family": "^2.27.3",
     "@tiptap/extension-highlight": "^2.27.3",
@@ -32,6 +33,7 @@
     "@tiptap/starter-kit": "^2.11.5",
     "fastify": "^5.2.1",
     "lib0": "^0.2.109",
+    "lowlight": "^3.3.0",
     "pg": "^8.13.3",
     "prosemirror-model": "^1.24.1",
     "ws": "^8.18.0",

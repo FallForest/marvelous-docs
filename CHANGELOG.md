@@ -8,6 +8,36 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.57] - 2026-11-12
+
+### Added
+
+- Syntax highlighting in code blocks. Lowlight decorates the block from the
+  stored `language` attribute, so switching language now visibly changes the
+  code instead of only the badge. The palette is muted and warm-neutral to read
+  as part of the document rather than as an IDE, and every colour keeps at least
+  4.5:1 contrast on the block background.
+
+### Changed
+
+- Code blocks come from `CodeBlockLowlight` instead of StarterKit's plain
+  `codeBlock`. The node type and `language` attribute are identical, so the
+  server schema and stored documents are unaffected.
+- Grammars are imported one per language the picker offers (26 total) rather than
+  using lowlight's `common` (37) or `all` (192). `common` added 180 KB to the
+  entry chunk and `all` took it to 1.1 MB; the explicit list costs ~140 KB and
+  covers every selectable language, including Scala, PowerShell and Dockerfile
+  that `common` omits.
+- `highlight.js` is now a direct dependency. Under pnpm's strict node_modules an
+  import of a transitive package's subpath does not resolve at build time.
+
+### Tests
+
+- The picker and the highlighter are pinned to each other: every language the
+  picker offers must have a grammar, aliases must resolve (`html`→`xml`,
+  `toml`→`ini`), unknown languages must fall back to plaintext, and the
+  registry must stay proportional to the picker rather than to highlight.js.
+
 ## [0.1.56] - 2026-11-12
 
 ### Fixed

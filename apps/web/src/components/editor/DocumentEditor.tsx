@@ -17,6 +17,7 @@ import { buildEditorExtensions } from '../../lib/editor'
 import { useBlockGeometry } from '../../hooks/useBlockGeometry'
 import { wordCount, formatDate } from '../../lib/format'
 import LanguagePicker from './LanguagePicker'
+import { grammarFor } from '../../lib/highlight'
 import { emptyContent } from '../../lib/types'
 import type { CollabStatus } from '../../lib/app-types'
 import type { Doc, SaveStatus, User } from '../../lib/types'
@@ -327,7 +328,9 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
             // attribute inside the same chain.
             const node = editor.state.doc.nodeAt(target)
             const end = target + 1 + (node?.content.size ?? 0)
-            editor.chain().focus().setTextSelection(end).updateAttributes('codeBlock', { language: id }).run()
+            // Store the grammar name the highlighter knows; the picker shows a friendly
+            // label for it via languageLabel().
+            editor.chain().focus().setTextSelection(end).updateAttributes('codeBlock', { language: grammarFor(id) }).run()
           }}
         />
         <span className="code-overlay-actions">
