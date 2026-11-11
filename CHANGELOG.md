@@ -8,6 +8,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.53] - 2026-11-12
+
+### Added
+
+- Request rate limiting for the endpoints that cost the most per call:
+  uploads (30 / 10 min), markdown parsing (60 / 5 min), export (60 / 5 min) and
+  search (120 / min). `RateLimiter` is a fixed-window counter keyed by user id
+  when authenticated and by address otherwise, so a signed-in abuser cannot
+  reset the budget by changing networks. A blocked call answers 429 with
+  `Retry-After` and `X-RateLimit-Remaining` is exposed on every allowed call.
+  Only the login endpoint had any limit before this release.
+- Conflict recovery. A save that hits 409 no longer just says "refresh and try
+  again" (which discarded the local edit). The draft is written to
+  `localStorage` first, then a dialog offers 保留我的版本 / 使用服务器版本 — the
+  first re-reads the document for its current version and writes the local copy
+  over it, the second adopts the server copy. Either way no page reload is
+  required and the local draft survives until the user chooses.
+- A failed non-conflict save also keeps a local draft and says so, instead of the
+  message scrolling away with the edit still unsaved.
+
+### Tests
+
+- Rate limiter covered for limit enforcement, window rollover, key isolation,
+  remaining count and bucket capping.
+
 ## [0.1.52] - 2026-11-12
 
 ### Fixed

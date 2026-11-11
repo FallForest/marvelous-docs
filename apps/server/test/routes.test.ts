@@ -76,7 +76,9 @@ async function buildApp() {
     catch { return reply.code(401).send({ error: { code: 'UNAUTHENTICATED', message: 'A valid bearer token is required.' } }) }
   })
   const authenticate = { preHandler: (app as unknown as { authenticate: (request: unknown, reply: unknown) => Promise<unknown> }).authenticate }
-  registerRoutes(app, { authenticate })
+  // The structural test only inspects the table, so the limiter is a pass-through.
+  const rateLimit = () => async () => undefined
+  registerRoutes(app, { authenticate, rateLimit: rateLimit as never })
   app.setNotFoundHandler((_request, reply) => reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'The requested resource was not found.' } }))
   await app.ready()
   return { app, registered }

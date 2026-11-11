@@ -55,7 +55,8 @@ export function registerDocumentReadRoutes(app: FastifyInstance, deps: RouteDeps
     return { documents: result.rows.map(documentSummaryJson) }
   })
 
-  app.get('/api/v1/documents/search', deps.authenticate, async (request, reply) => {
+  // Search is an ILIKE scan, so a tight budget keeps it from being a load generator.
+  app.get('/api/v1/documents/search', { preHandler: [deps.authenticate.preHandler, deps.rateLimit(120, 60 * 1000)] }, async (request, reply) => {
     const auth = request as AuthRequest
     const query = parse(z.object({
       q: z.string().trim().min(1).max(200),

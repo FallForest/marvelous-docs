@@ -16,7 +16,8 @@ import type { RouteDeps } from './deps.js'
  * Export flushes the room first so a download never lags behind live edits.
  */
 export function registerExportRoutes(app: FastifyInstance, deps: RouteDeps) {
-  app.get('/api/v1/documents/:id/export', deps.authenticate, async (request, reply) => {
+  // Exporting flushes the live room and serialises the whole document.
+  app.get('/api/v1/documents/:id/export', { preHandler: [deps.authenticate.preHandler, deps.rateLimit(60, 5 * 60 * 1000)] }, async (request, reply) => {
     const auth = request as AuthRequest
     const params = parse(idParams, request.params)
     if (!params) return fail(reply, 400, 'INVALID_ID', 'Document id must be a UUID.')

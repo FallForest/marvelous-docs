@@ -18,7 +18,8 @@ const ALLOWED_MIME = new Set(['application/octet-stream', 'image/png', 'image/jp
  * embedded images are expected to behave.
  */
 export function registerUploadRoutes(app: FastifyInstance, deps: RouteDeps) {
-  app.put('/api/v1/uploads', deps.authenticate, async (request, reply) => {
+  // Each upload may be 20 MB, so the budget is deliberately small per caller.
+  app.put('/api/v1/uploads', { preHandler: [deps.authenticate.preHandler, deps.rateLimit(30, 10 * 60 * 1000)] }, async (request, reply) => {
     const auth = request as AuthRequest
     const body = request.body as Buffer
     if (!Buffer.isBuffer(body) || body.length === 0) return fail(reply, 400, 'INVALID_INPUT', 'Upload body is required.')

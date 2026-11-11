@@ -1,4 +1,4 @@
-import type { FastifyRequest } from 'fastify'
+import type { FastifyReply, FastifyRequest, preHandlerHookHandler } from 'fastify'
 
 /**
  * Shared dependencies handed to every route module.
@@ -9,5 +9,13 @@ import type { FastifyRequest } from 'fastify'
  */
 export type RouteDeps = {
   /** preHandler that rejects unauthenticated requests with 401. */
-  authenticate: { preHandler: (request: FastifyRequest, reply: import('fastify').FastifyReply) => Promise<unknown> }
+  authenticate: { preHandler: (request: FastifyRequest, reply: FastifyReply) => Promise<unknown> }
+  /**
+   * Builds a preHandler limiting `limit` requests per `windowMs` for the caller.
+   *
+   * Keyed by user id when the request is authenticated and by IP otherwise, so a
+   * signed-in abuser cannot dodge the budget by switching networks, and an
+   * anonymous flood is still capped per source.
+   */
+  rateLimit: (limit: number, windowMs: number) => preHandlerHookHandler
 }

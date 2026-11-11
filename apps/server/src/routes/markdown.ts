@@ -11,7 +11,7 @@ import type { RouteDeps } from './deps.js'
  * anonymous endpoint for it is a free denial-of-service surface.
  */
 export function registerMarkdownRoutes(app: FastifyInstance, deps: RouteDeps) {
-  app.post('/api/v1/markdown/convert', deps.authenticate, async (request, reply) => {
+  app.post('/api/v1/markdown/convert', { preHandler: [deps.authenticate.preHandler, deps.rateLimit(60, 5 * 60 * 1000)] }, async (request, reply) => {
     const input = parse(z.object({ markdown: z.string().min(1).max(500000) }), request.body)
     if (!input) return fail(reply, 400, 'INVALID_INPUT', 'Provide markdown text.')
     const doc = markdownToTiptap(input.markdown)

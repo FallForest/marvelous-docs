@@ -5,6 +5,7 @@ import jwt from '@fastify/jwt'
 import { config } from './config.js'
 import { initializeWorkspace, pool } from './db.js'
 import { fail } from './http.js'
+import { RateLimiter } from './lib/rate-limit.js'
 import { registerRoutes } from './routes/index.js'
 import { registerUpgradeHandler } from './collaboration/socket.js'
 import { flushRoom, rooms, setRoomLogger } from './collaboration/rooms.js'
@@ -48,7 +49,31 @@ const authenticate = { preHandler: (app as unknown as { authenticate: RouteAuthH
 
 type RouteAuthHandler = (request: FastifyRequest, reply: FastifyReply) => Promise<unknown>
 
-registerRoutes(app, { authenticate })
+/**
+ * Builds a requests-per-window guard for an expensive endpoint.
+ *
+ * The bucket key prefers the authenticated user, so a signed-in abuser cannot
+ * reset the budget by changing IP; anonymous traffic falls back to the address.
+ * A blocked call answers 429 with Retry-After, which is what a well-behaved
+ * client (and the CLI) can back off on.
+ */
+function rateLimit(limit: number, windowMs: number) {
+  const limiter = new RateLimiter({ limit, windowMs })
+  const handler = async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = (request as FastifyRequest & { user?: { sub?: string } }).user
+    const key = user?.sub ? 'user:' + user.sub : 'ip:' + (request.ip || 'unknown')
+    const result = limiter.consume(key)
+    if (result.allowed) {
+      reply.header('X-RateLimit-Remaining', String(result.remaining))
+      return
+    }
+    reply.header('Retry-After', String(result.retryAfter))
+    return fail(reply, 429, 'RATE_LIMITED', 'Too many requests. Retry in ' + result.retryAfter + ' seconds.')
+  }
+  return handler as unknown as import('fastify').preHandlerHookHandler
+}
+
+registerRoutes(app, { authenticate, rateLimit })
 setRoomLogger(app.log)
 
 app.setErrorHandler((error, _request, reply) => {

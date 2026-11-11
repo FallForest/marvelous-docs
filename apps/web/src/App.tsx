@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent } from 'react'
 import { AlertCircle, X } from 'lucide-react'
 import { api } from './lib/endpoints'
 import { copyText } from './lib/clipboard'
+import { Dialog } from './components/ui/Dialog'
 import { withViewTransition } from './lib/motion'
 import { COLLAB_URL } from './lib/collab'
 import { downloadTextFile, EXPORT_MIME, printHtmlDocument } from './lib/download'
@@ -63,6 +64,8 @@ function App() {
   const [shareLinkCopied, setShareLinkCopied] = useState(false)
   /** Multi-select over the document tree; null means selection mode is off. */
   const [checkedIds, setCheckedIds] = useState<Set<string> | null>(null)
+  /** Set when a save hit 409, so the user can pick which version wins. */
+  const [conflictDoc, setConflictDoc] = useState<Doc | null>(null)
   const [batchBusy, setBatchBusy] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<'member' | 'admin'>('member')
@@ -114,6 +117,9 @@ function App() {
 
 
 
+  /** Draft key so an unsaved edit survives a reload, a crash or a conflict. */
+  const draftKey = (id: string) => 'mdocs-draft-' + id
+
   const persist = useCallback((json: Record<string, unknown>, immediate = false) => {
     if (!token || !activeRef.current) return
     const flush = async () => {
@@ -125,10 +131,19 @@ function App() {
         setActive(result.document)
         setDocuments((items) => items.map((item) => item.id === result.document.id ? result.document : item))
         setSaveStatus('saved')
+        // The server accepted this edit, so the local safety copy is stale.
+        try { window.localStorage.removeItem(draftKey(doc.id)) } catch { /* private mode */ }
       } catch (error) {
         const failure = error as Error & { status?: number }
         setSaveStatus('error')
-        setNotice(failure.status === 409 ? '文档已在其他位置更新，请刷新后继续。' : '保存失败：' + failure.message)
+        // Keep the exact bytes either way: a reload must not be the price of a
+        // failed save, and a conflict must not silently discard the local edit.
+        try { window.localStorage.setItem(draftKey(doc.id), JSON.stringify(json)) } catch { /* quota */ }
+        if (failure.status === 409) {
+          setConflictDoc(doc)
+        } else {
+          setNotice('保存失败，已保留本地副本：' + failure.message)
+        }
       }
     }
     window.clearTimeout(saveTimer.current)
@@ -136,6 +151,44 @@ function App() {
     setSaveStatus('saving')
     saveTimer.current = window.setTimeout(() => { void flush() }, 700)
   }, [token])
+
+  /**
+   * Resolves a version conflict.
+   *
+   * `mine` re-reads the document for its current version and writes the local
+   * copy over it; `theirs` drops the local edit and adopts the server copy.
+   * Neither path needs a page reload, and the local draft stays on disk until the
+   * user actually picks one.
+   */
+  const resolveConflict = useCallback(async (choice: 'mine' | 'theirs') => {
+    const doc = conflictDoc
+    if (!doc || !token) return
+    setConflictDoc(null)
+    try {
+      const latest = await api.document(token, doc.id)
+      if (choice === 'theirs') {
+        setActive(latest.document)
+        setDocuments((items) => items.map((item) => item.id === latest.document.id ? latest.document : item))
+        try { window.localStorage.removeItem(draftKey(doc.id)) } catch { /* ignore */ }
+        setSaveStatus('saved')
+        return
+      }
+      let draft: Record<string, unknown> | null = null
+      try { const raw = window.localStorage.getItem(draftKey(doc.id)); draft = raw ? JSON.parse(raw) as Record<string, unknown> : null } catch { /* ignore */ }
+      if (!draft) { setNotice('本地草稿已丢失，已载入服务器版本'); setActive(latest.document); return }
+      const saved = await api.saveContent(token, doc.id, draft, latest.document.version)
+      setActive(saved.document)
+      setDocuments((items) => items.map((item) => item.id === saved.document.id ? saved.document : item))
+      try { window.localStorage.removeItem(draftKey(doc.id)) } catch { /* ignore */ }
+      setSaveStatus('saved')
+      setNotice('已用你的版本覆盖服务器内容')
+    } catch (error) {
+      setSaveStatus('error')
+      setNotice('处理冲突失败：' + (error as Error).message)
+    }
+    // setActive/setDocuments are stable setState identities; conflictDoc and token
+    // are the real inputs.
+  }, [conflictDoc, token]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const exportActive = useCallback(async (format: ExportTarget) => {
     setExportMenuOpen(false)
@@ -854,6 +907,15 @@ function App() {
           entry animation must replay rather than being muted by React reuse. */}
       {notice && <div className="notice-toast" role="status" aria-live="polite" key={notice}>{notice}<button aria-label="关闭提示" title="关闭提示" onClick={() => setNotice('')}><X size={13} /></button></div>}
     </main>
+    {conflictDoc && <Dialog
+      title="文档已在别处更新"
+      description="另一个人或另一个标签页保存了更新的版本。选择要保留的内容，两个版本都不会因此丢失。"
+      confirmLabel="保留我的版本"
+      onConfirm={() => void resolveConflict('mine')}
+      onClose={() => void resolveConflict('theirs')}
+    >
+      <p className="dialog-hint">你的改动已存为本地草稿。关闭此对话框（或按 Esc）等于选择服务器版本。</p>
+    </Dialog>}
     {showShare && active && <ShareDialog title={active.title} members={workspaceMembers} permissions={documentPermissions} restricted={documentRestricted} busy={shareBusy} shareLinks={shareLinks} shareLinkCopied={shareLinkCopied} onCreateShareLink={() => void createShareLink(active.id)} onRevokeShareLink={(linkId: string) => void revokeShareLink(active.id, linkId)} onRestrictedChange={(value) => void toggleDocumentRestriction(value)} onPermissionChange={(member, role) => void saveDocumentPermission(member, role)} onClose={() => setShowShare(false)} />}
     {showInvite && <InviteDialog email={inviteEmail} setEmail={setInviteEmail} role={inviteRole} setRole={setInviteRole} link={inviteLink} error={inviteError} busy={inviteBusy} copied={copied} onSubmit={createInvite} onCopy={copyInviteLink} onClose={() => setShowInvite(false)} />}
     {moveDoc && <MoveDialog doc={moveDoc} documents={documents} busy={busy} onMove={(parentId) => void moveDocument(moveDoc, parentId)} onClose={() => setMoveDoc(null)} />}

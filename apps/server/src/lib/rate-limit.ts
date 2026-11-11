@@ -93,3 +93,81 @@ export class LoginRateLimiter {
 export function loginBuckets(ip: string, email: string): string[] {
   return [`ip:${ip}`, `email:${email.toLowerCase()}`];
 }
+
+/* -------------------------------------------------------------------------- */
+/* Request rate limiting (not failure counting)                               */
+/* -------------------------------------------------------------------------- */
+
+export type RateLimitOptions = {
+  /** Requests allowed per window. */
+  limit: number;
+  /** Window length in milliseconds. */
+  windowMs: number;
+  /** Hard cap on tracked buckets so memory stays bounded. Defaults to 20000. */
+  maxBuckets?: number;
+  /** Clock override, mainly for tests. */
+  now?: () => number;
+};
+
+type Slot = { count: number; resetAt: number };
+
+/**
+ * Fixed-window request limiter.
+ *
+ * Distinct from {@link LoginRateLimiter}: that one counts *failures* so a
+ * legitimate user is never locked out by successful calls, whereas abuse-prone
+ * endpoints (uploads, export, search, markdown parsing) need a plain
+ * requests-per-window budget keyed by caller.
+ *
+ * A fixed window is chosen over a sliding log because the endpoints it guards
+ * are expensive per request rather than trickled; the coarse boundary burst it
+ * allows is bounded by the still-generous limit and costs no per-request storage
+ * beyond two numbers.
+ */
+export class RateLimiter {
+  private readonly buckets = new Map<string, Slot>();
+  private readonly limit: number;
+  private readonly windowMs: number;
+  private readonly maxBuckets: number;
+  private readonly now: () => number;
+
+  constructor(options: RateLimitOptions) {
+    this.limit = Math.max(1, options.limit);
+    this.windowMs = Math.max(1, options.windowMs);
+    this.maxBuckets = Math.max(1, options.maxBuckets ?? 20000);
+    this.now = options.now ?? Date.now;
+  }
+
+  /**
+   * Consumes one slot for `key`.
+   *
+   * Returns `{ allowed: true, remaining }` or, when the budget is spent,
+   * `{ allowed: false, retryAfter }` with whole seconds until the window rolls.
+   */
+  consume(key: string): { allowed: true; remaining: number } | { allowed: false; retryAfter: number } {
+    const now = this.now();
+    let slot = this.buckets.get(key)
+    if (!slot || now >= slot.resetAt) {
+      slot = { count: 0, resetAt: now + this.windowMs }
+      this.buckets.set(key, slot)
+      if (this.buckets.size > this.maxBuckets) this.evict(now)
+    }
+    if (slot.count >= this.limit) {
+      return { allowed: false, retryAfter: Math.max(1, Math.ceil((slot.resetAt - now) / 1000)) }
+    }
+    slot.count += 1
+    return { allowed: true, remaining: this.limit - slot.count }
+  }
+
+  /** Number of tracked buckets; exposed for tests and operational probes. */
+  size(): number {
+    return this.buckets.size
+  }
+
+  private evict(now: number): void {
+    for (const [key, slot] of this.buckets) if (now >= slot.resetAt) this.buckets.delete(key)
+    if (this.buckets.size <= this.maxBuckets) return
+    const entries = [...this.buckets.entries()].sort((a, b) => a[1].resetAt - b[1].resetAt)
+    for (let i = 0; i < entries.length - this.maxBuckets; i += 1) this.buckets.delete(entries[i][0])
+  }
+}
