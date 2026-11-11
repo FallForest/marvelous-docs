@@ -8,6 +8,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.52] - 2026-11-12
+
+### Fixed
+
+- Single-document reads returned 500 after the ACL change in 0.1.51. The
+  inheritance query referenced the `chain` CTE in the select list without it
+  being in scope (`missing FROM-clause entry for table "chain"`), so every
+  `GET /documents/:id` failed. The ancestor checks are now correlated
+  subqueries over the CTE, verified against the live database.
+
 ## [0.1.51] - 2026-11-12
 
 ### Security

@@ -82,26 +82,22 @@ export async function getDocumentAccess(user: Claims, documentId: string) {
       )
       SELECT d.*, m.role AS member_role,
              da.role,
-             COALESCE(bool_or(chain.acl_restricted), false) AS chain_restricted,
-             (SELECT a.role FROM document_acl a
-                JOIN chain c2 ON c2.id = a.document_id
-               WHERE a.user_id=$2
-               ORDER BY CASE a.role WHEN 'owner' THEN 3 WHEN 'editor' THEN 2 WHEN 'viewer' THEN 1 ELSE 0 END DESC
+             COALESCE((SELECT bool_or(c.acl_restricted) FROM chain c), false) AS chain_restricted,
+             (SELECT a2.role FROM document_acl a2
+                JOIN chain c2 ON c2.id = a2.document_id
+               WHERE a2.user_id=$2
+               ORDER BY CASE a2.role WHEN 'owner' THEN 3 WHEN 'editor' THEN 2 WHEN 'viewer' THEN 1 ELSE 0 END DESC
                LIMIT 1) AS inherited_role
         FROM documents d
         JOIN memberships m ON m.workspace_id=d.workspace_id AND m.user_id=$2
         LEFT JOIN document_acl da ON da.document_id=d.id AND da.user_id=$2
-       WHERE d.id=$1 AND d.workspace_id=$3 AND d.deleted_at IS NULL
-       GROUP BY d.id, m.role, da.role`, [documentId, user.sub, user.workspaceId])
+       WHERE d.id=$1 AND d.workspace_id=$3 AND d.deleted_at IS NULL`, [documentId, user.sub, user.workspaceId])
   if (!result.rowCount) return null
   const row = result.rows[0]
-  // Workspace admins always have full access.
   if (row.member_role === 'admin') return { row, role: 'owner' as const }
-  // An explicit grant on this document is authoritative.
   if (row.role === 'owner' || row.role === 'editor' || row.role === 'viewer') {
     return { row, role: row.role }
   }
-  // Otherwise an inherited grant applies, unless a folder in the chain is locked.
   if (row.inherited_role && !row.chain_restricted) {
     return { row, role: row.inherited_role as 'owner' | 'editor' | 'viewer' }
   }
