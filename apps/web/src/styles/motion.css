@@ -86,9 +86,14 @@
 .motion-fade{animation:motion-fade-in var(--duration-fast) var(--ease-standard) backwards}
 .motion-disclose{animation:motion-disclose var(--duration-fast) var(--ease-standard) backwards}
 
-/* Staggered list entry. The index is the CSS variable --i, so the stagger
-   works without a runtime loop and without per-item inline delays. */
-.stagger{animation:motion-enter var(--duration-base) var(--ease-decelerate) backwards;animation-delay:calc(var(--i,0) * 28ms)}
+/* Staggered list entry. The index is the CSS variable --i, so the stagger works
+   without a runtime loop and without per-item inline delays.
+
+   The step is deliberately small and the cap lives in lib/motion.ts: a long
+   delay reads as "the page froze, then moved", because backwards fill holds the
+   start state while the element waits. Everything past the cap shares the last
+   delay so the tail of a list arrives together instead of cascading. */
+.stagger{animation:motion-enter var(--duration-fast) var(--ease-decelerate) backwards;animation-delay:calc(var(--i,0) * var(--stagger-step, 16ms))}
 
 /* Interactive acknowledgement, applied to a control that was just pressed. */
 .is-acknowledged{animation:motion-acknowledge var(--duration-slow) var(--ease-decelerate)}

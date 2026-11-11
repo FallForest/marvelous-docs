@@ -21,6 +21,9 @@ type TreeItemProps = {
   onSelectFolder: (doc: Doc) => void
   onSelectDocument: (doc: Doc) => void
   onAction: (action: TreeAction, doc: Doc) => void
+  /** Multi-select: when non-null, rows render a checkbox instead of opening. */
+  checkedIds: Set<string> | null
+  onToggleChecked: (doc: Doc) => void
 }
 
 /**
@@ -30,7 +33,9 @@ type TreeItemProps = {
  * the label never slides underneath the toggle.
  */
 export default function TreeItem(props: TreeItemProps) {
-  const { node, depth, index = 0, activeId, selectedFolderId, expandedFolders, favoriteIds, onToggle, onSelectFolder, onSelectDocument, onAction } = props
+  const { node, depth, index = 0, activeId, selectedFolderId, expandedFolders, favoriteIds, onToggle, onSelectFolder, onSelectDocument, onAction, checkedIds, onToggleChecked } = props
+  const selecting = checkedIds !== null
+  const checked = checkedIds?.has(node.doc.id) ?? false
   const [menuOpen, setMenuOpen] = useState(false)
   const isFolder = node.doc.kind === 'folder'
   const expanded = expandedFolders.has(node.doc.id)
@@ -43,8 +48,17 @@ export default function TreeItem(props: TreeItemProps) {
     onAction(action, node.doc)
   }
   return <div className="tree-node stagger" style={staggerStyle(Math.min(index, STAGGER_LIMIT))}>
-    <div className={'tree-entry' + (selected ? ' is-selected' : '')}>
-      {isFolder
+    <div className={'tree-entry' + (selected ? ' is-selected' : '') + (checked ? ' is-checked' : '') + (selecting ? ' is-selecting' : '')}>
+      {selecting
+        ? <input
+          type="checkbox"
+          className="tree-check"
+          checked={checked}
+          aria-label={'选择 ' + title}
+          onChange={() => onToggleChecked(node.doc)}
+          onClick={(event) => event.stopPropagation()}
+        />
+        : isFolder
         ? <button
           type="button"
           className="tree-chevron"
@@ -57,12 +71,16 @@ export default function TreeItem(props: TreeItemProps) {
         type="button"
         className={'tree-doc' + (isFolder ? ' tree-folder' : '')}
         title={title}
-        onClick={() => isFolder ? onSelectFolder(node.doc) : onSelectDocument(node.doc)}
+        onClick={() => {
+          if (selecting) { onToggleChecked(node.doc); return }
+          if (isFolder) onSelectFolder(node.doc)
+          else onSelectDocument(node.doc)
+        }}
       >
         {isFolder ? <Folder size={14} /> : <FileText size={14} />}
         <span className="tree-label">{title}</span>
       </button>
-      <div className="tree-menu-anchor">
+      {!selecting && <div className="tree-menu-anchor">
         <button
           type="button"
           className="tree-more"
@@ -79,7 +97,7 @@ export default function TreeItem(props: TreeItemProps) {
           <button type="button" role="menuitem" className="menu-item" onClick={() => run('move')}>移动到…</button>
           <button type="button" role="menuitem" className="menu-item menu-item-danger" onClick={() => run('delete')}>移到回收站</button>
         </Popover>
-      </div>
+      </div>}
     </div>
     {isFolder && expanded && <div className="tree-children">{node.children.map((child, childIndex) => <TreeItem
       key={child.doc.id}
@@ -94,6 +112,8 @@ export default function TreeItem(props: TreeItemProps) {
       onSelectFolder={onSelectFolder}
       onSelectDocument={onSelectDocument}
       onAction={onAction}
+      checkedIds={checkedIds}
+      onToggleChecked={onToggleChecked}
     />)}</div>}
   </div>
 }

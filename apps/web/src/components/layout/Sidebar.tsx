@@ -27,6 +27,14 @@ type SidebarProps = {
   onAdmin: () => void
   onFavorites: () => void
   onTrash: () => void
+  /** Multi-select state; null when the sidebar is not in selection mode. */
+  checkedIds: Set<string> | null
+  onToggleChecked: (doc: Doc) => void
+  onEnterSelection: () => void
+  onExitSelection: () => void
+  onBatchDelete: () => void
+  onBatchFavorite: () => void
+  batchBusy: boolean
   onToggleTree: () => void
   onNewMenu: (open: boolean) => void
   onCreateDocument: (templateId?: string) => void
@@ -102,6 +110,13 @@ export default function Sidebar(props: SidebarProps) {
         <button type="button" className="tree-heading-toggle" aria-expanded={props.treeExpanded} onClick={props.onToggleTree}>
           {props.treeExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}<span>文档</span>
         </button>
+        <button
+          type="button"
+          className={'tree-select-toggle' + (props.checkedIds ? ' is-active' : '')}
+          aria-pressed={Boolean(props.checkedIds)}
+          title={props.checkedIds ? '退出多选' : '多选文档'}
+          onClick={() => props.checkedIds ? props.onExitSelection() : props.onEnterSelection()}
+        >{props.checkedIds ? '取消' : '选择'}</button>
         <div className="new-menu-anchor">
           <button type="button" className="new-doc-btn" aria-haspopup="menu" aria-expanded={props.newMenuOpen} title="新建" onClick={() => props.onNewMenu(!props.newMenuOpen)}><Plus size={14} /><span>新建</span><ChevronDown size={12} /></button>
           <TemplateMenu
@@ -131,10 +146,18 @@ export default function Sidebar(props: SidebarProps) {
           onSelectFolder={props.onSelectFolder}
           onSelectDocument={props.onSelectDocument}
           onAction={props.onDocumentAction}
+          checkedIds={props.checkedIds}
+          onToggleChecked={props.onToggleChecked}
         />)}
         {tree.length === 0 && <div className="empty-tree">{props.emptyMessage}</div>}
       </div>}
     </div>
+
+    {props.checkedIds && <div className="batch-bar" role="toolbar" aria-label="批量操作">
+      <span className="batch-count">已选 {props.checkedIds.size} 项</span>
+      <button type="button" className="batch-action" onClick={props.onBatchFavorite} disabled={props.checkedIds.size === 0 || props.batchBusy}>收藏</button>
+      <button type="button" className="batch-action danger" onClick={props.onBatchDelete} disabled={props.checkedIds.size === 0 || props.batchBusy}>{props.batchBusy ? '处理中…' : '移到回收站'}</button>
+    </div>}
 
     <div className="sidebar-bottom">
       <button type="button" className="help-row" onClick={props.onHelp}><span className="help-dot">?</span><span>帮助与快捷键</span></button>

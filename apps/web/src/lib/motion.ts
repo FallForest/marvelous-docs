@@ -55,7 +55,7 @@ export function prefersReducedMotion(): boolean {
  * pick up .stagger; this helper exists for the cases where React has to know
  * the delay (a timer, a focus move) rather than the animation.
  */
-export function staggerDelay(index: number, step = 28, max = 280): number {
+export function staggerDelay(index: number, step = STAGGER.step, max = STAGGER.max): number {
   return Math.min(index * step, max)
 }
 
@@ -68,8 +68,17 @@ export function staggerDelay(index: number, step = 28, max = 280): number {
  * other property in the same object.
  */
 export function staggerStyle(index: number): CSSProperties {
-  return { '--i': index } as CSSProperties
+  return { '--i': index, '--stagger-step': STAGGER.step + 'ms' } as CSSProperties
 }
+
+/**
+ * Stagger timing, shared with styles/motion.css through --stagger-step.
+ *
+ * Kept deliberately small: each item holds its start state while it waits, so a
+ * generous cascade reads as "the page froze, then moved". Ten steps of 16ms is
+ * 160ms total — visible as a wave, short enough to feel immediate.
+ */
+export const STAGGER: { step: number; max: number } = { step: 16, max: 160 }
 
 /** Damped spring position at time t (seconds), normalised to 0..1. */
 export function springValue(t: number, { response, damping }: { response: number; damping: number }): number {

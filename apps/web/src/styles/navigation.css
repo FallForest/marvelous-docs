@@ -218,3 +218,67 @@
   .tree-children{animation:motion-fade-in var(--duration-fast) linear backwards}
   .tree-entry .tree-chevron svg{transition:none}
 }
+
+/* ══ multi-select in the document tree ══════════════════════════ */
+.tree-select-toggle{
+  height:22px;
+  padding:0 7px;
+  margin-left:auto;
+  margin-right:4px;
+  border:1px solid transparent;
+  border-radius:5px;
+  background:transparent;
+  color:var(--text-muted);
+  font-size:11px;
+  cursor:pointer;
+  transition:background var(--duration-fast) var(--ease-standard),color var(--duration-fast) var(--ease-standard);
+}
+.tree-select-toggle:hover{background:var(--surface-sunken);color:var(--text)}
+.tree-select-toggle.is-active{background:var(--accent-soft);color:var(--accent-strong)}
+.tree-select-toggle:active{transform:scale(.97)}
+
+/* A checkbox takes the chevron's slot so the label keeps its baseline. */
+.tree-check{
+  flex:0 0 auto;
+  width:14px;
+  height:14px;
+  margin:0 1px;
+  accent-color:var(--accent);
+  cursor:pointer;
+}
+.tree-entry.is-selecting{background:transparent}
+.tree-entry.is-checked{background:var(--accent-soft)}
+.tree-entry.is-checked .tree-label{color:var(--accent-strong);font-weight:600}
+
+/* Batch bar pinned above the sidebar footer while items are checked. */
+.batch-bar{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:8px 10px;
+  margin:0 8px 6px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--surface);
+  box-shadow:0 4px 14px #11182714;
+  animation:motion-rise var(--duration-fast) var(--ease-spring-snappy) backwards;
+}
+.batch-count{font-size:11px;color:var(--text-secondary);margin-right:auto;white-space:nowrap}
+.batch-action{
+  height:24px;
+  padding:0 9px;
+  border:1px solid var(--border);
+  border-radius:5px;
+  background:var(--surface);
+  color:var(--text-secondary);
+  font-size:11.5px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:background var(--duration-fast) var(--ease-standard),color var(--duration-fast) var(--ease-standard);
+}
+.batch-action:hover:not(:disabled){background:var(--surface-sunken);color:var(--text)}
+.batch-action:active:not(:disabled){transform:scale(.97)}
+.batch-action:disabled{opacity:.5;cursor:default}
+.batch-action.danger{color:var(--danger);border-color:var(--danger-soft)}
+.batch-action.danger:hover:not(:disabled){background:var(--danger-soft)}

@@ -8,6 +8,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.50] - 2026-11-12
+
+### Added
+
+- Multi-select in the document tree. A 选择 toggle in the tree heading swaps each
+  row's chevron for a checkbox; a bar above the sidebar footer reports the count
+  and offers 收藏 / 移到回收站. Deletion runs sequentially and reports how many
+  succeeded and how many failed, instead of firing a burst of requests and
+  showing one generic error.
+
+### Fixed
+
+- Staggered entry no longer reads as "the page froze, then moved". Each item held
+  its start state while waiting, and the old 28ms step with a 280ms cap meant the
+  tail of a list sat still for a quarter second. The step is now 16ms with a
+  160ms cap, shared between CSS (`--stagger-step`) and JS (`STAGGER`) so the
+  two cannot drift.
+- The text bubble toolbar is hidden while the cursor is in a code block. The
+  block has its own toolbar, and the bubble floated over the block it belonged
+  to.
+
 ## [0.1.49] - 2026-11-12
 
 ### Fixed

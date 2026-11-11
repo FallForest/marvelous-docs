@@ -56,6 +56,9 @@ export default function BubbleToolbar({ editor, anchor, onLink, onComment }: Pro
   const shown = anchor ?? (dismissed ? null : lastRef.current)
   const leaving = !anchor && !dismissed && lastRef.current !== null
   if (!editor || !shown) return null
+  // A code block has its own toolbar (language, copy, move, delete). Showing the
+  // text bubble there would cover the block it belongs to.
+  if (editor.isActive('codeBlock')) return null
 
   const button = (label: string, active: boolean, run: () => void, icon: React.ReactNode) => <button
     type="button"

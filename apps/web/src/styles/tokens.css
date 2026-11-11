@@ -86,6 +86,7 @@
        base     the default for a surface that arrives
        slow     large surfaces (sheet, page change)
        lazy     staggered list entries                                */
+  --stagger-step:16ms;
   --duration-instant:80ms;
   --duration-fast:140ms;
   --duration-base:220ms;

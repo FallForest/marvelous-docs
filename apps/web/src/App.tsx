@@ -61,6 +61,9 @@ function App() {
   const [shareBusy, setShareBusy] = useState(false)
   const [shareLinks, setShareLinks] = useState<Array<{id: string; token: string; permission: string; expiresAt: string | null}>>([])
   const [shareLinkCopied, setShareLinkCopied] = useState(false)
+  /** Multi-select over the document tree; null means selection mode is off. */
+  const [checkedIds, setCheckedIds] = useState<Set<string> | null>(null)
+  const [batchBusy, setBatchBusy] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<'member' | 'admin'>('member')
   const [inviteLink, setInviteLink] = useState('')
@@ -446,6 +449,45 @@ function App() {
     }
   }
 
+  function toggleChecked(doc: Doc) {
+    setCheckedIds((current) => {
+      const next = new Set(current ?? [])
+      if (next.has(doc.id)) next.delete(doc.id)
+      else next.add(doc.id)
+      return next
+    })
+  }
+
+  async function batchDelete() {
+    if (!checkedIds || checkedIds.size === 0) return
+    const ids = [...checkedIds]
+    setBatchBusy(true)
+    let failed = 0
+    // Sequential so a failure reports the exact document and the rest still go.
+    for (const id of ids) {
+      try { await api.remove(token, id) } catch { failed += 1 }
+    }
+    setBatchBusy(false)
+    setCheckedIds(null)
+    setNotice(failed
+      ? `已移到回收站 ${ids.length - failed} 项，${failed} 项失败`
+      : `已把 ${ids.length} 项移到回收站`)
+    window.dispatchEvent(new Event('mdoc-reload'))
+  }
+
+  async function batchFavorite() {
+    if (!checkedIds || checkedIds.size === 0) return
+    const ids = [...checkedIds]
+    setBatchBusy(true)
+    let failed = 0
+    for (const id of ids) {
+      try { await api.favorite(token, id, true) } catch { failed += 1 }
+    }
+    setBatchBusy(false)
+    setFavorites(Array.from(new Set([...favoriteIds, ...ids])))
+    setNotice(failed ? `${ids.length - failed} 项已收藏，${failed} 项失败` : `已收藏 ${ids.length} 项`)
+  }
+
   async function moveDocument(doc: Doc, parentId: string | null) {
     setMoveDoc(null)
     await updateDocument(doc, { parentId })
@@ -685,6 +727,13 @@ function App() {
       onSelectFolder={(folder) => { withViewTransition(() => { setSelectedFolderId(folder.id); setActive(null); setHomeView('home'); setQuery(''); setShowRight(false) }); if (narrow) setSidebarOpen(false) }}
       onSelectDocument={(doc) => { withViewTransition(() => { setActive(doc); setSelectedFolderId(doc.parentId || null); setHomeView('home'); setQuery(''); setShowRight(false) }); if (narrow) setSidebarOpen(false) }}
       onDocumentAction={(action, doc) => void handleDocumentAction(action, doc)}
+      checkedIds={checkedIds}
+      onToggleChecked={toggleChecked}
+      onEnterSelection={() => setCheckedIds(new Set())}
+      onExitSelection={() => setCheckedIds(null)}
+      onBatchDelete={() => void batchDelete()}
+      onBatchFavorite={() => void batchFavorite()}
+      batchBusy={batchBusy}
       onHelp={() => { setWorkspaceOpen(false); setHelpOpen(true) }}
       onLogout={() => { setWorkspaceOpen(false); clearToken() }}
     />}
