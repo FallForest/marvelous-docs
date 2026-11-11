@@ -35,20 +35,25 @@
     opacity var(--duration-fast) var(--ease-accelerate),
     visibility 0s linear var(--duration-fast);
 }
-/* On desktop the panel is a flex sibling, so its 304px has to go back to the
-   canvas. Width is layout, so it is never animated: opening snaps it back in
-   the same frame (the closed style is the only one that lists margin-right in
-   its transition), and closing releases it after the slide, when the panel is
-   already gone and the reflow cannot be seen under a moving surface. */
+/*
+ * On desktop the panel is a flex sibling, so its 304px has to go back to the
+ * canvas when it closes.
+ *
+ * The negative margin is on the *container*, not on the panel. A closed panel
+ * with margin-right:-304px widens the flex line's available space, and the
+ * editor column's auto margins then re-centre inside that wider line — a 152px
+ * horizontal jump that lands right after the slide, which reads as a flash.
+ * The panel itself also overflows the line by its own width, which is what let
+ * it paint outside the shell. Pulling the container in by the panel's width
+ * instead keeps the panel's box inside the line and keeps the column's
+ * centring reference the same in both states: opening and closing move only
+ * the panel, never the canvas.
+ */
 @media (min-width:981px){
-  .right-panel.is-closed{
-    margin-right:-304px;
-    transition:
-      transform var(--duration-fast) var(--ease-accelerate),
-      opacity var(--duration-fast) var(--ease-accelerate),
-      visibility 0s linear var(--duration-fast),
-      margin-right 0s linear var(--duration-fast);
-  }
+  /* Closing hands the 304px back to the canvas in the same frame the panel
+     starts sliding, so the column's centring box is stable from the first
+     frame of the exit rather than snapping at the end of it. */
+  .workspace-content:has(> .right-panel.is-closed){padding-right:0}
 }
 
 @media (prefers-reduced-motion:reduce){
@@ -57,6 +62,7 @@
     transition:opacity var(--duration-fast) linear,visibility 0s linear 0s;
   }
   .right-panel.is-closed{margin-right:0}
+  .workspace-content{padding-right:0}
 }
 
 /* ── 2. panel chrome ───────────────────────────────────────────── */

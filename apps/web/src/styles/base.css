@@ -118,9 +118,17 @@ button:disabled{cursor:not-allowed;opacity:.55}
 
 .share-btn:hover{background:#f8f9fa}
 
-.workspace-content{flex:1;min-height:0;display:flex;justify-content:center;position:relative;background:#fff}
+.workspace-content{flex:1;min-height:0;display:flex;justify-content:flex-start;position:relative;background:#fff}
 
-.editor-column{width:min(100%,900px);min-width:0;display:flex;flex-direction:column}
+/*
+ * The column is centred with auto margins and a fixed max width, not by the
+ * parent's justify-content. When the comments panel slides in, the parent's
+ * remaining width changes, and centring there would re-centre the column in the
+ * same frame — a hard 150px jump landing right after the panel animation, which
+ * reads as a flash. Centring inside a column that does not resize keeps the
+ * canvas still and lets only the panel move.
+ */
+.editor-column{width:min(100%,900px);min-width:0;margin:0 auto;display:flex;flex-direction:column}
 
 .editor-toolbar{height:45px;flex:0 0 45px;border-bottom:1px solid #f0f1f3;display:flex;align-items:center;gap:3px;padding:0 24px}
 

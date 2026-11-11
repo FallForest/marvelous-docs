@@ -72,7 +72,7 @@
    only the travel, so the panel becomes a plain fade. */
 @media (prefers-reduced-motion:reduce){
   .popover.popover-below,.popover.popover-above,.popover-item-enter{
-    animation:motion-fade-in var(--duration-fast) linear both;
+    animation:motion-fade-in var(--duration-fast) linear backwards;
   }
 }
 
@@ -167,11 +167,11 @@
  * two people connect within the same frame.
  */
 .presence-stack .presence-enter{
-  animation:motion-pop var(--duration-base) var(--ease-spring-bouncy) both;
+  animation:motion-pop var(--duration-base) var(--ease-spring-bouncy) backwards;
   animation-delay:calc(var(--i,0) * 40ms);
 }
 @media (prefers-reduced-motion:reduce){
-  .presence-stack .presence-enter{animation:motion-fade-in var(--duration-fast) linear both;animation-delay:0ms}
+  .presence-stack .presence-enter{animation:motion-fade-in var(--duration-fast) linear backwards;animation-delay:0ms}
 }
 
 /* ══ 6. floating sidebar surface ════════════════════════════════
@@ -211,10 +211,10 @@
 .tree-chevron[aria-expanded="true"] .chevron-rotate{transform:rotate(90deg)}
 .tree-chevron[aria-expanded="false"] .chevron-rotate{transform:rotate(0deg)}
 
-.tree-children{animation:motion-disclose var(--duration-fast) var(--ease-standard) both}
+.tree-children{animation:motion-disclose var(--duration-fast) var(--ease-standard) backwards}
 
 /* Reduced motion: the children still appear, they just do not travel. */
 @media (prefers-reduced-motion:reduce){
-  .tree-children{animation:motion-fade-in var(--duration-fast) linear both}
+  .tree-children{animation:motion-fade-in var(--duration-fast) linear backwards}
   .tree-entry .tree-chevron svg{transition:none}
 }

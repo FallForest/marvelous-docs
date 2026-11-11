@@ -37,7 +37,7 @@ export default function LoginPage({ onLogin, onAccepted, error, busy }: LoginPag
       setInviteBusy(false)
     }
   }
-  return <div className="login-screen"><div className="login-card">
+  return <div className="login-screen motion-enter"><div className="login-card motion-rise">
     <div {...staggerItemProps(0, 'login-brand')}><div className="brand-mark"><Sparkles size={17} /></div><span>Marvelous Docs</span></div>
     {inviteToken ? <>
       <h1 {...staggerItemProps(1)}>加入团队</h1><p {...staggerItemProps(2)}>设置你的账户以加入工作区</p>

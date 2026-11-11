@@ -74,29 +74,60 @@
 
 /* ══ 2. utilities ═══════════════════════════════════════════════ */
 
-.motion-rise{animation:motion-rise-in var(--duration-base) var(--ease-spring-snappy) both}
-.motion-sink{animation:motion-sink-in var(--duration-base) var(--ease-spring-snappy) both}
-.motion-sheet{animation:motion-sheet-in var(--duration-base) var(--ease-spring-snappy) both}
-.motion-enter{animation:motion-enter var(--duration-base) var(--ease-decelerate) both}
-.motion-fade{animation:motion-fade-in var(--duration-fast) var(--ease-standard) both}
-.motion-disclose{animation:motion-disclose var(--duration-fast) var(--ease-standard) both}
+/*
+ * `backwards`, not `both`: an entrance needs its start state held during the
+ * delay, but must hand the element back to its class rules once it finishes.
+ * See section 3 for why a retained final frame breaks hover and :active.
+ */
+.motion-rise{animation:motion-rise-in var(--duration-base) var(--ease-spring-snappy) backwards}
+.motion-sink{animation:motion-sink-in var(--duration-base) var(--ease-spring-snappy) backwards}
+.motion-sheet{animation:motion-sheet-in var(--duration-base) var(--ease-spring-snappy) backwards}
+.motion-enter{animation:motion-enter var(--duration-base) var(--ease-decelerate) backwards}
+.motion-fade{animation:motion-fade-in var(--duration-fast) var(--ease-standard) backwards}
+.motion-disclose{animation:motion-disclose var(--duration-fast) var(--ease-standard) backwards}
 
 /* Staggered list entry. The index is the CSS variable --i, so the stagger
    works without a runtime loop and without per-item inline delays. */
-.stagger{animation:motion-enter var(--duration-base) var(--ease-decelerate) both;animation-delay:calc(var(--i,0) * 28ms)}
+.stagger{animation:motion-enter var(--duration-base) var(--ease-decelerate) backwards;animation-delay:calc(var(--i,0) * 28ms)}
 
 /* Interactive acknowledgement, applied to a control that was just pressed. */
 .is-acknowledged{animation:motion-acknowledge var(--duration-slow) var(--ease-decelerate)}
 
 /* ══ 3. the global contract ═════════════════════════════════════ */
 
-/* Promote the surfaces that animate, so the first frame is not a layout pass. */
-.popover,.modal-backdrop,.right-panel,.notice-toast,.sidebar{
+/*
+ * Two rules here exist because of a specific bug, so they are worth stating
+ * plainly instead of being rediscovered by reading the cascade.
+ *
+ * (a) Entry animations fill backwards, never forwards.
+ *     `both` keeps the final keyframe applied after the animation ends. Every
+ *     entrance ends on its neutral value (opacity 1, no transform), so the
+ *     retained frame renders identically today — but the moment a component
+ *     gains a hover transform, a selected scale, or a compositor promotion on
+ *     :active, the retained `transform:none` outranks the class rule and the
+ *     control stops responding. It also forces a layer for every row that
+ *     staggered, forever. `backwards` keeps what a fill is actually for: the
+ *     start state during the delay.
+ *
+ * (b) No permanent will-change.
+ *     A standing `will-change: transform, opacity` promotes the element to its
+ *     own compositor layer for as long as it exists. For chrome that is always
+ *     on screen (sidebar, panel, backdrop) that is one layer each, created at
+ *     mount and never released — and a layer's rasterisation can differ from
+ *     inline rendering by a subpixel, which reads as a flash when the element
+ *     switches modes. The surfaces below animate on demand and do not need the
+ *     hint; the hint is added only for the duration of an entrance by the
+ *     `.is-animating` contract below.
+ */
+/*
+ * Surfaces that animate from the shell. The promotion lasts exactly as long as
+ * the animation and is removed by `animationend`, so an idle menu is not kept
+ * on its own layer (see lib/motion.ts: markAnimating).
+ */
+.is-animating{
   will-change:transform,opacity;
   backface-visibility:hidden;
 }
-/* ...but not forever: a permanent will-change wastes a compositor layer. */
-.popover,.notice-toast{will-change:auto}
 
 /*
  * Reduced motion is not "no feedback", it is "no travel". Anything that
@@ -141,8 +172,20 @@
    chrome that is supposed to hold still. */
 ::view-transition-old(root),::view-transition-new(root){animation:none}
 
-/* A page that is being swapped by a view transition must not also play its own
-   entry animation, or the content arrives twice. */
+/*
+ * No entry animation for a page that a view transition is swapping in.
+ *
+ * The old selector was html:active-view-transition, which is false by the time
+ * the new content is committed — the transition is already finishing — so the
+ * page's own entrance fired *after* the cross-fade and replayed the content.
+ * That is the flash: one element, two entrances.
+ *
+ * The attribute is written by withViewTransition() in lib/motion.ts and removed
+ * on the next frame, so the class is suppressed for exactly the commit in which
+ * the cross-fade does the work.
+ */
+html[data-vt-swapping] .motion-enter,
+html[data-vt-swapping] .stagger,
 html:active-view-transition .motion-enter,
 html:active-view-transition .stagger{animation:none !important}
 

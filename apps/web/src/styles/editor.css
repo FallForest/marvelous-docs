@@ -160,7 +160,7 @@
   padding:4px;background:var(--surface-glass);border:1px solid var(--border);border-radius:8px;
   box-shadow:var(--shadow-popover);transform-origin:50% 100%;
   backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);
-  animation:editor-bubble-in var(--duration-base) var(--ease-spring-snappy) both;
+  animation:editor-bubble-in var(--duration-base) var(--ease-spring-snappy) backwards;
 }
 /* Flipped placement (bar pinned under the line) grows from its top edge. */
 .bubble-toolbar[data-origin="top"]{transform-origin:50% 0}
@@ -185,7 +185,7 @@
 .bubble-comment{font-size:12px;padding:0 8px}
 @media (prefers-reduced-motion:reduce){
   /* Reduced motion keeps the acknowledgement but drops the scale travel. */
-  .bubble-toolbar{animation:motion-fade-in var(--duration-fast) linear both}
+  .bubble-toolbar{animation:motion-fade-in var(--duration-fast) linear backwards}
   .bubble-toolbar.is-leaving{animation:motion-fade-out var(--duration-fast) linear both}
 }
 

@@ -191,3 +191,44 @@ test('every source file is valid UTF-8 without misplaced CJK', () => {
   const offenders = files.filter((file) => mojibake.test(file.text)).map((file) => file.path)
   assert.deepEqual(offenders, [], 'mojibake in: ' + offenders.join(', '))
 })
+
+test('page roots animate through the shared class, not an inline animation', () => {
+  // A page root with its own animation declaration cannot be suppressed during
+  // a view transition, because the suppression selector keys off .motion-enter.
+  // That produced a double entrance: the cross-fade, then the page's own replay.
+  const ROOTS = ['home-dashboard', 'search-page', 'folder-overview', 'admin-shell', 'login-screen', 'login-card'];
+  const pages = readFileSync(join(SRC, 'styles/pages.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const offenders: string[] = [];
+  for (const root of ROOTS) {
+    const rule = new RegExp('\\\\.' + root + '\\s*\\{([^}]*)\\}');
+    const match = rule.exec(pages);
+    if (match && /animation\s*:/.test(match[1]!)) offenders.push(root);
+  }
+  assert.deepEqual(offenders, [], 'declare the entry on .motion-enter / .motion-rise instead')
+});
+
+test('view transition suppression covers the whole transition', () => {
+  // The flag used to be cleared after two animation frames, but a transition
+  // does not paint the new DOM until its snapshot phase ends (~300ms here), so
+  // the swapped-in page replayed its entrance after the cross-fade.
+  const motion = readFileSync(join(SRC, 'lib/motion.ts'), 'utf8');
+  assert.ok(motion.includes('data-vt-swapping'), 'the suppression flag must exist')
+  assert.ok(/\.finished\.then\(release/.test(motion), 'the flag must be released by transition.finished')
+  assert.ok(!/requestAnimationFrame\(\(\) => requestAnimationFrame\(\(\) => root\.removeAttribute/.test(motion), 'a fixed frame count cannot outlive the snapshot phase')
+});
+
+test('entry animations do not retain their final frame', () => {
+  // fill-mode:both keeps transform:none applied after the entrance, which
+  // outranks :active/:hover and stops the control responding.
+  const offenders: string[] = [];
+  for (const name of readdirSync(join(SRC, 'styles'))) {
+    if (!name.endsWith('.css')) continue
+    const text = readFileSync(join(SRC, 'styles', name), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const [i, line] of text.split('\n').entries()) {
+      if (/animation\s*:[^;]*\b(motion-enter|motion-rise-in|motion-sink-in|motion-sheet-in|motion-disclose|motion-pop)\b[^;]*\bboth\b/.test(line)) {
+        offenders.push(name + ':' + (i + 1));
+      }
+    }
+  }
+  assert.deepEqual(offenders, [], 'entry animations must fill backwards')
+});

@@ -9,7 +9,7 @@ import type { User, WorkspaceMember } from '../lib/types'
 export type AdminWorkspaceProps = { user: User; members: WorkspaceMember[]; membersBusy: boolean; updateInfo: UpdateInfo | null; notice: string; showInvite: boolean; onBack: () => void; onOpenInvite: () => void; onStartUpdate: () => void; onLogout: () => void; onCloseInvite: () => void; inviteProps: AdminInviteProps }
 
 export default function AdminWorkspace({ user, members, membersBusy, updateInfo, notice, showInvite, onBack, onOpenInvite, onStartUpdate, onLogout, onCloseInvite, inviteProps }: AdminWorkspaceProps) {
-  return <div className="admin-shell">
+  return <div className="admin-shell motion-enter">
     <aside className="admin-sidebar">
       <div className="brand-row"><div className="brand-mark"><Sparkles size={16} /></div><span>Marvelous Docs</span></div>
       <div className="admin-sidebar-title"><ShieldCheck size={17} /><div><b>管理中心</b><small>工作区设置</small></div></div>

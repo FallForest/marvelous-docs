@@ -8,6 +8,28 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.49] - 2026-11-12
+
+### Fixed
+
+- A page swapped by a view transition no longer replays its own entrance. The
+  suppression flag used to be cleared after a double `requestAnimationFrame`,
+  but the new DOM is not painted until the snapshot phase ends (~300ms), so the
+  entrance ran on top of the cross-fade and read as a flash at the end of the
+  animation. `withViewTransition()` now holds `data-vt-swapping` for the whole
+  transition and releases it on `finished` (with a 2s watchdog for a transition
+  interrupted by another one).
+- Entrances use `animation-fill-mode: backwards`, never `both`. `both` kept the
+  final `transform` applied forever, which outranked `:hover` and `:active` and
+  silently killed the interaction on any element that had animated in.
+- Popover, panel and page surfaces no longer hard-code durations or easings;
+  they reference the motion tokens so a retune reaches every surface.
+
+### Tests
+
+- `structure.test.ts` now also rejects `animation-fill-mode: both` and inline
+  `animation:` on page roots. Suite is 119 tests.
+
 ## [0.1.47] - 2026-11-12
 
 ### Changed

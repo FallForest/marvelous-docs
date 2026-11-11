@@ -67,7 +67,7 @@ export default function HomeDashboard({ documents, favorites, query, trash, favo
   const view = trash ? 'trash' : favoritesView ? 'favorites' : 'home'
   const rootRef = useHeroShift(reduced, view)
   const visible = documents.filter((doc) => !query || doc.title.toLowerCase().includes(query.toLowerCase()))
-  if (trash) return <div className="home-dashboard" ref={rootRef}>
+  if (trash) return <div className="home-dashboard motion-enter" ref={rootRef}>
     <div className="home-hero"><div><span {...heroLine(0, 'eyebrow')}>文档管理</span><h1 {...heroLine(1)}>回收站</h1><p {...heroLine(2)}>恢复误删的文档，或永久清理不再需要的内容。</p></div></div>
     <section className="home-section">
       <div className="home-section-head"><h2><Trash2 size={16} />已删除文档</h2><span>{visible.length + ' 项'}</span></div>
@@ -78,7 +78,7 @@ export default function HomeDashboard({ documents, favorites, query, trash, favo
     </section>
   </div>
   const favoriteDocs = visible.filter((doc) => favorites.has(doc.id))
-  if (favoritesView) return <div className="home-dashboard" ref={rootRef}>
+  if (favoritesView) return <div className="home-dashboard motion-enter" ref={rootRef}>
     <div className="home-hero"><div><span {...heroLine(0, 'eyebrow')}>我的收藏</span><h1 {...heroLine(1)}>收藏</h1><p {...heroLine(2)}>标星过的文档和文件夹集中在这里，方便随时回到常用内容。</p></div></div>
     <section className="home-section">
       <div className="home-section-head"><h2><Star size={16} />已收藏</h2><span>{favoriteDocs.length + ' 项'}</span></div>
@@ -95,7 +95,7 @@ export default function HomeDashboard({ documents, favorites, query, trash, favo
     { title: '收藏', icon: Star, items: favoriteDocs },
     { title: '我创建的', icon: FileText, items: visible.filter((doc) => doc.kind !== 'folder').slice(0, 6) },
   ]
-  return <div className="home-dashboard" ref={rootRef}>
+  return <div className="home-dashboard motion-enter" ref={rootRef}>
     <div className="home-hero">
       <div><span {...heroLine(0, 'eyebrow')}>工作区</span><h1 {...heroLine(1)}>欢迎回来</h1><p {...heroLine(2)}>继续处理你的文档，或创建一个新的知识空间。</p></div>
       <div className="hero-actions">
@@ -118,7 +118,7 @@ export default function HomeDashboard({ documents, favorites, query, trash, favo
 
 export function FolderOverview({ folder, items, onCreate, onImport, onCreateFolder, onOpen }: { folder: Doc; items: Doc[]; onCreate: () => void; onImport: () => void; onCreateFolder: () => void; onOpen: (doc: Doc) => void }) {
   const rootRef = useHeroShift(useReducedMotion(), folder.id)
-  return <div className="folder-overview" ref={rootRef}>
+  return <div className="folder-overview motion-enter" ref={rootRef}>
     <div className="folder-overview-head">
       <div className="folder-large-icon"><Folder size={23} /></div>
       <div><h1 {...heroLine(1)}>{folder.title}</h1><p {...heroLine(2)}>{items.length + ' 个项目'}</p></div>

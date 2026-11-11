@@ -67,8 +67,8 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
 }
 /* Direction is owned by the placement class Popover.tsx writes (below/above),
    so a menu always arrives from the edge it was anchored to. */
-.popover.popover-below{animation:motion-rise-in var(--duration-base) var(--ease-spring-snappy) both}
-.popover.popover-above{animation:motion-sink-in var(--duration-base) var(--ease-spring-snappy) both}
+.popover.popover-below{animation:motion-rise-in var(--duration-base) var(--ease-spring-snappy) backwards}
+.popover.popover-above{animation:motion-sink-in var(--duration-base) var(--ease-spring-snappy) backwards}
 .popover-left{left:0;right:auto}
 .popover[role="menu"]{pointer-events:auto}
 
@@ -190,7 +190,7 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
      behind stops being readable without turning the backdrop into fog */
   -webkit-backdrop-filter:blur(8px) saturate(140%);
   backdrop-filter:blur(8px) saturate(140%);
-  animation:motion-fade-in var(--duration-fast) var(--ease-standard) both;
+  animation:motion-fade-in var(--duration-fast) var(--ease-standard) backwards;
 }
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   .modal-backdrop{background:rgba(17,24,39,.46)}
@@ -199,7 +199,7 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
 .modal-backdrop.is-closing{animation:motion-fade-out var(--duration-fast) var(--ease-accelerate) both;pointer-events:none}
 
 .modal-panel{
-  animation:motion-sheet-in var(--duration-base) var(--ease-spring-snappy) both;
+  animation:motion-sheet-in var(--duration-base) var(--ease-spring-snappy) backwards;
   transform-origin:center 60%;
 }
 .modal-panel.is-closing{animation:modal-leave var(--duration-fast) var(--ease-accelerate) both;pointer-events:none}
@@ -211,8 +211,8 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
 /* "先播退场再卸载" is the same keyframes for every surface; only the name of the
    end event differs, and usePresence listens for modal-leave on the panel. */
 @media (prefers-reduced-motion:reduce){
-  .modal-backdrop,.modal-backdrop.is-closing{animation:motion-fade-in var(--duration-fast) linear both}
-  .modal-panel,.modal-panel.is-closing{animation:motion-fade-in var(--duration-fast) linear both}
+  .modal-backdrop,.modal-backdrop.is-closing{animation:motion-fade-in var(--duration-fast) linear backwards}
+  .modal-panel,.modal-panel.is-closing{animation:motion-fade-in var(--duration-fast) linear backwards}
 }
 
 /* dialog internals that every modal shares */
@@ -277,7 +277,7 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
   line-height:1.45;
   color:var(--text-secondary);
   box-shadow:var(--shadow-toast);
-  animation:motion-rise-in var(--duration-base) var(--ease-spring-snappy) both;
+  animation:motion-rise-in var(--duration-base) var(--ease-spring-snappy) backwards;
 }
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   .notice-toast{background:var(--surface)}

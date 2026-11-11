@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
-import { staggerDelay } from '../../lib/motion'
+import { markAnimating, staggerDelay } from '../../lib/motion'
 
 type PopoverProps = {
   open: boolean
@@ -111,6 +111,9 @@ export default function Popover({ open, onClose, children, align = 'right', clas
       row.style.animationDelay = staggerDelay(index, 20, 140) + 'ms'
       row.classList.add('popover-item-enter')
     })
+    // Promote the panel only while it is arriving. A standing will-change on a
+    // menu would keep a layer alive for every popover the page has ever opened.
+    return markAnimating(node)
   }, [open])
 
   return <>

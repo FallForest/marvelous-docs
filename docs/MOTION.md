@@ -71,6 +71,16 @@ easing politely into place.
    inconsistent in the first place.
 6. **Stagger is capped.** Ten items, 28ms apart, 280ms maximum. Beyond that the
    user is waiting for the UI, which is the opposite of the point.
+7. **One entrance per navigation.** A page that is swapped by a view transition
+   must not also play its own entry animation — the user sees the content arrive
+   twice, which reads as a flash at the end. Page roots therefore carry the
+   shared `.motion-enter` / `.motion-rise` class and never an inline
+   `animation:`; `withViewTransition()` sets `data-vt-swapping` for the whole
+   transition and `motion.css` mutes the class inside that window.
+8. **An entrance must release the element when it ends.** Use
+   `animation-fill-mode: backwards`, never `both`. `both` keeps the final
+   `transform` applied forever, which outranks `:hover` and `:active` and
+   silently kills the interaction. `structure.test.ts` fails on both rules.
 
 ## Adding something new
 
