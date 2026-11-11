@@ -5,7 +5,8 @@ export type Doc = {
   title: string
   kind?: 'folder' | 'document'
   parentId?: string | null
-  content: DocJson
+  /** Absent on list responses: only a single-document load returns the body. */
+  content?: DocJson
   version: number
   updatedAt?: string
   createdAt?: string

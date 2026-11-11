@@ -8,6 +8,48 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.51] - 2026-11-12
+
+### Security
+
+- Stored XSS on the public share page. `render-html.ts` escaped quotes but did
+  not validate the URL scheme, so a document containing
+  `[x](javascript:...)` executed script in any anonymous visitor's browser when
+  clicked. Every href and img src now goes through a scheme allowlist
+  (http/https/mailto/tel/relative), external links carry
+  `rel="noopener noreferrer nofollow"`, and unsafe images are dropped.
+- `POST /api/v1/markdown/convert` required no authentication, letting anyone
+  spend CPU parsing 500 KB of Markdown. It now requires a bearer token.
+- Folder restrictions now apply to their contents. Access resolution walks the
+  ancestor chain in one recursive query; an explicit grant on the document wins,
+  then an inherited grant, and any restricted folder in the chain denies access.
+  Previously a document inside a restricted folder stayed editable by everyone in
+  the workspace.
+- Duplicating a document now requires editor rights. A viewer could copy a
+  restricted document, become its owner and re-share it.
+
+### Performance
+
+- List endpoints no longer ship every document's body. `GET /documents` and the
+  trash/recent/favorites lists selected `d.*`, including the full Tiptap JSON of
+  each document; a hundred documents meant megabytes on every first paint and
+  every refresh. They now use an explicit column list without `content`
+  (`documentSummaryJson`); only a single-document load returns the body.
+- The editor no longer re-measures every block on each keystroke.
+  `useBlockGeometry` was subscribed to `update`, paying one
+  `getBoundingClientRect` per block per character typed. It now reacts to
+  selection changes and layout changes only, and skips the state update when
+  nothing moved.
+- The word count is debounced to 300ms instead of re-scanning the whole document
+  on every keystroke.
+
+### Reliability
+
+- "已保存" no longer lies in collaborative mode. It used to flip to saved on a
+  900ms timer with no confirmation while the Yjs room wrote asynchronously. The
+  status now stays "saving" until the document's persisted version advances, and
+  a failure keeps an `error` state, writes a local draft and raises a notice.
+
 ## [0.1.50] - 2026-11-12
 
 ### Added

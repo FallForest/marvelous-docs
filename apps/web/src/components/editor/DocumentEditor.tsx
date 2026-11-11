@@ -48,6 +48,9 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
   const [copyState, setCopyState] = useState<{ pos: number; ok: boolean } | null>(null)
   const [slash, setSlash] = useState<{ left: number; top: number; query: string; range: { from: number; to: number } } | null>(null)
   const statusTimer = useRef<number | undefined>(undefined)
+  const wordTimer = useRef<number | undefined>(undefined)
+  /** Version last seen persisted, so a stale read cannot report success. */
+  const persistedVersion = useRef<number>(doc.version)
 
   useEffect(() => { setTitle(doc.title) }, [doc.id, doc.title])
 
@@ -101,15 +104,48 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
 
 
 
+  /**
+   * Confirms the edit actually reached the database.
+   *
+   * The collaboration room writes asynchronously, so the only honest signal is
+   * the document's own version moving forward. On failure the status becomes
+   * 'error' and stays there until the next successful confirmation.
+   */
+  async function confirmPersisted(local: unknown) {
+    try {
+      const latest = await request<{ document: { version: number } }>('/documents/' + doc.id, token)
+      if (latest.document.version > persistedVersion.current) {
+        persistedVersion.current = latest.document.version
+        onSaveStatus('saved')
+        return
+      }
+      // The room has not flushed yet; keep waiting rather than lying.
+      window.clearTimeout(statusTimer.current)
+      statusTimer.current = window.setTimeout(() => { void confirmPersisted(local) }, 1200)
+    } catch (error) {
+      onSaveStatus('error')
+      // Keep a local copy so closing the tab cannot destroy the work.
+      try { window.localStorage.setItem('mdocs-draft-' + doc.id, JSON.stringify(local)) } catch { /* quota */ }
+      window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '保存遇到问题，已在本地保留草稿：' + (error as Error).message }))
+    }
+  }
+
   const editor = useEditor({
     extensions: buildEditorExtensions({ ydoc: provider ? ydoc : null, placeholder: '从这里开始写作…' }),
     content: doc.content?.doc || emptyContent.doc,
     onUpdate: ({ editor: instance }) => {
-      setWords(wordCount(instance.getText()))
+      // Counting the whole document on every keystroke is O(n); the footer only
+      // needs to be roughly current.
+      window.clearTimeout(wordTimer.current)
+      wordTimer.current = window.setTimeout(() => setWords(wordCount(instance.getText())), 300)
       if (provider) {
+        /* Collaborative edits reach the server through the Yjs room, which
+           debounces and writes asynchronously. Reporting "saved" on a timer would
+           claim success without any confirmation, so the status stays "saving"
+           until a HEAD on the document shows the persisted version moved. */
         onSaveStatus('saving')
         window.clearTimeout(statusTimer.current)
-        statusTimer.current = window.setTimeout(() => onSaveStatus('saved'), 900)
+        statusTimer.current = window.setTimeout(() => { void confirmPersisted(instance.getJSON()) }, 1000)
       } else {
         persist(instance.getJSON())
       }

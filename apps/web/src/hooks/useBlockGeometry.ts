@@ -84,7 +84,11 @@ export function useBlockGeometry(editor: Editor | null, enabled = true): BlockGe
     // Motion tokens animate layout changes, so a single measurement can capture
     // a mid-transition width. Re-measure once the longest duration has elapsed.
     const settleTimers = [120, 260, 460].map((delay) => window.setTimeout(schedule, delay))
-    editor.on('update', schedule)
+    /* Deliberately not subscribed to 'update': that fires on every keystroke, and
+       measuring costs one getBoundingClientRect per block (forced layout). What
+       this hook needs is a change of *which* block is under the cursor, plus
+       layout changes, both of which are observed below. */
+    editor.on('create', schedule)
     editor.on('selectionUpdate', schedule)
     window.addEventListener('scroll', schedule, true)
     window.addEventListener('resize', schedule)
@@ -97,7 +101,7 @@ export function useBlockGeometry(editor: Editor | null, enabled = true): BlockGe
     return () => {
       settleTimers.forEach((id) => window.clearTimeout(id))
       if (frame) cancelAnimationFrame(frame)
-      editor.off('update', schedule)
+      editor.off('create', schedule)
       editor.off('selectionUpdate', schedule)
       window.removeEventListener('scroll', schedule, true)
       window.removeEventListener('resize', schedule)

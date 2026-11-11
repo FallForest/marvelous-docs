@@ -176,7 +176,10 @@ export function registerDocumentWriteRoutes(app: FastifyInstance, deps: RouteDep
     }), request.body ?? {})
     if (!input) return fail(reply, 400, 'INVALID_INPUT', 'Optional title and parentId must be valid when supplied.')
 
-    const access = await requireNode(auth, reply, params.id, 'viewer')
+    // Editing rights, not viewing: the copy is created with the caller as owner,
+    // so letting a viewer duplicate a restricted document would let them grant
+    // themselves access and re-share it.
+    const access = await requireNode(auth, reply, params.id, 'editor')
     if (!access) return
     if (access.role === 'none') return fail(reply, 403, 'FORBIDDEN', 'You do not have permission for this operation.')
     if (access.row.kind !== 'document') return fail(reply, 400, 'NOT_A_DOCUMENT', 'Folders cannot be duplicated.')

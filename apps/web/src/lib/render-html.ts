@@ -1,10 +1,25 @@
 /**
  * Renders stored Tiptap JSON to static HTML for the public share page.
  *
+ * Any URL in the document is untrusted: the page is rendered anonymously and
+ * injected with dangerouslySetInnerHTML, so a `javascript:` href would execute.
+ * Every URL therefore goes through safeHref, which allows only http(s), mailto,
+ * tel and relative references.
+ *
  * This is intentionally a small, closed renderer: it only understands the node
  * types the server schema allows, and escapes every text value, so a shared
  * document cannot inject markup.
  */
+
+/** The only URL shapes a document may contain, mirroring the server export path. */
+function safeHref(value: unknown): string {
+  const href = typeof value === 'string' ? value.trim() : ''
+  if (!href) return ''
+  if (/^(https?:|mailto:|tel:|#|\/|\.\/|\.\.\/|\?)/i.test(href)) return href
+  // Anything with another scheme (javascript:, data:, vbscript:) is dropped.
+  if (/^[a-z][a-z0-9+.-]*:/i.test(href)) return ''
+  return href
+}
 
 export function renderDocHTML(node: Record<string, unknown> | undefined): string {
   if (!node) return '<p>（空文档）</p>'
@@ -21,7 +36,12 @@ export function renderDocHTML(node: Record<string, unknown> | undefined): string
         else if (m.type === 'underline') t = '<u>' + t + '</u>'
         else if (m.type === 'strike') t = '<s>' + t + '</s>'
         else if (m.type === 'code') t = '<code>' + t + '</code>'
-        else if (m.type === 'link') t = '<a href="' + escapeHtml((m.attrs as Record<string, string>)?.href || '#') + '" target="_blank">' + t + '</a>'
+        else if (m.type === 'link') {
+          const href = safeHref((m.attrs as Record<string, unknown>)?.href)
+          t = href
+            ? '<a href="' + escapeHtml(href) + '" target="_blank" rel="noopener noreferrer nofollow">' + t + '</a>'
+            : t
+        }
       }
       return t
     }
@@ -44,7 +64,10 @@ export function renderDocHTML(node: Record<string, unknown> | undefined): string
     case 'taskList': return '<ul class="task-list">' + inner + '</ul>'
     case 'taskItem': return '<li>' + inner + '</li>'
     case 'horizontalRule': return '<hr>'
-    case 'image': return '<img src="' + escapeHtml(attrs.src as string || '') + '" alt="' + escapeHtml(attrs.alt as string || '') + '">'
+    case 'image': {
+      const src = safeHref(attrs.src)
+      return src ? '<img src="' + escapeHtml(src) + '" alt="' + escapeHtml(attrs.alt as string || '') + '" loading="lazy">' : ''
+    }
     case 'table': return '<table>' + inner + '</table>'
     case 'tableRow': return '<tr>' + inner + '</tr>'
     case 'tableHeader': return '<th>' + inner + '</th>'

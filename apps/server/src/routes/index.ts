@@ -24,7 +24,7 @@ export function registerRoutes(app: FastifyInstance, deps: RouteDeps) {
   registerSystemRoutes(app, deps)
   registerAuthRoutes(app, deps)
   registerWorkspaceRoutes(app, deps)
-  registerMarkdownRoutes(app)
+  registerMarkdownRoutes(app, deps)
 
   // Literal document paths first, then the parameterised ones.
   registerDocumentReadRoutes(app, deps)
