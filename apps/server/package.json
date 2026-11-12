@@ -1,6 +1,6 @@
 {
   "name": "@marvelous-docs/server",
-  "version": "0.1.61",
+  "version": "0.1.62",
   "private": true,
   "type": "module",
   "scripts": {
@@ -43,6 +43,8 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
+    "@electric-sql/pglite-socket": "^0.2.19",
     "@types/node": "^22.13.10",
     "@types/pg": "^8.11.11",
     "@types/ws": "^8.5.14",

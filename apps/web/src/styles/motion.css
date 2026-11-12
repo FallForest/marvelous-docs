@@ -141,7 +141,9 @@
  */
 @media (prefers-reduced-motion:reduce){
   .motion-rise,.motion-sink,.motion-sheet,.motion-enter,.motion-disclose,.stagger{
-    animation:motion-fade-in var(--duration-fast) linear both !important;
+    /* backwards for the same reason the entrances use it: a retained final
+       frame would outrank :hover/:active once the fade has finished. */
+    animation:motion-fade-in var(--duration-fast) linear backwards !important;
   }
   .is-acknowledged{animation:none !important}
 }

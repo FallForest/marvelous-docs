@@ -1,7 +1,7 @@
 {
   "name": "marvelous-docs",
   "private": true,
-  "version": "0.1.61",
+  "version": "0.1.62",
   "packageManager": "pnpm@11.25.0",
   "engines": {
     "node": ">=22",
@@ -19,6 +19,7 @@
     "test:server": "pnpm --filter @marvelous-docs/server test",
     "test:web": "pnpm --filter @marvelous-docs/web test",
     "test:cli": "pnpm --filter @marvelous-docs/cli test",
+    "verify:browser": "node scripts/verify-pdf.mjs && node scripts/verify-blocks.mjs",
     "cli": "pnpm --filter @marvelous-docs/cli exec node dist/index.js",
     "db:migrate": "pnpm --filter @marvelous-docs/server db:migrate",
     "clean": "node -e \"for (const p of ['apps/server/dist','apps/web/dist','packages/cli/dist','apps/web/tsconfig.tsbuildinfo','coverage','.tmp']) { require('node:fs').rmSync(p, { recursive: true, force: true }) }\""

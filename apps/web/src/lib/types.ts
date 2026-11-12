@@ -66,6 +66,11 @@ export type TreeAction = 'rename' | 'move' | 'favorite' | 'duplicate' | 'delete'
 
 export type ExportFormat = 'markdown' | 'html' | 'json'
 
-export type ExportTarget = ExportFormat | 'print'
+/**
+ * What the export menu offers. `pdf` and `print` are client-side renders of the
+ * `html` export: the server returns one document, the browser either sends it to
+ * the print dialog or rasterises it into a PDF.
+ */
+export type ExportTarget = ExportFormat | 'pdf' | 'print'
 
 export const emptyContent: DocJson = { schemaVersion: 1, doc: { type: 'doc', content: [{ type: 'paragraph' }] } }

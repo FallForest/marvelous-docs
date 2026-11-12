@@ -8,6 +8,71 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.62] - 2026-11-12
+
+### Added
+
+- Export PDF. The export menu offers a fourth destination beside Markdown, HTML,
+  JSON and print; it is the same server `html` export — one rendering, two
+  destinations — rasterised in the browser at 2× and cut into A4 pages with a
+  folio under each. A text PDF was rejected on purpose: jsPDF ships Latin faces
+  only, and a bundled CJK font would add several megabytes to the bundle for one
+  menu item. The export's own stylesheet is rewritten under a scoped class before
+  it touches the page (`lib/export-css.ts`), so `body{margin:0}` cannot restyle
+  the app; page geometry lives in `lib/pdf-pages.ts` because pagination is where
+  a blank last page or a line cut at the fold hides. jsPDF and html2canvas load
+  on demand: the entry chunk stays at 318 kB and an export pays 594 kB once.
+- Block drag handle and block context menu. Pointing at a block reveals a grip in
+  the left margin; the grip starts a block drag (with a drop rule at the target's
+  own edge), and right-clicking a block opens the same actions as a menu:
+  convert to heading/body/list/quote/code, move up or down, duplicate, insert a
+  paragraph below, delete. Both read one command table, and both are pure
+  client-side block moves applied as a single transaction, so a move is one undo
+  step. Escape closes the menu; the browser's own context menu is suppressed
+  inside the body only.
+
+### Changed
+
+- Search is a ranked full-text query over a PostgreSQL `tsvector`, not an
+  `ILIKE` scan of `content::text`. Three things a LIKE could not do and this
+  does: it no longer decodes and ships every candidate document's whole Tiptap
+  JSON to build a snippet (the indexed prose comes back with the hit), it uses a
+  GIN index, and it ranks by relevance — repetition counts twice, a title match
+  outranks body matches, then recency decides. Chinese, Japanese and Korean are
+  searchable without a segmenter: `marvelous_cjk_tokens` turns each ideograph
+  into a lexeme and the query builder asks for a run of them as an adjacent
+  phrase, so `写作` no longer matches `作文`. English terms still match on prefix,
+  as they did before.
+
+### Fixed
+
+- A position exactly at a block boundary resolved to the block above it. Both
+  `posAtCoords` consumers tested `pos <= offset + nodeSize`, so the top edge of a
+  paragraph reported its predecessor: the drag handle floated one block up and a
+  drop landed one block early. The test is now half-open, and the document's
+  final position is handled separately.
+- The block gutter was positioned with a guessed `-34px` offset and overlapped
+  the text column once the insert button was added. It is now moved out by its
+  own measured width (`calc(-100% - 8px)`).
+- The reduced-motion collapse of the entrance utilities filled forwards and kept
+  its final frame, which outranks `:hover`/`:active` on any control that carries
+  `.motion-rise` — the same bug the entry animations were fixed for in 0.1.54.
+
+### Tests
+
+- `test/search.test.ts` and `test/search-route.test.ts` run the search statement
+  and the endpoint against a real PostgreSQL engine (PGlite over its TCP socket),
+  with the project's own migrations applied: CJK adjacency, prefix matching, title
+  ranking, scope, restricted-document visibility, trash exclusion, and the
+  half-open boundary above.
+- `scripts/verify-pdf.mjs` and `scripts/verify-blocks.mjs` check the two browser
+  surfaces that cannot be tested from Node — the PDF raster and the gutter
+  gestures — by bundling the real modules with esbuild and driving Chrome over
+  the DevTools protocol (`pnpm verify:browser`). The PDF check asserts a real
+  paginated PDF, no ink in the top margin, and that the app's own styles and DOM
+  survive the export; the block check drives hover, right-click, a menu command,
+  a drag, Escape, and typing afterwards.
+
 ## [0.1.61] - 2026-11-12
 
 ### Added

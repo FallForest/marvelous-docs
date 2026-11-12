@@ -10,6 +10,7 @@ import {
   nodeText,
   searchSnippet,
   slugifyFilename,
+  snippetFromText,
   tiptapToHtml,
   tiptapToMarkdown,
   type TiptapNode,
@@ -245,6 +246,22 @@ test('extracts plain text and builds focused search snippets', () => {
   assert.ok(fallback.endsWith('…'));
   const wrapped = searchSnippet({ schemaVersion: 1, doc: document }, 'target');
   assert.ok(wrapped.includes('target phrase'));
+});
+
+test('snippets can be windowed from prose that is already flat', () => {
+  // Full-text search hands over the indexed text instead of the Tiptap JSON, so
+  // both paths must produce the same window for the same document.
+  const document = markdownToTiptap('# Title\n\nFirst paragraph with the target phrase.\n\n- one\n- two\n');
+  assert.equal(snippetFromText(documentPlainText(document), 'target'), searchSnippet(document, 'target'));
+  // Whitespace is collapsed before looking for the term.
+  assert.ok(snippetFromText('one\n\n  two   target here', 'target').includes('target here'));
+  // Nothing to show.
+  assert.equal(snippetFromText('', 'x'), '');
+  assert.equal(snippetFromText(null, 'x'), '');
+  // A title-only match falls back to the head of the body.
+  const head = snippetFromText('alpha beta gamma', 'zzz', 8);
+  assert.ok(head.startsWith('alpha'));
+  assert.ok(head.endsWith('…'));
 });
 
 test('round-trips standalone images and aligned paragraphs', () => {

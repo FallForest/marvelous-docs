@@ -6,7 +6,8 @@ import { documentJson, documentSummaryJson, DOCUMENT_SUMMARY_COLUMNS } from '../
 import { flushRoom, rooms } from '../collaboration/rooms.js'
 import { recordActivity } from '../access.js'
 import { requireDoc } from '../guards.js'
-import { searchSnippet } from '../lib/markdown.js'
+import { buildTsQuery, SEARCH_SQL, type SearchRow } from '../lib/search.js'
+import { snippetFromText } from '../lib/markdown.js'
 import { uuidSchema } from './schemas.js'
 import type { AuthRequest, DocumentRow } from '../types.js'
 import type { RouteDeps } from './deps.js'
@@ -55,7 +56,17 @@ export function registerDocumentReadRoutes(app: FastifyInstance, deps: RouteDeps
     return { documents: result.rows.map(documentSummaryJson) }
   })
 
-  // Search is an ILIKE scan, so a tight budget keeps it from being a load generator.
+  /*
+   * Full-text search over an indexed `tsvector` (see lib/search.ts and
+   * migrations/003), not an ILIKE scan of `content::text`.
+   *
+   * The old query had three problems a LIKE cannot fix: it read and shipped the
+   * whole Tiptap JSON of every candidate document just to build a snippet, it
+   * could not use an index, and it ranked by title match then recency, so a
+   * document that mentioned the term ten times sorted below one that mentioned
+   * it once. The term is still rate-limited: a query is cheap now, but it is
+   * still a query per keystroke.
+   */
   app.get('/api/v1/documents/search', { preHandler: [deps.authenticate.preHandler, deps.rateLimit(120, 60 * 1000)] }, async (request, reply) => {
     const auth = request as AuthRequest
     const query = parse(z.object({
@@ -65,18 +76,34 @@ export function registerDocumentReadRoutes(app: FastifyInstance, deps: RouteDeps
     }), request.query)
     if (!query) return fail(reply, 400, 'INVALID_INPUT', 'q, an optional scope, and a limit between 1 and 100 are required.')
 
-    const result = await pool.query(`SELECT d.id,d.title,d.kind,d.parent_id AS "parentId",d.updated_at AS "updatedAt",d.version,d.content,
-      CASE WHEN d.title ILIKE $3 THEN 1 ELSE 0 END AS title_match
-      FROM documents d JOIN memberships m ON m.workspace_id=d.workspace_id AND m.user_id=$1 LEFT JOIN document_acl a ON a.document_id=d.id AND a.user_id=$1
-      WHERE d.workspace_id=$2 AND d.deleted_at IS NULL AND (m.role='admin' OR a.role IS NOT NULL OR d.acl_restricted=false)
-        AND (($4='title' AND d.title ILIKE '%'||$3||'%') OR ($4='content' AND d.content::text ILIKE '%'||$3||'%') OR ($4='all' AND (d.title ILIKE '%'||$3||'%' OR d.content::text ILIKE '%'||$3||'%')))
-      ORDER BY title_match DESC,d.updated_at DESC LIMIT $5`, [auth.user.sub, auth.user.workspaceId, query.q, query.scope, query.limit])
+    const tsquery = buildTsQuery(query.q)
+    if (!tsquery) return { results: [], query: query.q, mode: 'fulltext' }
+
+    let result
+    try {
+      result = await pool.query<SearchRow>(SEARCH_SQL, [auth.user.sub, auth.user.workspaceId, tsquery, query.scope, query.limit])
+    } catch (error) {
+      // A tsquery parse error can only come from our own builder, but a
+      // malformed one must never surface as a 500 mid-typing.
+      app.log.warn({ err: error, query: tsquery }, 'Full-text query failed')
+      return fail(reply, 400, 'INVALID_INPUT', 'That search could not be parsed.')
+    }
 
     return {
-      results: result.rows.map((row) => {
-        const { content, ...rest } = row as Record<string, unknown>
-        return { ...rest, snippet: searchSnippet(content, query.q) }
-      }),
+      query: query.q,
+      mode: 'fulltext',
+      results: result.rows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        kind: row.kind,
+        parentId: row.parentId,
+        version: row.version,
+        updatedAt: row.updatedAt,
+        titleMatch: row.title_match,
+        // The snippet is built from the indexed prose the query just read,
+        // instead of decoding every hit's Tiptap JSON.
+        snippet: snippetFromText(row.body_text, query.q),
+      })),
     }
   })
 

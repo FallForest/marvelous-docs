@@ -26,5 +26,10 @@ coverage/
 # Local tool state
 .claude/settings.local.json
 
+# Browser verification artefacts (scripts/verify-*.mjs)
+.tmp-export.pdf
+.tmp-export-canvas.png
+.tmp-pdf/
+
 # Vite debug output
 apps/web/vite-out.txt

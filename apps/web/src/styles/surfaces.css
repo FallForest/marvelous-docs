@@ -311,6 +311,57 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
 .notice-toast button:hover{background:var(--surface-muted);color:var(--text)}
 .notice-toast button:active{transform:scale(.92);transition-duration:var(--duration-instant)}
 
+/* ── 8b. PDF export progress ────────────────────────────────────
+ * Rasterising a long document blocks the main thread for a moment, so the
+ * export gets a scrim and a determinate bar rather than a silent pause. The
+ * scrim reuses the modal backdrop; the card is smaller because nothing in it is
+ * interactive.
+ */
+.pdf-progress{
+  position:fixed;
+  inset:0;
+  z-index:var(--z-modal);
+  display:grid;
+  place-items:center;
+  padding:20px;
+  background:var(--scrim);
+  -webkit-backdrop-filter:blur(6px) saturate(140%);
+  backdrop-filter:blur(6px) saturate(140%);
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .pdf-progress{background:rgba(17,24,39,.46)}
+}
+.pdf-progress-card{
+  width:min(100%,320px);
+  display:flex;
+  flex-direction:column;
+  gap:11px;
+  padding:20px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-modal);
+}
+.pdf-progress-title{font-size:13px;font-weight:600;color:var(--text)}
+.pdf-progress-hint{font-size:11px;color:var(--text-muted);line-height:1.5}
+.pdf-progress-track{
+  position:relative;
+  display:block;
+  height:4px;
+  border-radius:var(--radius-pill);
+  background:var(--surface-sunken);
+  overflow:hidden;
+}
+/* Only width animates: the bar is the one place a layout property is the honest
+   choice — a transform-scaled bar would keep its own corner radius mirrored. */
+.pdf-progress-track i{
+  display:block;
+  height:100%;
+  border-radius:inherit;
+  background:var(--accent);
+  transition:width var(--duration-base) var(--ease-standard);
+}
+
 /* ── 9. sidebar profile row: clean circle + ellipsis ───────────── */
 .profile-row{
   height:auto;

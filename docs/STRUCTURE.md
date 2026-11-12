@@ -13,7 +13,7 @@ apps/
 packages/
   cli/           Dependency-free Node client for the REST API (mdocs)
 docs/            API contract, architecture, development, security
-scripts/         Release, publish, and update automation
+scripts/         Release, publish, update automation, and the browser verifiers
 release-check/   Smoke checks run against a built release
 ```
 
@@ -32,6 +32,8 @@ App.tsx                   Workspace shell: wires hooks to layout and pages
 hooks/                    State and data ownership that outlives one screen
   useWorkspaceData.ts     Session, documents, comments, versions, search, stats
   useReducedMotion.ts     Live prefers-reduced-motion, for JS-driven animation
+  useBlockGeometry.ts     Rect of every block that hosts its own toolbar
+  useBlockAnchor.ts       The top-level block under the pointer, for the gutter handle
 
 
 pages/                    One file per route-level screen
@@ -55,6 +57,7 @@ components/
     EditorToolbar.tsx     Grouped formatting toolbar
     BubbleToolbar.tsx     Selection bubble menu
     SlashMenu.tsx         "/" insertion menu
+    BlockHandle.tsx       Gutter drag handle, drop indicator, block context menu
     TableMenu.tsx         Table context menu
     FindReplace.tsx       Find/replace and outline panels
   panels/                 Right-hand document panels
@@ -76,13 +79,17 @@ lib/                      Pure logic and browser helpers (no JSX)
   api.ts                  fetch wrapper and the API base URL
   endpoints.ts            Typed API client: one declaration per endpoint
   app-types.ts            Shell-level unions shared across pages
+  blocks.ts               Block spans and move planning for the drag handle
   collab.ts               Collaboration URL resolution
   download.ts             Export download and print helpers
   editor.ts               Tiptap extension list
   code-block.ts           Code block boundaries: Enter to leave, Backspace to remove
+  export-css.ts           Scopes a standalone export stylesheet for in-app render
   font-size.ts            Custom FontSize extension
   format.ts               Dates, word count, excerpting
   languages.ts            Code-block language list and labels
+  pdf-pages.ts            A4 geometry and canvas→page slicing
+  pdf.ts                  HTML export → PDF (jsPDF + html2canvas), loaded on demand
   render-html.ts          Tiptap JSON → static HTML for share pages
   motion.ts               Motion contract: durations, spring presets, stagger
   tree.ts                 Tree building, filtering, depth helpers
@@ -124,6 +131,7 @@ That is what keeps "make it feel snappier" a one-file change — see
 | A pure function with no React | `lib/` |
 | State or data loading shared by screens | `hooks/` |
 | A new API call | Add it to `lib/endpoints.ts` |
+| A browser-only flow that must be seen to be believed | A `scripts/verify-*.mjs` script: bundle the real module with esbuild and drive Chrome over the DevTools protocol (`pnpm verify:browser`) |
 | A type shared by more than one page | `lib/types.ts` or `lib/app-types.ts` |
 | Styling for an existing component | The matching layer in `styles/` |
 | A new screen's styles | `styles/pages.css`, scoped to that screen's root class |
@@ -163,8 +171,7 @@ routes/                   One module per REST resource
   auth.ts                 Login, invite redeem, me, invite create
   workspace.ts            Members, stats, templates
   document-reads.ts       Tree, trash, recent, favorites, search, get
-  document-writes.ts      Create, import, update, duplicate, favorite
-  trash.ts                Soft delete, restore, permanent delete
+  document-writes.ts      Create, import, update, duplicate, favorite  trash.ts                Soft delete, restore, permanent delete
   export.ts               Export and activity log
   sharing.ts              ACL and public share links
   comments.ts             Comment threads
@@ -181,6 +188,7 @@ collaboration/
 lib/                      Pure helpers, unit-tested without PostgreSQL
   markdown.ts             Markdown import/export, search snippets
   schema.ts               Server-side Tiptap schema
+  search.ts               tsquery building + the full-text search statement
   templates.ts            Built-in document templates
   version.ts              Semver comparison
   rate-limit.ts           Login throttling

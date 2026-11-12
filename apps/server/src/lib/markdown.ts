@@ -990,13 +990,25 @@ export function documentPlainText(docJson: unknown): string {
  * the title.
  */
 export function searchSnippet(docJson: unknown, query: string, maxLength = 180): string {
-  const text = documentPlainText(docJson);
-  if (!text) return '';
+  return snippetFromText(documentPlainText(docJson), query, maxLength);
+}
+
+/**
+ * The same window over prose that is already flat.
+ *
+ * Full-text search reads the indexed text out of PostgreSQL (`marvelous_doc_text`)
+ * instead of decoding each hit's Tiptap JSON, so the windowing has to work on a
+ * string. Keeping both entry points on one implementation is what stops the two
+ * paths from producing different snippets for the same document.
+ */
+export function snippetFromText(text: string | null | undefined, query: string, maxLength = 180): string {
+  const flat = (text || '').replace(/\s+/g, ' ').trim();
+  if (!flat) return '';
   const needle = query.trim().toLocaleLowerCase();
-  const haystack = text.toLocaleLowerCase();
+  const haystack = flat.toLocaleLowerCase();
   const index = needle ? haystack.indexOf(needle) : -1;
-  if (index < 0) return text.length > maxLength ? text.slice(0, maxLength).trimEnd() + '…' : text;
+  if (index < 0) return flat.length > maxLength ? flat.slice(0, maxLength).trimEnd() + '…' : flat;
   const start = Math.max(0, index - Math.floor(maxLength / 3));
-  const end = Math.min(text.length, start + maxLength);
-  return (start > 0 ? '…' : '') + text.slice(start, end).trim() + (end < text.length ? '…' : '');
+  const end = Math.min(flat.length, start + maxLength);
+  return (start > 0 ? '…' : '') + flat.slice(start, end).trim() + (end < flat.length ? '…' : '');
 }

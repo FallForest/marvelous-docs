@@ -89,7 +89,7 @@ idempotent so the same file can run at startup on every boot.
 | `users` | Accounts: unique e-mail, display name, scrypt password hash (`scrypt:<hex salt>:<hex key>`). |
 | `memberships` | `(workspace_id, user_id)` with role `admin` or `member`. |
 | `invites` | One-time invite tokens (hashed, 7-day expiry) plus the intended role. |
-| `documents` | Documents and folders: `kind`, `parent_id`, `title`, Tiptap `content` JSONB, `yjs_state` bytea, `version`, `acl_restricted`, `deleted_at`. |
+| `documents` | Documents and folders: `kind`, `parent_id`, `title`, Tiptap `content` JSONB, `yjs_state` bytea, `version`, `acl_restricted`, `deleted_at`, and the two generated search columns. |
 | `document_acl` | Explicit per-document roles (`owner`, `editor`, `viewer`). |
 | `document_versions` | Immutable snapshots keyed by `(document_id, version)`. |
 | `comments` | Threaded comments with `anchor` JSONB, `status` `open`/`resolved`, resolver, timestamps. |
@@ -105,6 +105,32 @@ Indexes cover the hot paths: `documents(workspace_id, updated_at DESC)` for the
 tree and recent list, `documents(workspace_id, deleted_at)` for trash,
 `comments(document_id, parent_id, created_at)` for threads, and
 `document_activity(user_id, created_at DESC)` for recent documents.
+
+### Full-text search
+
+`migrations/003_full_text_search.sql` adds two stored generated `tsvector`
+columns — `search_title` and `search_vector` — each with a GIN index, so the
+index is maintained by PostgreSQL on every write and no application code has to
+remember to update it. Search then ranks instead of scanning.
+
+Three details are load-bearing:
+
+- **`simple` dictionary.** One workspace holds notes in several languages, and a
+  stemming dictionary silently discards every word it does not know.
+- **`marvelous_cjk_tokens`.** CJK has no word boundaries and `simple` does not
+  segment, so every ideograph is surrounded by a space: `写作方法` becomes four
+  lexemes. `buildTsQuery` (`src/lib/search.ts`) then asks for them as a phrase
+  (`'写' <-> '作'`), which is what keeps `写作` from matching `作文`.
+- **`strict $.**.text`.** The extraction path is `strict` on purpose: the
+  non-strict form applies `.text` at every level of a text node's ancestry and
+  returned each paragraph's words once per level, tripling its `ts_rank`.
+
+Query building and the statement live in `src/lib/search.ts`, apart from the
+route, because the parsing is where the subtle failures live (an operator
+character reaching `to_tsquery` unquoted, a prefix match on a single ideograph)
+and it is unit-tested without a database. `test/search.test.ts` also runs the
+statement against a real PostgreSQL engine (PGlite) with the project's own
+migrations applied.
 
 ## Request flow
 
@@ -207,6 +233,8 @@ output (production dependencies only).
 | New editor node or mark | Add the Tiptap extension to `apps/web/src/lib/editor.ts` and to the server schema in `apps/server/src/lib/schema.ts`, then handle it in Markdown import/export. |
 | New template | Extend `apps/server/src/lib/templates.ts`; documents accept `templateId`. |
 | New web screen | Add a file under `apps/web/src/pages/` and render it from `App.tsx`. |
+| New export format | Add it to `ExportTarget`; server-side formats extend `exportResponse` in `lib/markdown.ts`, client-side ones follow `lib/pdf.ts` (build from the existing `html` export rather than adding a server endpoint). |
+| A new block command | Add it to the `COMMANDS` table in `components/editor/BlockHandle.tsx`; the gutter menu and any keyboard flavour read the same table. |
 | New CLI command | Add a module under `packages/cli/src/commands/`, register it in `commands/index.ts`, and add a test in `packages/cli/test`. |
 | Multiple API instances | Replace the in-memory room map in `apps/server/src/collaboration/rooms.ts` with a shared store (for example Redis-backed y-websocket persistence) and route by document id. |
 | Object storage for uploads | Swap the local filesystem in `apps/server/src/routes/uploads.ts` for an S3-compatible client and keep `GET /uploads/:name` as a redirect. |

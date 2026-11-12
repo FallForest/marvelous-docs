@@ -7,6 +7,7 @@ import { Dialog } from './components/ui/Dialog'
 import { withViewTransition } from './lib/motion'
 import { COLLAB_URL } from './lib/collab'
 import { downloadTextFile, EXPORT_MIME, printHtmlDocument } from './lib/download'
+import { pdfFilename } from './lib/pdf-pages'
 import { buildDocTree, filterDocTree } from './lib/tree'
 import { useWorkspaceData } from './hooks/useWorkspaceData'
 import { emptyContent } from './lib/types'
@@ -90,6 +91,8 @@ function App() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved')
   const [newMenuOpen, setNewMenuOpen] = useState(false)
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  /** 0..1 while a PDF is being rendered; null when idle. */
+  const [pdfProgress, setPdfProgress] = useState<number | null>(null)
   const [moveDoc, setMoveDoc] = useState<Doc | null>(null)
   const [previewVersion, setPreviewVersion] = useState<Version | null>(null)
   const [renameDoc, setRenameDoc] = useState<Doc | null>(null)
@@ -200,6 +203,34 @@ function App() {
         printHtmlDocument(result.content)
       } catch (error) {
         setNotice('打印失败：' + (error as Error).message)
+      }
+      return
+    }
+    if (format === 'pdf') {
+      // PDF and print share the server's `html` export: one rendering of the
+      // document, two destinations. Rasterising happens here because a text PDF
+      // with Chinese content would need a multi-megabyte font in the bundle.
+      //
+      // jsPDF and html2canvas are ~500 kB of code that only this menu item
+      // needs, so they are imported on demand: the editor's first paint stays
+      // exactly as light as it was, and an export pays the download once.
+      setPdfProgress(0)
+      try {
+        const [result, pdf] = await Promise.all([
+          api.exportDocument(token, doc.id, 'html'),
+          import('./lib/pdf'),
+        ])
+        const blob = await pdf.htmlToPdf(result.content, {
+          // An export blocks long enough to need a determinate bar, not a spinner.
+          onProgress: setPdfProgress,
+        })
+        const filename = pdfFilename(doc.title || result.filename || 'document')
+        pdf.downloadBlob(filename, blob)
+        setNotice('已导出 ' + filename)
+      } catch (error) {
+        setNotice('PDF 导出失败：' + (error as Error).message)
+      } finally {
+        setPdfProgress(null)
       }
       return
     }
@@ -914,7 +945,20 @@ function App() {
       */}
       <div className="notice-live" role="status" aria-live="polite" aria-atomic="true">
         {notice ? notice : ''}
+        {pdfProgress !== null ? '正在生成 PDF' : ''}
       </div>
+      {/*
+        PDF rendering blocks the main thread for a moment on a long document, so
+        it gets a scrim with a determinate bar rather than a silent pause: the
+        user otherwise clicks export, sees nothing, and clicks again.
+      */}
+      {pdfProgress !== null && <div className="pdf-progress motion-fade" role="dialog" aria-modal="true" aria-label="正在生成 PDF">
+        <div className="pdf-progress-card motion-sheet">
+          <span className="pdf-progress-title">正在生成 PDF…</span>
+          <span className="pdf-progress-track" aria-hidden="true"><i style={{ width: Math.round(pdfProgress * 100) + '%' }} /></span>
+          <span className="pdf-progress-hint">文档较长时需要几秒钟，请保持页面打开。</span>
+        </div>
+      </div>}
       {notice && <div className="notice-toast">
         {notice}
         <button aria-label="关闭提示" title="关闭提示" onClick={() => setNotice('')}><X size={13} /></button>

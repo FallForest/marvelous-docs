@@ -18,6 +18,8 @@ import { useBlockGeometry } from '../../hooks/useBlockGeometry'
 import { wordCount, formatDate } from '../../lib/format'
 import LanguagePicker from './LanguagePicker'
 import ImageToolbar from './ImageToolbar'
+import BlockHandle from './BlockHandle'
+import { useBlockAnchor } from '../../hooks/useBlockAnchor'
 import { grammarFor } from '../../lib/highlight'
 import { emptyContent } from '../../lib/types'
 import type { CollabStatus } from '../../lib/app-types'
@@ -174,6 +176,9 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
   // divider). The hook re-measures on transactions and layout changes.
   const blocks = useBlockGeometry(editor)
   const codeBlocks = blocks.filter((block) => block.kind === 'codeBlock')
+  // The gutter handle follows the pointer; it is pinned while its menu or a
+  // drag is open so the target cannot change under the user mid-gesture.
+  const blockAnchor = useBlockAnchor(editor)
 
 
   // Reveal the quoted text when a comment anchor is clicked in the side panel.
@@ -407,6 +412,13 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
       </div>)}
       </>, document.body)}    </div>
     <SlashMenu editor={editor} anchor={slash} query={slash?.query || ''} range={slash?.range || null} onClose={() => setSlash(null)} onImage={() => setImagePrompt(true)} />
+    {editor && <BlockHandle
+      editor={editor}
+      anchor={blockAnchor.anchor}
+      pin={blockAnchor.pin}
+      refresh={blockAnchor.refresh}
+      editable={editor.isEditable}
+    />}
     <TableMenu editor={editor} table={blocks.find((block) => block.kind === 'table') ?? null} />
     <ImageToolbar editor={editor} image={blocks.find((block) => block.kind === 'image') ?? null} />
     <BubbleToolbar editor={editor} anchor={bubbleAnchor} onLink={() => rangeSelection()} onComment={() => { commentSelection(); window.dispatchEvent(new Event('mdoc-open-comments')) }} />
