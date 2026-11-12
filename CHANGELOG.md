@@ -8,6 +8,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.60] - 2026-11-12
+
+### Fixed
+
+- Uploaded images now display. `GET /uploads/:filename` served everything as
+  `application/octet-stream`, so an `<img src>` pointing at an uploaded file
+  downloaded it instead of rendering it — the image never appeared. The type now
+  comes from the file extension (never from the client's upload header), with
+  `nosniff` and a one-year immutable cache since names carry a random prefix.
+  SVG is served as `image/svg+xml`; no HTML-ish type is ever returned.
+- An image whose source fails to load no longer collapses to a two-pixel sliver
+  when the toolbar has set a width. `height:auto` has no intrinsic ratio to
+  preserve for a broken source, so a floor height and a subtle patterned
+  background keep the block visible and selectable, and the alt text shows.
+
 ## [0.1.59] - 2026-11-12
 
 ### Fixed

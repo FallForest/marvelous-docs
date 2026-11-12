@@ -11,6 +11,23 @@ const MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 const ALLOWED_MIME = new Set(['application/octet-stream', 'image/png', 'image/jpeg', 'image/gif', 'image/webp', 'application/pdf'])
 
 /**
+ * Type served for a stored file, chosen by extension.
+ *
+ * Deliberately excludes anything HTML-ish: a stored file is content, never a
+ * document, so it must not be able to run script in the app's origin.
+ */
+const MIME_BY_EXTENSION: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+  '.pdf': 'application/pdf',
+  '.txt': 'text/plain; charset=utf-8',
+}
+
+/**
  * Uploads.
  *
  * Files live on disk with a random 32-hex prefix and a sanitised name; reads
@@ -51,7 +68,21 @@ export function registerUploadRoutes(app: FastifyInstance, deps: RouteDeps) {
     if (!/^[a-f0-9]{32}-[a-zA-Z0-9._-]+$/.test(filename)) return fail(reply, 404, 'NOT_FOUND', 'File was not found.')
     try {
       const data = await readFile(join(config.uploadDir, filename))
-      return reply.type('application/octet-stream').send(data)
+      /*
+       * Serve with the type the file actually is. Everything used to go out as
+       * application/octet-stream, so an <img src> pointing here downloaded the
+       * file instead of rendering it — the image simply never appeared.
+       *
+       * The type comes from the extension, not from the upload header: the
+       * header is client-supplied, and echoing it back would let a caller label
+       * an HTML document as text/html (the filename is sanitised, so this is
+       * belt and braces rather than the only guard).
+       */
+      const type = MIME_BY_EXTENSION[filename.slice(filename.lastIndexOf('.')).toLowerCase()] ?? 'application/octet-stream'
+      // Content is immutable per filename (random prefix), so it can be cached.
+      reply.header('Cache-Control', 'public, max-age=31536000, immutable')
+      reply.header('X-Content-Type-Options', 'nosniff')
+      return reply.type(type).send(data)
     } catch {
       return fail(reply, 404, 'NOT_FOUND', 'File was not found.')
     }

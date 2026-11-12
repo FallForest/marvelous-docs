@@ -428,8 +428,28 @@
 .block-tool-iconbar button.danger:hover{background:var(--danger-soft);color:var(--danger)}
 .block-tool-divider{width:1px;height:14px;margin:0 3px;background:var(--border)}
 
-/* An image sized by the toolbar keeps its aspect ratio. */
-.tiptap-content img[width]{height:auto;max-width:100%}
+/* An image sized by the toolbar keeps its aspect ratio.
+   `height:auto` alone collapses to a 2px sliver when the source fails to load
+   and the browser has no intrinsic ratio to preserve, so a floor height keeps the
+   broken image visible (and selectable, so it can be replaced or removed). */
+.tiptap-content img[width]{height:auto;min-height:60px;max-width:100%}
+.tiptap-content img{min-height:24px}
 .tiptap-content img[data-align="center"]{margin-left:auto;margin-right:auto}
 .tiptap-content img[data-align="right"]{margin-left:auto;margin-right:0}
 .tiptap-content img[data-align="left"]{margin-left:0;margin-right:auto}
+
+/* A source that fails to load still occupies a visible, selectable box with a
+   hint, rather than an invisible 2px sliver the user cannot act on. Browsers do
+   not expose a reliable pseudo-element for broken images, so the parent node is
+   given a subtle dashed frame and a background, and alt text shows through. */
+.tiptap-content img{
+  background:
+    repeating-linear-gradient(45deg, #f4f5f7 0 8px, #eef0f3 8px 16px);
+  color:var(--text-muted);
+  font-size:12px;
+  font-style:italic;
+  padding:0;
+}
+.tiptap-content img:not([src]),.tiptap-content img[src=""]{
+  border:1px dashed var(--border-strong);
+}
