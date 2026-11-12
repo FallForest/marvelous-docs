@@ -282,3 +282,16 @@
 .batch-action:disabled{opacity:.5;cursor:default}
 .batch-action.danger{color:var(--danger);border-color:var(--danger-soft)}
 .batch-action.danger:hover:not(:disabled){background:var(--danger-soft)}
+
+/* ══ drag to move a document ═══════════════════════════════════ */
+/* The row that is being dragged fades so the target reads as the active thing. */
+.tree-node[draggable="true"]:active{opacity:.55}
+/* A folder that will accept the drop: an inset ring rather than a background,
+   so it reads as a target without competing with the selected state. */
+.tree-entry.is-drop-target{
+  background:var(--accent-soft);
+  box-shadow:inset 0 0 0 1px var(--accent);
+}
+.tree-entry.is-drop-target .tree-label{color:var(--accent-strong)}
+/* The root row is a drop target too. */
+.root-folder:not([aria-dropeffect="none"]){transition:background var(--duration-fast) var(--ease-standard)}

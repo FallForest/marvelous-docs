@@ -787,6 +787,8 @@ function App() {
       onBatchDelete={() => void batchDelete()}
       onBatchFavorite={() => void batchFavorite()}
       batchBusy={batchBusy}
+      allDocs={documents}
+      onMoveInto={(dragged, target) => void moveDocument(dragged, target ? target.id : null)}
       onHelp={() => { setWorkspaceOpen(false); setHelpOpen(true) }}
       onLogout={() => { setWorkspaceOpen(false); clearToken() }}
     />}

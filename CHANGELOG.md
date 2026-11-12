@@ -8,6 +8,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.61] - 2026-11-12
+
+### Added
+
+- Drag a document or folder onto another folder to move it there, or onto
+  "所有文档" to move it back to the root. Native HTML5 drag keeps the drag image,
+  auto-scroll and Escape-to-cancel. Only folders accept a drop; a folder cannot be
+  dropped into its own subtree (the server rejects it with 400, but refusing
+  locally means the row never highlights). Foreign payloads — a file dragged in
+  from the desktop, selected text — are ignored rather than treated as a move.
+  Keyboard users keep the existing 移动到… menu item.
+
 ## [0.1.60] - 2026-11-12
 
 ### Fixed

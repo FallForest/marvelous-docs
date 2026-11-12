@@ -32,6 +32,10 @@ type TreeItemProps = {
   focusId?: string | null
   onFocusRow?: (id: string) => void
   level?: number
+  /** Called when a dragged row is dropped onto a folder row (null = tree root). */
+  onDropInto?: (dragged: Doc, target: Doc | null) => void
+  /** Every document in the workspace, used to resolve a drag payload by id. */
+  allDocs?: Doc[]
 }
 
 /**
@@ -41,7 +45,17 @@ type TreeItemProps = {
  * the label never slides underneath the toggle.
  */
 export default function TreeItem(props: TreeItemProps) {
-  const { node, depth, index = 0, activeId, selectedFolderId, expandedFolders, favoriteIds, onToggle, onSelectFolder, onSelectDocument, onAction, checkedIds, onToggleChecked, focusId, onFocusRow, level = 1 } = props
+  const { node, depth, index = 0, activeId, selectedFolderId, expandedFolders, favoriteIds, onToggle, onSelectFolder, onSelectDocument, onAction, checkedIds, onToggleChecked, focusId, onFocusRow, level = 1, onDropInto } = props
+  /*
+   * Drag and drop is HTML5-native rather than a pointer-based implementation:
+   * the tree is a plain list of rows, the interactivity is "move this node into
+   * that folder", and native drag gives us the drag image, auto-scroll and the
+   * Escape-to-cancel behaviour for free.
+   *
+   * Only folders accept a drop, and a folder may not receive itself or one of its
+   * own ancestors — the server rejects a cycle with 400, but refusing locally
+   * means the row simply does not highlight instead of failing after the drop.
+   */
   const selecting = checkedIds !== null
   const checked = checkedIds?.has(node.doc.id) ?? false
   const [menuOpen, setMenuOpen] = useState(false)
@@ -51,6 +65,29 @@ export default function TreeItem(props: TreeItemProps) {
    *  document inside it must not light up two rows at once. */
   const selected = activeId ? activeId === node.doc.id : selectedFolderId === node.doc.id
   const title = node.doc.title || (isFolder ? '未命名文件夹' : '未命名文档')
+  const [dragOver, setDragOver] = useState(false)
+  const canAcceptDrop = isFolder && Boolean(onDropInto)
+
+  /** Resolves a dragged id against the flat list the sidebar already holds. */
+  const findDoc = (id: string) => props.allDocs?.find((doc) => doc.id === id) ?? null
+
+  /**
+   * True when `candidate` sits inside `folder`, walking parents upward.
+   *
+   * The server rejects a folder moved into its own subtree, but detecting it here
+   * keeps the row from highlighting as a valid target and avoids a failed request.
+   */
+  const isDescendantOf = (folderId: string, candidate: Doc) => {
+    let cursor: string | null = candidate.parentId ?? null
+    const byId = new Map((props.allDocs ?? []).map((doc) => [doc.id, doc]))
+    // Bounded by the list size, so a malformed cycle in the data cannot spin.
+    for (let guard = 0; guard <= (props.allDocs?.length ?? 0); guard += 1) {
+      if (!cursor) return false
+      if (cursor === folderId) return true
+      cursor = byId.get(cursor)?.parentId ?? null
+    }
+    return true
+  }
   const run = (action: TreeAction) => {
     setMenuOpen(false)
     onAction(action, node.doc)
@@ -65,6 +102,35 @@ export default function TreeItem(props: TreeItemProps) {
     aria-selected={selected}
     aria-expanded={isFolder ? expanded : undefined}
     tabIndex={tabStop ? 0 : -1}
+    draggable={!selecting}
+    onDragStart={(event) => {
+      event.dataTransfer.effectAllowed = 'move'
+      event.dataTransfer.setData('application/x-mdocs-doc', node.doc.id)
+      // Firefox will not begin a drag unless some text payload is present.
+      event.dataTransfer.setData('text/plain', node.doc.id)
+    }}
+    onDragOver={(event) => {
+      if (!canAcceptDrop) return
+      // Only react to our own payload, so dragging a file or text from outside
+      // does not highlight rows as drop targets.
+      if (!event.dataTransfer.types.includes('application/x-mdocs-doc')) return
+      event.preventDefault()
+      event.dataTransfer.dropEffect = 'move'
+      if (!dragOver) setDragOver(true)
+    }}
+    onDragLeave={() => setDragOver(false)}
+    onDrop={(event) => {
+      setDragOver(false)
+      if (!canAcceptDrop) return
+      event.preventDefault()
+      const draggedId = event.dataTransfer.getData('application/x-mdocs-doc') || event.dataTransfer.getData('text/plain')
+      if (!draggedId || draggedId === node.doc.id) return
+      const source = findDoc(draggedId)
+      if (!source) return
+      // Refuse to move a folder into its own subtree; the server would 400.
+      if (source.kind === 'folder' && isDescendantOf(node.doc.id, source)) return
+      onDropInto?.(source, node.doc)
+    }}
     onFocus={() => onFocusRow?.(node.doc.id)}
     onKeyDown={(event) => {
         if (event.key === 'ArrowRight' && isFolder && !expanded) { event.preventDefault(); onToggle(node.doc.id); return }
@@ -77,7 +143,7 @@ export default function TreeItem(props: TreeItemProps) {
       }
     }}
   >
-    <div className={'tree-entry' + (selected ? ' is-selected' : '') + (checked ? ' is-checked' : '') + (selecting ? ' is-selecting' : '')}>
+    <div className={'tree-entry' + (selected ? ' is-selected' : '') + (checked ? ' is-checked' : '') + (selecting ? ' is-selecting' : '') + (dragOver ? ' is-drop-target' : '')}>
       {selecting
         ? <input
           type="checkbox"
@@ -149,6 +215,8 @@ export default function TreeItem(props: TreeItemProps) {
       focusId={focusId}
       onFocusRow={onFocusRow}
       level={level + 1}
+      onDropInto={onDropInto}
+      allDocs={props.allDocs}
     />)}</div>}
   </div>
 }

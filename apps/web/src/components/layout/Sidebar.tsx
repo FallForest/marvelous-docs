@@ -36,6 +36,10 @@ type SidebarProps = {
   onBatchDelete: () => void
   onBatchFavorite: () => void
   batchBusy: boolean
+  /** Move a document into a folder (null = workspace root) after a drag. */
+  onMoveInto: (dragged: Doc, target: Doc | null) => void
+  /** Flat document list, so a drag payload can be resolved by id. */
+  allDocs: Doc[]
   onToggleTree: () => void
   onNewMenu: (open: boolean) => void
   onCreateDocument: (templateId?: string) => void
@@ -155,7 +159,23 @@ export default function Sidebar(props: SidebarProps) {
         {/* The "所有文档" shortcut is a sibling action, not a node of the tree,
             so it lives outside role="tree" — a tree may only contain treeitems
             and groups. */}
-        <button type="button" className="root-folder" onClick={props.onHome}><Folder size={15} /><span>所有文档</span></button>
+        <button
+          type="button"
+          className="root-folder"
+          onClick={props.onHome}
+          // Dropping here moves the document out of any folder.
+          onDragOver={(event) => {
+            if (!event.dataTransfer.types.includes('application/x-mdocs-doc')) return
+            event.preventDefault()
+            event.dataTransfer.dropEffect = 'move'
+          }}
+          onDrop={(event) => {
+            event.preventDefault()
+            const id = event.dataTransfer.getData('application/x-mdocs-doc') || event.dataTransfer.getData('text/plain')
+            const dragged = props.allDocs.find((doc) => doc.id === id)
+            if (dragged) props.onMoveInto(dragged, null)
+          }}
+        ><Folder size={15} /><span>所有文档</span></button>
         <div
         className="doc-tree"
         ref={treeRef}
@@ -187,6 +207,8 @@ export default function Sidebar(props: SidebarProps) {
           onToggleChecked={props.onToggleChecked}
           focusId={focusId}
           onFocusRow={setFocusId}
+          onDropInto={props.onMoveInto}
+          allDocs={props.allDocs}
         />)}
         {tree.length === 0 && <div className="empty-tree">{props.emptyMessage}</div>}
         </div>
