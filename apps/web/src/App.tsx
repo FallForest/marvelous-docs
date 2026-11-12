@@ -286,7 +286,11 @@ function App() {
   }, [setUser, setActive, setDocuments, setComments, setVersions])
 
   const startUpdate = useCallback(async () => {
-    if (!token || !updateInfo || updateInfo.status === 'running') return
+    // Every early return has to say why: a silent no-op is indistinguishable from
+    // a broken button, which is exactly how this looked in production.
+    if (!token) { setNotice('请先登录后再检查更新。'); return }
+    if (!updateInfo) { setNotice('当前没有可用的更新信息，请稍后重试。'); return }
+    if (updateInfo.status === 'running') { setNotice('更新正在进行中，请稍候…'); return }
     setUpdatePrompt(null)
     setUpdateInfo((current) => current ? { ...current, status: 'running' } : current)
     try {
@@ -766,7 +770,14 @@ function App() {
     showInvite={showInvite}
     onBack={() => setWorkspaceView('documents')}
     onOpenInvite={() => { setShowInvite(true); setInviteError(''); setInviteLink('') }}
-    onStartUpdate={() => setUpdatePrompt(updateInfo)}
+    /*
+     * Run the update directly: the confirmation dialog lives in the document
+     * shell below, but the admin page returns before that point, so queueing the
+     * prompt there rendered nothing and the click looked dead. The admin page
+     * already states "系统会在更新前自动备份数据库", which is what the dialog
+     * repeated.
+     */
+    onStartUpdate={() => void startUpdate()}
     onLogout={clearToken}
     onCloseInvite={() => setShowInvite(false)}
     inviteProps={{ email: inviteEmail, setEmail: setInviteEmail, role: inviteRole, setRole: setInviteRole, link: inviteLink, error: inviteError, busy: inviteBusy, copied, onSubmit: createInvite, onCopy: copyInviteLink }}

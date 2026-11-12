@@ -40,6 +40,15 @@ export default function AdminWorkspace({ user, members, membersBusy, updateInfo,
         </section>
       </div>
     </main>
+    {/*
+      The admin page returns before the document shell, so it never rendered that
+      shell's toast. An update that failed therefore reported nothing: the inline
+      line at the top only shows the *current* status text, not the result of the
+      action the user just took.
+    */}
+    {notice && <div className="notice-toast" role="status" aria-live="polite">
+      {notice}
+    </div>}
     {showInvite && <InviteDialog {...inviteProps} onClose={onCloseInvite} />}
   </div>
 }
