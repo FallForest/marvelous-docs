@@ -15,8 +15,9 @@ import TableHeader from '@tiptap/extension-table-header'
 import TextStyle from '@tiptap/extension-text-style'
 import FontFamily from '@tiptap/extension-font-family'
 import TextAlign from '@tiptap/extension-text-align'
-import Image from '@tiptap/extension-image'
+import { DocumentImage } from './image'
 import { FontSize } from './font-size'
+import { CodeBlockBoundary } from './code-block'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { lowlight } from './highlight'
 
@@ -35,7 +36,13 @@ export function buildEditorExtensions(options: EditorExtensionOptions = {}) {
       // looked up through grammarFor. Passing the id straight through would leave
       // the aliases unhighlighted.
       languageClassPrefix: 'language-',
+      // Boundary keys are owned by CodeBlockBoundary below: it needs to rewrite
+      // both handlers, and leaving the stock ones in place would keep the old
+      // "Backspace demotes the block to a paragraph" behaviour alive.
+      exitOnTripleEnter: false,
+      exitOnArrowDown: false,
     }),
+    CodeBlockBoundary,
     Underline,
     Link.configure({ openOnClick: false, autolink: true, HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' } }),
     TextStyle,
@@ -50,7 +57,7 @@ export function buildEditorExtensions(options: EditorExtensionOptions = {}) {
     TableRow,
     TableHeader,
     TableCell,
-    Image.configure({ inline: false, allowBase64: true }),
+    DocumentImage,
     ...(placeholder ? [Placeholder.configure({ placeholder })] : []),
     ...(ydoc ? [Collaboration.configure({ document: ydoc })] : []),
   ]

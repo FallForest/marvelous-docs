@@ -8,6 +8,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.58] - 2026-11-12
+
+### Added
+
+- Image toolbar. An inserted image could not be moved, sized or removed without
+  selecting it and pressing Backspace. Selecting an image now shows a bar on the
+  image itself with width presets (小 / 中 / 大 / 原始), left/centre/right
+  alignment, and delete. Width and alignment are node attributes because a mark
+  cannot style a node with no text and TextAlign covers only headings and
+  paragraphs; the server schema mirrors them exactly, since a mismatch would
+  break REST saves while collaboration kept working.
+
+### Changed
+
+- Code blocks you can leave. The stock extension only offered triple-Enter or
+  ArrowDown on the last line, and Backspace at the block start did not delete it
+  — it demoted the block to a paragraph and kept the code as body text. Enter at
+  the end of a block now starts a paragraph after it, Shift+Enter inserts a
+  newline (it used to leave the block), and Backspace empties then removes the
+  block as two undoable steps.
+
 ## [0.1.57] - 2026-11-12
 
 ### Added

@@ -232,3 +232,37 @@ test('entry animations do not retain their final frame', () => {
   }
   assert.deepEqual(offenders, [], 'entry animations must fill backwards')
 });
+
+test('focus is drawn once per control', () => {
+  // A field nested inside a focus-painted box must not draw the global outline
+  // too: the inner rectangle covered whatever sat at the end of the box (the
+  // sidebar's ⌘K hint) and read as a double border.
+  const surfaces = readFileSync(join(SRC, 'styles/surfaces.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  // The two selectors share one rule and are written across two lines, so the
+  // check looks for the declaration itself rather than matching one selector.
+  const block = /([^{}]*:focus-visible[^{}]*)\{([^}]*outline\s*:\s*none[^}]*)\}/.exec(surfaces);
+  assert.ok(block, 'nested-field focus rule must exist');
+  for (const sel of ['.action-row input', '.invite-input input']) {
+    assert.ok(block[1]!.includes(sel), sel + ' must be in the outline:none group');
+  }
+});
+
+test('the transition suppresses entries only inside the swapped surface', () => {
+  // Scoping this to the whole document muted every .stagger in the app while a
+  // transition ran; when the attribute cleared, the sidebar's rows restarted
+  // from opacity 0 and the sidebar blinked after each document click.
+  const motion = readFileSync(join(SRC, 'styles/motion.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.ok(!/html\[data-vt-swapping\]\s+\.stagger/.test(motion), 'a document-wide .stagger mute restarts the sidebar');
+  assert.ok(/html:active-view-transition\s+\[data-vt-scope='main'\]/.test(motion) || /html\[data-vt-swapping\]\s+\[data-vt-scope='main'\]/.test(motion), 'suppression must be scoped to the swapped surface');
+});
+
+test('the sidebar root row shares the tree indent grid', () => {
+  // "所有文档" reads as the tree root, so its icon has to sit on the same column
+  // as every document icon. It is a <button>, so it also has to be a flex line:
+  // as inline-block the padding offset the text run instead of the icon.
+  const shell = readFileSync(join(SRC, 'styles/shell.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const rule = /\.sidebar \.root-folder,\s*\n?\.sidebar \.root-folder\.selected\{([^}]*)\}/.exec(shell);
+  assert.ok(rule, '.root-folder rule must exist');
+  assert.ok(/display\s*:\s*flex/.test(rule[1]!), '.root-folder must be a flex row');
+  assert.ok(/--tree-chevron-w/.test(rule[1]!), '.root-folder indent must follow the chevron column width');
+});

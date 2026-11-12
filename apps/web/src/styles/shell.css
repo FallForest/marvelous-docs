@@ -12,6 +12,10 @@
 .app-shell{
   --side-w:264px;
   --row-h:34px;
+  /* Width of the tree's disclosure column. Rows reserve it even for leaves, so
+     folder and document icons share one vertical line; "所有文档" has to reserve
+     the same column to sit on that line. */
+  --tree-chevron-w:18px;
   --row-pad:10px;
   --row-radius:7px;
   --row-fg:var(--text-secondary);
@@ -113,10 +117,16 @@
   color:var(--text-muted);
 }
 .sidebar .action-row:hover{background:#eceef2}
+/*
+ * The search row is the only field in the sidebar, so it is the control: the
+ * container draws the whole focus state (border + a soft halo) and the input
+ * inside draws nothing (surfaces.css removes its outline). Drawing both put a
+ * hard 2px rectangle inside the rounded container and covered the ⌘K hint.
+ */
 .sidebar .action-row:focus-within{
   background:#fff;
   border-color:var(--accent);
-  box-shadow:0 0 0 2px var(--accent-soft);
+  box-shadow:0 0 0 3px var(--accent-ring);
 }
 .sidebar .action-row svg{flex:0 0 auto}
 .sidebar .action-row input{height:100%;font-size:12.5px;color:var(--text)}
@@ -133,7 +143,9 @@
   padding:1px 4px;
   line-height:1.4;
 }
-.sidebar .action-row:focus-within kbd{opacity:0}
+/* Hidden while typing: the hint has done its job, and the row belongs to the
+   caret. Fading is enough; removing it would shift the text. */
+.sidebar .action-row:focus-within kbd{opacity:0;transition:opacity var(--duration-fast) var(--ease-standard)}
 
 /* section label: one rhythm for both "导航" and "文档" */
 .sidebar .nav-label{
@@ -273,7 +285,7 @@
 .tree-entry:hover{background:var(--surface-sunken)}
 .tree-entry.is-selected{background:var(--accent-soft)}
 .tree-chevron{
-  width:18px;height:18px;flex:0 0 18px;
+  width:var(--tree-chevron-w);height:18px;flex:0 0 var(--tree-chevron-w);
   display:grid;place-items:center;
   padding:0;
   border:0;
@@ -346,11 +358,28 @@
 .sidebar .tree-chevron:focus-visible{outline-offset:-2px}
 
 /* "所有文档" behaves as a tree row, not a section header */
+/*
+ * "所有文档" sits above the tree but reads as its root row, so it has to line up
+ * with the rows underneath: a tree row is [row padding][chevron column][label],
+ * which puts its icon --row-pad + chevron-width past the row edge. A plain
+ * --row-pad here put the root's icon 47px to the right of every document icon
+ * and its label outside the tree's indent, which is what made the block look
+ * detached from the tree rather than part of it.
+ */
 .sidebar .root-folder,
 .sidebar .root-folder.selected{
+  /* A <button> defaults to inline-block. The row has to be a flex line, or the
+     padding positions the text run instead of the icon and the icon lands in
+     the wrong column (measured 62px off before this). */
+  display:flex;
+  align-items:center;
   height:var(--row-h);
-  padding:0 var(--row-pad);
-  gap:9px;
+  /* Matches the icon of a tree row: row edge + chevron column + row gap +
+     doc-button padding. The chevron column is 18px on desktop and 24px once
+     the touch layout widens it, so it is read from the same custom property
+     rather than hard-coded twice. */
+  padding:0 var(--row-pad) 0 calc(var(--row-pad) + var(--tree-chevron-w) + 2px + 4px);
+  gap:8px;
   margin:0 0 2px;
   border:0;
   border-radius:var(--row-radius);
@@ -603,7 +632,7 @@
   }
   .main-area>.topbar .share-btn svg{width:16px;height:16px}
   .sidebar .tree-more{width:32px;height:32px;flex:0 0 32px;opacity:1}
-  .tree-chevron{width:24px;flex-basis:24px}
+  @media (max-width:560px){ .app-shell{--tree-chevron-w:24px} }
   .sidebar .brand-row{height:52px;flex-basis:52px}
   .sidebar .nav-row,
   .sidebar .tree-entry .tree-doc,

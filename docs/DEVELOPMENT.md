@@ -144,7 +144,9 @@ gate.
   manifest and let the lockfile update once.
 
 Where a new file belongs, and which imports each layer may use, is in
-[STRUCTURE.md](STRUCTURE.md).
+[STRUCTURE.md](STRUCTURE.md). Interaction contracts that override a library
+
+default are collected in [EDITING.md](EDITING.md).
 
 ## Migrations
 

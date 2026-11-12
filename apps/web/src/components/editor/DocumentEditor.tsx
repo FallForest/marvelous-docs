@@ -17,6 +17,7 @@ import { buildEditorExtensions } from '../../lib/editor'
 import { useBlockGeometry } from '../../hooks/useBlockGeometry'
 import { wordCount, formatDate } from '../../lib/format'
 import LanguagePicker from './LanguagePicker'
+import ImageToolbar from './ImageToolbar'
 import { grammarFor } from '../../lib/highlight'
 import { emptyContent } from '../../lib/types'
 import type { CollabStatus } from '../../lib/app-types'
@@ -407,6 +408,7 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
       </>, document.body)}    </div>
     <SlashMenu editor={editor} anchor={slash} query={slash?.query || ''} range={slash?.range || null} onClose={() => setSlash(null)} onImage={() => setImagePrompt(true)} />
     <TableMenu editor={editor} table={blocks.find((block) => block.kind === 'table') ?? null} />
+    <ImageToolbar editor={editor} image={blocks.find((block) => block.kind === 'image') ?? null} />
     <BubbleToolbar editor={editor} anchor={bubbleAnchor} onLink={() => rangeSelection()} onComment={() => { commentSelection(); window.dispatchEvent(new Event('mdoc-open-comments')) }} />
     {imagePrompt && <Dialog
       title="插入图片"

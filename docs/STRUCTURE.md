@@ -79,6 +79,7 @@ lib/                      Pure logic and browser helpers (no JSX)
   collab.ts               Collaboration URL resolution
   download.ts             Export download and print helpers
   editor.ts               Tiptap extension list
+  code-block.ts           Code block boundaries: Enter to leave, Backspace to remove
   font-size.ts            Custom FontSize extension
   format.ts               Dates, word count, excerpting
   languages.ts            Code-block language list and labels

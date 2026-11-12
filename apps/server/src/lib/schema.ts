@@ -13,7 +13,7 @@ import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import FontFamily from '@tiptap/extension-font-family';
 import TextAlign from '@tiptap/extension-text-align';
-import Image from '@tiptap/extension-image';
+import { DocumentImage } from './image.js';
 import { FontSize } from './font-size.js';
 
 /**
@@ -37,7 +37,7 @@ export const editorExtensions = [
   TableRow,
   TableCell,
   TableHeader,
-  Image.configure({ inline: false, allowBase64: true }),
+  DocumentImage,
 ];
 
 /** ProseMirror schema derived from {@link editorExtensions}. */

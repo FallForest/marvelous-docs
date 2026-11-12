@@ -52,7 +52,7 @@
 .invite-modal form{display:flex;flex-direction:column;gap:15px}
 .invite-modal form>label{font-size:11px;color:var(--text-secondary);display:flex;flex-direction:column;gap:7px}
 .invite-input{height:38px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);display:flex;align-items:center;gap:8px;padding:0 10px;color:var(--text-muted);transition:border-color var(--duration-fast) var(--ease-standard)}
-.invite-input:focus-within{border-color:var(--accent)}
+.invite-input:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
 .invite-input input{border:0;outline:0;width:100%;min-width:0;font-size:12px;background:transparent}
 .invite-modal select{height:38px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);background:var(--surface);padding:0 10px;outline:0;font-size:12px;color:var(--text-secondary);transition:var(--transition-colors)}
 .invite-submit{align-self:flex-end;min-width:128px}

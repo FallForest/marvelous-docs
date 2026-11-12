@@ -197,7 +197,11 @@
 }
 .outline-panel{width:260px;max-height:60vh;overflow:auto}
 .find-head{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--text)}
-.find-field{display:flex;align-items:center;gap:7px;height:34px;padding:0 9px;border:1px solid var(--border-strong);border-radius:6px;background:#fff;color:var(--text-muted);transition:var(--transition-colors)}
+.find-field{display:flex;align-items:center;gap:7px;height:34px;padding:0 9px;border:1px solid var(--border-strong);border-radius:6px;background:#fff;color:var(--text-muted);transition:var(--transition-colors),box-shadow var(--duration-fast) var(--ease-standard)}
+
+/* The bordered box is the field; the input inside is borderless and draws no
+   ring of its own (surfaces.css), so focus is shown once, here. */
+.find-field:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
 .find-field input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:12px;color:var(--text)}
 /* Miss state: the border carries the error, the shake adds one beat of
    "nothing here" without moving the input itself out from under the caret. */

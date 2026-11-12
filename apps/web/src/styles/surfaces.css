@@ -25,11 +25,28 @@ button,[role="menuitem"],[role="button"],[role="tab"],a,.home-card,.search-hit,.
 .tiptap-content blockquote{line-height:1.6;color:var(--text-secondary)}
 .modal-copy p,.menu-item-copy small,.workspace-menu-user,.login-card>p{line-height:1.5}
 
-/* ── 2. focus ring (global, token driven) ──────────────────────── */
+/* ── 2. focus ring (global, token driven) ────────────────────────
+ *
+ * One ring per control, never two. A text field is often drawn as a bordered
+ * *box* with the input inside it (the sidebar search, the invite e-mail field);
+ * that box already paints focus via :focus-within. Letting the bare <input>
+ * also draw the global outline put a second rectangle inside the first, and the
+ * inner one covered whatever sits at the end of the box — the ⌘K hint in the
+ * search row. So the ring is painted by the element the user sees as the field:
+ * buttons and the like draw it themselves; a field inside a focus-painted box
+ * defers to the box.
+ */
 :focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
 a:focus-visible,button:focus-visible,[role="menuitem"]:focus-visible,[role="tab"]:focus-visible,
-[role="button"]:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,
+[role="button"]:focus-visible,textarea:focus-visible,select:focus-visible,
 .popover:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+
+/* A field that is its own visual boundary (a plain bordered input) keeps the
+   ring; one nested in a focus-painted container does not. */
+input:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+.action-row input:focus-visible,
+.invite-input input:focus-visible{outline:none}
+
 /* inputs sit inside bordered boxes, so the ring is drawn on the box */
 .modal-field input:focus-visible,.dialog-field input:focus-visible{outline-offset:1px}
 button:focus:not(:focus-visible),[role="menuitem"]:focus:not(:focus-visible){outline:none}

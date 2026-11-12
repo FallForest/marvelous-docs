@@ -100,7 +100,10 @@
 .comment-compose{border-top:1px solid var(--border-subtle);padding:12px}
 
 .comment-compose textarea{width:100%;height:82px;resize:vertical;outline:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px;font-size:11px;color:var(--text-secondary);transition:border-color var(--duration-fast) var(--ease-standard),box-shadow var(--duration-fast) var(--ease-standard)}
-.comment-compose textarea:focus{border-color:var(--border-strong);box-shadow:0 0 0 3px var(--accent-ring)}
+/* Strong border + halo is the whole indicator; the global outline would draw a
+   second rectangle just inside the textarea's own border. */
+.comment-compose textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
+.comment-compose textarea:focus-visible{outline:none}
 
 .comment-compose>div{display:flex;align-items:center;justify-content:space-between;margin-top:7px}
 

@@ -19,11 +19,11 @@ export default function SharedDocumentPage({ token }: { token: string }) {
       .finally(() => setLoading(false))
   }, [token])
 
-  if (loading) return <div className="shared-page motion-enter"><div className="shared-header"><div className="shared-logo">M</div><h1>Marvelous Docs</h1></div><p className="shared-state"><span className="login-spinner" aria-hidden="true" />正在加载文档…</p></div>
-  if (error || !doc) return <div className="shared-page motion-enter"><div className="shared-header"><div className="shared-logo">M</div><h1>Marvelous Docs</h1></div><div className="shared-content"><p className="shared-state">{error || '文档不存在或链接已过期'}</p></div></div>
+  if (loading) return <div className="shared-page motion-enter" data-vt-scope="main"><div className="shared-header"><div className="shared-logo">M</div><h1>Marvelous Docs</h1></div><p className="shared-state"><span className="login-spinner" aria-hidden="true" />正在加载文档…</p></div>
+  if (error || !doc) return <div className="shared-page motion-enter" data-vt-scope="main"><div className="shared-header"><div className="shared-logo">M</div><h1>Marvelous Docs</h1></div><div className="shared-content"><p className="shared-state">{error || '文档不存在或链接已过期'}</p></div></div>
 
   const content = doc.content as { doc?: { type: string; content?: unknown[] } }
-  return <div className="shared-page motion-enter">
+  return <div className="shared-page motion-enter" data-vt-scope="main">
     <div className="shared-header">
       <div className="shared-logo">M</div>
       <h1>Marvelous Docs</h1>
