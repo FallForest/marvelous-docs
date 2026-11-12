@@ -8,6 +8,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.59] - 2026-11-12
+
+### Fixed
+
+- Declared `@tiptap/pm` as a direct web dependency. `lib/code-block.ts` imports
+  `@tiptap/pm/state` for its text selection, which resolved locally through the
+  hoisted store but failed a clean typecheck in the release image
+  (`TS2307: Cannot find module '@tiptap/pm/state'`).
+
 ## [0.1.58] - 2026-11-12
 
 ### Added

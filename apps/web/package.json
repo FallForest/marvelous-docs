@@ -1,6 +1,6 @@
 {
   "name": "@marvelous-docs/web",
-  "version": "0.1.58",
+  "version": "0.1.59",
   "private": true,
   "type": "module",
   "scripts": {
@@ -32,6 +32,7 @@
     "@tiptap/extension-text-align": "^2.27.3",
     "@tiptap/extension-text-style": "^2.27.3",
     "@tiptap/extension-underline": "^2.27.3",
+    "@tiptap/pm": "^2.27.3",
     "@tiptap/react": "^2.11.5",
     "@tiptap/starter-kit": "^2.11.5",
     "highlight.js": "^11.11.2",
