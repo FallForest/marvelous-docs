@@ -45,15 +45,16 @@
   </section>
   <footer><span>AI 原创生成 · 透明素材逐个导出 · 工具栏小符号仍可使用现有矢量图标</span><span id="weight">正在读取素材清单…</span></footer>
 </main>
+<script src="./assets-data.js"></script>
 <script>
-const definitions = [
- ['brand-spark','折纸星标','品牌标志 · 40–56 px'],['notebook','手绘笔记本','文档标题 · 56–80 px'],['idea-bulb','灵感灯泡','提示卡片 · 32–48 px'],['folder','纸质文件夹','文档树 · 24–32 px'],['document','折角文档','文档树 · 24–32 px'],['home','首页小屋','导航 · 24–32 px'],['favorite-star','铅笔收藏星','收藏入口 · 24–32 px'],['trash','回收站','导航 · 24–32 px'],['comment','纸质评论气泡','评论入口 · 24–32 px']
-];
-document.querySelector('#icons').innerHTML = definitions.map(([id,name,usage]) => `<article class="asset"><div class="art-stage"><img src="./icons/${id}.webp" alt="${name}"><div class="sizes"><img src="./icons/${id}.webp" width="24" height="24" alt="24像素预览"><img src="./icons/${id}.webp" width="32" height="32" alt="32像素预览"></div></div><div class="asset-info"><strong>${name}</strong><a href="./icons/${id}.png" download>PNG ↓</a><small>${usage}</small></div></article>`).join('');
-const decorations = [['marker-yellow','淡黄荧光笔','标题下划线 / 短语高亮','decor'],['marker-sage','鼠尾草绿涂抹','选中背景 / 章节标记','decor'],['washi-tape','半透纸胶带','评论卡片 / 便签装饰','decor'],['paper-ivory','奶油纸张纹理','背景底图 · 建议低透明度叠加','textures']];
-document.querySelector('#decor').innerHTML = decorations.map(([id,name,usage,dir]) => `<article class="asset"><div class="art-stage">${dir==='textures'?'<div class="texture" role="img" aria-label="奶油纸张纹理"></div>':`<img src="./${dir}/${id}.webp" alt="${name}">`}</div><div class="asset-info"><strong>${name}</strong><a href="./${dir}/${id}.png" download>PNG ↓</a><small>${usage}</small></div></article>`).join('');
+const manifest = window.MARVELOUS_DOCS_ART;
+const definitions = manifest.assets.filter(asset => asset.category === 'icons');
+document.querySelector('.tag').textContent = `${manifest.assets.length} 份独立素材 · PNG + WebP`;
+document.querySelector('#icons').innerHTML = definitions.map(({id,name,usage,png,webp}) => `<article class="asset"><div class="art-stage"><img src="./${webp}" alt="${name}"><div class="sizes"><img src="./${webp}" width="24" height="24" alt="24像素预览"><img src="./${webp}" width="32" height="32" alt="32像素预览"></div></div><div class="asset-info"><strong>${name}</strong><a href="./${png}" download>PNG ↓</a><small>${usage}</small></div></article>`).join('');
+const decorations = manifest.assets.filter(asset => asset.category !== 'icons');
+document.querySelector('#decor').innerHTML = decorations.map(({id,name,usage,png,webp,category}) => `<article class="asset"><div class="art-stage">${category==='textures'?'<div class="texture" role="img" aria-label="奶油纸张纹理"></div>':`<img src="./${webp}" alt="${name}" ${id==='pencil-frame'?'style="width:86px;height:86px"':''}>`}</div><div class="asset-info"><strong>${name}</strong><a href="./${png}" download>PNG ↓</a><small>${usage}</small></div></article>`).join('');
 document.querySelectorAll('.surfaces button').forEach(button => button.addEventListener('click', () => { document.body.dataset.surface = button.dataset.value; document.querySelectorAll('.surfaces button').forEach(b => b.setAttribute('aria-pressed', String(b === button))); }));
-fetch('./manifest.json').then(r=>r.json()).then(m=>{document.querySelector('#weight').textContent=`网页 WebP 全套约 ${Math.round(m.assets.reduce((n,a)=>n+a.webpBytes,0)/1024)} KB · 原图另行保留`;}).catch(()=>{document.querySelector('#weight').textContent='PNG / WebP · 高清原图保存在设计目录';});
+document.querySelector('#weight').textContent=`网页 WebP 全套约 ${Math.round(manifest.assets.reduce((n,a)=>n+a.webpBytes,0)/1024)} KB · 原图另行保留`;
 </script>
 </body>
 </html>

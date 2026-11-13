@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ChevronDown, ChevronRight, Folder, Home, LogOut, PanelLeftClose, Plus, Search, ShieldCheck, Sparkles, Star, Trash2 } from 'lucide-react'
+import { CheckSquare, ChevronDown, ChevronRight, Folder, Home, LogOut, PanelLeftClose, Plus, Search, ShieldCheck, Sparkles, Star, Trash2 } from 'lucide-react'
 import TemplateMenu from '../layout/TemplateMenu'
 import TreeItem from '../tree/TreeItem'
 import Popover from '../ui/Popover'
@@ -81,6 +81,7 @@ export default function Sidebar(props: SidebarProps) {
 
   const { user, tree, favoriteSet, activeId, selectedFolderId, expandedFolders, homeView, floating } = props
   const initial = (user.name || user.email)[0]!.toUpperCase()
+  const modifierKey = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl'
 
   return <aside className={'sidebar' + (floating ? ' sidebar-floating' : '')} aria-label="文档导航">
     <div className="brand-row">
@@ -94,24 +95,24 @@ export default function Sidebar(props: SidebarProps) {
         translucent one it has as a static column. */}
     <div className="sidebar-scroll">
       <div className="workspace-anchor">
-        <button type="button" className="workspace" aria-haspopup="menu" aria-expanded={props.workspaceOpen} onClick={() => props.onWorkspaceMenu(!props.workspaceOpen)}>
+        <button type="button" className="workspace sketch-frame" aria-haspopup="menu" aria-expanded={props.workspaceOpen} onClick={() => props.onWorkspaceMenu(!props.workspaceOpen)}>
           <div className="workspace-avatar">M</div>
           <span className="workspace-copy"><b>Marvelous 团队</b><small>工作区</small></span>
           <ChevronDown size={16} />
         </button>
-        <Popover open={props.workspaceOpen} onClose={() => props.onWorkspaceMenu(false)} label="工作区菜单" align="left" className="workspace-menu">
+        <Popover open={props.workspaceOpen} onClose={() => props.onWorkspaceMenu(false)} label="工作区菜单" align="left" className="workspace-menu sketch-frame">
           <div className="workspace-menu-head"><b>Marvelous 团队</b><span>私有部署 · 单工作区</span></div>
           <div className="workspace-menu-user"><span className="avatar">{initial}</span><div><b>{user.name || user.email.split('@')[0]}</b><small>{user.email}</small></div></div>
           <div className="menu-divider" />
-          {user.role === 'admin' && <button type="button" role="menuitem" className="menu-item" onClick={props.onAdmin}><ShieldCheck size={15} /><span>管理中心</span></button>}
-          <button type="button" role="menuitem" className="menu-item" onClick={props.onHelp}><span className="menu-key">?</span><span>快捷键与帮助</span></button>
-          <button type="button" role="menuitem" className="menu-item menu-item-danger" onClick={props.onLogout}><LogOut size={15} /><span>退出登录</span></button>
+          {user.role === 'admin' && <button type="button" role="menuitem" className="menu-item" onClick={props.onAdmin}><ArtIcon name="shield" fallback={<ShieldCheck size={15} />} /><span>管理中心</span></button>}
+          <button type="button" role="menuitem" className="menu-item" onClick={props.onHelp}><ArtIcon name="help" fallback={<span className="menu-key">?</span>} /><span>快捷键与帮助</span></button>
+          <button type="button" role="menuitem" className="menu-item menu-item-danger" onClick={props.onLogout}><ArtIcon name="logout" fallback={<LogOut size={15} />} /><span>退出登录</span></button>
         </Popover>
       </div>
 
       <div className="sidebar-actions">
-        <div className="action-row">
-          <Search size={16} />
+        <div className="action-row sketch-frame">
+          <ArtIcon name="search" fallback={<Search size={16} />} />
           <input
             aria-label="搜索文档"
             placeholder="搜索文档"
@@ -119,14 +120,14 @@ export default function Sidebar(props: SidebarProps) {
             onChange={(event) => props.onSearch(event.target.value)}
             onKeyDown={(event) => { if (event.key === 'Escape') props.onSearch('') }}
           />
-          <kbd>⌘ K</kbd>
+          <kbd>{modifierKey} K</kbd>
         </div>
       </div>
 
       <div className="nav-label">导航</div>
       <nav className="nav-list" aria-label="工作区导航">
         <button type="button" className="nav-row" aria-current={homeView === 'home' && !activeId && !selectedFolderId ? 'page' : undefined} onClick={props.onHome}><ArtIcon name="home" fallback={<Home size={16} />} />首页</button>
-        {user.role === 'admin' && <button type="button" className="nav-row" onClick={props.onAdmin}><ShieldCheck size={16} />管理中心</button>}
+        {user.role === 'admin' && <button type="button" className="nav-row" onClick={props.onAdmin}><ArtIcon name="shield" fallback={<ShieldCheck size={16} />} />管理中心</button>}
         <button type="button" className="nav-row" aria-current={homeView === 'favorites' ? 'page' : undefined} onClick={props.onFavorites}><ArtIcon name="favorite-star" fallback={<Star size={16} />} />收藏 {favoriteSet.size > 0 && <span className="nav-count">{favoriteSet.size}</span>}</button>
         <button type="button" className="nav-row" aria-current={homeView === 'trash' ? 'page' : undefined} onClick={props.onTrash}><ArtIcon name="trash" fallback={<Trash2 size={16} />} />回收站</button>
       </nav>
@@ -137,13 +138,14 @@ export default function Sidebar(props: SidebarProps) {
         </button>
         <button
           type="button"
-          className={'tree-select-toggle' + (props.checkedIds ? ' is-active' : '')}
+          className={'tree-select-toggle sketch-frame' + (props.checkedIds ? ' is-active' : '')}
           aria-pressed={Boolean(props.checkedIds)}
+          aria-label={props.checkedIds ? '退出多选' : '多选文档'}
           title={props.checkedIds ? '退出多选' : '多选文档'}
           onClick={() => props.checkedIds ? props.onExitSelection() : props.onEnterSelection()}
-        >{props.checkedIds ? '取消' : '选择'}</button>
+        ><span className="handdrawn-only tree-action-art"><ArtIcon name="selection" fallback={<CheckSquare size={16} />} /></span><span>{props.checkedIds ? '完成' : '多选'}</span></button>
         <div className="new-menu-anchor">
-          <button type="button" className="new-doc-btn" aria-haspopup="menu" aria-expanded={props.newMenuOpen} title="新建" onClick={() => props.onNewMenu(!props.newMenuOpen)}><Plus size={14} /><span>新建</span><ChevronDown size={12} /></button>
+          <button type="button" className="new-doc-btn sketch-frame" aria-haspopup="menu" aria-expanded={props.newMenuOpen} title="新建" onClick={() => props.onNewMenu(!props.newMenuOpen)}><ArtIcon name="new-document" fallback={<Plus size={14} />} /><span>新建</span><ChevronDown size={12} className="new-doc-chevron" /></button>
           <TemplateMenu
             open={props.newMenuOpen}
             templates={props.templates}
@@ -223,11 +225,11 @@ export default function Sidebar(props: SidebarProps) {
     </div>}
 
     <div className="sidebar-bottom">
-      <button type="button" className="help-row" onClick={props.onHelp}><span className="help-dot">?</span><span>帮助与快捷键</span></button>
+      <button type="button" className="help-row" onClick={props.onHelp}><ArtIcon name="help" fallback={<span className="help-dot">?</span>} /><span>帮助与快捷键</span></button>
       <div className="profile-row">
         <div className="avatar">{initial}</div>
         <div className="profile-copy"><b>{user.name || user.email.split('@')[0]}</b><small>{user.email}</small></div>
-        <button type="button" className="icon-btn" aria-label="退出登录" title="退出登录" onClick={props.onLogout}><LogOut size={16} /></button>
+        <button type="button" className="icon-btn" aria-label="退出登录" title="退出登录" onClick={props.onLogout}><ArtIcon name="logout" fallback={<LogOut size={16} />} /></button>
       </div>
     </div>
   </aside>

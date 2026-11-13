@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import {
   MessageCircle,
-  AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Check, ChevronDown, Code2, Download,
+  AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Check, ChevronDown, Code2, Search,
   Highlighter, ImagePlus, IndentDecrease, IndentIncrease, Italic, Link2, List, ListOrdered,
   Minus, MoreHorizontal, Palette, Quote, Redo2, Strikethrough, Table2, Type, Underline, Undo2,
 } from 'lucide-react'
 import type { Editor } from '@tiptap/react'
 import Popover from '../ui/Popover'
+import ArtIcon from '../ui/ArtIcon'
 
 export type ToolbarActions = {
   onLink: () => void
@@ -120,7 +121,7 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
     <div className="tb-group tb-group-color">
       <div className="tb-anchor">
         <button type="button" className="tb-btn" title="文字颜色" aria-label="文字颜色" aria-haspopup="menu" aria-expanded={colorOpen} onClick={() => setColorOpen((value) => !value)}>
-          <span className="tb-color"><Palette size={15} /><i style={{ background: (editor?.getAttributes('textStyle').color as string) || '#1f2937' }} /></span>
+          <span className="tb-color"><ArtIcon name="palette" fallback={<Palette size={15} />} /><i style={{ background: (editor?.getAttributes('textStyle').color as string) || '#1f2937' }} /></span>
         </button>
         <Popover open={colorOpen} onClose={() => setColorOpen(false)} label="文字颜色" align="left" className="tb-menu tb-color-menu">
           <div className="tb-swatches">{COLORS.map((color) => <button key={color} type="button" aria-label={'颜色 ' + color} className="tb-swatch" style={{ background: color }} onClick={() => { editor?.chain().focus().setColor(color).run(); setColorOpen(false) }} />)}</div>
@@ -158,7 +159,7 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
     <div className="tb-group tb-group-list">
       {item('项目符号列表', !!editor?.isActive('bulletList'), () => editor?.chain().focus().toggleBulletList().run(), <List size={16} />)}
       {item('编号列表', !!editor?.isActive('orderedList'), () => editor?.chain().focus().toggleOrderedList().run(), <ListOrdered size={16} />)}
-      {item('任务列表', !!editor?.isActive('taskList'), () => editor?.chain().focus().toggleTaskList().run(), <span className="tb-task">☑</span>)}
+      {item('任务列表', !!editor?.isActive('taskList'), () => editor?.chain().focus().toggleTaskList().run(), <ArtIcon name="selection" fallback={<span className="tb-task">☑</span>} />)}
       {item('引用', !!editor?.isActive('blockquote'), () => editor?.chain().focus().toggleBlockquote().run(), <Quote size={16} />)}
       {item('代码块', !!editor?.isActive('codeBlock'), () => editor?.chain().focus().toggleCodeBlock().run(), <span className="tb-mono">{'</>'}</span>)}
     </div>
@@ -175,14 +176,14 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
           <button type="button" role="menuitem" className="tb-menu-item" onClick={() => { editor?.chain().focus().setHorizontalRule().run(); setInsertOpen(false) }}><Minus size={15} /><span>分割线</span></button>
           <button type="button" role="menuitem" className="tb-menu-item" onClick={() => { editor?.chain().focus().setHardBreak().run(); setInsertOpen(false) }}><Type size={15} /><span>换行符</span></button>
           <button type="button" role="menuitem" className="tb-menu-item" onClick={() => { actions.onOutline(); setInsertOpen(false) }}><ListOrdered size={15} /><span>文档大纲</span></button>
-          <button type="button" role="menuitem" className="tb-menu-item" onClick={() => { actions.onFind(); setInsertOpen(false) }}><Download size={15} /><span>查找替换</span></button>
+          <button type="button" role="menuitem" className="tb-menu-item" onClick={() => { actions.onFind(); setInsertOpen(false) }}><ArtIcon name="search" fallback={<Search size={15} />} /><span>查找替换</span></button>
         </Popover>
       </div>
     </div>
 
     <div className="tb-spacer" />
     <div className="tb-group tb-group-extra">
-      {item('评论', false, actions.onComment, <MessageCircle size={16} />)}
+      {item('评论', false, actions.onComment, <ArtIcon name="comment" fallback={<MessageCircle size={16} />} />)}
       {item('减少缩进', false, () => editor?.chain().focus().liftListItem('listItem').run(), <IndentDecrease size={16} />)}
       {item('增加缩进', false, () => editor?.chain().focus().sinkListItem('listItem').run(), <IndentIncrease size={16} />)}
     </div>
@@ -231,11 +232,11 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
         {([
           ['表格', Table2, () => editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()],
           ['分割线', Minus, () => editor?.chain().focus().setHorizontalRule().run()],
-          ['查找替换', Download, () => actions.onFind()],
+          ['查找替换', Search, () => actions.onFind()],
           ['文档大纲', ListOrdered, () => actions.onOutline()],
         ] as const).map(([label, Icon, run]) => (
           <button key={label} type="button" role="menuitem" className="tb-menu-item" onClick={() => { run(); setMoreOpen(false) }}>
-            <Icon size={15} /><span>{label}</span>
+            {label === '查找替换' ? <ArtIcon name="search" fallback={<Icon size={15} />} /> : <Icon size={15} />}<span>{label}</span>
           </button>
         ))}
       </Popover>

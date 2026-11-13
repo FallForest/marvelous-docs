@@ -75,23 +75,23 @@ export default function TopBar(props: TopBarProps) {
         <div className="menu-anchor">
           <button
             type="button"
-            className="icon-btn theme-btn"
+            className="icon-btn theme-btn sketch-frame"
             aria-label="切换主题"
             title="切换主题"
             aria-haspopup="menu"
             aria-expanded={props.themeOpen}
             onClick={() => props.onThemeMenu(!props.themeOpen)}
-          ><Palette size={16} /><span className="theme-trigger-label handdrawn-only">外观</span></button>
+          ><ArtIcon name="palette" fallback={<Palette size={16} />} /><span className="theme-trigger-label handdrawn-only">外观</span></button>
           <ThemeMenu open={props.themeOpen} currentId={props.themeId} onPick={props.onTheme} onClose={() => props.onThemeMenu(false)} />
         </div>
         <div className="menu-anchor">
-          <button type="button" className="icon-btn" aria-label="导出文档" title="导出文档" aria-haspopup="menu" aria-expanded={props.exportOpen} disabled={!props.hasDocument} onClick={() => props.onExportMenu(!props.exportOpen)}><ArrowDownToLine size={16} /></button>
+          <button type="button" className="icon-btn" aria-label="导出文档" title="导出文档" aria-haspopup="menu" aria-expanded={props.exportOpen} disabled={!props.hasDocument} onClick={() => props.onExportMenu(!props.exportOpen)}><ArtIcon name="download" fallback={<ArrowDownToLine size={16} />} /></button>
           <ExportMenu open={props.exportOpen} onSelect={props.onExport} onClose={() => props.onExportMenu(false)} />
         </div>
-        <button type="button" className="icon-btn" aria-label="版本历史" title="版本历史" onClick={props.onHistory}><History size={16} /></button>
+        <button type="button" className="icon-btn" aria-label="版本历史" title="版本历史" onClick={props.onHistory}><ArtIcon name="history" fallback={<History size={16} />} /></button>
         <button type="button" className="icon-btn" aria-label="评论" title="评论" onClick={props.onComments}><ArtIcon name="comment" fallback={<MessageCircle size={16} />} /></button>
       </div>
-      {props.hasDocument && <button type="button" className="share-btn" onClick={props.onShare}><Share2 size={14} />共享</button>}
+      {props.hasDocument && <button type="button" className="share-btn sketch-frame" onClick={props.onShare}><ArtIcon name="share" fallback={<Share2 size={14} />} />共享</button>}
     </div>
   </header>
 }

@@ -1,5 +1,6 @@
-import { FilePlus2, FolderPlus, Upload } from 'lucide-react'
+import { FilePlus2, FileText, FolderPlus, Upload } from 'lucide-react'
 import Popover from '../ui/Popover'
+import ArtIcon from '../ui/ArtIcon'
 import type { Template } from '../../lib/types'
 
 const TEMPLATE_ORDER = ['meeting-notes', 'weekly-report', 'project-plan', 'product-spec', 'release-notes']
@@ -49,14 +50,15 @@ type TemplateMenuProps = {
 
 export default function TemplateMenu({ open, templates, onCreateBlank, onCreateTemplate, onImport, onNewFolder, onClose }: TemplateMenuProps) {
   const entries = mergeTemplates(templates)
-  return <Popover open={open} onClose={onClose} label="新建" align="right" className="template-menu">
+  return <Popover open={open} onClose={onClose} label="新建" align="right" className="template-menu sketch-frame">
     <div className="menu-heading">新建</div>
-    <button type="button" role="menuitem" className="menu-item" onClick={() => { onClose(); onCreateBlank() }}><FilePlus2 size={15} /><span>空白文档</span></button>
+    <button type="button" role="menuitem" className="menu-item" onClick={() => { onClose(); onCreateBlank() }}><ArtIcon name="new-document" fallback={<FilePlus2 size={15} />} /><span>空白文档</span></button>
     {entries.map((template) => <button key={template.id} type="button" role="menuitem" className="menu-item" onClick={() => { onClose(); onCreateTemplate(template.id) }}>
+      <span className="handdrawn-only template-art"><ArtIcon name="document" fallback={<FileText size={15} />} /></span>
       <span className="menu-item-copy"><b>{TEMPLATE_LABELS[template.id] || template.name}</b><small>{TEMPLATE_HINTS[template.id] || template.description || '模板'}</small></span>
     </button>)}
     <div className="menu-divider" />
     <button type="button" role="menuitem" className="menu-item" onClick={() => { onClose(); onImport() }}><Upload size={15} /><span>导入 Markdown</span></button>
-    <button type="button" role="menuitem" className="menu-item" onClick={() => { onClose(); onNewFolder() }}><FolderPlus size={15} /><span>新建文件夹</span></button>
+    <button type="button" role="menuitem" className="menu-item" onClick={() => { onClose(); onNewFolder() }}><ArtIcon name="folder" fallback={<FolderPlus size={15} />} /><span>新建文件夹</span></button>
   </Popover>
 }

@@ -24,9 +24,20 @@ const definitions = [
   ['marker-sage', '鼠尾草绿涂抹', 'decor', '选中背景 / 章节标记'],
   ['washi-tape', '半透纸胶带', 'decor', '评论卡片 / 便签装饰'],
   ['paper-ivory', '奶油纸张纹理', 'textures', '背景纹理 · 建议降低不透明度'],
+  ['search', '手绘放大镜', 'icons', '搜索输入 / 命令面板'],
+  ['help', '纸质问号', 'icons', '帮助入口'],
+  ['logout', '退出门箭头', 'icons', '账号 / 退出'],
+  ['palette', '手绘调色板', 'icons', '外观切换'],
+  ['download', '导出下载', 'icons', '导出入口与菜单'],
+  ['history', '历史时钟', 'icons', '版本历史 / 动态'],
+  ['share', '共享节点', 'icons', '共享按钮'],
+  ['shield', '管理盾牌', 'icons', '管理中心'],
+  ['selection', '多选清单', 'icons', '文档批量选择'],
+  ['new-document', '新建纸页', 'icons', '新建文档'],
+  ['pencil-frame', '铅笔边框', 'decor', '九宫格边框材质 / 按钮与输入框'],
 ]
 
-const manifest = { version: 1, generator: 'built-in image_gen', assets: [] }
+const manifest = { version: 2, generator: 'built-in image_gen', assets: [] }
 for (const [id, name, category, usage] of definitions) {
   const sourcePath = path.join(sourceDir, id + '.png')
   const source = await sharp(sourcePath).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
@@ -65,6 +76,8 @@ for (const [id, name, category, usage] of definitions) {
   manifest.assets.push({ id, name, category, usage, png: category + '/' + id + '.png', webp: category + '/' + id + '.webp', width: metadata.width, height: metadata.height, sourceWidth: width, sourceHeight: height, alphaBounds, crop: category === 'textures' ? null : crop, transparentFraction: +(transparent / (width * height)).toFixed(4), partialAlphaFraction: +(partial / (width * height)).toFixed(4), pngBytes: (await fs.stat(pngPath)).size, webpBytes: (await fs.stat(webpPath)).size })
 }
 await fs.writeFile(path.join(outputDir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n')
+// A local script makes the visual catalog usable from file:// as well as Vite.
+await fs.writeFile(path.join(outputDir, 'assets-data.js'), 'globalThis.MARVELOUS_DOCS_ART = ' + JSON.stringify(manifest) + ';\n')
 const totalPng = manifest.assets.reduce((n, a) => n + a.pngBytes, 0)
 const totalWebp = manifest.assets.reduce((n, a) => n + a.webpBytes, 0)
 console.log(JSON.stringify({ assets: manifest.assets.length, totalPngBytes: totalPng, totalWebpBytes: totalWebp, outputDir }, null, 2))

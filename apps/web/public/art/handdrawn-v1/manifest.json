@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "generator": "built-in image_gen",
   "assets": [
     {
@@ -360,6 +360,314 @@
       "partialAlphaFraction": 0,
       "pngBytes": 671613,
       "webpBytes": 21634
+    },
+    {
+      "id": "search",
+      "name": "手绘放大镜",
+      "category": "icons",
+      "usage": "搜索输入 / 命令面板",
+      "png": "icons/search.png",
+      "webp": "icons/search.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 101,
+        "top": 68,
+        "width": 1050,
+        "height": 1120
+      },
+      "crop": {
+        "left": 79,
+        "top": 46,
+        "width": 1094,
+        "height": 1164
+      },
+      "transparentFraction": 0.7484,
+      "partialAlphaFraction": 0.2516,
+      "pngBytes": 53478,
+      "webpBytes": 16616
+    },
+    {
+      "id": "help",
+      "name": "纸质问号",
+      "category": "icons",
+      "usage": "帮助入口",
+      "png": "icons/help.png",
+      "webp": "icons/help.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 97,
+        "top": 109,
+        "width": 1053,
+        "height": 1058
+      },
+      "crop": {
+        "left": 75,
+        "top": 87,
+        "width": 1097,
+        "height": 1102
+      },
+      "transparentFraction": 0.4386,
+      "partialAlphaFraction": 0.5614,
+      "pngBytes": 100939,
+      "webpBytes": 19944
+    },
+    {
+      "id": "logout",
+      "name": "退出门箭头",
+      "category": "icons",
+      "usage": "账号 / 退出",
+      "png": "icons/logout.png",
+      "webp": "icons/logout.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1303,
+      "sourceHeight": 1207,
+      "alphaBounds": {
+        "left": 169,
+        "top": 170,
+        "width": 961,
+        "height": 885
+      },
+      "crop": {
+        "left": 147,
+        "top": 148,
+        "width": 1005,
+        "height": 929
+      },
+      "transparentFraction": 0.644,
+      "partialAlphaFraction": 0.356,
+      "pngBytes": 84792,
+      "webpBytes": 21982
+    },
+    {
+      "id": "palette",
+      "name": "手绘调色板",
+      "category": "icons",
+      "usage": "外观切换",
+      "png": "icons/palette.png",
+      "webp": "icons/palette.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1312,
+      "sourceHeight": 1199,
+      "alphaBounds": {
+        "left": 120,
+        "top": 124,
+        "width": 1055,
+        "height": 972
+      },
+      "crop": {
+        "left": 98,
+        "top": 102,
+        "width": 1099,
+        "height": 1016
+      },
+      "transparentFraction": 0.5136,
+      "partialAlphaFraction": 0.4864,
+      "pngBytes": 93661,
+      "webpBytes": 19806
+    },
+    {
+      "id": "download",
+      "name": "导出下载",
+      "category": "icons",
+      "usage": "导出入口与菜单",
+      "png": "icons/download.png",
+      "webp": "icons/download.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1263,
+      "sourceHeight": 1245,
+      "alphaBounds": {
+        "left": 125,
+        "top": 118,
+        "width": 1010,
+        "height": 1042
+      },
+      "crop": {
+        "left": 103,
+        "top": 96,
+        "width": 1054,
+        "height": 1086
+      },
+      "transparentFraction": 0.6651,
+      "partialAlphaFraction": 0.3348,
+      "pngBytes": 71670,
+      "webpBytes": 17816
+    },
+    {
+      "id": "history",
+      "name": "历史时钟",
+      "category": "icons",
+      "usage": "版本历史 / 动态",
+      "png": "icons/history.png",
+      "webp": "icons/history.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 149,
+        "top": 152,
+        "width": 956,
+        "height": 970
+      },
+      "crop": {
+        "left": 127,
+        "top": 130,
+        "width": 1000,
+        "height": 1014
+      },
+      "transparentFraction": 0.5279,
+      "partialAlphaFraction": 0.4721,
+      "pngBytes": 102467,
+      "webpBytes": 20458
+    },
+    {
+      "id": "share",
+      "name": "共享节点",
+      "category": "icons",
+      "usage": "共享按钮",
+      "png": "icons/share.png",
+      "webp": "icons/share.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1261,
+      "sourceHeight": 1247,
+      "alphaBounds": {
+        "left": 152,
+        "top": 85,
+        "width": 944,
+        "height": 1097
+      },
+      "crop": {
+        "left": 130,
+        "top": 63,
+        "width": 988,
+        "height": 1141
+      },
+      "transparentFraction": 0.7548,
+      "partialAlphaFraction": 0.2452,
+      "pngBytes": 53860,
+      "webpBytes": 14982
+    },
+    {
+      "id": "shield",
+      "name": "管理盾牌",
+      "category": "icons",
+      "usage": "管理中心",
+      "png": "icons/shield.png",
+      "webp": "icons/shield.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 168,
+        "top": 128,
+        "width": 912,
+        "height": 1024
+      },
+      "crop": {
+        "left": 146,
+        "top": 106,
+        "width": 956,
+        "height": 1068
+      },
+      "transparentFraction": 0.5351,
+      "partialAlphaFraction": 0.4649,
+      "pngBytes": 84669,
+      "webpBytes": 16870
+    },
+    {
+      "id": "selection",
+      "name": "多选清单",
+      "category": "icons",
+      "usage": "文档批量选择",
+      "png": "icons/selection.png",
+      "webp": "icons/selection.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1312,
+      "sourceHeight": 1199,
+      "alphaBounds": {
+        "left": 207,
+        "top": 258,
+        "width": 909,
+        "height": 780
+      },
+      "crop": {
+        "left": 185,
+        "top": 236,
+        "width": 953,
+        "height": 824
+      },
+      "transparentFraction": 0.8033,
+      "partialAlphaFraction": 0.1967,
+      "pngBytes": 58792,
+      "webpBytes": 15812
+    },
+    {
+      "id": "new-document",
+      "name": "新建纸页",
+      "category": "icons",
+      "usage": "新建文档",
+      "png": "icons/new-document.png",
+      "webp": "icons/new-document.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 248,
+        "top": 169,
+        "width": 737,
+        "height": 943
+      },
+      "crop": {
+        "left": 226,
+        "top": 147,
+        "width": 781,
+        "height": 987
+      },
+      "transparentFraction": 0.5741,
+      "partialAlphaFraction": 0.4258,
+      "pngBytes": 87693,
+      "webpBytes": 16628
+    },
+    {
+      "id": "pencil-frame",
+      "name": "铅笔边框",
+      "category": "decor",
+      "usage": "九宫格边框材质 / 按钮与输入框",
+      "png": "decor/pencil-frame.png",
+      "webp": "decor/pencil-frame.webp",
+      "width": 1024,
+      "height": 1016,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 30,
+        "top": 36,
+        "width": 1193,
+        "height": 1184
+      },
+      "crop": {
+        "left": 18,
+        "top": 24,
+        "width": 1217,
+        "height": 1208
+      },
+      "transparentFraction": 0.9427,
+      "partialAlphaFraction": 0.0573,
+      "pngBytes": 169534,
+      "webpBytes": 75386
     }
   ]
 }

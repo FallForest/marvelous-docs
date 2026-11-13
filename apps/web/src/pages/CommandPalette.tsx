@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { FileText, Folder, Home, Plus, Search } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import ArtIcon from '../components/ui/ArtIcon'
 import { staggerItemProps } from '../components/ui/Stagger'
 import { useReducedMotion } from '../hooks/useReducedMotion'
 import { excerpt, snippetText } from '../lib/format'
@@ -82,7 +83,7 @@ export default function CommandPalette({ query, onQuery, scope, onScope, index, 
   return <div className="command-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
     <section className="command-palette" role="dialog" aria-modal="true" aria-label="命令面板">
       <div className="command-input">
-        <Search size={17} />
+        <ArtIcon name="search" fallback={<Search size={17} />} />
         <input autoFocus role="combobox" aria-expanded="true" aria-controls="command-results" aria-autocomplete="list" aria-label="搜索文档或输入命令" placeholder="搜索文档或输入命令" value={query === '__favorites__' ? '' : query} onChange={(event) => onQuery(event.target.value)} />
         <kbd>ESC</kbd>
       </div>
@@ -110,7 +111,10 @@ export default function CommandPalette({ query, onQuery, scope, onScope, index, 
             onMouseEnter={() => onIndex(itemIndex)}
             onClick={() => activate(item)}
           >
-            <Icon size={16} />
+            <ArtIcon
+              name={item.key === 'home' ? 'home' : item.key === 'create' ? 'new-document' : item.doc?.kind === 'folder' ? 'folder' : 'document'}
+              fallback={<Icon size={16} />}
+            />
             <span className="command-item-copy"><span>{item.label}</span>{item.snippet && <small>{item.snippet}</small>}</span>
             {item.hint && <kbd>{item.hint}</kbd>}
           </button>

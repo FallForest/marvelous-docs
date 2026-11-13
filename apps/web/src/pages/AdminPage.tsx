@@ -2,6 +2,7 @@ import {
   ArrowLeft, LayoutDashboard, LogOut, ShieldCheck, Sparkles, UserPlus, Users,
 } from 'lucide-react'
 import InviteDialog from '../components/dialogs/InviteDialog'
+import ArtIcon from '../components/ui/ArtIcon'
 import { staggerItemProps } from '../components/ui/Stagger'
 import type { AdminInviteProps, UpdateInfo } from '../lib/app-types'
 import type { User, WorkspaceMember } from '../lib/types'
@@ -11,10 +12,10 @@ export type AdminWorkspaceProps = { user: User; members: WorkspaceMember[]; memb
 export default function AdminWorkspace({ user, members, membersBusy, updateInfo, notice, showInvite, onBack, onOpenInvite, onStartUpdate, onLogout, onCloseInvite, inviteProps }: AdminWorkspaceProps) {
   return <div className="admin-shell" data-vt-scope="main">
     <aside className="admin-sidebar">
-      <div className="brand-row"><div className="brand-mark"><Sparkles size={16} /></div><span>Marvelous Docs</span></div>
-      <div className="admin-sidebar-title"><ShieldCheck size={17} /><div><b>管理中心</b><small>工作区设置</small></div></div>
+      <div className="brand-row"><div className="brand-mark"><ArtIcon name="brand-spark" fallback={<Sparkles size={16} />} /></div><span>Marvelous Docs</span></div>
+      <div className="admin-sidebar-title"><ArtIcon name="shield" fallback={<ShieldCheck size={17} />} /><div><b>管理中心</b><small>工作区设置</small></div></div>
       <button className="admin-back" onClick={onBack}><ArrowLeft size={15} />返回文档</button>
-      <div className="admin-sidebar-footer"><div className="profile-row"><div className="avatar">{(user.name || user.email)[0].toUpperCase()}</div><div className="profile-copy"><b>{user.name || user.email.split('@')[0]}</b><small>管理员</small></div><button className="icon-btn" aria-label="退出登录" title="退出登录" onClick={onLogout}><LogOut size={16} /></button></div></div>
+      <div className="admin-sidebar-footer"><div className="profile-row"><div className="avatar">{(user.name || user.email)[0].toUpperCase()}</div><div className="profile-copy"><b>{user.name || user.email.split('@')[0]}</b><small>管理员</small></div><button className="icon-btn" aria-label="退出登录" title="退出登录" onClick={onLogout}><ArtIcon name="logout" fallback={<LogOut size={16} />} /></button></div></div>
     </aside>
     <main className="admin-main">
       <header className="admin-topbar"><div><span {...staggerItemProps(0, 'eyebrow')}>工作区管理</span><h1 {...staggerItemProps(1)}>管理中心</h1><p {...staggerItemProps(2)}>管理成员、邀请和工作区服务。</p></div><span className="admin-status"><span className="save-dot" />管理员权限</span></header>
@@ -30,7 +31,7 @@ export default function AdminWorkspace({ user, members, membersBusy, updateInfo,
         <section {...staggerItemProps(1, 'admin-section')}>
           <div className="admin-section-head"><div><h2><LayoutDashboard size={18} />系统更新</h2><p>检查并部署 Marvelous Docs 的新版本。</p></div>{updateInfo?.url && <a className="admin-release-link" href={updateInfo.url} target="_blank" rel="noreferrer">查看发布说明</a>}</div>
           <div className="admin-update-card">
-            <div className={'admin-update-icon' + (updateInfo?.status === 'running' ? ' is-running' : '')}><Sparkles size={19} /></div>
+            <div className={'admin-update-icon' + (updateInfo?.status === 'running' ? ' is-running' : '')}><ArtIcon name="brand-spark" fallback={<Sparkles size={19} />} /></div>
             <div className="admin-update-copy">
               <b>{updateInfo?.status === 'available' ? '发现新版本 ' + updateInfo.version : updateInfo?.status === 'running' ? '正在更新到 ' + updateInfo.version : updateInfo?.status === 'failed' ? '更新失败（' + updateInfo.version + '）' : '当前使用最新版本'}</b>
               <span>{notice || '系统会在更新前自动备份数据库。'}</span>

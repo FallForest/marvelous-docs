@@ -42,9 +42,9 @@
 [data-theme='handdrawn'] .popover{background:var(--surface);border-color:var(--border-strong);border-radius:9px 12px 8px 11px;backdrop-filter:none}
 [data-theme='handdrawn'] :is(.modal-panel,.share-modal,.invite-modal,.move-modal,.version-modal,.command-palette){border-color:var(--border-strong);border-radius:12px 16px 10px 14px;background-color:var(--surface)}
 [data-theme='handdrawn'] :is(.modal-panel,.share-modal,.invite-modal,.move-modal,.version-modal)::before{pointer-events:none}
-[data-theme='handdrawn'] :is(.search-page,.admin-page,.shared-page){background-color:var(--surface-muted);background-image:url('/art/handdrawn-v1/textures/paper-ivory.webp');background-size:768px 768px}
-[data-theme='handdrawn'] :is(.search-hero h1,.admin-hero h1,.shared-header h1){font-family:var(--font-handwritten);font-weight:700}
-[data-theme='handdrawn'] :is(.search-result,.search-result-card,.admin-card,.stat-card){border-color:var(--border);border-radius:9px 12px 8px 10px;background-color:var(--surface)}
+[data-theme='handdrawn'] :is(.search-page,.admin-shell,.shared-page){background-color:var(--surface-muted);background-image:url('/art/handdrawn-v1/textures/paper-ivory.webp');background-size:768px 768px}
+[data-theme='handdrawn'] :is(.search-hero h1,.admin-topbar h1,.shared-header h1){font-family:var(--font-handwritten);font-weight:700}
+[data-theme='handdrawn'] :is(.search-hit,.admin-section,.stat-card){border-color:var(--border);border-radius:9px 12px 8px 10px;background-color:var(--surface)}
 [data-theme='handdrawn'] .shared-content{background:var(--surface);border:1px solid var(--border-strong);border-radius:9px 12px 7px 10px;box-shadow:3px 4px 0 rgba(var(--shadow-rgb),.09);padding:40px clamp(22px,5vw,64px)}
 [data-theme='handdrawn'] .shared-logo{background:transparent;box-shadow:none;border:0;font-size:0;background-image:url('/art/handdrawn-v1/icons/brand-spark.webp');background-position:center;background-repeat:no-repeat;background-size:contain}
 

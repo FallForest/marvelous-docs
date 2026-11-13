@@ -1,5 +1,6 @@
 import { ArrowDownToLine, FileType2, Printer } from 'lucide-react'
 import Popover from '../ui/Popover'
+import ArtIcon from '../ui/ArtIcon'
 import type { ExportTarget } from '../../lib/types'
 
 const ITEMS: Array<{ format: ExportTarget; label: string; hint: string }> = [
@@ -18,7 +19,7 @@ export default function ExportMenu({ open, onSelect, onClose }: ExportMenuProps)
     {ITEMS.map((item) => <button key={item.format} type="button" role="menuitem" className="menu-item" onClick={() => { onClose(); onSelect(item.format) }}>
       {item.format === 'print'
         ? <Printer size={15} />
-        : item.format === 'pdf' ? <FileType2 size={15} /> : <ArrowDownToLine size={15} />}
+        : item.format === 'pdf' ? <ArtIcon name="document" fallback={<FileType2 size={15} />} /> : <ArtIcon name="download" fallback={<ArrowDownToLine size={15} />} />}
       <span>{item.label}</span>
       <small className="menu-hint">{item.hint}</small>
     </button>)}
