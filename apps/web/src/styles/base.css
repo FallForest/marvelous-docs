@@ -249,6 +249,80 @@ button:disabled{cursor:not-allowed;opacity:.55}
 
 .sidebar-scrim{position:fixed;inset:0;z-index:29;background:#1b20294d}
 
+/*
+ * ── the shell is an interface, not a document ────────────────────
+ *
+ * Everything is unselectable by default and content opts back in.
+ *
+ * A click on a label that has no focusable target — "导航", "文档", a breadcrumb
+ * separator — leaves the browser a collapsed caret to draw, and it blinks
+ * between two words of a heading. Dragging across the topbar or the tree
+ * heading paints a text highlight over the chrome ("我的文档 所有文档").
+ * Neither is visible in a screenshot, and neither is a styling preference:
+ * both come from the browser treating the whole shell as document text.
+ *
+ * `user-select:none` stops the highlight; `caret-color:transparent` stops the
+ * caret, because the caret survives user-select in Chromium.
+ *
+ * Both properties inherit, so the rule goes on the viewport and nowhere else.
+ * Declaring it on `* ` would work too and would be a trap: it gives every
+ * opt-in below the same specificity problem this comment exists to prevent —
+ * an opt-in only has to be a class, not an id or an !important.
+ */
+html,body{-webkit-user-select:none;user-select:none;caret-color:transparent}
+
+/* ── content that people actually copy ─────────────────────────────
+ *
+ * The editor is the reason this application exists: its text must stay fully
+ * selectable, including inside code blocks, tables and task lists. Read-only
+ * views of a document (a shared page, a version preview, the PDF/office
+ * surfaces) are content too.
+ */
+.tiptap-content,
+.shared-content,
+.shared-content *,
+.version-copy,
+.version-copy *,
+.anchor-preview,
+.preview-body,
+.code-overlay pre,
+.code-overlay code{
+  -webkit-user-select:text;user-select:text;
+}
+
+/* Titles, counts, e-mail addresses and error strings: short, but the kind of
+   string a user retypes or pastes elsewhere. */
+.document-heading input,
+.breadcrumbs strong,
+.doc-meta,
+.home-card-main,
+.search-hit-copy,
+.tree-label,
+.profile-copy small,
+.admin-member-copy small,
+.share-link-info code,
+.invite-result,
+.help-note,
+.dialog-hint,
+.login-foot{
+  -webkit-user-select:text;user-select:text;
+}
+
+/* Fields take typing, so they get a real caret and a real selection back. */
+input,
+textarea,
+select,
+[contenteditable="true"],
+[contenteditable="plaintext-only"]{
+  -webkit-user-select:text;user-select:text;caret-color:auto;
+}
+
+/* The editor caret is the product, not an accident. Chromium resolves
+   `caret-color:auto` to transparent when `user-select:none` was inherited
+   anywhere above, and `auto` is not "whatever the text colour is" — so the
+   colour is stated once, on the element that owns the caret, and inherited. */
+.tiptap-content{caret-color:var(--text)}
+
 :focus-visible{outline:2px solid #d95f48;outline-offset:2px}
 
 button:focus:not(:focus-visible){outline:none}

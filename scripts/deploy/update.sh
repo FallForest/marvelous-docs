@@ -24,6 +24,18 @@ for f in $COMPOSE_FILES; do
   cp "$f" "$BACKUP_DIR/pre-update-$timestamp.$(basename "$f")"
 done
 cp .env "$BACKUP_DIR/pre-update-$timestamp.env"
+# Retention. Every run writes a pre-update-<stamp>.sql plus one copy of each
+# compose file and .env, and nothing ever deleted them: one real deployment had
+# 61 files and 21 MB after a month of repeated updates. Keep the newest
+# BACKUP_KEEP sets and drop the rest.
+KEEP="${BACKUP_KEEP:-5}"
+if [ "$KEEP" -gt 0 ]; then
+  ls -1 "$BACKUP_DIR" 2>/dev/null \
+    | sed -n 's/^\(pre-update-[0-9]\{8\}-[0-9]\{6\}\)\..*/\1/p' \
+    | sort -u | head -n -"$KEEP" \
+    | while IFS= read -r set; do rm -f "$BACKUP_DIR/$set".*; done
+  echo "==> keeping the newest $KEEP backup sets in $BACKUP_DIR"
+fi
 
 # Wait for the database, then dump through the container's own environment:
 # the updater has no POSTGRES_USER of its own.
@@ -44,6 +56,24 @@ fi
 echo "Creating PostgreSQL backup: $backup_file"
 compose exec -T postgres \
   sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$backup_file"
+
+# Apply the tags the agent resolved, now that the pre-update snapshot exists and a
+# rollback would restore what was actually running. The file is written by the
+# agent; a run started by hand simply has none and keeps the current tags.
+TARGET_FILE="${UPDATE_TARGET_FILE:-./.update-target.env}"
+if [ -f "$TARGET_FILE" ]; then
+  echo "==> applying release target from $TARGET_FILE"
+  while IFS='=' read -r key value; do
+    case "$key" in ''|\#*) continue ;; esac
+    [ -n "$value" ] || continue
+    if grep -q "^${key}=" .env 2>/dev/null; then
+      sed "s|^${key}=.*|${key}=${value}|" .env > .env.tmp && mv .env.tmp .env
+    else
+      printf '%s=%s\n' "$key" "$value" >> .env
+    fi
+  done < "$TARGET_FILE"
+  rm -f "$TARGET_FILE"
+fi
 
 echo "Pulling configured images"
 compose pull api web

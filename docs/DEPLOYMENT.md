@@ -118,8 +118,18 @@ can start the update. The `updater` container backs up the database, runs
 ./scripts/deploy/update.sh     # backup, pull, migrate, restart, health check
 ```
 
-`scripts/deploy/update.sh` honours `COMPOSE_FILE` and `BACKUP_DIR`. If the health check
-fails it exits non-zero, prints the dump path, and you roll back the image tags.
+`scripts/deploy/update.sh` honours `COMPOSE_FILE`, `BACKUP_DIR` and
+`BACKUP_KEEP` (default 5 — it keeps the newest N `pre-update-*` sets and deletes
+the older ones, so repeated in-app updates cannot fill the disk). If the health
+check fails it exits non-zero, prints the dump path, restores the compose files
+and `.env` snapshot, and brings the previous images back up.
+
+The in-app path has one more moving part: the agent resolves the manifest and
+writes `APP_VERSION`, `API_IMAGE` and `WEB_IMAGE` to `.update-target.env`
+in the project directory (git-ignored). It does **not** edit `.env` or the
+compose files itself — `update.sh` applies that file after it has taken the
+snapshot, which is what makes the automatic rollback actually roll back. A
+manual run has no such file and simply keeps the tags already configured.
 
 The release workflow publishes multi-arch images
 (`ghcr.io/<owner>/marvelous-docs-api`, `...-web`) tagged with the version and

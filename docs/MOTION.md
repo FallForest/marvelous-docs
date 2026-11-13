@@ -82,6 +82,47 @@ easing politely into place.
    `transform` applied forever, which outranks `:hover` and `:active` and
    silently kills the interaction. `structure.test.ts` fails on both rules.
 
+## Selectability: the shell is an interface, not a document
+
+A separate contract, but it lives in the same file because it fails the same
+way — as something that moved or blinked when it should have stayed still.
+
+Clicking a label with no focusable target ("导航", "文档", a breadcrumb) left
+Chromium a collapsed caret to draw, blinking between two words of a heading.
+Dragging across the topbar painted a text highlight over the chrome. Neither
+shows up in a screenshot; both come from the browser treating the whole shell
+as document text.
+
+`base.css` therefore states it once, on the viewport:
+
+```css
+html,body{user-select:none;caret-color:transparent}
+```
+
+Both properties inherit, so a content opt-in only has to be a class. Content
+opts back in — `.tiptap-content`, `.shared-content`, `.version-copy`,
+`.preview-body`, the code overlay, plus the short strings people retype
+(titles, counts, e-mail addresses, error copy) — and every field resets
+`caret-color:auto`.
+
+Two things that are easy to get wrong here:
+
+- **`user-select:none` does not hide the caret.** The caret survives it in
+  Chromium; `caret-color` is the property that turns it off.
+- **`caret-color:auto` on a contentEditable element resolves to transparent**
+  once `user-select:none` has been inherited above it. The editor's caret is
+  part of the product, so `.tiptap-content{caret-color:var(--text)}` states the
+  colour explicitly instead of relying on `auto`.
+
+Do not implement this as `*{user-select:none}`: a universal selector makes
+every opt-in fight the same specificity battle, and the opt-in list is the one
+thing that has to stay cheap to extend.
+
+`scripts/verify/verify-selectability.mjs` is the regression test: it mounts the
+real sidebar, topbar and a real Tiptap instance, presses and drags with real
+input events, and fails if a caret appears in the chrome, if a drag selects
+chrome text, or if the editor and its inputs stop being selectable.
+
 ## Adding something new
 
 1. Does the value already exist as a token? Use it.
@@ -94,3 +135,8 @@ easing politely into place.
 `structure.test.ts` enforces that `motion.css` loads before the layers that use
 it, that every named layer file exists, and that no stylesheet invents a
 duration that is not a token.
+
+New chrome is unselectable by default, so a component that renders text worth
+copying needs an entry in the opt-in list in `base.css` — that omission is the
+one failure this contract can produce, and `verify-selectability.mjs` checks the
+surfaces a user actually copies from.
