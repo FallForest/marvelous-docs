@@ -82,7 +82,12 @@ setRoomLogger(app.log)
 app.setErrorHandler((error, _request, reply) => {
   const status = (error as { statusCode?: number }).statusCode
   if ((error as { validation?: unknown }).validation) return fail(reply, 400, 'INVALID_INPUT', 'Request validation failed.')
-  if (status === 413) return fail(reply, 413, 'FILE_TOO_LARGE', 'Request body is too large.')
+  // Fastify raises 413 for a body over bodyLimit, before any route runs — so this
+  // is the message a caller sees for the one case the upload route cannot answer
+  // itself. Name the ceiling rather than "request body is too large": the client
+  // shows this string verbatim, and a limit the user cannot see is a limit they
+  // will hit twice.
+  if (status === 413) return fail(reply, 413, 'FILE_TOO_LARGE', 'Files are limited to 1 GB.')
   if (status && status >= 400 && status < 500) return fail(reply, status, 'INVALID_INPUT', 'The request could not be processed.')
   app.log.error(error)
   return fail(reply, 500, 'INTERNAL_ERROR', 'An unexpected server error occurred.')
