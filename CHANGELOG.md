@@ -8,6 +8,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.64] - 2026-11-13
+
+### Changed
+
+- Editor toolbar and shell styling refinements, with the structure test extended
+  to cover them.
+
+### Verified
+
+- End-to-end in-app update: the admin 立即更新 button reaches the API, the
+  updater survives its own update, the stack comes back on the new images, and a
+  failed health check rolls the compose files back.
+
 ## [0.1.63] - 2026-11-13
 
 ### Fixed

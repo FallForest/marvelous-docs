@@ -3,7 +3,7 @@ import {
   MessageCircle,
   AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Check, ChevronDown, Code2, Download,
   Highlighter, ImagePlus, IndentDecrease, IndentIncrease, Italic, Link2, List, ListOrdered,
-  Minus, Palette, Quote, Redo2, Strikethrough, Table2, Type, Underline, Undo2,
+  Minus, MoreHorizontal, Palette, Quote, Redo2, Strikethrough, Table2, Type, Underline, Undo2,
 } from 'lucide-react'
 import type { Editor } from '@tiptap/react'
 import Popover from '../ui/Popover'
@@ -55,6 +55,7 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
   const [highlightOpen, setHighlightOpen] = useState(false)
   const [alignOpen, setAlignOpen] = useState(false)
   const [insertOpen, setInsertOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
   const disabled = !editor
 
   const item = (label: string, active: boolean, run: () => void, icon: React.ReactNode, extra?: string) => <button
@@ -76,7 +77,7 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
 
     <span className="tb-separator" />
 
-    <div className="tb-group">
+    <div className="tb-group tb-group-block">
       <div className="tb-anchor">
         <button type="button" className="tb-select" aria-haspopup="menu" aria-expanded={blockOpen} onMouseDown={(event) => { event.preventDefault(); onInteract?.() }}
           onClick={() => setBlockOpen((value) => !value)}>
@@ -106,7 +107,7 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
 
     <span className="tb-separator" />
 
-    <div className="tb-group">
+    <div className="tb-group tb-group-inline">
       {item('加粗', !!editor?.isActive('bold'), () => editor?.chain().focus().toggleBold().run(), <Bold size={16} />)}
       {item('斜体', !!editor?.isActive('italic'), () => editor?.chain().focus().toggleItalic().run(), <Italic size={16} />)}
       {item('下划线', !!editor?.isActive('underline'), () => editor?.chain().focus().toggleUnderline().run(), <Underline size={16} />)}
@@ -116,7 +117,7 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
 
     <span className="tb-separator" />
 
-    <div className="tb-group">
+    <div className="tb-group tb-group-color">
       <div className="tb-anchor">
         <button type="button" className="tb-btn" title="文字颜色" aria-label="文字颜色" aria-haspopup="menu" aria-expanded={colorOpen} onClick={() => setColorOpen((value) => !value)}>
           <span className="tb-color"><Palette size={15} /><i style={{ background: (editor?.getAttributes('textStyle').color as string) || '#1f2937' }} /></span>
@@ -154,7 +155,7 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
 
     <span className="tb-separator" />
 
-    <div className="tb-group">
+    <div className="tb-group tb-group-list">
       {item('项目符号列表', !!editor?.isActive('bulletList'), () => editor?.chain().focus().toggleBulletList().run(), <List size={16} />)}
       {item('编号列表', !!editor?.isActive('orderedList'), () => editor?.chain().focus().toggleOrderedList().run(), <ListOrdered size={16} />)}
       {item('任务列表', !!editor?.isActive('taskList'), () => editor?.chain().focus().toggleTaskList().run(), <span className="tb-task">☑</span>)}
@@ -184,6 +185,60 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
       {item('评论', false, actions.onComment, <MessageCircle size={16} />)}
       {item('减少缩进', false, () => editor?.chain().focus().liftListItem('listItem').run(), <IndentDecrease size={16} />)}
       {item('增加缩进', false, () => editor?.chain().focus().sinkListItem('listItem').run(), <IndentIncrease size={16} />)}
+    </div>
+
+    {/*
+     * Mobile only. On a phone the row cannot hold every group, and horizontal
+     * scrolling hid 306px of it behind a fade — the controls existed but were
+     * unreachable. This puts the same commands in a menu instead, so nothing is
+     * lost and nothing has to be discovered by swiping a toolbar.
+     */}
+    <div className="tb-anchor tb-more">
+      <button
+        type="button"
+        className={'tb-btn' + (moreOpen ? ' is-active' : '')}
+        title="更多格式"
+        aria-label="更多格式"
+        aria-haspopup="menu"
+        aria-expanded={moreOpen}
+        disabled={disabled}
+        onClick={() => setMoreOpen((value) => !value)}
+      ><MoreHorizontal size={18} /></button>
+      <Popover open={moreOpen} onClose={() => setMoreOpen(false)} label="更多格式" align="right" className="tb-menu tb-more-menu">
+        <div className="tb-more-section">段落</div>
+        {([
+          ['正文', () => editor?.chain().focus().setParagraph().run()],
+          ['标题 1', () => editor?.chain().focus().toggleHeading({ level: 1 }).run()],
+          ['标题 2', () => editor?.chain().focus().toggleHeading({ level: 2 }).run()],
+          ['标题 3', () => editor?.chain().focus().toggleHeading({ level: 3 }).run()],
+        ] as const).map(([label, run]) => (
+          <button key={label} type="button" role="menuitem" className="tb-menu-item" onClick={() => { run(); setMoreOpen(false) }}>
+            <span>{label}</span>
+          </button>
+        ))}
+        <div className="tb-more-section">列表与块</div>
+        {([
+          ['项目符号列表', List, () => editor?.chain().focus().toggleBulletList().run()],
+          ['编号列表', ListOrdered, () => editor?.chain().focus().toggleOrderedList().run()],
+          ['引用', Quote, () => editor?.chain().focus().toggleBlockquote().run()],
+          ['代码块', Code2, () => editor?.chain().focus().toggleCodeBlock().run()],
+        ] as const).map(([label, Icon, run]) => (
+          <button key={label} type="button" role="menuitem" className="tb-menu-item" onClick={() => { run(); setMoreOpen(false) }}>
+            <Icon size={15} /><span>{label}</span>
+          </button>
+        ))}
+        <div className="tb-more-section">插入</div>
+        {([
+          ['表格', Table2, () => editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()],
+          ['分割线', Minus, () => editor?.chain().focus().setHorizontalRule().run()],
+          ['查找替换', Download, () => actions.onFind()],
+          ['文档大纲', ListOrdered, () => actions.onOutline()],
+        ] as const).map(([label, Icon, run]) => (
+          <button key={label} type="button" role="menuitem" className="tb-menu-item" onClick={() => { run(); setMoreOpen(false) }}>
+            <Icon size={15} /><span>{label}</span>
+          </button>
+        ))}
+      </Popover>
     </div>
   </div>
 }

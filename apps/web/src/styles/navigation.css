@@ -187,8 +187,10 @@
     backdrop-filter:blur(24px) saturate(180%);
   }
 }
-@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  @media (max-width:820px){
+/* Media query outermost, feature query inside: one nesting style for the whole
+   codebase, and the fallback stays next to the rule it is a fallback for. */
+@media (max-width:820px){
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
     .sidebar.sidebar-floating{background:#f7f8fa}
   }
 }

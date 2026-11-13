@@ -549,41 +549,18 @@
 .main-area>.topbar .share-btn svg{flex:0 0 auto}
 .main-area>.topbar .share-btn:focus-visible{outline:2px solid var(--accent-strong);outline-offset:2px}
 
-/* ══ editor toolbar: same rhythm as the topbar ══════════════════ */
-.editor-toolbar{
-  height:46px;
-  flex:0 0 46px;
-  padding:0 12px;
-  gap:1px;
-  border-bottom:1px solid var(--border);
-  background:#fff;
-}
-.tb-group{gap:1px}
-.tb-separator{
-  width:1px;
-  height:16px;
-  margin:0 5px;
-  background:var(--border);
-}
-.tb-btn{
-  width:29px;
-  height:30px;
-  border-radius:6px;
-  color:var(--text-secondary);
-}
-.tb-btn:hover:not(:disabled){background:var(--surface-sunken);color:var(--text)}
-.tb-btn.is-active{background:var(--accent-soft);color:var(--accent-strong)}
-.tb-select{
-  height:30px;
-  padding:0 6px;
-  border-radius:6px;
-  color:var(--text-secondary);
-}
-.tb-select:hover{background:var(--surface-sunken);color:var(--text)}
-/* when the row is still wider than the column, cut it off deliberately:
-   fade to the canvas instead of slicing an icon in half */
+/*
+ * The editor toolbar is styled in editor.css, which owns the toolbar's layout,
+ * its responsive compaction and its touch sizes.
+ *
+ * It used to be restyled here as well. Because shell.css loads after editor.css,
+ * this block won every conflict — including the phone sizes — while the file
+ * that the reader would naturally open to change the toolbar had no effect. One
+ * surface, one owner: only the fade that belongs to this shell's narrow layout
+ * stays here.
+ */
 @media (max-width:1240px){
-  .editor-toolbar{mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent)}
+  .editor-toolbar:not(:has(.tb-more)){mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent)}
 }
 
 /* admin shell shares the chrome grid: same 12px inset as the document
@@ -618,25 +595,43 @@
   }
 }
 @media (max-width:560px){
-  .app-shell{--row-h:44px;--row-pad:12px}
-  .main-area>.topbar{height:auto;min-height:56px;padding:0 10px;gap:6px}
-  .main-area>.topbar .top-actions{gap:6px}
+  /*
+   * Touch layout. Every interactive target is at least 44px on its short edge,
+   * which is the size a fingertip actually hits; 32px targets were the main
+   * complaint on phones.
+   *
+   * --tree-chevron-w is re-declared here as a plain declaration. It used to be
+   * written as a nested @media inside this block, which is invalid CSS: the
+   * parser drops a nested at-rule, so everything after it in the block silently
+   * stopped applying.
+   */
+  .app-shell{--row-h:44px;--row-pad:12px;--tree-chevron-w:24px}
+  .main-area>.topbar{height:auto;min-height:56px;padding:0 8px;gap:4px}
+  .main-area>.topbar .top-actions{gap:4px}
   .icon-group{gap:0;padding:0}
-  .icon-group .icon-btn{width:34px;height:36px;border-radius:7px}
+  .icon-group .icon-btn{width:40px;height:44px;border-radius:8px}
+  .main-area>.topbar .icon-btn{width:40px;height:44px}
   .main-area>.topbar .share-btn{
-    width:34px;height:34px;
+    width:44px;height:44px;
     padding:0;
     gap:0;
     font-size:0;
     justify-content:center;
   }
-  .main-area>.topbar .share-btn svg{width:16px;height:16px}
-  .sidebar .tree-more{width:32px;height:32px;flex:0 0 32px;opacity:1}
-  @media (max-width:560px){ .app-shell{--tree-chevron-w:24px} }
+  .main-area>.topbar .share-btn svg{width:18px;height:18px}
+  .sidebar .tree-more{width:44px;height:44px;flex:0 0 44px;opacity:1}
   .sidebar .brand-row{height:52px;flex-basis:52px}
   .sidebar .nav-row,
   .sidebar .tree-entry .tree-doc,
   .sidebar .tree-entry .tree-folder,
-  .sidebar .root-folder{font-size:13.5px}
+  .sidebar .root-folder{font-size:14px}
   .sidebar .profile-row{min-height:56px}
+  /* The tree row's own overflow menu is inside the 44px row; give it a full
+     hit area rather than letting it inherit the 24px desktop size. */
+  .sidebar .tree-select-toggle,.sidebar .new-doc-btn{height:44px;padding:0 12px;font-size:13px}
+  /* The section label is a disclosure button; a 24px row left it as the only
+     control on the screen smaller than a fingertip. */
+  .sidebar .tree-heading{height:auto;min-height:32px;margin-top:20px}
+  .sidebar .tree-heading-toggle{height:44px;padding:0 8px;margin-left:-8px;font-size:13px}
+  .sidebar .help-row{height:44px}
 }

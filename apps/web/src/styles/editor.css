@@ -351,22 +351,73 @@
 @media (max-width:760px){
   .tb-group-history .tb-btn:last-child,.tb-group .tb-btn[aria-label="行内代码"]{display:none}
 }
+/* Desktop keeps the full row; the overflow menu is a phone affordance.
+   Declared before the mobile block so the media query can override it. */
+.tb-more{display:none}
+.tb-more-menu{min-width:180px}
+.tb-more-section{
+  padding:6px 9px 4px;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.02em;
+  color:var(--text-muted);
+}
+.tb-more-section:not(:first-child){margin-top:2px;border-top:1px solid var(--border)}
+
 @media (max-width:560px){
+  /*
+   * Phone toolbar. It used to be the desktop row with overflow-x:auto and a fade
+   * at the right edge, which hid 306px of controls — the commands were present
+   * but unreachable, and nothing indicated that swiping would reveal them.
+   *
+   * The row now holds only the commands a thumb reaches for while typing and
+   * pushes the rest into the "more" menu, so the toolbar always fits and every
+   * command is one visible tap away.
+   */
   .editor-toolbar{
-    gap:2px;padding:0 8px;height:42px;flex-basis:42px;
-    scrollbar-width:none;overflow-x:auto;
-    /* fade to the canvas instead of slicing an icon in half */
-    mask-image:linear-gradient(90deg,#000 calc(100% - 18px),transparent);
+    gap:2px;padding:0 6px;height:48px;flex-basis:48px;
+    overflow:visible;
+    mask-image:none;
   }
   .editor-toolbar::-webkit-scrollbar{display:none}
-  .tb-select{min-width:44px;padding:0 5px}
-  .tb-size{min-width:36px}
-  .top-actions{gap:6px}
-  .top-actions .icon-btn{width:32px;height:32px}
-  .breadcrumbs{font-size:12px}
-  .paper{padding:26px 18px 72px}
+  .tb-btn{width:40px;height:44px;border-radius:8px}
+  .tb-select{min-width:52px;height:44px;padding:0 6px}
+  .tb-size{min-width:44px}
+  .tb-separator{margin:0 3px;height:20px}
+  .tb-group-history .tb-btn:last-child{display:none}
+  /*
+   * Which groups stay on the phone row.
+   *
+   * The row has 390px. At 44px per button that is eight columns, so the toolbar
+   * keeps only what a thumb reaches for while typing — undo/redo, the block
+   * type, and the four inline marks — and the rest moves into the "more" menu
+   * with the exact same commands. Hiding a group here never removes a feature;
+   * it relocates it to a place the user can see.
+   */
+  .tb-group-color,
+  .tb-group-list,
+  .tb-group-insert,
+  .tb-group-extra,
+  .tb-group-inline .tb-btn:nth-child(n+4){display:none}
+  /* Separators before a hidden group would leave a dangling rule. */
+  .tb-separator{display:none}
+
+  .paper{padding:22px 16px 64px}
   .document-heading input{font-size:24px}
+  .document-heading{margin-bottom:16px;padding-bottom:12px}
+  .tiptap-content{font-size:16px;line-height:1.75}
+
+  /* The overflow control is only meaningful on a phone. */
+  .tb-more{display:flex}
+  .tb-more .tb-btn{width:44px}
+
+  /* Menu rows are touch targets too: a 12-item list with 32px rows is a
+     mis-tap machine on a phone. */
+  .tb-more-menu{min-width:0;width:min(240px,calc(100vw - 24px))}
+  .tb-more-menu .tb-menu-item{min-height:44px;font-size:14px;gap:10px}
+  .tb-more-section{font-size:12px;padding:8px 10px 4px}
 }
+
 
 /* Feishu-style popovers that open upward get the shared rise keyframes; the
    literal `.12s ease-out` this used to carry predates the token layer. */

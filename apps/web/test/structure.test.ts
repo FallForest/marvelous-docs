@@ -286,3 +286,58 @@ test('the sidebar root row shares the tree indent grid', () => {
   assert.ok(/display\s*:\s*flex/.test(rule[1]!), '.root-folder must be a flex row');
   assert.ok(/--tree-chevron-w/.test(rule[1]!), '.root-folder indent must follow the chevron column width');
 });
+
+test('no @media nests inside another @media', () => {
+  // `@media { @media { ... } }` is invalid: the parser drops the inner block and
+  // everything after it in the outer one silently stops applying. That is how the
+  // phone touch sizes vanished without any error anywhere.
+  //
+  // `@media { @supports { ... } }` is valid and is the preferred order — the
+  // media query outermost, the feature query next to the rule it guards — so
+  // only media-inside-media is an error.
+  const offenders: string[] = [];
+  for (const name of readdirSync(join(SRC, 'styles'))) {
+    if (!name.endsWith('.css')) continue
+    const text = readFileSync(join(SRC, 'styles', name), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const stack: string[] = [];
+    let index = 0;
+    while (index < text.length) {
+      const char = text[index];
+      if (char === '{') {
+        const prior = text.slice(Math.max(0, index - 200), index);
+        const at = prior.lastIndexOf('@');
+        const head = at >= 0 ? prior.slice(at) : '';
+        const atName = head && !head.includes('{') && !head.includes('}') ? (head.match(/^@([a-z-]+)/) || [])[1] : undefined;
+        if (atName) {
+          if (atName === 'media' && stack.includes('media')) { offenders.push(name); break }
+          stack.push(atName);
+        } else {
+          stack.push('(rule)');
+        }
+      } else if (char === '}') {
+        stack.pop();
+      }
+      index++;
+    }
+  }
+  assert.deepEqual(offenders, [], '@media nested inside @media: ' + offenders.join(', '));
+});
+test('the editor toolbar is styled in one layer', () => {
+  // shell.css loads after editor.css, so a toolbar rule there wins every
+  // conflict while the file a reader would open to change the toolbar has no
+  // effect. The phone sizes were lost that way.
+  const shell = readFileSync(join(SRC, 'styles/shell.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const offenders = ['.tb-btn{', '.tb-select{', '.editor-toolbar{'].filter((selector) => shell.includes(selector));
+  assert.deepEqual(offenders, [], 'toolbar rules belong in editor.css: ' + offenders.join(', '));
+});
+
+test('the phone toolbar fits without horizontal scrolling', () => {
+  // It used to overflow by ~300px behind a fade mask, which hid a third of the
+  // commands with no affordance that they could be reached. The phone row now
+  // keeps a few groups and moves the rest into a visible menu.
+  const editor = readFileSync(join(SRC, 'styles/editor.css'), 'utf8');
+  const start = editor.indexOf('@media (max-width:560px)');
+  const mobile = editor.slice(start);
+  assert.ok(/\.tb-more\{display:flex\}/.test(mobile), 'the phone row needs the overflow menu');
+  assert.ok(!/\.editor-toolbar\{[^}]*overflow-x:auto/.test(mobile), 'the phone row must not rely on horizontal scrolling');
+});

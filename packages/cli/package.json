@@ -1,6 +1,6 @@
 {
   "name": "@marvelous-docs/cli",
-  "version": "0.1.63",
+  "version": "0.1.64",
   "private": false,
   "description": "Command line client for Marvelous Docs: documents, comments, versions, sharing, and uploads over the versioned REST API.",
   "type": "module",
