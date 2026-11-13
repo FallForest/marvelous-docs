@@ -326,7 +326,7 @@ Every REST content update, version restore, and persisted collaboration edit app
 ## System
 
 - `GET /healthz` — `{ "status": "ok" } ` or `503 DATABASE_UNAVAILABLE`.
-- `GET /system/version` — `{ "version": "0.1.66" }`.
+- `GET /system/version` — `{ "version": "0.1.67" }`.
 - `GET /system/update-check` (authenticated) — `{ "currentVersion", "latestVersion", "updateAvailable", "manifest" }`.
 - `POST /system/update` (workspace administrator) — starts the update agent; `202`.
 - `GET /system/update-status` (workspace administrator) — `{ "update": { "status", "startedAt", "finishedAt", "output", "error" } }`.

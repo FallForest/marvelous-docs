@@ -4,6 +4,46 @@ All notable changes to Marvelous Docs are documented in this file. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.67] - 2026-11-13
+
+### Fixed
+
+- **外壳里会冒出不该出现的输入光标。** 点击没有可聚焦目标的标签（侧边栏的
+  「导航」、文档树的「文档」、面包屑的分隔处）时，浏览器会在两个词之间留下一个
+  折叠光标并持续闪烁；在顶栏或树标题上横向拖动，还会把「我的文档 产品路线图」
+  这类界面文字选中成一片高亮。两者都不出现在截图里。
+
+  根因是整块外壳都被当成可选文本。现在 `base.css` 在视口上一处声明
+  `html,body{user-select:none;caret-color:transparent}`，由内容反向 opt-in：
+  编辑器、公开分享页、版本预览、代码浮层，以及用户真的会复制的短文本（标题、
+  计数、邮箱、报错文案）恢复可选，表单控件恢复真实光标。
+
+  两个细节值得记住：`user-select:none` 在 Chromium 里**挡不住光标**，
+  必须同时给 `caret-color`；而 `caret-color:auto` 在一棵曾继承
+  `user-select:none` 的树上会解析成透明，所以编辑器的光标颜色显式写成
+  `var(--text)`。
+
+- **更新失败时的回滚其实回滚不了。** 更新代理在 `update.sh` 拍快照**之前**
+  就把 `.env` 与 compose 文件改成了新版本，于是"回滚"恢复的是新 tag 本身；
+  同时它每次更新都改写工作树，检出逐步偏离模板（`image: ${API_IMAGE:-...}`
+  被固化成 `ghcr.io/...:0.1.66`），下一次 `git pull` 必然与本地改动冲突。
+
+  现在代理只把清单里的 tag 写进 `.update-target.env`（该文件已加入
+  `.gitignore`），`update.sh` 在备份完成**之后**才读取并写入 `.env`——
+  写入落在快照的正确一侧，工作树保持干净；手动执行的更新没有这个文件，
+  沿用当前 tag。代理也不再假定脚本一定在 `scripts/deploy/update.sh`：
+  旧部署把脚本复制在 `scripts/`，现在两处都认，不会再以 127 退出。
+
+### Added
+
+- `scripts/verify/verify-selectability.mjs`：真实浏览器校验。挂载真实的
+  Sidebar、TopBar 和一个真实 Tiptap 实例，用真实鼠标事件去点、去拖，断言外壳
+  不产生光标、拖动选不中界面文字，同时编辑器与输入框仍然可选、光标可见。
+  已接入 `pnpm verify:browser`。回退样式后它会报 10 项失败，包含原始症状。
+- `update.sh` 的备份保留策略：每次更新写一份 dump、每个 compose 文件和
+  `.env` 的快照，此前从不清理——一次真实部署一个月就攒到 61 个文件、21 MB。
+  现在只保留最新 `BACKUP_KEEP` 组（默认 5，设为 0 关闭清理）。
+
 ## [0.1.66] - 2026-11-13
 
 ### Changed
