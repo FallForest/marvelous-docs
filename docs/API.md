@@ -261,7 +261,7 @@ Viewer access. `200` →
 
 PDF is a client-side render of the `html` export, not a fourth server format: the
 web client injects the exported article under a scoped stylesheet, rasterises it
-at 2× and cuts the canvas into A4 pages (see `apps/web/src/lib/pdf.ts` and
+at 2× and cuts the canvas into A4 pages (see `apps/web/src/lib/export/pdf.ts` and
 `pdf-pages.ts`). A text PDF would need a bundled CJK font several megabytes wide
 for this one menu item.
 
@@ -326,7 +326,7 @@ Every REST content update, version restore, and persisted collaboration edit app
 ## System
 
 - `GET /healthz` — `{ "status": "ok" } ` or `503 DATABASE_UNAVAILABLE`.
-- `GET /system/version` — `{ "version": "0.1.65" }`.
+- `GET /system/version` — `{ "version": "0.1.66" }`.
 - `GET /system/update-check` (authenticated) — `{ "currentVersion", "latestVersion", "updateAvailable", "manifest" }`.
 - `POST /system/update` (workspace administrator) — starts the update agent; `202`.
 - `GET /system/update-status` (workspace administrator) — `{ "update": { "status", "startedAt", "finishedAt", "output", "error" } }`.

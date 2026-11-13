@@ -4,9 +4,37 @@ All notable changes to Marvelous Docs are documented in this file. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.66] - 2026-11-13
 
-Nothing yet.
+### Changed
+
+- 目录结构与模块边界重新整理，行为不变：服务端从扁平 `src/lib` 拆出 `src/core/`
+  （配置、连接池、错误信封、密码、共享类型）与 `src/domain/`（有效角色、文档 JSON
+  形状、路由守卫），依赖方向固定为 `routes → domain → core → lib`；
+  917 行的 `lib/markdown.ts` 拆成 `lib/markdown/`（nodes / parse / serialize / html /
+  export / snippet，统一从 `index.ts` 导出）。
+- Web 端 `lib/` 按用途分组：只存在于 Tiptap 实例内的模块进 `lib/editor/`，导出链路上的
+  模块进 `lib/export/`；`usePresence` 从 `components/ui/` 移到 `hooks/`，因为它属于状态
+  生命周期而不是展示原语。
+- 外壳瘦身：`App.tsx` 从 1055 行降到 867 行，分享（成员、ACL、外链、范围）、邀请表单、
+  导出（markdown/html/json、打印、PDF 进度）三块的数据与动作分别收进
+  `hooks/useSharing.ts`、`hooks/useInvite.ts`、`hooks/useDocumentExport.ts`；外壳只保留
+  "哪个浮层打开"这一个布尔。这两个行为细节也因此只有一处：分享加载失败不会留下旧权限，
+  邀请链接在纯 HTTP 下复制失败会如实提示。
+- 脚本按阶段归位：`scripts/deploy/{backup,restore,update}.sh`、
+  `scripts/release/publish-images.sh`、`scripts/verify/verify-*.mjs`；更新代理
+  `update-agent.mjs` 归到它自己的镜像目录 `apps/updater/`。发布清单从根目录移到
+  `release/latest.json`，根目录只保留入口文件（配置、清单、README）。
+- 新增 `apps/server/test/structure.test.ts`：用真实 import 图校验服务端分层方向，
+  并禁止 `lib/` 引入框架依赖；`apps/web/test/structure.test.ts` 增加 `lib/editor`、
+  `lib/export` 的目录契约。
+
+### Removed
+
+- 清理过期产物：根目录的 `.tmp-export.pdf`、`.tmp-export-canvas.png`，CLI 的
+  `test-run.log`，空的 `release-check/`，以及 `apps/web/.gitignore`（与根 `.gitignore`
+  重复）。`.gitignore` 中的调试脚本规则改为根锚定，此前 `verify*.mjs` 会把真正
+  提交的浏览器校验脚本一起忽略。
 
 ## [0.1.65] - 2026-11-13
 
