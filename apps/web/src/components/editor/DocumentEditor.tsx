@@ -277,22 +277,57 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
     if (selection && selection.to > selection.from) onSelection({ from: selection.from, to: selection.to, text: editor.state.doc.textBetween(selection.from, selection.to, ' ').slice(0, 500) })
   }
 
+  /** 1 GiB, matching the server's ceiling. Checked here so the wait is not wasted. */
+  const MAX_UPLOAD_BYTES = 1024 * 1024 * 1024
+
+  /** PUTs one file to the upload endpoint and returns the URL it is served from. */
+  async function uploadFile(file: File): Promise<string> {
+    const response = await fetch(API + '/api/v1/uploads', {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type || 'application/octet-stream', 'X-File-Name': file.name, Authorization: 'Bearer ' + token },
+      body: file,
+    })
+    const body = await response.json()
+    if (!response.ok) throw new Error(body.error?.message || '上传失败')
+    return API + body.file.url
+  }
+
   async function uploadImage(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
-    if (file.size > 20 * 1024 * 1024) { window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '图片不能超过 20 MB' })); return }
+    if (file.size > MAX_UPLOAD_BYTES) { window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '文件不能超过 1 GB' })); return }
     try {
-      const response = await fetch(API + '/api/v1/uploads', {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type || 'application/octet-stream', 'X-File-Name': file.name, Authorization: 'Bearer ' + token },
-        body: file,
-      })
-      const body = await response.json()
-      if (!response.ok) throw new Error(body.error?.message || '上传失败')
-      setImageUrl(API + body.file.url)
+      setImageUrl(await uploadFile(file))
     } catch (error) {
       window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '图片上传失败：' + (error as Error).message }))
+    }
+  }
+
+  /**
+   * Uploads a file and inserts a link to it.
+   *
+   * Separate from uploadImage because a PDF is not an image: setImage would put a
+   * broken <img> in the document. Anything that is not an image becomes a link
+   * carrying the original name, which is what a reader needs to find it again.
+   */
+  async function uploadAttachment(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    if (file.size > MAX_UPLOAD_BYTES) { window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '文件不能超过 1 GB' })); return }
+    try {
+      const url = await uploadFile(file)
+      if (file.type.startsWith('image/')) {
+        editor?.chain().focus().setImage({ src: url }).run()
+      } else {
+        editor?.chain().focus()
+          .insertContent({ type: 'text', text: file.name, marks: [{ type: 'link', attrs: { href: url } }] })
+          .run()
+      }
+      setImagePrompt(false)
+    } catch (error) {
+      window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '文件上传失败：' + (error as Error).message }))
     }
   }
 
@@ -453,7 +488,7 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
     <BubbleToolbar editor={editor} anchor={bubbleAnchor} onLink={() => rangeSelection()} onComment={() => { commentSelection(); window.dispatchEvent(new Event('mdoc-open-comments')) }} />
     {imagePrompt && <Dialog
       title="插入图片"
-      description="粘贴图片地址，或上传本地图片（20 MB 以内）。"
+      description="粘贴图片地址，或上传本地文件（1 GB 以内）。"
       confirmLabel="插入"
       onConfirm={() => { if (imageUrl.trim()) { editor?.chain().focus().setImage({ src: imageUrl.trim() }).run(); setImageUrl(''); setBubbleAnchor(null) } setImagePrompt(false) }}
       onClose={() => setImagePrompt(false)}
@@ -462,7 +497,8 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
         <label htmlFor="image-url">图片地址</label>
         <div className="image-insert-row">
           <input id="image-url" placeholder="https://example.com/image.png" value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} />
-          <label className="image-upload-btn secondary-btn">上传<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" className="visually-hidden" onChange={(event) => void uploadImage(event)} /></label>
+          <label className="image-upload-btn secondary-btn">上传图片<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" className="visually-hidden" onChange={(event) => void uploadImage(event)} /></label>
+          <label className="image-upload-btn secondary-btn">上传文件<input type="file" className="visually-hidden" onChange={(event) => void uploadAttachment(event)} /></label>
         </div>
       </div>
     </Dialog>}
