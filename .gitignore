@@ -33,3 +33,7 @@ coverage/
 
 # Vite debug output
 apps/web/vite-out.txt
+
+# Ad-hoc debugging scripts (not part of the project)
+probe*.mjs
+app-stub*.js

@@ -198,13 +198,21 @@
  *     transition is running.
  *
  * Two selectors cover the page root: the page itself when it is the named
- * element, and a page nested inside the named wrapper (.workspace-content >
- * .editor-column).
+ * element, and any page-level descendant of the named wrapper that still
+ * carries an entrance class.
+ *
+ * The workspace is deliberately not listed: its named element
+ * (.workspace-content) contains no animated child. The editor column used to
+ * carry .motion-enter, and because it was keyed on the document id it remounted
+ * AFTER the transition finished — the flag is released by then — so its
+ * entrance faded the canvas a second time. Suppression cannot win a race
+ * against a remount that has not happened yet, so the duplicate entrance was
+ * removed at the source instead.
  */
 html:active-view-transition [data-vt-scope='main'],
 html[data-vt-swapping] [data-vt-scope='main'],
-html:active-view-transition .workspace-content .motion-enter,
-html[data-vt-swapping] .workspace-content .motion-enter{animation:none !important}
+html:active-view-transition [data-vt-scope='main'] .motion-enter,
+html[data-vt-swapping] [data-vt-scope='main'] .motion-enter{animation:none !important}
 
 /* The named surface is the one the cross-fade is already animating. */
 html:active-view-transition [data-vt-scope='main'].motion-enter,
