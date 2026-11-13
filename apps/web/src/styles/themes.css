@@ -1,18 +1,14 @@
 /*
  * ══ themes ═════════════════════════════════════════════════════════
  *
- * The only file a new theme needs to touch. Everything the client paints is
- * expressed as var(--token); tokens.css declares the default palette on :root,
- * and a theme re-declares the tokens it changes under [data-theme='<id>'].
+ * The palette layer for every registered appearance. Everything the client
+ * paints is expressed as var(--token); tokens.css declares the default palette
+ * on :root, and a theme re-declares its colours under [data-theme='<id>'].
  *
- * Why this is a palette and not a stylesheet:
- *   - switching is a single attribute write, so there is no re-render, no
- *     stylesheet reload and no flash of the old palette;
- *   - a theme cannot move anything, because it may not touch layout, radii,
- *     motion or layering — those stay in tokens.css;
- *   - the switcher, the stored preference and the pre-paint script in
- *     index.html all read lib/theme.ts, so adding an entry there plus a block
- *     here is the whole change.
+ * This file stays a palette: no selectors for components, layout or artwork.
+ * A visual appearance may add a separate, explicitly theme-scoped layer after
+ * the component layers. That lets hand-drawn materials and borders be switched
+ * off completely without making colours bypass the semantic token contract.
  *
  * The contract, in order of importance:
  *   1. Prefer overriding the semantic tokens (--surface, --text, --accent…).
@@ -24,7 +20,7 @@
  *      caret; a dark palette with color-scheme:light keeps every <select> white.
  *   4. Check contrast after the palette is in. Body text must stay ≥4.5:1
  *      against --surface and --surface-muted, and --text-on-accent ≥4.5:1
- *      against --accent. test/theme.test.ts reads the computed values back.
+ *      against --accent. test/theme.test.ts checks those palette pairs.
  *
  * This file loads after tokens.css and before every component layer, so a theme
  * override never needs !important.
@@ -37,6 +33,115 @@
  * kept as a real block so the file shows the shape a new theme should copy. */
 [data-theme='paper']{
   color-scheme:light;
+}
+
+/* Handmade stationery: warm paper, graphite, sage and a butter-yellow marker.
+ * Dark sage is the control accent so white action labels remain AA-readable;
+ * pale sage and yellow are reserved for backgrounds and decorative marks. */
+[data-theme='handdrawn']{
+  color-scheme:light;
+
+  --surface-rgb:255,254,249;
+  --surface:#fffef9;
+  --surface-soft:#fcfaf3;
+  --surface-muted:#f8f5ec;
+  --surface-sunken:#eeeadd;
+  --surface-hover:#efefdf;
+  --surface-active:#e0e6d2;
+  --surface-selected:#e5ead9;
+  --surface-raised:#fffef9;
+  --surface-glass:rgba(var(--surface-rgb),.9);
+  --surface-code:#33362f;
+  --surface-marker:#f6e6a6;
+  --surface-disabled:#a6a68e;
+  --surface-sunken-scroll:#cac7b5;
+  --surface-scroll-hover:#afae98;
+  --scroll-thumb:#cecbb9;
+
+  --border:#d8d3c2;
+  --border-strong:#aaa58f;
+  --border-subtle:#e7e2d4;
+  --border-soft-accent:#b6c2a5;
+
+  --text:#353630;
+  --text-secondary:#55594b;
+  --text-soft:#656958;
+  --text-muted:#6a6b5c;
+  --text-faint:#737462;
+  --text-disabled:#a5a68f;
+  --text-on-accent:#ffffff;
+  --text-on-code:#efeee2;
+
+  --accent-rgb:82,100,66;
+  --accent:#526442;
+  --accent-strong:#425237;
+  --accent-soft:#e6eadb;
+  --focus-ring:#526442;
+
+  --danger:#a64235;
+  --danger-strong:#8b352b;
+  --danger-soft:#faeae2;
+  --danger-line:#e7c5b6;
+  --danger-rgb:166,66,53;
+  --success:#526b3e;
+  --success-soft:#e7eddd;
+  --success-line:#c5d0b3;
+  --warning:#82631f;
+  --warning-strong:#6f5319;
+  --warning-soft:#faf1d0;
+  --warning-line:#dfd0a2;
+  --info:#456c81;
+  --info-strong:#36566b;
+  --info-soft:#eaf0ee;
+  --info-line:#c9d6d4;
+  --info-ink:#456277;
+  --status-online:#6c8751;
+  --status-idle:#ac8733;
+  --status-offline:#b35c4c;
+
+  --code-comment:#686d5c;
+  --code-keyword:#795772;
+  --code-string:#526b3e;
+  --code-number:#95623b;
+  --code-name:#456c81;
+  --code-attr:#82631f;
+  --code-type:#426c60;
+  --code-meta:#686d5c;
+  --code-success:#526b3e;
+  --code-success-soft:#e7eddd;
+  --code-success-line:rgba(var(--sage-rgb),.33);
+
+  --quote-bg:#faf0cd;
+  --quote-bg-hover:#f5e7b4;
+  --quote-ink:#6b5525;
+  --quote-line:#c3aa65;
+  --tint-rose-soft:#f7eae1;
+  --tint-rose-ink:#9a6451;
+  --tint-rose-line:#ead9ce;
+  --tint-amber-soft:#f7efd7;
+  --tint-amber-ink:#8a6f35;
+  --tint-gold-soft:#faf0cd;
+  --tint-gold-hover:#f6e6a6;
+  --tint-gold-ink:#82631f;
+  --tint-blue-soft:#e9efec;
+  --tint-blue-ink:#456c81;
+  --tint-sage-soft:#dce4ce;
+  --tint-sage-softer:#ecedde;
+  --tint-sage-ink:#526442;
+  --tint-sage-line:#ccd5bd;
+  --tint-slate-ink:#657569;
+
+  --hero-from:#f3edda;
+  --hero-mid:#fffaf0;
+  --hero-to:#eaf0df;
+  --shadow-rgb:53,54,48;
+  --sage-rgb:82,100,66;
+  --on-accent-rgb:255,255,255;
+  --comment-mark:#f9edc6;
+  --comment-mark-hover:#f6e5ac;
+  --comment-mark-active:#f1da8a;
+  --comment-mark-line:#c3aa65;
+  --comment-mark-resolved:#eeeee2;
 }
 
 /*

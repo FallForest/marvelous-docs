@@ -46,3 +46,7 @@
 @import './shell.css';
 @import './pages.css';
 @import './updates.css';
+/* Material skins are opt-in and cannot change the default paper appearance. */
+@import './handdrawn.css';
+@import './handdrawn-navigation.css';
+@import './handdrawn-content.css';

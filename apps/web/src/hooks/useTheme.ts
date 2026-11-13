@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { applyTheme, readStoredTheme, storeTheme, themeById } from '../lib/theme'
+import { applyTheme, readStoredTheme, storeTheme, themeById, THEME_STORAGE_KEY } from '../lib/theme'
 import type { Theme } from '../lib/theme'
 
 /**
@@ -10,9 +10,8 @@ import type { Theme } from '../lib/theme'
  * twice is what keeps the switcher from showing "纸本" over a dark page for one
  * frame.
  *
- * Applying is an attribute write on <html>, not state the app renders: the
- * palette lives entirely in CSS, so nothing re-renders and no component needs to
- * know a theme exists.
+ * Applying writes one attribute on <html>. React updates the selected menu row,
+ * while the same mounted editor keeps its content, selection and undo history.
  */
 export function useTheme() {
   const [themeId, setThemeId] = useState(() => readStoredTheme())
@@ -22,6 +21,22 @@ export function useTheme() {
     // module is loaded without index.html (tests, a hosted bundle).
     applyTheme(themeId)
   }, [themeId])
+
+  useEffect(() => {
+    // A second tab can choose an appearance or clear the stored preference.
+    // Reuse the same validation/fallback as first paint, and ignore sessionStorage.
+    const syncTheme = (event: StorageEvent) => {
+      if (event.key !== THEME_STORAGE_KEY && event.key !== null) return
+      try {
+        if (event.storageArea && event.storageArea !== window.localStorage) return
+      } catch { return }
+      const id = readStoredTheme()
+      applyTheme(id)
+      setThemeId(id)
+    }
+    window.addEventListener('storage', syncTheme)
+    return () => window.removeEventListener('storage', syncTheme)
+  }, [])
 
   const setTheme = useCallback((id: string) => {
     const theme: Theme = themeById(id)

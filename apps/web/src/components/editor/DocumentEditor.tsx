@@ -3,13 +3,14 @@ import { createPortal } from 'react-dom'
 import { EditorContent, useEditor } from '@tiptap/react'
 import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
-import { ArrowDown, ArrowUp, Check, Copy as CopyIcon, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, Check, Copy as CopyIcon, FileText, Trash2 } from 'lucide-react'
 import EditorToolbar from './EditorToolbar'
 import BubbleToolbar from './BubbleToolbar'
 import { FindReplace, OutlinePanel } from './FindReplace'
 import SlashMenu, { SLASH_ITEMS } from './SlashMenu'
 import TableMenu from './TableMenu'
 import { Dialog } from '../ui/Dialog'
+import ArtIcon from '../ui/ArtIcon'
 import { API, request } from '../../lib/api'
 import { copyText } from '../../lib/clipboard'
 import { COLLAB_URL } from '../../lib/collab'
@@ -323,13 +324,16 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
     />
     <div className="paper">
       <div className="document-heading">
-        <input
+        <div className="document-title-row">
+          <span className="handdrawn-only document-title-art" aria-hidden="true"><ArtIcon name="notebook" fallback={<FileText size={40} />} /></span>
+          <div className="document-title-field"><input
           aria-label="文档标题"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           onBlur={(event) => { if (event.target.value !== doc.title) void saveTitle(event.target.value) }}
           onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur() }}
-        />
+          /></div>
+        </div>
         <div className="doc-meta"><span>最后编辑于 {formatDate(doc.updatedAt) || '刚刚'}</span></div>
       </div>
       {/* Code block enhancement: language badge and per-block actions */}

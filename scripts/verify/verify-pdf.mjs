@@ -10,6 +10,7 @@
  *   node scripts/verify/verify-pdf.mjs
  */
 import { createServer } from 'node:http'
+import { servePublicArt } from './public-art.mjs'
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
 import { createRequire } from 'node:module'
@@ -48,6 +49,7 @@ const bundle = await build({
     loader: 'ts',
   },
   bundle: true,
+  external: ['/art/*'],
   format: 'iife',
   globalName: '__mdocsPdf',
   platform: 'browser',
@@ -64,6 +66,7 @@ const page = `<!doctype html><html><head><meta charset="utf-8"><title>harness</t
 <script>${bundleSource}</script></body></html>`
 
 const server = createServer((request, response) => {
+  if (servePublicArt(request, response)) return
   if (request.url === '/') { response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); response.end(page); return }
   response.writeHead(404); response.end()
 })

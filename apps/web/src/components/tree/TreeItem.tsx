@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ChevronRight, FileText, Folder, MoreHorizontal } from 'lucide-react'
 import Popover from '../ui/Popover'
+import ArtIcon from '../ui/ArtIcon'
 import { staggerStyle } from '../../lib/motion'
 import type { Doc, DocNode, TreeAction } from '../../lib/types'
 
@@ -174,7 +175,7 @@ export default function TreeItem(props: TreeItemProps) {
           else onSelectDocument(node.doc)
         }}
       >
-        {isFolder ? <Folder size={14} /> : <FileText size={14} />}
+        <ArtIcon name={isFolder ? 'folder' : 'document'} fallback={isFolder ? <Folder size={14} /> : <FileText size={14} />} />
         <span className="tree-label">{title}</span>
       </button>
       {!selecting && <div className="tree-menu-anchor">

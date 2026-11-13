@@ -1,21 +1,20 @@
 /**
  * Theme registry.
  *
- * A theme is a *palette*, not a stylesheet: every colour in the client resolves
- * through a custom property declared in styles/tokens.css, and a theme only
- * overrides those properties on <html>. That is what makes switching instant and
- * lossless — no re-render, no flash of the previous palette, no layout shift, and
- * nothing to keep in sync when a new screen is added.
+ * Every colour in a theme resolves through a custom property declared in
+ * styles/tokens.css. A visual theme can also opt into a separately scoped style
+ * layer, such as the hand-drawn paper textures and artwork. Switching writes an
+ * attribute on <html>; the mounted editor and its document state stay intact.
  *
  * Adding a theme is therefore one entry here plus one block in styles/themes.css:
  *
  *   1. append { id, name, hint, scheme } below;
  *   2. add `[data-theme='<id>']{ ... }` overrides in styles/themes.css, using the
  *      same token names as tokens.css;
- *   3. nothing else. The switcher, the stored preference and the pre-paint script
- *      all read this list.
+ *   3. add the id and its scheme/page colour to index.html's pre-paint map;
+ *   4. if needed, add an isolated [data-theme='<id>'] visual layer.
  *
- * `scheme` is the only structural thing a theme declares: it sets
+ * `scheme` sets
  * `color-scheme` on the root, so form controls, scrollbars and the caret follow
  * the palette instead of staying light on a dark page.
  */
@@ -51,6 +50,7 @@ export type Theme = {
  */
 export const THEMES: Theme[] = [
   { id: 'paper', name: '纸本', hint: '默认：暖白纸面、炭灰墨线', scheme: 'light', swatch: ['#ffffff', '#f7f8fa', '#c0533f'] },
+  { id: 'handdrawn', name: '手绘纸本', hint: '铅笔线条、纸张纹理与手绘图标', scheme: 'light', swatch: ['#fffef9', '#eeeadd', '#526442'] },
 ]
 
 export const DEFAULT_THEME_ID = 'paper'

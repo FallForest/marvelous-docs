@@ -1,0 +1,25 @@
+{
+  "checks": [
+    "Picker changes theme and preserves mounted editor",
+    "Real task NodeView uses sage checkbox, toggles and strikes completed text",
+    "All visible artwork loads",
+    "Switch round trip preserves text, undo history and comment draft",
+    "Reload restores stored handdrawn theme before app paint",
+    "390 px editor/sidebar/home do not overflow horizontally",
+    "No page exceptions or missing HTTP assets"
+  ],
+  "screenshots": [
+    "paper-editor.png",
+    "handdrawn-editor.png",
+    "handdrawn-home.png",
+    "handdrawn-favorites.png",
+    "handdrawn-search.png",
+    "handdrawn-share.png",
+    "handdrawn-mobile-editor.png",
+    "handdrawn-mobile-sidebar.png",
+    "handdrawn-mobile-home.png",
+    "handdrawn-login.png"
+  ],
+  "fixture": "Actual AppRoot and Tiptap, isolated in-memory REST API; live Yjs transport disabled in verifier only.",
+  "saves": 1
+}

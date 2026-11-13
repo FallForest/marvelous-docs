@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import { AlertCircle, ChevronRight, Sparkles } from 'lucide-react'
+import { AlertCircle, ChevronRight, FileText, Sparkles } from 'lucide-react'
+import ArtIcon from '../components/ui/ArtIcon'
 import { staggerItemProps } from '../components/ui/Stagger'
 import { API } from '../lib/api'
 import type { User } from '../lib/types'
@@ -37,8 +38,15 @@ export default function LoginPage({ onLogin, onAccepted, error, busy }: LoginPag
       setInviteBusy(false)
     }
   }
-  return <div className="login-screen" data-vt-scope="main"><div className="login-card motion-rise">
-    <div {...staggerItemProps(0, 'login-brand')}><div className="brand-mark"><Sparkles size={17} /></div><span>Marvelous Docs</span></div>
+  return <div className="login-screen" data-vt-scope="main">
+  <aside className="handdrawn-only login-art-intro" aria-hidden="true">
+    <ArtIcon name="notebook" fallback={<FileText size={64} />} />
+    <span className="login-art-kicker">THE TEAM NOTEBOOK</span>
+    <h2>让好想法，<br />在这里落笔。</h2>
+    <p>记录、讨论，然后一起把事情做好。</p>
+  </aside>
+  <div className="login-card motion-rise">
+    <div {...staggerItemProps(0, 'login-brand')}><div className="brand-mark"><ArtIcon name="brand-spark" fallback={<Sparkles size={17} />} /></div><span>Marvelous Docs</span></div>
     {inviteToken ? <>
       <h1 {...staggerItemProps(1)}>加入团队</h1><p {...staggerItemProps(2)}>设置你的账户以加入工作区</p>
       <form onSubmit={acceptInvite}>

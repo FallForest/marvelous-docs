@@ -2,6 +2,7 @@ import { ArrowDownToLine, ChevronRight, History, MessageCircle, Palette, PanelLe
 import type { CSSProperties } from 'react'
 import ExportMenu from '../layout/ExportMenu'
 import ThemeMenu from '../layout/ThemeMenu'
+import ArtIcon from '../ui/ArtIcon'
 import type { CollabStatus } from '../../lib/app-types'
 import type { ExportTarget, SaveStatus } from '../../lib/types'
 
@@ -18,7 +19,7 @@ type TopBarProps = {
   hasDocument: boolean
   favorite: boolean
   exportOpen: boolean
-  /** Current palette id, and whether the appearance menu is open. */
+  /** Current appearance id, and whether the appearance menu is open. */
   themeId: string
   themeOpen: boolean
   onThemeMenu: (open: boolean) => void
@@ -70,7 +71,7 @@ export default function TopBar(props: TopBarProps) {
       </div>
       <span className="top-divider" aria-hidden="true" />
       <div className="icon-group">
-        {props.hasDocument && <button type="button" className={'icon-btn favorite-btn' + (props.favorite ? ' is-favorite' : '')} aria-label={props.favorite ? '取消收藏' : '收藏文档'} aria-pressed={props.favorite} title={props.favorite ? '取消收藏' : '收藏文档'} onClick={props.onFavorite}><Star size={16} fill={props.favorite ? 'currentColor' : 'none'} /></button>}
+        {props.hasDocument && <button type="button" className={'icon-btn favorite-btn' + (props.favorite ? ' is-favorite' : '')} aria-label={props.favorite ? '取消收藏' : '收藏文档'} aria-pressed={props.favorite} title={props.favorite ? '取消收藏' : '收藏文档'} onClick={props.onFavorite}><ArtIcon name="favorite-star" fallback={<Star size={16} fill={props.favorite ? 'currentColor' : 'none'} />} /></button>}
         <div className="menu-anchor">
           <button
             type="button"
@@ -80,7 +81,7 @@ export default function TopBar(props: TopBarProps) {
             aria-haspopup="menu"
             aria-expanded={props.themeOpen}
             onClick={() => props.onThemeMenu(!props.themeOpen)}
-          ><Palette size={16} /></button>
+          ><Palette size={16} /><span className="theme-trigger-label handdrawn-only">外观</span></button>
           <ThemeMenu open={props.themeOpen} currentId={props.themeId} onPick={props.onTheme} onClose={() => props.onThemeMenu(false)} />
         </div>
         <div className="menu-anchor">
@@ -88,7 +89,7 @@ export default function TopBar(props: TopBarProps) {
           <ExportMenu open={props.exportOpen} onSelect={props.onExport} onClose={() => props.onExportMenu(false)} />
         </div>
         <button type="button" className="icon-btn" aria-label="版本历史" title="版本历史" onClick={props.onHistory}><History size={16} /></button>
-        <button type="button" className="icon-btn" aria-label="评论" title="评论" onClick={props.onComments}><MessageCircle size={16} /></button>
+        <button type="button" className="icon-btn" aria-label="评论" title="评论" onClick={props.onComments}><ArtIcon name="comment" fallback={<MessageCircle size={16} />} /></button>
       </div>
       {props.hasDocument && <button type="button" className="share-btn" onClick={props.onShare}><Share2 size={14} />共享</button>}
     </div>

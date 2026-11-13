@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, Folder, Home, LogOut, PanelLeftClose, Plus, 
 import TemplateMenu from '../layout/TemplateMenu'
 import TreeItem from '../tree/TreeItem'
 import Popover from '../ui/Popover'
+import ArtIcon from '../ui/ArtIcon'
 import type { Doc, DocNode, Template, TreeAction, User } from '../../lib/types'
 
 type SidebarProps = {
@@ -83,8 +84,8 @@ export default function Sidebar(props: SidebarProps) {
 
   return <aside className={'sidebar' + (floating ? ' sidebar-floating' : '')} aria-label="文档导航">
     <div className="brand-row">
-      <div className="brand-mark"><Sparkles size={16} /></div>
-      <span className="brand-name">Marvelous Docs</span>
+      <div className="brand-mark"><ArtIcon name="brand-spark" fallback={<Sparkles size={16} />} /></div>
+      <span className="brand-name"><small className="brand-byline handdrawn-only" aria-hidden="true">ZHZ’s</small><span className="brand-title">Marvelous Docs</span></span>
       <button type="button" className="icon-btn push" aria-label="收起侧边栏" title="收起侧边栏" onClick={props.onClose}><PanelLeftClose size={17} /></button>
     </div>
 
@@ -124,10 +125,10 @@ export default function Sidebar(props: SidebarProps) {
 
       <div className="nav-label">导航</div>
       <nav className="nav-list" aria-label="工作区导航">
-        <button type="button" className="nav-row" aria-current={homeView === 'home' && !activeId && !selectedFolderId ? 'page' : undefined} onClick={props.onHome}><Home size={16} />首页</button>
+        <button type="button" className="nav-row" aria-current={homeView === 'home' && !activeId && !selectedFolderId ? 'page' : undefined} onClick={props.onHome}><ArtIcon name="home" fallback={<Home size={16} />} />首页</button>
         {user.role === 'admin' && <button type="button" className="nav-row" onClick={props.onAdmin}><ShieldCheck size={16} />管理中心</button>}
-        <button type="button" className="nav-row" aria-current={homeView === 'favorites' ? 'page' : undefined} onClick={props.onFavorites}><Star size={16} />收藏 {favoriteSet.size > 0 && <span className="nav-count">{favoriteSet.size}</span>}</button>
-        <button type="button" className="nav-row" aria-current={homeView === 'trash' ? 'page' : undefined} onClick={props.onTrash}><Trash2 size={16} />回收站</button>
+        <button type="button" className="nav-row" aria-current={homeView === 'favorites' ? 'page' : undefined} onClick={props.onFavorites}><ArtIcon name="favorite-star" fallback={<Star size={16} />} />收藏 {favoriteSet.size > 0 && <span className="nav-count">{favoriteSet.size}</span>}</button>
+        <button type="button" className="nav-row" aria-current={homeView === 'trash' ? 'page' : undefined} onClick={props.onTrash}><ArtIcon name="trash" fallback={<Trash2 size={16} />} />回收站</button>
       </nav>
 
       <div className="tree-heading">
@@ -175,7 +176,7 @@ export default function Sidebar(props: SidebarProps) {
             const dragged = props.allDocs.find((doc) => doc.id === id)
             if (dragged) props.onMoveInto(dragged, null)
           }}
-        ><Folder size={15} /><span>所有文档</span></button>
+        ><ArtIcon name="folder" fallback={<Folder size={15} />} /><span>所有文档</span></button>
         <div
         className="doc-tree"
         ref={treeRef}

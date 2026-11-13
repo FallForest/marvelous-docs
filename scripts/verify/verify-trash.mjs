@@ -11,6 +11,7 @@
  *   node scripts/verify/verify-trash.mjs
  */
 import { createServer } from 'node:http'
+import { servePublicArt } from './public-art.mjs'
 import { mkdtemp, rm, readFile } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
 import { createRequire } from 'node:module'
@@ -99,6 +100,7 @@ createRoot(document.getElementById('root')).render(
 await build({
   stdin: { contents: HARNESS, resolveDir: WEB, loader: 'tsx' },
   bundle: true,
+  external: ['/art/*'],
   format: 'iife',
   platform: 'browser',
   target: 'chrome110',
@@ -110,7 +112,8 @@ await build({
 })
 
 const bundleSource = await readFile(join(WORK, 'harness.js'), 'utf8')
-const cssSource = await readFile(join(WORK, 'harness.css'), 'utf8').catch(() => '')
+// Isolated checks must not wait for third-party font network availability.
+const cssSource = (await readFile(join(WORK, 'harness.css'), 'utf8').catch(() => '')).replace(/^@import[^\n]*\n/gm, '')
 
 const page = `<!doctype html><html lang="zh"><head><meta charset="utf-8"><title>trash harness</title>
 <style>${cssSource}
@@ -119,6 +122,7 @@ html,body{margin:0;background:#fff}
 </style></head><body><div id="root"></div><script>${bundleSource}</script></body></html>`
 
 const server = createServer((request, response) => {
+  if (servePublicArt(request, response)) return
   response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
   response.end(page)
 })

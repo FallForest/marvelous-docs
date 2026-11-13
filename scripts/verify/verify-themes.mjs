@@ -12,6 +12,7 @@
  *   node scripts/verify/verify-themes.mjs
  */
 import { createServer } from 'node:http'
+import { servePublicArt } from './public-art.mjs'
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
 import { createRequire } from 'node:module'
@@ -129,6 +130,7 @@ createRoot(document.getElementById('root')).render(<Harness />)
 await build({
   stdin: { contents: HARNESS, resolveDir: WEB, loader: 'tsx' },
   bundle: true,
+  external: ['/art/*'],
   format: 'iife',
   platform: 'browser',
   target: 'chrome110',
@@ -153,6 +155,7 @@ const page = `<!doctype html><html lang="zh"><head><meta charset="utf-8"><title>
 </head><body><div id="root"></div><script src="/harness.js"></script></body></html>`
 
 const server = createServer((request, response) => {
+  if (servePublicArt(request, response)) return
   if (request.url === '/harness.js') {
     response.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8' })
     response.end(bundleSource)

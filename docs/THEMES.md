@@ -1,12 +1,18 @@
 # Themes
 
-A theme is a **palette**, not a stylesheet. Every colour the client paints
-resolves through a custom property declared in `styles/tokens.css`; a theme
-re-declares the ones it changes under `[data-theme='<id>']` in
-`styles/themes.css`. Switching is one attribute write on `<html>`, so there is
-no re-render, no stylesheet reload, and no flash of the previous palette.
+Every appearance has a **semantic palette**. Every colour the client paints
+resolves through a custom property declared in `styles/tokens.css`; its palette
+re-declares the changed tokens under `[data-theme='<id>']` in `styles/themes.css`.
+A visual appearance may also have a separate, explicitly theme-scoped layer for
+artwork, borders and spacing. Switching writes the attribute on `<html>` without
+replacing the mounted editor, its document, selection or undo history.
 
-## Add a theme
+The shipped appearances are **纸本** (`paper`, the unchanged default) and
+**手绘纸本** (`handdrawn`, ivory paper, graphite lines and AI-generated stationery
+art). The latter uses pale sage and yellow for decoration, with a darker sage
+control accent so action labels remain readable.
+
+## Add a palette
 
 Three edits, no component changes:
 
@@ -36,8 +42,22 @@ Three edits, no component changes:
    bundle parses, so it cannot import the registry. `test/theme.test.ts` fails if
    the two lists disagree, or if `themes.css` lacks a block for a registered id.
 
-Nothing else. The picker reads `THEMES`; the shell reads the same hook; the
-pre-paint script paints the stored id on the first frame.
+The picker reads `THEMES`; the shell reads the same hook; the pre-paint script
+paints the stored id on the first frame. Keep `paper` as the default unless a
+separate product decision explicitly changes it; adding an appearance does not
+migrate an existing preference.
+
+## Add an art direction
+
+The hand-drawn appearance also loads component styling after the normal layers.
+Every visual override must begin with `[data-theme='handdrawn']`, including rules
+inside media queries, so changing back to `paper` restores the original design.
+Use semantic colour tokens in these layers just as in the base components.
+
+The transparent PNG/WebP artwork lives at `/art/handdrawn-v1/`. Images are
+decorative alongside real text and controls. They must not replace editable text,
+encode document state, cover pointer targets, or force an editor remount. Read
+the asset guide in `docs/design/handdrawn-v1/` for sizes and material usage.
 
 ## The token contract
 
@@ -60,11 +80,11 @@ One hex in the theme changes every derived shadow, scrim, halo and ring.
 `--shadow-rgb`, `--accent-rgb`, `--surface-rgb`, `--danger-rgb`, `--sage-rgb`,
 `--on-accent-rgb`.
 
-### What a theme may not do
+### What a palette may not do
 
-- Change layout, radii, spacing, motion or layering. Those live in `tokens.css`
-  outside the palette block for a reason: a theme that could move the page is a
-  second stylesheet.
+- Change layout, radii, spacing, motion or layering in `themes.css`. Keep that
+  file limited to colour token overrides and `color-scheme`; optional visual
+  layers are separate and explicitly scoped to their appearance.
 - Introduce a literal colour in a component layer. `test/theme.test.ts` fails on
   one — that check is the reason this refactor exists: 180 distinct literals used
   to sit in the layers, and every one of them was a pixel no theme could reach.
@@ -78,17 +98,20 @@ bar is not framed in the wrong palette.
 
 `hooks/useTheme.ts` is the React surface: it reads the stored id (the same key
 the pre-paint script uses, so the switcher never disagrees with the painted
-page), applies it, and exposes `setTheme`.
+page), applies it, and exposes `setTheme`. A `storage` event updates other tabs;
+clearing the preference restores the default. Blocked storage safely falls back
+to `paper`, and stale or unknown ids never reach the DOM.
 
-The picker is `components/layout/ThemeMenu.tsx`, opened from the topbar. It is a
-radiogroup: exactly one theme is active, the tick and the tinted row both say
-which.
+The picker is `components/layout/ThemeMenu.tsx`, opened from the topbar. Its
+group contains radio menu items: exactly one appearance is active, and both the
+tick and tinted row indicate it. Arrow keys, Home and End move focus; Enter or
+Space selects the focused appearance.
 
 ## Checks
 
 | Check | What it catches |
 | --- | --- |
-| `test/theme.test.ts` | Registry shape, storage fallbacks, the three lists drifting apart, a colour literal in a layer, a raw `rgba(17,24,39,…)`, an unknown token in an override |
+| `test/theme.test.ts` | Registry shape, storage fallbacks, pre-paint restoration and hostile-id rejection, AA contrast for hand-drawn surfaces/actions, the three lists drifting apart, colour literals outside the palette, unknown tokens |
 | `scripts/verify/verify-themes.mjs` | In Chrome: opens the picker, picks a theme, then applies a probe palette keyed on `data-theme` and asserts every sampled surface, field and quoted snippet recomputes, that untouched tokens are inherited, that geometry is unchanged, and that removing the probe restores the shipped values exactly |
 
 Run the browser check with `node scripts/verify/verify-themes.mjs` (it is part of

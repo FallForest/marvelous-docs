@@ -20,7 +20,7 @@
       (function () {
         // id → [color-scheme, page colour]. The only thing here that has to stay
         // in step with THEMES in lib/theme.ts; test/theme.test.ts checks both.
-        var themes = { paper: ['light', '#ffffff'] };
+        var themes = { paper: ['light', '#ffffff'], handdrawn: ['light', '#fffef9'] };
         var id = null;
         try { id = localStorage.getItem('mdocs-theme') } catch (error) { id = null }
         if (!Object.prototype.hasOwnProperty.call(themes, id)) id = 'paper';

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Clock3, History, MessageCircle, Send, Activity, X } from 'lucide-react'
 import ActivityPanel from '../panels/ActivityPanel'
+import ArtIcon from '../ui/ArtIcon'
 import { formatDate } from '../../lib/format'
 import { staggerDelay } from '../../lib/motion'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
@@ -103,7 +104,7 @@ export default function DocumentPanel(props: DocumentPanelProps) {
   >
     <div className="panel-tabbar">
       <div className="panel-tabs" role="tablist" aria-label="侧边栏标签">
-        <button type="button" role="tab" id="tab-comments" aria-controls="panel-comments" aria-selected={tab === 'comments'} className={tab === 'comments' ? 'active' : ''} onClick={() => props.onTab('comments')}><MessageCircle size={15} />评论</button>
+        <button type="button" role="tab" id="tab-comments" aria-controls="panel-comments" aria-selected={tab === 'comments'} className={tab === 'comments' ? 'active' : ''} onClick={() => props.onTab('comments')}><ArtIcon name="comment" fallback={<MessageCircle size={15} />} />评论</button>
         <button type="button" role="tab" id="tab-history" aria-controls="panel-history" aria-selected={tab === 'history'} className={tab === 'history' ? 'active' : ''} onClick={() => props.onTab('history')}><History size={15} />历史</button>
         <button type="button" role="tab" id="tab-activity" aria-controls="panel-activity" aria-selected={tab === 'activity'} className={tab === 'activity' ? 'active' : ''} onClick={() => props.onTab('activity')}><Activity size={15} />动态</button>
       </div>
@@ -113,7 +114,7 @@ export default function DocumentPanel(props: DocumentPanelProps) {
     {tab === 'comments' ? <div className="panel-body motion-enter" key="comments" role="tabpanel" id="panel-comments" aria-labelledby="tab-comments">
       <div className="panel-intro"><b>讨论</b><span>{comments.length + ' 条评论'}</span></div>
       {comments.length === 0
-        ? <div className="panel-empty"><MessageCircle size={21} /><b>还没有评论</b><span>选中文本后点击评论开始讨论</span></div>
+        ? <div className="panel-empty"><ArtIcon name="comment" fallback={<MessageCircle size={21} />} /><b>还没有评论</b><span>选中文本后点击评论开始讨论</span></div>
         : <div className="comment-list">{comments.map((comment) => <div
           className={'comment'
             + (comment.status === 'resolved' ? ' comment-resolved' : '')

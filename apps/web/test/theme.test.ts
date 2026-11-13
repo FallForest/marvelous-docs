@@ -2,6 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { runInNewContext } from 'node:vm'
 import {
   DEFAULT_THEME_ID, THEMES, THEME_STORAGE_KEY, applyTheme, isThemeId, readStoredTheme,
   storeTheme, themeById,
@@ -10,7 +11,7 @@ import {
 /**
  * The theme contract.
  *
- * A theme is a palette, so the interesting failures are all structural: a colour
+ * Every appearance shares a semantic palette contract. The failures include a colour
  * that bypasses the token layer cannot be rethemed, a theme missing from one of
  * the three lists (registry, CSS block, pre-paint script) paints the wrong
  * palette for one frame, and a missing derived channel token makes every shadow
@@ -67,7 +68,7 @@ test('an unknown id never reaches the DOM', () => {
 
 test('a stored theme is read back, and anything else falls back', () => {
   const storage = (value: string | null) => ({ getItem: () => value })
-  assert.equal(readStoredTheme(storage(THEMES[0]!.id)), THEMES[0]!.id)
+  for (const theme of THEMES) assert.equal(readStoredTheme(storage(theme.id)), theme.id)
   assert.equal(readStoredTheme(storage(null)), DEFAULT_THEME_ID)
   assert.equal(readStoredTheme(storage('from-a-build-that-is-gone')), DEFAULT_THEME_ID)
 })
@@ -98,9 +99,11 @@ test('the storage key is short and namespaced', () => {
 
 test('applying a theme writes the id and the scheme together', () => {
   const root = { dataset: {} as Record<string, string>, style: { colorScheme: '' } } as unknown as HTMLElement
-  applyTheme('paper', root)
-  assert.equal(root.dataset.theme, 'paper')
-  assert.equal(root.style.colorScheme, 'light')
+  for (const theme of THEMES) {
+    applyTheme(theme.id, root)
+    assert.equal(root.dataset.theme, theme.id)
+    assert.equal(root.style.colorScheme, theme.scheme)
+  }
 })
 
 test('applying an unknown id applies the default instead', () => {
@@ -141,6 +144,61 @@ test('the pre-paint script knows every theme and its scheme', () => {
   }
   assert.equal(entries.size, THEMES.length, 'index.html lists a theme the registry dropped')
   assert.ok(html.includes(THEME_STORAGE_KEY), 'the pre-paint script must read the same key')
+})
+
+test('first paint restores every appearance and safely rejects stale or hostile ids', () => {
+  const html = readFileSync(join(WEB, 'index.html'), 'utf8')
+  const script = /<script>([\s\S]*?)<\/script>/.exec(html)?.[1]
+  assert.ok(script, 'the preference must be applied before the bundle loads')
+  const paint = (value: string | null, blocked = false) => {
+    const attributes: Record<string, string> = {}
+    const root = { style: { colorScheme: '' }, setAttribute: (key: string, next: string) => { attributes[key] = next } }
+    let metaColour = ''
+    runInNewContext(script, {
+      localStorage: { getItem: () => { if (blocked) throw new Error('blocked'); return value } },
+      document: { documentElement: root, querySelector: () => ({ setAttribute: (_key: string, next: string) => { metaColour = next } }) },
+    })
+    return { id: attributes['data-theme'], scheme: root.style.colorScheme, colour: metaColour }
+  }
+  for (const theme of THEMES) {
+    assert.deepEqual(paint(theme.id), { id: theme.id, scheme: theme.scheme, colour: theme.swatch[0] })
+  }
+  const fallback = themeById(DEFAULT_THEME_ID)
+  for (const value of [null, '', 'deleted-appearance', '__proto__', 'constructor']) {
+    assert.deepEqual(paint(value), { id: fallback.id, scheme: fallback.scheme, colour: fallback.swatch[0] })
+  }
+  assert.deepEqual(paint('handdrawn', true), { id: fallback.id, scheme: fallback.scheme, colour: fallback.swatch[0] })
+})
+
+/** sRGB relative luminance used by the WCAG contrast formula. */
+const luminance = (hex: string) => {
+  const linear = [1, 3, 5].map((offset) => {
+    const channel = parseInt(hex.slice(offset, offset + 2), 16) / 255
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+  })
+  return linear[0]! * .2126 + linear[1]! * .7152 + linear[2]! * .0722
+}
+const contrast = (a: string, b: string) => {
+  const values = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return (values[0]! + .05) / (values[1]! + .05)
+}
+
+test('hand-drawn reading surfaces, actions and quoted text retain AA contrast', () => {
+  const base = new Map([...strip(css('tokens.css')).matchAll(/--([a-z0-9-]+)\s*:\s*(#[0-9a-f]{6})\s*;/gi)].map((m) => [m[1]!, m[2]!]))
+  const handdrawn = /\[data-theme='handdrawn'\]\s*\{([^}]+)\}/.exec(strip(css('themes.css')))?.[1]
+  assert.ok(handdrawn, 'handdrawn requires its own semantic palette')
+  for (const match of handdrawn.matchAll(/--([a-z0-9-]+)\s*:\s*(#[0-9a-f]{6})\s*;/gi)) base.set(match[1]!, match[2]!)
+  const pairs: Array<[string, string]> = []
+  for (const ink of ['text', 'text-secondary', 'text-soft', 'text-muted']) {
+    for (const surface of ['surface', 'surface-soft', 'surface-muted', 'surface-sunken']) pairs.push([ink, surface])
+  }
+  pairs.push(['text-on-accent', 'accent'], ['text-on-accent', 'accent-strong'], ['text-on-code', 'surface-code'], ['quote-ink', 'quote-bg'], ['quote-ink', 'quote-bg-hover'], ['text', 'comment-mark-active'])
+  for (const [ink, surface] of pairs) {
+    const foreground = base.get(ink), background = base.get(surface)
+    assert.ok(foreground && background, `missing contrast token: ${ink} / ${surface}`)
+    const ratio = contrast(foreground, background)
+    assert.ok(ratio >= 4.5, `${ink} on ${surface}: ${ratio.toFixed(2)}:1, expected 4.5:1`)
+  }
 })
 
 test('themes.css only re-declares tokens that tokens.css defines', () => {
