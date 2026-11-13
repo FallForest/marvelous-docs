@@ -6,6 +6,48 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.70] - 2026-11-14
+
+Paste a screenshot and it lands in the document. Make the 20 MB ceiling real.
+
+### Added
+
+- **Pasting or dropping an image inserts it.** Before this, a copied screenshot
+  did nothing: the clipboard carries an image as a `File` with no name, the
+  editor had no paste handler, and the browser pasted whatever text alternative
+  the source offered — usually none. `editorProps.handlePaste` / `handleDrop`
+  now upload the file and insert it, and return `false` for anything that is not
+  an image so ordinary text paste and ProseMirror's own drop handling are
+  untouched. A screenshot's missing filename is replaced with `pasted-<time>`.
+
+### Fixed
+
+- **The 20 MB upload ceiling was unreachable.** `nginx.conf` never set
+  `client_max_body_size`, so nginx refused anything over its 1 MiB default in
+  under a millisecond, with an HTML 413 that names no limit — and the API's own
+  20 MB check never ran. A 2 MB image failed; a 900 KB one succeeded.
+  The proxy limit now says 20m, matching `MAX_UPLOAD_BYTES`.
+- **The two lists of accepted types had drifted.** `index.ts` registered body
+  parsers for five image types plus PDF, and the route kept its own
+  `ALLOWED_MIME` set; a type in one list but not the other failed in two
+  different ways for the same mistake. Both now read one exported
+  `UPLOAD_MIME_TYPES`.
+- **A `text/plain` upload said "Upload body is required".** Fastify's built-in
+  text and JSON parsers hand the route a string, so `Buffer.isBuffer` failed and
+  the message described the wrong problem. The type is now checked first (415,
+  with a hint about `application/octet-stream`), and a non-buffer body is
+  reported as "send the file as raw bytes".
+
+### Added (maintenance)
+
+- **`pnpm prune:uploads`** reports uploads no document refers to, and
+  `--delete` removes them. Nothing ever deleted an upload: removing the
+  document that embedded an image left the bytes on disk, and there was no way
+  to tell an orphan from a live file. The scan reads `documents.content` *and*
+  `document_versions`, so a URL that only survives in an old version still
+  counts; `--min-age` (default 1 day) protects an upload made seconds ago that
+  has not been inserted yet.
+
 ## [0.1.69] - 2026-11-14
 
 Withdraws 0.1.68's attachment work. Attachments do not belong in a document

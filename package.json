@@ -1,7 +1,7 @@
 {
   "name": "marvelous-docs",
   "private": true,
-  "version": "0.1.69",
+  "version": "0.1.70",
   "packageManager": "pnpm@11.25.0",
   "engines": {
     "node": ">=22",
@@ -22,7 +22,8 @@
     "verify:browser": "node scripts/verify/verify-pdf.mjs && node scripts/verify/verify-blocks.mjs && node scripts/verify/verify-trash.mjs && node scripts/verify/verify-selectability.mjs && node scripts/verify/verify-comment-marks.mjs && node scripts/verify/verify-themes.mjs",
     "cli": "pnpm --filter @marvelous-docs/cli exec node dist/index.js",
     "db:migrate": "pnpm --filter @marvelous-docs/server db:migrate",
-    "clean": "node -e \"for (const p of ['apps/server/dist','apps/web/dist','packages/cli/dist','apps/web/tsconfig.tsbuildinfo','coverage','.tmp']) { require('node:fs').rmSync(p, { recursive: true, force: true }) }\""
+    "clean": "node -e \"for (const p of ['apps/server/dist','apps/web/dist','packages/cli/dist','apps/web/tsconfig.tsbuildinfo','coverage','.tmp']) { require('node:fs').rmSync(p, { recursive: true, force: true }) }\"",
+    "prune:uploads": "node scripts/maintenance/prune-uploads.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

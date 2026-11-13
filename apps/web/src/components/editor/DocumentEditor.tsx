@@ -176,7 +176,31 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
         setBubbleAnchor(null)
       }
     },
-    editorProps: { attributes: { class: 'tiptap-content' } },
+    editorProps: {
+      attributes: { class: 'tiptap-content' },
+      // Paste and drop both route through insertImageFile. Returning false hands
+      // the event back to ProseMirror, which is what keeps ordinary text paste
+      // and ProseMirror's own drop handling working.
+      handlePaste: (_view, event) => {
+        const files = Array.from(event.clipboardData?.files || [])
+        if (!files.length) return false
+        // Never preventDefault synchronously: the upload is async, but claiming
+        // the event is not, and a false claim would swallow a text paste whose
+        // clipboard also carries a stale image.
+        void (async () => {
+          for (const file of files) await insertImageFile(file)
+        })()
+        return files.some((file) => file.type.startsWith('image/'))
+      },
+      handleDrop: (_view, event) => {
+        const files = Array.from((event as DragEvent).dataTransfer?.files || [])
+        if (!files.length) return false
+        void (async () => {
+          for (const file of files) await insertImageFile(file)
+        })()
+        return files.some((file) => file.type.startsWith('image/'))
+      },
+    },
   }, [doc.id, provider])
 
   // Geometry for every block that hosts its own toolbar (code, table, image,
@@ -277,23 +301,64 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
     if (selection && selection.to > selection.from) onSelection({ from: selection.from, to: selection.to, text: editor.state.doc.textBetween(selection.from, selection.to, ' ').slice(0, 500) })
   }
 
+  /** 20 MiB, matching MAX_UPLOAD_BYTES on the server and nginx's proxy limit. */
+  const MAX_IMAGE_BYTES = 20 * 1024 * 1024
+
+  /** PUTs one image and returns the URL it is served from, or throws. */
+  async function putImage(file: File): Promise<string> {
+    const response = await fetch(API + '/api/v1/uploads', {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type || 'application/octet-stream', 'X-File-Name': file.name, Authorization: 'Bearer ' + token },
+      body: file,
+    })
+    const body = await response.json()
+    if (!response.ok) throw new Error(body.error?.message || '上传失败')
+    return API + body.file.url
+  }
+
   async function uploadImage(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
-    if (file.size > 20 * 1024 * 1024) { window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '图片不能超过 20 MB' })); return }
+    if (file.size > MAX_IMAGE_BYTES) { window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '图片不能超过 20 MB' })); return }
     try {
-      const response = await fetch(API + '/api/v1/uploads', {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type || 'application/octet-stream', 'X-File-Name': file.name, Authorization: 'Bearer ' + token },
-        body: file,
-      })
-      const body = await response.json()
-      if (!response.ok) throw new Error(body.error?.message || '上传失败')
-      setImageUrl(API + body.file.url)
+      setImageUrl(await putImage(file))
     } catch (error) {
       window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '图片上传失败：' + (error as Error).message }))
     }
+  }
+
+  /**
+   * Uploads an image dropped or pasted into the editor and inserts it.
+   *
+   * Returns false for anything that is not an image, so the caller can let ProseMirror
+   * handle the event itself — a pasted paragraph of text, a copied spreadsheet cell,
+   * a PDF dragged in from the desktop: all of those have their own correct
+   * behaviour and none of them is this function's business.
+   *
+   * Why it exists at all: before this, pasting a screenshot did nothing. The
+   * clipboard carries an image as a File with no name, and the editor had no
+   * handler, so the browser pasted whatever text alternative the source offered
+   * (usually nothing) and the image was silently dropped.
+   */
+  async function insertImageFile(file: File): Promise<boolean> {
+    if (!file.type.startsWith('image/')) return false
+    if (file.size > MAX_IMAGE_BYTES) {
+      window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '图片不能超过 20 MB' }))
+      return true
+    }
+    try {
+      // The clipboard gives a screenshot no filename, so the name the server
+      // stores would be a bare extension. Name it after the kind of thing it is.
+      const named = file.name && file.name !== 'image.png'
+        ? file
+        : new File([file], 'pasted-' + Date.now() + '.' + (file.type.split('/')[1] || 'png'), { type: file.type })
+      const url = await putImage(named)
+      editor?.chain().focus().setImage({ src: url }).run()
+    } catch (error) {
+      window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '图片上传失败：' + (error as Error).message }))
+    }
+    return true
   }
 
   async function saveTitle(next: string) {

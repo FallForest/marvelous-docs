@@ -7,6 +7,7 @@ import { initializeWorkspace, pool } from './core/db.js'
 import { fail } from './core/http.js'
 import { RateLimiter } from './lib/rate-limit.js'
 import { purgeExpiredTrash } from './lib/trash.js'
+import { UPLOAD_MIME_TYPES } from './routes/uploads.js'
 import { registerRoutes } from './routes/index.js'
 import { registerUpgradeHandler } from './collaboration/socket.js'
 import { flushRoom, rooms, setRoomLogger, evictRoom } from './collaboration/rooms.js'
@@ -22,8 +23,12 @@ import { flushRoom, rooms, setRoomLogger, evictRoom } from './collaboration/room
 const app = Fastify({ logger: true, bodyLimit: 25 * 1024 * 1024 })
 
 // Uploads arrive as raw bodies, so they bypass JSON parsing.
-app.addContentTypeParser('application/octet-stream', { parseAs: 'buffer' }, (_request, body, done) => done(null, body))
-for (const type of ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'application/pdf']) {
+//
+// The list comes from the upload route rather than being repeated here. These two
+// gates used to be written out separately and drifted: a type registered here but
+// not accepted there reached the handler and got a 415, and a type accepted there
+// but not registered here never reached it at all. One exported list, read twice.
+for (const type of UPLOAD_MIME_TYPES) {
   app.addContentTypeParser(type, { parseAs: 'buffer' }, (_request, body, done) => done(null, body))
 }
 
