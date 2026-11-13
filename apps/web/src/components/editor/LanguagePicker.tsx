@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, ChevronDown } from 'lucide-react'
-import { LANGUAGES, canonicalLanguage, languageLabel } from '../../lib/languages'
+import { LANGUAGES, canonicalLanguage, languageLabel } from '../../lib/editor/languages'
 import { DURATION } from '../../lib/motion'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 

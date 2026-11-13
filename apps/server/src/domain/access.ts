@@ -1,5 +1,5 @@
-import { pool } from './db.js'
-import type { Claims, DocumentRow } from './types.js'
+import { pool } from '../core/db.js'
+import type { Claims, DocumentRow } from '../core/types.js'
 
 /**
  * Columns a list response needs. `content` is deliberately absent: the tree only

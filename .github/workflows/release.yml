@@ -6,7 +6,7 @@ name: Release
 # runner needs no emulation at all.
 #
 # If the arm runner is unavailable for the repository, fall back to building on
-# the deploy host with scripts/publish-images.sh and run this workflow manually
+# the deploy host with scripts/release/publish-images.sh and run this workflow manually
 # with workflow_dispatch once the images exist in GHCR.
 
 on:
@@ -78,10 +78,12 @@ jobs:
         run: |
           version='${{ steps.tag.outputs.version }}'
           owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
-          jq -n --arg version "$version" --arg owner "$owner" '{version:$version, releaseUrl:("https://github.com/" + $owner + "/marvelous-docs/releases/tag/v" + $version), apiImage:("ghcr.io/" + $owner + "/marvelous-docs-api:" + $version), webImage:("ghcr.io/" + $owner + "/marvelous-docs-web:" + $version)}' > latest.json
+          # The committed copy lives in release/ so the repository root holds only
+          # entry points; the workflow rewrites it before publishing it as an asset.
+          jq -n --arg version "$version" --arg owner "$owner" '{version:$version, releaseUrl:("https://github.com/" + $owner + "/marvelous-docs/releases/tag/v" + $version), notesUrl:("https://github.com/" + $owner + "/marvelous-docs/releases"), apiImage:("ghcr.io/" + $owner + "/marvelous-docs-api:" + $version), webImage:("ghcr.io/" + $owner + "/marvelous-docs-web:" + $version)}' > release/latest.json
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.name }}
           generate_release_notes: true
-          files: latest.json
+          files: release/latest.json

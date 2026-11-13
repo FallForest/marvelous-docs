@@ -6,8 +6,8 @@
 # minutes per tag. After it succeeds, push the tag and the Release workflow will
 # verify the images exist and publish the GitHub release entry.
 #
-# Usage: scripts/publish-images.sh 0.1.34          # build only (default)
-#        scripts/publish-images.sh 0.1.34 --push   # also push to GHCR
+# Usage: scripts/release/publish-images.sh 0.1.34          # build only (default)
+#        scripts/release/publish-images.sh 0.1.34 --push   # also push to GHCR
 #
 # Pushing needs a token with write:packages; a plain "gh auth token" usually
 # lacks it, so building locally and running the containers from the local tags

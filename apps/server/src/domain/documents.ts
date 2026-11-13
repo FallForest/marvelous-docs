@@ -1,9 +1,9 @@
 import type { FastifyReply } from 'fastify'
 import type * as Y from 'yjs'
-import { pool } from './db.js'
-import { fail } from './http.js'
-import { yState } from './collaboration/ydoc.js'
-import type { AuthRequest, DocumentRow } from './types.js'
+import { pool } from '../core/db.js'
+import { fail } from '../core/http.js'
+import { yState } from '../collaboration/ydoc.js'
+import type { AuthRequest, DocumentRow } from '../core/types.js'
 
 /** A parent must exist in this workspace and be a folder, not a document. */
 export async function assertFolderParent(auth: AuthRequest, parentId: string | null | undefined, reply: FastifyReply): Promise<boolean> {

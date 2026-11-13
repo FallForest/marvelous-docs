@@ -1,7 +1,7 @@
 import Image from '@tiptap/extension-image';
 
 /**
- * The document's image node, mirroring `apps/web/src/lib/image.ts`.
+ * The document's image node, mirroring `apps/web/src/lib/editor/image.ts`.
  *
  * Width and alignment are node attributes rather than marks: a mark cannot style
  * a node that has no text, and TextAlign only covers headings and paragraphs.

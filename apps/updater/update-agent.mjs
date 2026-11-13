@@ -91,7 +91,7 @@ const server = http.createServer((request, response) => {
     if (state.status === 'running') return send(response, 409, { error: 'update already running', state })
     state = { status: 'running', startedAt: new Date().toISOString(), finishedAt: null, output: '', error: null }
     syncReleaseEnv().then(() => {
-      const child = spawn('bash', ['scripts/update.sh'], { cwd: projectDir, env: process.env })
+      const child = spawn('bash', ['scripts/deploy/update.sh'], { cwd: projectDir, env: process.env })
       child.stdout.on('data', (chunk) => { state.output = (state.output + chunk.toString()).slice(-12000) })
       child.stderr.on('data', (chunk) => { state.output = (state.output + chunk.toString()).slice(-12000) })
       child.on('error', (error) => { state = { ...state, status: 'failed', finishedAt: new Date().toISOString(), error: error.message } })

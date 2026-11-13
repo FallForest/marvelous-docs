@@ -1,11 +1,11 @@
 import { randomBytes, createHash } from 'node:crypto'
 import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
-import { pool } from '../db.js'
-import { fail, parse } from '../http.js'
-import { passwordHash, passwordMatches, safeUser } from '../security.js'
+import { pool } from '../core/db.js'
+import { fail, parse } from '../core/http.js'
+import { passwordHash, passwordMatches, safeUser } from '../core/security.js'
 import { loginBuckets, LoginRateLimiter } from '../lib/rate-limit.js'
-import type { AuthRequest, Claims } from '../types.js'
+import type { AuthRequest, Claims } from '../core/types.js'
 import type { RouteDeps } from './deps.js'
 
 const emailSchema = z.string().email().max(320).transform((v) => v.toLowerCase())

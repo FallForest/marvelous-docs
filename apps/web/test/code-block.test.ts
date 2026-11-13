@@ -2,8 +2,8 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { getSchema } from '@tiptap/core'
 import { EditorState, TextSelection } from '@tiptap/pm/state'
-import { buildEditorExtensions } from '../src/lib/editor.ts'
-import { CodeBlockBoundary, isAtCodeBlockEnd } from '../src/lib/code-block.ts'
+import { buildEditorExtensions } from '../src/lib/editor/index.ts'
+import { CodeBlockBoundary, isAtCodeBlockEnd } from '../src/lib/editor/code-block.ts'
 
 /**
  * Runs a key handler from the boundary extension against a real ProseMirror

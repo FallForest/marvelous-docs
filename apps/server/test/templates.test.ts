@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { getTemplate, templateIds, templates } from '../src/lib/templates.js';
 import { schema } from '../src/lib/schema.js';
-import { markdownToTiptap, tiptapToMarkdown } from '../src/lib/markdown.js';
+import { markdownToTiptap, tiptapToMarkdown } from '../src/lib/markdown/index.js';
 
 const EXPECTED = ['blank', 'meeting-notes', 'weekly-report', 'project-plan', 'product-spec', 'release-notes'];
 

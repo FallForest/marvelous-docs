@@ -57,6 +57,12 @@ instance plus `RouteDeps`, so nothing in `routes/` imports `index.ts` and the
 module graph stays acyclic. `test/routes.test.ts` asserts that every documented
 endpoint is still registered after such a change.
 
+Between the routes and the pure helpers sit two layers: `src/core/` (configuration,
+the pool, the error envelope, password hashing, shared types) and `src/domain/`
+(effective role, document JSON shapes, the route guards). The direction is
+`routes → domain → core → lib`, and `test/structure.test.ts` fails the build when
+an import points back up it.
+
 Content is versioned Tiptap JSON (`{ schemaVersion: 1, doc }`). The server keeps a
 Tiptap schema that mirrors the client extensions (StarterKit, underline, link,
 text style, colour, highlight, task lists, tables) and rejects anything it cannot
@@ -70,12 +76,12 @@ JWT under the platform config directory and maps commands to endpoints. See
 [API.md](API.md#cli-mapping) for the stable mapping and
 [`packages/cli/README.md`](../packages/cli/README.md) for usage.
 
-### Update agent (`apps/updater`, `scripts/update-agent.mjs`)
+### Update agent (`apps/updater`)
 
 An internal-only container with the Docker socket and the compose project bound.
 The API exposes `/api/v1/system/update` to workspace admins, which forwards to the
 agent with `UPDATE_AGENT_TOKEN`. The agent runs the same procedure as
-`scripts/update.sh`: database backup, `docker compose pull`, schema migration,
+`scripts/deploy/update.sh`: database backup, `docker compose pull`, schema migration,
 service restart, and a `/healthz` check. It is not routed through Caddy.
 
 ## Data model
@@ -233,7 +239,7 @@ output (production dependencies only).
 | New editor node or mark | Add the Tiptap extension to `apps/web/src/lib/editor.ts` and to the server schema in `apps/server/src/lib/schema.ts`, then handle it in Markdown import/export. |
 | New template | Extend `apps/server/src/lib/templates.ts`; documents accept `templateId`. |
 | New web screen | Add a file under `apps/web/src/pages/` and render it from `App.tsx`. |
-| New export format | Add it to `ExportTarget`; server-side formats extend `exportResponse` in `lib/markdown.ts`, client-side ones follow `lib/pdf.ts` (build from the existing `html` export rather than adding a server endpoint). |
+| New export format | Add it to `ExportTarget`; server-side formats extend `exportResponse` in `lib/markdown/export.ts`, client-side ones follow `lib/export/pdf.ts` (build from the existing `html` export rather than adding a server endpoint). |
 | A new block command | Add it to the `COMMANDS` table in `components/editor/BlockHandle.tsx`; the gutter menu and any keyboard flavour read the same table. |
 | New CLI command | Add a module under `packages/cli/src/commands/`, register it in `commands/index.ts`, and add a test in `packages/cli/test`. |
 | Multiple API instances | Replace the in-memory room map in `apps/server/src/collaboration/rooms.ts` with a shared store (for example Redis-backed y-websocket persistence) and route by document id. |

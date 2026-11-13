@@ -6,10 +6,10 @@ import * as syncProtocol from 'y-protocols/sync'
 import * as awarenessProtocol from 'y-protocols/awareness'
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { getDocumentAccess } from '../access.js'
+import { getDocumentAccess } from '../domain/access.js'
 import { flushRoom, getRoom, rooms } from './rooms.js'
 import { encodeAwareness, encodeSyncStep1, encodeSyncStep2, AWARENESS_MESSAGE, SYNC_MESSAGE } from './protocol.js'
-import type { Claims, Room } from '../types.js'
+import type { Claims, Room } from '../core/types.js'
 
 const uuidSchema = z.string().uuid()
 

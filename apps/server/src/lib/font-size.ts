@@ -9,7 +9,12 @@ declare module '@tiptap/core' {
   }
 }
 
-/** Adds a fontSize attribute to the textStyle mark (used by the toolbar). */
+/**
+ * Adds a fontSize attribute to the textStyle mark (used by the toolbar).
+ *
+ * Mirrors `apps/web/src/lib/editor/font-size.ts`; see image.ts for why the two
+ * copies must not drift.
+ */
 export const FontSize = Extension.create({
   name: 'fontSize',
   addOptions() {

@@ -4,10 +4,10 @@
  * There is no test runner here that can drive a page, and the PDF path is the
  * one piece of this batch whose failure mode (a blank page, a cut line, a
  * stylesheet that restyles the app) only shows up once Chrome has laid the
- * document out. So this bundles `lib/pdf.ts` with esbuild, loads it into
+ * document out. So this bundles `lib/export/pdf.ts` with esbuild, loads it into
  * headless Chrome, runs one export, and inspects the resulting PDF.
  *
- *   node scripts/verify-pdf.mjs
+ *   node scripts/verify/verify-pdf.mjs
  */
 import { createServer } from 'node:http'
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
@@ -18,7 +18,7 @@ import { join, resolve } from 'node:path'
 
 // esbuild is a dependency of apps/web (through Vite), not of the repository
 // root, so it is resolved from that package instead of from this script.
-const requireFromWeb = createRequire(resolve(import.meta.dirname, '../apps/web/package.json'))
+const requireFromWeb = createRequire(resolve(import.meta.dirname, '../../apps/web/package.json'))
 const { build } = requireFromWeb('esbuild')
 
 const CHROME = process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
@@ -42,7 +42,7 @@ const EXPORT_HTML = `<!doctype html>
 const bundle = await build({
   stdin: {
     contents: `
-      export { htmlToPdf, renderExportCanvas } from './apps/web/src/lib/pdf.ts'
+      export { htmlToPdf, renderExportCanvas } from './apps/web/src/lib/export/pdf.ts'
     `,
     resolveDir: process.cwd(),
     loader: 'ts',

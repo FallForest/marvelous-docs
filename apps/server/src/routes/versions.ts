@@ -1,13 +1,13 @@
 import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
-import { pool } from '../db.js'
-import { fail, parse } from '../http.js'
-import { documentJson, recordActivity } from '../access.js'
+import { pool } from '../core/db.js'
+import { fail, parse } from '../core/http.js'
+import { documentJson, recordActivity } from '../domain/access.js'
 import { createYDoc, yState } from '../collaboration/ydoc.js'
 import { flushRoom, rooms, syncRoomFromContent } from '../collaboration/rooms.js'
-import { requireDoc } from '../guards.js'
+import { requireDoc } from '../domain/guards.js'
 import { versionParams } from './schemas.js'
-import type { AuthRequest, DocumentRow } from '../types.js'
+import type { AuthRequest, DocumentRow } from '../core/types.js'
 import type { RouteDeps } from './deps.js'
 
 /**

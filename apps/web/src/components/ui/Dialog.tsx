@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { AlertTriangle, Info, X } from 'lucide-react'
-import { usePresence } from './usePresence'
+import { usePresence } from '../../hooks/usePresence'
 
 type DialogProps = {
   title: string

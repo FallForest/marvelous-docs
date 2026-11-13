@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { API } from '../lib/api'
-import { renderDocHTML } from '../lib/render-html'
+import { renderDocHTML } from '../lib/export/render-html'
 
 /** Public, unauthenticated view of a document reached through a share link. */
 export default function SharedDocumentPage({ token }: { token: string }) {

@@ -1,8 +1,8 @@
 import type { FastifyReply } from 'fastify'
 import { z } from 'zod'
 import { ROLE_LEVEL, getDocumentAccess } from './access.js'
-import { fail, parse } from './http.js'
-import type { AuthRequest } from './types.js'
+import { fail, parse } from '../core/http.js'
+import type { AuthRequest } from '../core/types.js'
 
 const uuidSchema = z.string().uuid()
 

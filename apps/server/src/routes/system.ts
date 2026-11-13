@@ -1,10 +1,10 @@
 import { compareVersions } from '../lib/version.js'
-import { pool } from '../db.js'
-import { fail } from '../http.js'
-import { config } from '../config.js'
+import { pool } from '../core/db.js'
+import { fail } from '../core/http.js'
+import { config } from '../core/config.js'
 import { z } from 'zod'
 import type { FastifyInstance, FastifyReply } from 'fastify'
-import type { AuthRequest, UpdateManifest } from '../types.js'
+import type { AuthRequest, UpdateManifest } from '../core/types.js'
 import type { RouteDeps } from './deps.js'
 
 /** Health, version, and the admin-only self-update surface. */

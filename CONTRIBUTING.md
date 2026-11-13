@@ -84,7 +84,7 @@ screenshots.
 | Build | `pnpm build` |
 
 Releases are tag-driven (`v*.*.*`) and publish multi-arch images plus
-`latest.json` through `.github/workflows/release.yml`.
+`release/latest.json` through `.github/workflows/release.yml`.
 
 ## Code style
 

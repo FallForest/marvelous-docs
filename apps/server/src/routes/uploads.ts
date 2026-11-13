@@ -2,9 +2,9 @@ import { randomBytes } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { FastifyInstance } from 'fastify'
-import { fail } from '../http.js'
-import { config } from '../config.js'
-import type { AuthRequest } from '../types.js'
+import { fail } from '../core/http.js'
+import { config } from '../core/config.js'
+import type { AuthRequest } from '../core/types.js'
 import type { RouteDeps } from './deps.js'
 
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024

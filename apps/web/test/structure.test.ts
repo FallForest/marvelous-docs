@@ -52,6 +52,19 @@ const layerOf = (file: string) => {
   return 'other'
 }
 
+test('lib is split by concern, and each sub-folder keeps one job', () => {
+  // lib/ used to be one flat directory where pdf, highlight and tree sat side by
+  // side. The sub-folders are the rule now: anything that only exists inside the
+  // Tiptap instance lives in editor/, anything on the way out of the editor lives
+  // in export/, and a helper used by more than one screen stays at the top level
+  // so a page never has to guess which sub-folder to reach into.
+  const EDITOR = ['blocks.ts', 'code-block.ts', 'font-size.ts', 'highlight.ts', 'image.ts', 'index.ts', 'languages.ts']
+  const EXPORT = ['download.ts', 'export-css.ts', 'pdf-pages.ts', 'pdf.ts', 'render-html.ts']
+  assert.deepEqual(readdirSync(join(SRC, 'lib/editor')).sort(), EDITOR, 'lib/editor holds the editor-only modules')
+  assert.deepEqual(readdirSync(join(SRC, 'lib/export')).sort(), EXPORT, 'lib/export holds the outbound modules')
+  const flat = readdirSync(join(SRC, 'lib')).filter((name) => name.endsWith('.ts')).sort()
+  assert.deepEqual(flat, ['api.ts', 'app-types.ts', 'clipboard.ts', 'collab.ts', 'endpoints.ts', 'format.ts', 'motion.ts', 'trash.ts', 'tree.ts', 'types.ts'], 'shared helpers stay flat')
+})
 test('lib never imports UI code', () => {
   const offenders: string[] = []
   for (const file of files.filter((entry) => layerOf(entry.path) === 'lib')) {

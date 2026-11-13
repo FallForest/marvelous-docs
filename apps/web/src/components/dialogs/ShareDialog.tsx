@@ -1,5 +1,5 @@
 import { Copy, Share2, X } from 'lucide-react'
-import { usePresence } from '../ui/usePresence'
+import { usePresence } from '../../hooks/usePresence'
 import type { DocumentPermission, WorkspaceMember } from '../../lib/types'
 
 type ShareDialogProps = {

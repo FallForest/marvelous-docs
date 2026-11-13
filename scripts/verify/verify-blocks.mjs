@@ -8,7 +8,7 @@
  * extensions and the real stylesheet, and drives them over the DevTools
  * protocol.
  *
- *   node scripts/verify-blocks.mjs
+ *   node scripts/verify/verify-blocks.mjs
  */
 import { createServer } from 'node:http'
 import { mkdtemp, rm } from 'node:fs/promises'
@@ -17,7 +17,7 @@ import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
-const WEB = resolve(import.meta.dirname, '../apps/web')
+const WEB = resolve(import.meta.dirname, '../../apps/web')
 const requireFromWeb = createRequire(join(WEB, 'package.json'))
 const { build } = requireFromWeb('esbuild')
 

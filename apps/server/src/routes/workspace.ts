@@ -1,8 +1,8 @@
 import type { FastifyInstance } from 'fastify'
-import { pool } from '../db.js'
-import { safeUser } from '../security.js'
+import { pool } from '../core/db.js'
+import { safeUser } from '../core/security.js'
 import { templates } from '../lib/templates.js'
-import type { AuthRequest } from '../types.js'
+import type { AuthRequest } from '../core/types.js'
 import type { RouteDeps } from './deps.js'
 
 /** Workspace-level reads: members, stats, and the template catalogue. */

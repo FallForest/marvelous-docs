@@ -9,7 +9,6 @@ dist/
 
 # TypeScript incremental build metadata
 *.tsbuildinfo
-apps/web/tsconfig.tsbuildinfo
 
 # Environment and secrets
 .env
@@ -22,11 +21,12 @@ tmp/
 backups/
 coverage/
 *.log
+*.tmp.mjs
 
 # Local tool state
 .claude/settings.local.json
 
-# Browser verification artefacts (scripts/verify-*.mjs)
+# Browser verification artefacts (scripts/verify/*.mjs write these to the repo root)
 .tmp-export.pdf
 .tmp-export-canvas.png
 .tmp-pdf/
@@ -34,18 +34,13 @@ coverage/
 # Vite debug output
 apps/web/vite-out.txt
 
-# Ad-hoc debugging scripts (not part of the project)
-probe*.mjs
-app-stub*.js
-verify*.mjs
-shot*.mjs
-.shot-*
-*.tmp.mjs
-
-# Local scratch output
-.tmp-scratch/
-m-probe*.mjs
-m-shot*.mjs
-*-probe*.mjs
-*-shot*.mjs
-regex-check*.mjs
+# Ad-hoc debugging scripts. Root-anchored on purpose: an unanchored pattern also
+# matched the committed scripts/verify/*.mjs helpers.
+/probe*.mjs
+/app-stub*.js
+/shot*.mjs
+/.shot-*
+/m-probe*.mjs
+/m-shot*.mjs
+/regex-check*.mjs
+/scaffold*.mjs

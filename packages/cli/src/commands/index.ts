@@ -23,7 +23,7 @@ import {
   treeCommand,
   updateCommand
 } from './documents.js';
-import { createCompletionCommand } from './misc.js';
+import { createCompletionCommand } from './completion.js';
 import {
   shareGrantCommand,
   shareListCommand,

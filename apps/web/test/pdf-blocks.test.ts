@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { A4, PDF_CONTENT_HEIGHT, PDF_CONTENT_WIDTH, PDF_MARGIN, folioLabel, pdfFilename, slicePages } from '../src/lib/pdf-pages'
-import { afterBlock, blockSpans, dropTargetBefore, endOfBlocks, neighbourTarget, planMove } from '../src/lib/blocks'
+import { A4, PDF_CONTENT_HEIGHT, PDF_CONTENT_WIDTH, PDF_MARGIN, folioLabel, pdfFilename, slicePages } from '../src/lib/export/pdf-pages'
+import { afterBlock, blockSpans, dropTargetBefore, endOfBlocks, neighbourTarget, planMove } from '../src/lib/editor/blocks'
 
 /* ------------------------------------------------------------------ */
 /* PDF pagination                                                      */

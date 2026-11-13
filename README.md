@@ -93,7 +93,7 @@ instance and its local CA). Database rows live in the `postgres_data` volume and
 uploads in `uploads_data`. To run released images instead of local builds, set
 `API_IMAGE`/`WEB_IMAGE`/`APP_VERSION` and use `docker compose pull && docker compose up -d`.
 The internal `updater` service performs the same backup, pull, migration,
-restart, and `/healthz` verification as `scripts/update.sh`; it is never
+restart, and `/healthz` verification as `scripts/deploy/update.sh`; it is never
 exposed through Caddy.
 
 Full guide - TLS, updates, upgrades, rollback, observability: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
@@ -145,21 +145,24 @@ CI runs exactly these steps on every push and pull request
 ```
 apps/
   server/          Fastify API, Yjs collaboration server, SQL migrations, Dockerfile
+                   src/core (config, pool, http, security) + src/domain (rules) + src/routes
   web/             React + Vite + Tiptap client, nginx config, Dockerfile
-  updater/         Dockerfile for the internal update agent (scripts/update-agent.mjs)
+  updater/         Internal update agent: Dockerfile + update-agent.mjs
 packages/
   cli/             mdocs command line client (published package)
 docs/
   API.md           authoritative HTTP + WebSocket API contract
   ARCHITECTURE.md  components, data model, collaboration, security, deployment
+  STRUCTURE.md     directory map and the rule for where a new file belongs
   DEVELOPMENT.md   local setup, conventions, migrations, debugging
   DEPLOYMENT.md    compose, TLS, updates, backup/restore, upgrades, observability
   SECURITY.md      authentication, ACL, uploads, rate limits, hardening
 scripts/
-  update.sh        manual backup + pull + migrate + restart + health check
-  update-agent.mjs internal update agent used by the updater container
-  backup.sh        pg_dump + uploads archive
-  restore.sh       restore a dump and the uploads archive
+  deploy/          backup.sh, restore.sh, update.sh — host-side operations
+  release/         publish-images.sh — build/push the release images
+  verify/          verify-pdf.mjs, verify-blocks.mjs, verify-trash.mjs — real-browser checks
+release/
+  latest.json      committed release manifest served to the update agent
 Caddyfile          reverse proxy and TLS for the compose stack
 docker-compose.yml postgres, api, updater, web, caddy
 ```
@@ -167,8 +170,8 @@ docker-compose.yml postgres, api, updater, web, caddy
 ## Backups and restore
 
 ```sh
-./scripts/backup.sh                                  # pg_dump + uploads archive into ./backups
-./scripts/restore.sh backups/<dump>.sql [uploads.tar.gz]
+./scripts/deploy/backup.sh                           # pg_dump + uploads archive into ./backups
+./scripts/deploy/restore.sh backups/<dump>.sql [uploads.tar.gz]
 ```
 
 The scripts wrap the documented commands; both are POSIX `sh` and safe to call

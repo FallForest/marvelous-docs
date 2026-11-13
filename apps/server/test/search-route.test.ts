@@ -44,7 +44,7 @@ test.before(async () => {
   process.env.BOOTSTRAP_ADMIN_PASSWORD = 'correct horse battery staple'
   process.env.BOOTSTRAP_ADMIN_NAME = 'Admin'
 
-  const dbModule = await import('../src/db.js')
+  const dbModule = await import('../src/core/db.js')
   pool = dbModule.pool
   // Replaying 001 must not trip over the missing extension.
   const rawQuery = pool.query.bind(pool) as (sql: unknown, params?: unknown) => Promise<unknown>
@@ -55,7 +55,7 @@ test.before(async () => {
   const Fastify = (await import('fastify')).default
   const jwt = (await import('@fastify/jwt')).default
   const { registerRoutes } = await import('../src/routes/index.js')
-  const { fail } = await import('../src/http.js')
+  const { fail } = await import('../src/core/http.js')
 
   app = Fastify({ logger: false })
   await app.register(jwt, { secret: process.env.JWT_SECRET })
@@ -76,7 +76,7 @@ test.before(async () => {
   token = login.json().token
 
   // A plain member, to prove restricted documents stay out of their results.
-  const { passwordHash } = await import('../src/security.js')
+  const { passwordHash } = await import('../src/core/security.js')
   const ws = await pool.query('SELECT id FROM workspaces LIMIT 1')
   const member = await pool.query<{ id: string }>(
     'INSERT INTO users(email,name,password_hash) VALUES ($1,$2,$3) RETURNING id',

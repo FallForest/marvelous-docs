@@ -1,10 +1,10 @@
 import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
-import { pool } from '../db.js'
-import { fail, parse } from '../http.js'
-import { requireDoc } from '../guards.js'
+import { pool } from '../core/db.js'
+import { fail, parse } from '../core/http.js'
+import { requireDoc } from '../domain/guards.js'
 import { idParams, uuidSchema } from './schemas.js'
-import type { AuthRequest } from '../types.js'
+import type { AuthRequest } from '../core/types.js'
 import type { RouteDeps } from './deps.js'
 
 /** Threaded comments with a text anchor, status, and resolver. */

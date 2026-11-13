@@ -61,7 +61,10 @@ export default tseslint.config(
     },
   },
   {
-    files: ['apps/server/**/*.ts', 'packages/cli/**/*.{ts,mjs}', 'scripts/**/*.mjs', '*.mjs'],
+    // Node-side code: the API, the CLI, the update agent, the scripts, the flat
+    // config itself. The agent used to live in scripts/, so it belonged here by
+    // path; it moved to apps/updater and has to stay in this group by name.
+    files: ['apps/server/**/*.ts', 'apps/updater/**/*.mjs', 'packages/cli/**/*.{ts,mjs}', 'scripts/**/*.mjs', '*.mjs'],
     languageOptions: {
       globals: {
         ...globals.node,

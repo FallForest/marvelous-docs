@@ -15,10 +15,10 @@ dist
 backups
 coverage
 .tmp
-release-check
 docs
 README.md
 CHANGELOG.md
 CONTRIBUTING.md
-latest.json
+release
 *.log
+*.tmp.mjs

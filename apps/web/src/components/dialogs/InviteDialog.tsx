@@ -1,5 +1,5 @@
 import { AlertCircle, ChevronRight, Copy, Mail, UserPlus, X } from 'lucide-react'
-import { usePresence } from '../ui/usePresence'
+import { usePresence } from '../../hooks/usePresence'
 import type { AdminInviteProps } from '../../lib/app-types'
 
 /** Creates a one-time invite link and shows it for the operator to send. */

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Folder, X } from 'lucide-react'
 import { buildDocTree, descendantIds, flatten, treeDepth } from '../../lib/tree'
-import { usePresence } from '../ui/usePresence'
+import { usePresence } from '../../hooks/usePresence'
 import { staggerDelay } from '../../lib/motion'
 import type { Doc } from '../../lib/types'
 

@@ -5,7 +5,7 @@
 #   marvelous-docs-<UTC timestamp>.sql        pg_dump of the database
 #   uploads-<UTC timestamp>.tar.gz            archive of the uploads volume
 #
-# Usage: ./scripts/backup.sh
+# Usage: ./scripts/deploy/backup.sh
 # Environment: COMPOSE_FILE, BACKUP_DIR, UPLOAD_SERVICE (default: api)
 set -eu
 
@@ -45,5 +45,5 @@ fi
 echo "==> Done"
 echo "    database: $sql_file"
 echo "    uploads:  $uploads_file"
-echo "    restore:  ./scripts/restore.sh \"$sql_file\" \"$uploads_file\""
+echo "    restore:  ./scripts/deploy/restore.sh \"$sql_file\" \"$uploads_file\""
 echo "Store the files off the server and test a restore regularly."

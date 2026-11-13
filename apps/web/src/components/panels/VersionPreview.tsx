@@ -5,7 +5,7 @@ import { request } from '../../lib/api'
 import { buildEditorExtensions } from '../../lib/editor'
 import { formatDate } from '../../lib/format'
 import { emptyContent } from '../../lib/types'
-import { usePresence } from '../ui/usePresence'
+import { usePresence } from '../../hooks/usePresence'
 import type { Version } from '../../lib/types'
 
 type VersionPreviewProps = {

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Restore a Marvelous Docs deployment from the artifacts written by backup.sh.
 #
-# Usage: ./scripts/restore.sh <database.sql> [uploads.tar.gz]
+# Usage: ./scripts/deploy/restore.sh <database.sql> [uploads.tar.gz]
 # The database dump is applied with psql ON_ERROR_STOP=1, the uploads archive is
 # extracted over the uploads volume, then api and web are started again.
 # Environment: COMPOSE_FILE

@@ -3,11 +3,11 @@ import * as awarenessProtocol from 'y-protocols/awareness'
 import { prosemirrorToYXmlFragment } from 'y-prosemirror'
 import { WebSocket } from 'ws'
 import type { FastifyBaseLogger } from 'fastify'
-import { pool } from '../db.js'
+import { pool } from '../core/db.js'
 import { schema } from '../lib/schema.js'
 import { createYDoc, contentFromYDoc, roomField, yState } from './ydoc.js'
 import { encodeAwareness, encodeSyncUpdate } from './protocol.js'
-import type { Room } from '../types.js'
+import type { Room } from '../core/types.js'
 
 /**
  * In-memory collaboration rooms.

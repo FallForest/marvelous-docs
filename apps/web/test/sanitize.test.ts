@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { renderDocHTML } from '../src/lib/render-html.js'
+import { renderDocHTML } from '../src/lib/export/render-html.js'
 
 /**
  * The public share page injects this HTML with dangerouslySetInnerHTML while

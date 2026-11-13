@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { LANGUAGES } from '../src/lib/languages.js'
-import { grammarFor, lowlight, safeGrammar, supportsLanguage } from '../src/lib/highlight.js'
+import { LANGUAGES } from '../src/lib/editor/languages.js'
+import { grammarFor, lowlight, safeGrammar, supportsLanguage } from '../src/lib/editor/highlight.js'
 
 /**
  * The language picker and the highlighter have to agree.

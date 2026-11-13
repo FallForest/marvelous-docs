@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { ChangeEvent, FormEvent } from 'react'
+import type { ChangeEvent } from 'react'
 import { AlertCircle, X } from 'lucide-react'
 import { api } from './lib/endpoints'
-import { copyText } from './lib/clipboard'
 import { Dialog } from './components/ui/Dialog'
 import { withViewTransition } from './lib/motion'
 import { COLLAB_URL } from './lib/collab'
-import { downloadTextFile, EXPORT_MIME, printHtmlDocument } from './lib/download'
-import { pdfFilename } from './lib/pdf-pages'
 import { buildDocTree, filterDocTree } from './lib/tree'
 import { useWorkspaceData } from './hooks/useWorkspaceData'
+import { useSharing } from './hooks/useSharing'
+import { useInvite } from './hooks/useInvite'
+import { useDocumentExport } from './hooks/useDocumentExport'
 import { emptyContent } from './lib/types'
 import type { CollabStatus, RightTab, UpdateInfo } from './lib/app-types'
 import type {
-  Comment, Doc, DocumentPermission, ExportTarget, SaveStatus, SearchScope, TreeAction, Version, WorkspaceMember,
+  Comment, Doc, SaveStatus, SearchScope, TreeAction, Version,
 } from './lib/types'
 import AdminWorkspace from './pages/AdminPage'
 import CommandPalette from './pages/CommandPalette'
@@ -33,11 +33,13 @@ import TopBar from './components/layout/TopBar'
 import VersionPreview from './components/panels/VersionPreview'
 
 /**
- * Workspace shell: owns session, document list, and every overlay.
+ * Workspace shell: owns session, the document list, and which overlay is open.
  *
  * Rendering of individual surfaces lives in ./pages (route-level screens),
  * ./components/editor (the Tiptap surface) and ./components/dialogs, so this
- * file only wires state to them.
+ * file only wires them together. The data behind an overlay that is closed most
+ * of the time — sharing, invites, export — lives in its own hook under ./hooks,
+ * because none of it is needed to paint the shell.
  */
 export function AppRoot() {
   const sharedMatch = window.location.pathname.match(/^\/shared\/(.+)$/)
@@ -57,23 +59,12 @@ function App() {
   const [showRight, setShowRight] = useState(false)
   const [showInvite, setShowInvite] = useState(false)
   const [showShare, setShowShare] = useState(false)
-  const [workspaceMembers, setWorkspaceMembers] = useState<WorkspaceMember[]>([])
-  const [documentPermissions, setDocumentPermissions] = useState<DocumentPermission[]>([])
-  const [documentRestricted, setDocumentRestricted] = useState(false)
-  const [shareBusy, setShareBusy] = useState(false)
-  const [shareLinks, setShareLinks] = useState<Array<{id: string; token: string; permission: string; expiresAt: string | null}>>([])
-  const [shareLinkCopied, setShareLinkCopied] = useState(false)
   /** Multi-select over the document tree; null means selection mode is off. */
   const [checkedIds, setCheckedIds] = useState<Set<string> | null>(null)
   /** Set when a save hit 409, so the user can pick which version wins. */
   const [conflictDoc, setConflictDoc] = useState<Doc | null>(null)
   const [batchBusy, setBatchBusy] = useState(false)
-  const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteRole, setInviteRole] = useState<'member' | 'admin'>('member')
-  const [inviteLink, setInviteLink] = useState('')
-  const [inviteError, setInviteError] = useState('')
-  const [inviteBusy, setInviteBusy] = useState(false)
-  const [copied, setCopied] = useState(false)
+  const invite = useInvite(token)
   const [query, setQuery] = useState('')
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
@@ -91,8 +82,6 @@ function App() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved')
   const [newMenuOpen, setNewMenuOpen] = useState(false)
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
-  /** 0..1 while a PDF is being rendered; null when idle. */
-  const [pdfProgress, setPdfProgress] = useState<number | null>(null)
   const [moveDoc, setMoveDoc] = useState<Doc | null>(null)
   const [previewVersion, setPreviewVersion] = useState<Version | null>(null)
   const [renameDoc, setRenameDoc] = useState<Doc | null>(null)
@@ -196,65 +185,6 @@ function App() {
     // are the real inputs.
   }, [conflictDoc, token]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const exportActive = useCallback(async (format: ExportTarget) => {
-    setExportMenuOpen(false)
-    const doc = activeRef.current
-    if (!doc || doc.kind === 'folder') { setNotice('请先打开一个文档'); return }
-    if (format === 'print') {
-      try {
-        const result = await api.exportDocument(token, doc.id, 'html')
-        printHtmlDocument(result.content)
-      } catch (error) {
-        setNotice('打印失败：' + (error as Error).message)
-      }
-      return
-    }
-    if (format === 'pdf') {
-      // PDF and print share the server's `html` export: one rendering of the
-      // document, two destinations. Rasterising happens here because a text PDF
-      // with Chinese content would need a multi-megabyte font in the bundle.
-      //
-      // jsPDF and html2canvas are ~500 kB of code that only this menu item
-      // needs, so they are imported on demand: the editor's first paint stays
-      // exactly as light as it was, and an export pays the download once.
-      setPdfProgress(0)
-      try {
-        const [result, pdf] = await Promise.all([
-          api.exportDocument(token, doc.id, 'html'),
-          import('./lib/pdf'),
-        ])
-        const blob = await pdf.htmlToPdf(result.content, {
-          // An export blocks long enough to need a determinate bar, not a spinner.
-          onProgress: setPdfProgress,
-        })
-        const filename = pdfFilename(doc.title || result.filename || 'document')
-        pdf.downloadBlob(filename, blob)
-        setNotice('已导出 ' + filename)
-      } catch (error) {
-        setNotice('PDF 导出失败：' + (error as Error).message)
-      } finally {
-        setPdfProgress(null)
-      }
-      return
-    }
-    try {
-      const result = await api.exportDocument(token, doc.id, format)
-      const filename = result.filename || (doc.title || 'document') + '.' + EXPORT_MIME[format].ext
-      downloadTextFile(filename, result.content, EXPORT_MIME[format].type)
-      setNotice('已导出 ' + filename)
-    } catch (error) {
-      setNotice('导出失败：' + (error as Error).message)
-    }
-  }, [token])
-
-
-
-
-
-
-
-
-
   const workspaceData = useWorkspaceData({
     token,
     query: { commandOpen, homeView, query, searchScope, workspaceView },
@@ -277,6 +207,27 @@ function App() {
     adminMembers, adminMembersBusy,
     updateInfo, setUpdateInfo,
   } = workspaceData
+
+  // Everything the share dialog shows is loaded on open, so the shell keeps
+  // only the boolean that decides whether it renders.
+  const sharing = useSharing({
+    token,
+    userId: user?.id ?? null,
+    notify: setNotice,
+  })
+
+  const openShareDialog = useCallback(() => {
+    if (!active || active.kind === 'folder') { setNotice('请先打开一个文档再设置共享权限'); return }
+    setShowShare(true)
+    void sharing.load(active)
+  }, [active, sharing])
+
+  const { pdfProgress, exportActive } = useDocumentExport({
+    token,
+    activeRef,
+    notify: setNotice,
+    closeMenu: () => setExportMenuOpen(false),
+  })
 
   const clearToken = useCallback(() => {
     localStorage.removeItem('mdocs-token')
@@ -623,123 +574,6 @@ function App() {
     return () => window.removeEventListener('mdoc-comment-status', handler)
   }, [comments, active])
 
-  async function loadShareLinks(docId: string) {
-    try {
-      const data = await api.shareLinks(token, docId)
-      setShareLinks(data.shareLinks)
-    } catch { setShareLinks([]) }
-  }
-
-  async function createShareLink(docId: string) {
-    setShareBusy(true)
-    try {
-      const data = await api.createShareLink(token, docId, 'viewer')
-      const url = window.location.origin + '/shared/' + data.shareLink.token
-      setShareLinks((prev) => [{ id: data.shareLink.id, token: data.shareLink.token, permission: data.shareLink.permission, expiresAt: null }, ...prev])
-      // Plain-HTTP deployments have no navigator.clipboard, so use the helper
-      // and report the real outcome instead of claiming success.
-      const copied = await copyText(url)
-      setShareLinkCopied(copied)
-      if (!copied) window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '链接已生成，但浏览器阻止了自动复制，请手动复制。' }))
-      setTimeout(() => setShareLinkCopied(false), 2500)
-    } catch (error) {
-      console.error('[share] create failed', error)
-      window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '创建分享链接失败：' + (error as Error).message }))
-    } finally { setShareBusy(false) }
-  }
-
-  async function revokeShareLink(docId: string, linkId: string) {
-    setShareBusy(true)
-    try {
-      await api.revokeShareLink(token, docId, linkId)
-      setShareLinks((prev) => prev.filter((l) => l.id !== linkId))
-    } catch (error) {
-      window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '删除分享链接失败：' + (error as Error).message }))
-    } finally { setShareBusy(false) }
-  }
-
-  async function openShareDialog() {
-    if (!active || active.kind === 'folder') { setNotice('请先打开一个文档再设置共享权限'); return }
-    setShowShare(true)
-    setShareBusy(true)
-    try {
-      const [members, access] = await Promise.all([
-        api.members(token),
-        api.acl(token, active.id),
-      ])
-      setWorkspaceMembers(members.members || [])
-      setDocumentPermissions(access.permissions || [])
-      setDocumentRestricted(access.restricted)
-      void loadShareLinks(active.id)
-    } catch (error) {
-      setNotice('共享设置加载失败：' + (error as Error).message)
-      setShowShare(false)
-    } finally {
-      setShareBusy(false)
-    }
-  }
-
-  async function saveDocumentPermission(member: WorkspaceMember, role: DocumentPermission['role'] | null) {
-    if (!active) return
-    setShareBusy(true)
-    try {
-      await api.setAcl(token, active.id, { userId: member.id, role, restricted: documentRestricted })
-      setDocumentPermissions((current) => {
-        const next = current.filter((permission) => permission.userId !== member.id)
-        return role ? [...next, { userId: member.id, email: member.email, name: member.name || member.email, role }] : next
-      })
-    } catch (error) {
-      setNotice('权限更新失败：' + (error as Error).message)
-    } finally {
-      setShareBusy(false)
-    }
-  }
-
-  async function toggleDocumentRestriction(restricted: boolean) {
-    if (!active) return
-    setDocumentRestricted(restricted)
-    setShareBusy(true)
-    try {
-      const owner = documentPermissions.find((permission) => permission.userId === user?.id)
-      await api.setAcl(token, active.id, { userId: user!.id, role: owner?.role || 'owner', restricted })
-    } catch (error) {
-      setDocumentRestricted(!restricted)
-      setNotice('共享范围更新失败：' + (error as Error).message)
-    } finally {
-      setShareBusy(false)
-    }
-  }
-
-  async function createInvite(event: FormEvent) {
-    event.preventDefault()
-    setInviteError('')
-    setInviteLink('')
-    setInviteBusy(true)
-    try {
-      const { invite } = await api.invite(token, inviteEmail, inviteRole)
-      const url = new URL(window.location.href)
-      url.search = ''
-      url.hash = ''
-      url.searchParams.set('invite', invite.token)
-      setInviteLink(url.toString())
-    } catch (error) {
-      setInviteError((error as Error).message)
-    } finally {
-      setInviteBusy(false)
-    }
-  }
-
-  async function copyInviteLink() {
-    if (!inviteLink) return
-    const ok = await copyText(inviteLink)
-    if (ok) {
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1800)
-    } else {
-      setInviteError('浏览器阻止了自动复制，请手动选中链接复制。')
-    }
-  }
-
   async function restoreVersion(versionId: string) {
     if (!active) return false
     try {
@@ -773,7 +607,7 @@ function App() {
     notice={notice}
     showInvite={showInvite}
     onBack={() => setWorkspaceView('documents')}
-    onOpenInvite={() => { setShowInvite(true); setInviteError(''); setInviteLink('') }}
+    onOpenInvite={() => { setShowInvite(true); invite.reset() }}
     /*
      * Run the update directly: the confirmation dialog lives in the document
      * shell below, but the admin page returns before that point, so queueing the
@@ -784,7 +618,7 @@ function App() {
     onStartUpdate={() => void startUpdate()}
     onLogout={clearToken}
     onCloseInvite={() => setShowInvite(false)}
-    inviteProps={{ email: inviteEmail, setEmail: setInviteEmail, role: inviteRole, setRole: setInviteRole, link: inviteLink, error: inviteError, busy: inviteBusy, copied, onSubmit: createInvite, onCopy: copyInviteLink }}
+    inviteProps={{ email: invite.email, setEmail: invite.setEmail, role: invite.role, setRole: invite.setRole, link: invite.link, error: invite.error, busy: invite.busy, copied: invite.copied, onSubmit: invite.onSubmit, onCopy: invite.onCopy }}
   />
 
   return <div className="app-shell">
@@ -857,7 +691,7 @@ function App() {
         onExportMenu={setExportMenuOpen}
         onHistory={() => { setRightTab('history'); setShowRight(true) }}
         onComments={() => { setRightTab('comments'); setShowRight(true) }}
-        onShare={() => void openShareDialog()}
+        onShare={openShareDialog}
       />
       {active && COLLAB_URL && collabStatus === 'disconnected' && <div className="collab-banner motion-sink" role="status"><AlertCircle size={14} />实时协作连接已断开，正在尝试重连，期间的修改会保存在本地。</div>}
       {active ? <div className="workspace-content">
@@ -994,8 +828,33 @@ function App() {
     >
       <p className="dialog-hint">你的改动已存为本地草稿。关闭此对话框（或按 Esc）等于选择服务器版本。</p>
     </Dialog>}
-    {showShare && active && <ShareDialog title={active.title} members={workspaceMembers} permissions={documentPermissions} restricted={documentRestricted} busy={shareBusy} shareLinks={shareLinks} shareLinkCopied={shareLinkCopied} onCreateShareLink={() => void createShareLink(active.id)} onRevokeShareLink={(linkId: string) => void revokeShareLink(active.id, linkId)} onRestrictedChange={(value) => void toggleDocumentRestriction(value)} onPermissionChange={(member, role) => void saveDocumentPermission(member, role)} onClose={() => setShowShare(false)} />}
-    {showInvite && <InviteDialog email={inviteEmail} setEmail={setInviteEmail} role={inviteRole} setRole={setInviteRole} link={inviteLink} error={inviteError} busy={inviteBusy} copied={copied} onSubmit={createInvite} onCopy={copyInviteLink} onClose={() => setShowInvite(false)} />}
+    {showShare && active && <ShareDialog
+      title={active.title}
+      members={sharing.members}
+      permissions={sharing.permissions}
+      restricted={sharing.restricted}
+      busy={sharing.busy}
+      shareLinks={sharing.shareLinks}
+      shareLinkCopied={sharing.linkCopied}
+      onCreateShareLink={() => void sharing.createLink(active)}
+      onRevokeShareLink={(linkId: string) => void sharing.revokeLink(active, linkId)}
+      onRestrictedChange={(value) => void sharing.setRestriction(active, value)}
+      onPermissionChange={(member, role) => void sharing.setPermission(active, member, role)}
+      onClose={() => setShowShare(false)}
+    />}
+    {showInvite && <InviteDialog
+      email={invite.email}
+      setEmail={invite.setEmail}
+      role={invite.role}
+      setRole={invite.setRole}
+      link={invite.link}
+      error={invite.error}
+      busy={invite.busy}
+      copied={invite.copied}
+      onSubmit={invite.onSubmit}
+      onCopy={invite.onCopy}
+      onClose={() => setShowInvite(false)}
+    />}
     {moveDoc && <MoveDialog doc={moveDoc} documents={documents} busy={busy} onMove={(parentId) => void moveDocument(moveDoc, parentId)} onClose={() => setMoveDoc(null)} />}
     {previewVersion && active && <VersionPreview token={token} documentId={active.id} version={previewVersion} onRestore={restoreVersion} onClose={() => setPreviewVersion(null)} />}
     <input ref={importInput} className="visually-hidden" type="file" accept=".md,.markdown,.txt" aria-label="导入 Markdown 文件" onChange={(event) => void handleImport(event)} />

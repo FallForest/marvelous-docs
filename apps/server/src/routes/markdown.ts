@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
-import { fail, parse } from '../http.js'
-import { markdownToTiptap } from '../lib/markdown.js'
+import { fail, parse } from '../core/http.js'
+import { markdownToTiptap } from '../lib/markdown/index.js'
 import type { RouteDeps } from './deps.js'
 
 /**

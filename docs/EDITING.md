@@ -8,7 +8,7 @@ wrong for a writer, not for a programmer.
 
 A code block is a ProseMirror `code: true` node: its content is raw text and
 every keystroke is literal. That is right for writing code and wrong for
-getting out again, so `lib/code-block.ts` owns the boundaries:
+getting out again, so `lib/editor/code-block.ts` owns the boundaries:
 
 | Press | Where | Result |
 | --- | --- | --- |
@@ -36,6 +36,6 @@ The node schema is untouched: no attribute, no mark, no new node type. That
 keeps `apps/server/src/lib/schema.ts`, the Markdown round-trip and existing
 documents all valid.
 
-To change any of this, edit `lib/code-block.ts`. The handlers are covered by
+To change any of this, edit `lib/editor/code-block.ts`. The handlers are covered by
 `test/code-block.test.ts`, which runs them against a real ProseMirror state
 with no DOM.

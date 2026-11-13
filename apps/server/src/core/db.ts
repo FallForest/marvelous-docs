@@ -1,5 +1,5 @@
 import pg from 'pg'
-import { applyMigrations } from './lib/migrations.js'
+import { applyMigrations } from '../lib/migrations.js'
 import { config } from './config.js'
 import { passwordHash } from './security.js'
 

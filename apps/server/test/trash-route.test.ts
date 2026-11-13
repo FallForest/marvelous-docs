@@ -38,7 +38,7 @@ test.before(async () => {
   process.env.BOOTSTRAP_ADMIN_NAME = 'Admin'
   process.env.TRASH_RETENTION_DAYS = '7'
 
-  const dbModule = await import('../src/db.js')
+  const dbModule = await import('../src/core/db.js')
   pool = dbModule.pool as unknown as typeof pool
   const rawQuery = pool.query.bind(pool)
   pool.query = ((sql: unknown, params?: unknown[]) =>
@@ -48,7 +48,7 @@ test.before(async () => {
   const Fastify = (await import('fastify')).default
   const jwt = (await import('@fastify/jwt')).default
   const { registerRoutes } = await import('../src/routes/index.js')
-  const { fail } = await import('../src/http.js')
+  const { fail } = await import('../src/core/http.js')
 
   app = Fastify({ logger: false })
   await app.register(jwt, { secret: process.env.JWT_SECRET })
@@ -66,7 +66,7 @@ test.before(async () => {
   assert.equal(login.statusCode, 200, login.body)
   adminToken = login.json().token
 
-  const { passwordHash } = await import('../src/security.js')
+  const { passwordHash } = await import('../src/core/security.js')
   const ws = await pool.query('SELECT id FROM workspaces LIMIT 1')
   const member = await pool.query<{ id: string }>(
     'INSERT INTO users(email,name,password_hash) VALUES ($1,$2,$3) RETURNING id',

@@ -114,26 +114,26 @@ can start the update. The `updater` container backs up the database, runs
 **Manual update from the host.**
 
 ```sh
-./scripts/backup.sh
-./scripts/update.sh            # backup, pull, migrate, restart, health check
+./scripts/deploy/backup.sh
+./scripts/deploy/update.sh     # backup, pull, migrate, restart, health check
 ```
 
-`scripts/update.sh` honours `COMPOSE_FILE` and `BACKUP_DIR`. If the health check
+`scripts/deploy/update.sh` honours `COMPOSE_FILE` and `BACKUP_DIR`. If the health check
 fails it exits non-zero, prints the dump path, and you roll back the image tags.
 
 The release workflow publishes multi-arch images
 (`ghcr.io/<owner>/marvelous-docs-api`, `...-web`) tagged with the version and
-`latest`, plus `latest.json` with `version`, `releaseUrl`, `apiImage`, and
-`webImage`.
+`latest`, plus `release/latest.json` with `version`, `releaseUrl`, `notesUrl`,
+`apiImage`, and `webImage`.
 
 ## Backup and restore
 
 ```sh
-./scripts/backup.sh
+./scripts/deploy/backup.sh
 # -> ./backups/marvelous-docs-<timestamp>.sql
 # -> ./backups/uploads-<timestamp>.tar.gz
 
-./scripts/restore.sh backups/marvelous-docs-<timestamp>.sql backups/uploads-<timestamp>.tar.gz
+./scripts/deploy/restore.sh backups/marvelous-docs-<timestamp>.sql backups/uploads-<timestamp>.tar.gz
 ```
 
 `backup.sh` dumps with `pg_dump --clean --if-exists` and archives the uploads
@@ -159,7 +159,7 @@ document content: encrypt at rest and restrict access.
 
 ## Upgrade and rollback
 
-1. Back up (`./scripts/backup.sh`).
+1. Back up (`./scripts/deploy/backup.sh`).
 2. Pin new tags in `.env`: `API_IMAGE=ghcr.io/<owner>/marvelous-docs-api:<version>`,
    `WEB_IMAGE=...:<version>`, `APP_VERSION=<version>`.
 3. `docker compose pull && docker compose up -d`.

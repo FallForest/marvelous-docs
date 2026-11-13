@@ -29,7 +29,7 @@ only that the running images lag `main`.
 2. Bump the version in `package.json`, `apps/server/package.json`,
    `apps/web/package.json`, `packages/cli/package.json`, plus
    `.env.example`, `apps/server/.env.example`, `docker-compose.yml`,
-   `latest.json` and the version string in `docs/API.md`.
+   `release/latest.json` and the version string in `docs/API.md`.
 3. Write one `CHANGELOG.md` section covering the whole batch, grouped by
    Added / Changed / Fixed / Security / Accessibility. A changelog entry is for
    the reader deciding whether to upgrade, not a commit log.

@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { scopeCss } from '../src/lib/export-css'
+import { scopeCss } from '../src/lib/export/export-css'
 
 /**
  * The export stylesheet is a standalone document's rules; injecting it into the

@@ -14,7 +14,7 @@ import {
   tiptapToHtml,
   tiptapToMarkdown,
   type TiptapNode,
-} from '../src/lib/markdown.js';
+} from '../src/lib/markdown/index.js';
 import { schema } from '../src/lib/schema.js';
 
 function validate(document: { type: 'doc'; content: TiptapNode[] }) {

@@ -5,8 +5,8 @@ import {
   ArrowDown, ArrowUp, CheckSquare, Code2, Copy as CopyIcon, GripVertical, Heading1, Heading2, Heading3,
   List, ListOrdered, Plus, Quote, Trash2, Type, X,
 } from 'lucide-react'
-import { afterBlock, blockSpans, dropTargetBefore, planMove } from '../../lib/blocks'
-import type { BlockSpan } from '../../lib/blocks'
+import { afterBlock, blockSpans, dropTargetBefore, planMove } from '../../lib/editor/blocks'
+import type { BlockSpan } from '../../lib/editor/blocks'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import type { BlockAnchor } from '../../hooks/useBlockAnchor'
 

@@ -5,7 +5,7 @@
  * be audited from one file instead of by grepping process.env.
  */
 
-import { DEFAULT_RETENTION_DAYS, resolveRetentionDays } from './lib/trash.js'
+import { DEFAULT_RETENTION_DAYS, resolveRetentionDays } from '../lib/trash.js'
 
 const environment = process.env.NODE_ENV || 'development'
 const configuredSecret = process.env.JWT_SECRET?.trim()

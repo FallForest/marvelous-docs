@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AnimationEvent } from 'react'
-import { DURATION, prefersReducedMotion } from '../../lib/motion'
+import { DURATION, prefersReducedMotion } from '../lib/motion'
 
 /**
  * Keyframes name that marks the end of a modal's exit animation.
