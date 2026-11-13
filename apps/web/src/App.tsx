@@ -857,9 +857,13 @@ function App() {
       />
       {active && COLLAB_URL && collabStatus === 'disconnected' && <div className="collab-banner motion-sink" role="status"><AlertCircle size={14} />实时协作连接已断开，正在尝试重连，期间的修改会保存在本地。</div>}
       {active ? <div className="workspace-content">
-        {/* Keyed on the document so switching documents replays the canvas
-            entry animation instead of silently swapping content in place. */}
-        <section className="editor-column motion-enter" key={active.id}>
+        {/* No entry animation on the column itself.
+            .workspace-content is the element named for the view transition, so
+            the cross-fade already animates this exact region. Keying the column
+            on the document id remounted it after that transition finished — the
+            flag has been released by then — and its own motion-enter then faded
+            the canvas in a second time. One region, one entrance. */}
+        <section className="editor-column" key={active.id}>
           <DocumentEditor
             key={active.id}
             doc={active}
