@@ -6,6 +6,28 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.69] - 2026-11-14
+
+Withdraws 0.1.68's attachment work. Attachments do not belong in a document
+editor: 0.1.68 let the insert dialog upload any file and drop a link, which
+made the dialog the place to put a PDF when the drive is the place files live.
+
+### Removed
+
+- **The non-image upload path in the insert dialog.** The picker accepts images
+  again and always inserts one; the second "上传文件" picker and the
+  link-inserting handler behind it are gone.
+
+### Changed
+
+- **The per-file ceiling is back to 20 MB.** 1 GiB was sized for a PDF, and a
+  PDF is not what this endpoint is for.
+- **The proxy limit and its timeouts are back to nginx's defaults.** `nginx.conf`
+  had gained `client_max_body_size 1100m`, ten-minute timeouts and
+  `proxy_request_buffering off` purely so a gigabyte could pass.
+- **The 413 message no longer claims a 1 GB limit.** Fastify's own 413 reads
+  "Request body is too large" again.
+
 ## [0.1.68] - 2026-11-14
 
 Attachments large enough to be worth attaching, and an update that stops
