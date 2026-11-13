@@ -7,19 +7,7 @@ import { config } from '../core/config.js'
 import type { AuthRequest } from '../core/types.js'
 import type { RouteDeps } from './deps.js'
 
-/*
- * One uploaded file may be 1 GiB.
- *
- * This was 20 MiB, which is fine for a screenshot pasted into a note and useless
- * for the other thing people do here: attach a long PDF. A 300-page scan is
- * routinely 200–600 MiB, so the old ceiling rejected exactly the files worth
- * uploading.
- *
- * The body is buffered (parseAs: 'buffer' below), so one upload costs its size in
- * RSS while it is in flight. Fastify's bodyLimit is set just above this number;
- * the two must move together or the request is rejected before this check runs.
- */
-const MAX_UPLOAD_BYTES = 1024 * 1024 * 1024
+const MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 const ALLOWED_MIME = new Set(['application/octet-stream', 'image/png', 'image/jpeg', 'image/gif', 'image/webp', 'application/pdf'])
 
 /**
@@ -47,13 +35,12 @@ const MIME_BY_EXTENSION: Record<string, string> = {
  * embedded images are expected to behave.
  */
 export function registerUploadRoutes(app: FastifyInstance, deps: RouteDeps) {
-  // An upload may be 1 GiB, so the per-caller budget stays low on purpose:
-  // thirty of these in ten minutes would be thirty gigabytes of body.
+  // Each upload may be 20 MB, so the budget is deliberately small per caller.
   app.put('/api/v1/uploads', { preHandler: [deps.authenticate.preHandler, deps.rateLimit(30, 10 * 60 * 1000)] }, async (request, reply) => {
     const auth = request as AuthRequest
     const body = request.body as Buffer
     if (!Buffer.isBuffer(body) || body.length === 0) return fail(reply, 400, 'INVALID_INPUT', 'Upload body is required.')
-    if (body.length > MAX_UPLOAD_BYTES) return fail(reply, 413, 'FILE_TOO_LARGE', 'Files are limited to 1 GB.')
+    if (body.length > MAX_UPLOAD_BYTES) return fail(reply, 413, 'FILE_TOO_LARGE', 'Files are limited to 20 MB.')
 
     const mime = String(request.headers['content-type'] || 'application/octet-stream').split(';')[0]!.toLowerCase()
     if (!ALLOWED_MIME.has(mime)) return fail(reply, 415, 'UNSUPPORTED_MEDIA_TYPE', 'This file type is not supported.')

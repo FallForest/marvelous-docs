@@ -19,10 +19,7 @@ import { flushRoom, rooms, setRoomLogger, evictRoom } from './collaboration/room
  * helpers). See docs/ARCHITECTURE.md for the module map.
  */
 
-// Just above the 1 GiB a single upload may be, so the route's own check is what
-// produces the 413 and its message. A bodyLimit below the route limit rejects the
-// body first, with a message that does not say which limit was hit.
-const app = Fastify({ logger: true, bodyLimit: 1024 * 1024 * 1024 + 1024 * 1024 })
+const app = Fastify({ logger: true, bodyLimit: 25 * 1024 * 1024 })
 
 // Uploads arrive as raw bodies, so they bypass JSON parsing.
 app.addContentTypeParser('application/octet-stream', { parseAs: 'buffer' }, (_request, body, done) => done(null, body))
