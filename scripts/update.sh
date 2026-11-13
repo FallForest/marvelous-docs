@@ -7,8 +7,12 @@ set -Eeuo pipefail
 # the containers, so Docker re-created them with generated names.
 COMPOSE_FILES="${COMPOSE_FILE:-docker-compose.yml}"
 compose() {
+  # Pin the project name: compose derives it from the working directory, and
+  # inside the updater that derivation resolved to a project with no running
+  # containers, so "exec postgres" reported the service as not running.
   # shellcheck disable=SC2086
-  docker compose $(for f in $COMPOSE_FILES; do printf -- "-f %s " "$f"; done) "$@"
+  docker compose --project-name "${COMPOSE_PROJECT_NAME:-marvelous-docs}" \
+    $(for f in $COMPOSE_FILES; do printf -- "-f %s " "$f"; done) "$@"
 }
 BACKUP_DIR="${BACKUP_DIR:-./backups}"
 mkdir -p "$BACKUP_DIR"
@@ -20,6 +24,22 @@ for f in $COMPOSE_FILES; do
   cp "$f" "$BACKUP_DIR/pre-update-$timestamp.$(basename "$f")"
 done
 cp .env "$BACKUP_DIR/pre-update-$timestamp.env"
+
+# Wait for the database, then dump through the container's own environment:
+# the updater has no POSTGRES_USER of its own.
+db_ready=0
+db_error=''
+for attempt in $(seq 1 30); do
+  # Capture the reason instead of swallowing it: a silent retry loop hides the
+  # difference between "still starting" and "the command is wrong".
+  if db_error="$(compose exec -T postgres pg_isready 2>&1)"; then db_ready=1; break; fi
+  sleep 2
+done
+if [ "$db_ready" -ne 1 ]; then
+  echo "PostgreSQL did not become ready; aborting before any change." >&2
+  echo "Last error: $db_error" >&2
+  exit 1
+fi
 
 echo "Creating PostgreSQL backup: $backup_file"
 compose exec -T postgres \

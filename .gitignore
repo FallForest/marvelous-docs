@@ -44,3 +44,7 @@ shot*.mjs
 
 # Local scratch output
 .tmp-scratch/
+m-probe*.mjs
+m-shot*.mjs
+*-probe*.mjs
+*-shot*.mjs
