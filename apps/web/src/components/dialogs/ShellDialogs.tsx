@@ -6,6 +6,9 @@ type ShellDialogsProps = {
   renameDoc: Doc | null
   deleteDoc: Doc | null
   purgeDoc: Doc | null
+  /** How many rows the empty-trash confirmation would remove; 0 closes it. */
+  emptyTrashCount: number
+  emptyTrashBusy: boolean
   updatePrompt: UpdateInfo | null
   helpOpen: boolean
   linkPrompt: { from: number; to: number } | null
@@ -15,6 +18,8 @@ type ShellDialogsProps = {
   onCancelDelete: () => void
   onConfirmPurge: (doc: Doc) => void
   onCancelPurge: () => void
+  onConfirmEmptyTrash: () => void
+  onCancelEmptyTrash: () => void
   onConfirmUpdate: () => void
   onCancelUpdate: () => void
   onCloseHelp: () => void
@@ -67,6 +72,21 @@ export default function ShellDialogs(props: ShellDialogsProps) {
       danger
       onConfirm={() => props.onConfirmPurge(purgeDoc)}
       onClose={props.onCancelPurge}
+    />}
+
+    {/*
+      Emptying the bin is the bulk version of the same destructive action, so it
+      gets the same confirm-with-a-count treatment: the number is what makes the
+      dialog informative instead of ceremonial.
+    */}
+    {props.emptyTrashCount > 0 && <Dialog
+      title={'清空回收站？'}
+      description={'回收站里的 ' + props.emptyTrashCount + ' 项会被永久删除，无法恢复；相关评论与历史也会一并删除。'}
+      confirmLabel="清空回收站"
+      danger
+      busy={props.emptyTrashBusy}
+      onConfirm={props.onConfirmEmptyTrash}
+      onClose={props.onCancelEmptyTrash}
     />}
 
     {updatePrompt && <Dialog

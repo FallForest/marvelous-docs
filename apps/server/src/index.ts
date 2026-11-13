@@ -6,10 +6,10 @@ import { config } from './config.js'
 import { initializeWorkspace, pool } from './db.js'
 import { fail } from './http.js'
 import { RateLimiter } from './lib/rate-limit.js'
+import { purgeExpiredTrash } from './lib/trash.js'
 import { registerRoutes } from './routes/index.js'
 import { registerUpgradeHandler } from './collaboration/socket.js'
-import { flushRoom, rooms, setRoomLogger } from './collaboration/rooms.js'
-
+import { flushRoom, rooms, setRoomLogger, evictRoom } from './collaboration/rooms.js'
 /**
  * API entry point.
  *
@@ -93,6 +93,37 @@ const wsHttpServer = createServer()
 const wsServer = registerUpgradeHandler(wsHttpServer, app)
 
 await initializeWorkspace({ info: (message) => app.log.info(message) })
+
+/*
+ * Trash retention.
+ *
+ * The sweep runs at boot — so a container that was down over the weekend does
+ * not come back holding expired rows — and then on a timer. It is one
+ * idempotent statement and never touches a row inside its window, so a failure
+ * only means the next tick retries; that is why it can share the process with
+ * request handling instead of needing a job runner.
+ */
+async function sweepTrash() {
+  try {
+    const removed = await purgeExpiredTrash(pool, config.trashRetentionDays)
+    if (!removed.length) return
+    /*
+     * A purged row may still have a live collaboration room and connected
+     * editors — the row was in the bin, but someone can have it open through a
+     * stale tab. The room's next debounced save would insert versions for a
+     * deleted document, so the room is evicted (clients are closed with it)
+     * before the sweep reports success.
+     */
+    for (const id of removed) evictRoom(id)
+    app.log.info({ removed: removed.length, retentionDays: config.trashRetentionDays }, 'Expired trash purged')
+  } catch (error) {
+    app.log.error(error, 'Trash retention sweep failed')
+  }
+}
+void sweepTrash()
+const trashTimer = setInterval(() => void sweepTrash(), config.trashSweepIntervalMs)
+trashTimer.unref()
+
 await app.listen({ port: config.port, host: config.host })
 await new Promise<void>((resolve, reject) => {
   wsHttpServer.once('error', reject)
@@ -101,6 +132,7 @@ await new Promise<void>((resolve, reject) => {
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, async () => {
+    clearInterval(trashTimer)
     for (const ws of wsServer.clients) ws.close(1001, 'Server shutting down')
     await Promise.all([...rooms.values()].map(flushRoom))
     wsServer.close()

@@ -98,6 +98,9 @@ function App() {
   const [renameDoc, setRenameDoc] = useState<Doc | null>(null)
   const [deleteDoc, setDeleteDoc] = useState<Doc | null>(null)
   const [purgeDoc, setPurgeDoc] = useState<Doc | null>(null)
+  /** Confirmation for emptying the whole bin; null when the dialog is closed. */
+  const [emptyTrashOpen, setEmptyTrashOpen] = useState(false)
+  const [emptyTrashBusy, setEmptyTrashBusy] = useState(false)
   const [updatePrompt, setUpdatePrompt] = useState<UpdateInfo | null>(null)
   const [linkPrompt, setLinkPrompt] = useState<{ from: number; to: number } | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
@@ -269,6 +272,7 @@ function App() {
     templates,
     stats, refreshStats, refreshDocuments,
     trashDocuments, setTrashDocuments,
+    trashRetentionDays,
     searchResults, searchLoading,
     adminMembers, adminMembersBusy,
     updateInfo, setUpdateInfo,
@@ -936,6 +940,8 @@ function App() {
           await refreshDocuments()
         }}
         onPermanentDelete={async (doc) => { setPurgeDoc(doc) }}
+        onEmptyTrash={() => setEmptyTrashOpen(true)}
+        trashRetentionDays={trashRetentionDays ?? undefined}
       />}
       {commandOpen && <CommandPalette
         query={query}
@@ -997,6 +1003,8 @@ function App() {
       renameDoc={renameDoc}
       deleteDoc={deleteDoc}
       purgeDoc={purgeDoc}
+      emptyTrashCount={emptyTrashOpen ? trashDocuments.length : 0}
+      emptyTrashBusy={emptyTrashBusy}
       updatePrompt={updatePrompt}
       helpOpen={helpOpen}
       linkPrompt={linkPrompt}
@@ -1023,6 +1031,18 @@ function App() {
         } catch (error) { setNotice('永久删除失败：' + (error as Error).message) }
       }}
       onCancelPurge={() => setPurgeDoc(null)}
+      onConfirmEmptyTrash={async () => {
+        setEmptyTrashBusy(true)
+        try {
+          const { removed } = await api.emptyTrash(token)
+          setTrashDocuments([])
+          setEmptyTrashOpen(false)
+          setNotice(removed ? '已永久删除 ' + removed + ' 项' : '回收站已经是空的')
+          void refreshStats()
+        } catch (error) { setNotice('清空回收站失败：' + (error as Error).message) }
+        finally { setEmptyTrashBusy(false) }
+      }}
+      onCancelEmptyTrash={() => setEmptyTrashOpen(false)}
       onConfirmUpdate={async () => { setUpdatePrompt(null); await startUpdate() }}
       onCancelUpdate={() => setUpdatePrompt(null)}
       onCloseHelp={() => setHelpOpen(false)}

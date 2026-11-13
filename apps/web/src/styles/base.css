@@ -8,7 +8,14 @@
  * without !important.
  */
 
-:root{color:var(--text);background:var(--surface-muted);font-family:'DM Sans','Noto Sans SC',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;font-weight:400;font-synthesis:none;text-rendering:optimizeLegibility}
+/*
+ * The root rule repeats the type defaults that tokens.css already declares. It
+ * loads later, so any value spelled here silently wins — `font-synthesis:none`
+ * used to sit at the end of this line and override the token, which is why
+ * fixing the token alone did not bring italics back. Synthesis policy is owned
+ * by tokens.css; nothing here may re-declare it.
+ */
+:root{color:var(--text);background:var(--surface-muted);font-family:'DM Sans','Noto Sans SC',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;font-weight:400;text-rendering:optimizeLegibility}
 
 *{box-sizing:border-box}
 

@@ -5,6 +5,8 @@
  * be audited from one file instead of by grepping process.env.
  */
 
+import { DEFAULT_RETENTION_DAYS, resolveRetentionDays } from './lib/trash.js'
+
 const environment = process.env.NODE_ENV || 'development'
 const configuredSecret = process.env.JWT_SECRET?.trim()
 
@@ -25,6 +27,14 @@ export const config = {
   updateAgentUrl: process.env.UPDATE_AGENT_URL?.trim() || '',
   updateAgentToken: process.env.UPDATE_AGENT_TOKEN?.trim() || '',
   corsOrigins: (process.env.CORS_ORIGIN || '').split(',').map((value) => value.trim()).filter(Boolean),
+  /**
+   * How long a soft-deleted document stays recoverable. Zero-day retention made
+   * the bin grow without bound, so the value is clamped to a sane window and
+   * unset/invalid input falls back to the documented default.
+   */
+  trashRetentionDays: resolveRetentionDays(process.env.TRASH_RETENTION_DAYS ?? DEFAULT_RETENTION_DAYS),
+  /** How often the retention sweep runs. A quarter hour keeps the bin current. */
+  trashSweepIntervalMs: 15 * 60 * 1000,
   bootstrap: {
     email: process.env.BOOTSTRAP_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '',
     password: process.env.BOOTSTRAP_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || '',

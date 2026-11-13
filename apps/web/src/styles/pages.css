@@ -220,6 +220,11 @@
 
 .home-hero>.primary-btn{flex:0 0 auto;min-height:39px;box-shadow:0 2px 5px #bd52361c}
 
+/* The bins' one bulk action. A danger-tinted secondary button, not a red
+   primary: emptying the trash is destructive but not the page's purpose. */
+.home-hero>.secondary-btn{flex:0 0 auto;gap:7px;color:#b64e43;border-color:#e8d2cb;background:#fffdfc}
+.home-hero>.secondary-btn:hover{color:#943a30;border-color:#d8a99b;background:#fff7f5}
+
 .home-section{margin-top:32px}
 
 .home-section-head{min-height:31px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
@@ -245,6 +250,11 @@
 .home-card b{overflow:hidden;color:#3a3f49;font-size:11px;font-weight:600;text-overflow:ellipsis;white-space:nowrap}
 
 .home-card small{overflow:hidden;color:#5f6673;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
+
+/* A trashed row the sweep has not reached yet. Muted rather than alarming: the
+   row is already as deleted as it gets, and the only useful action is "rescue it
+   now" — which the 恢复 button already offers. */
+.home-card small.is-expired{color:#b64e43}
 
 .home-card>svg{flex:0 0 auto;color:#6b7280}
 

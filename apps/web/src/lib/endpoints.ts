@@ -34,7 +34,7 @@ export const api = {
 
   /* ---- documents: reads ---- */
   documents: (token: Token) => request<{ documents: Doc[] }>('/documents', token),
-  trash: (token: Token) => request<{ documents: Doc[] }>('/documents/trash', token),
+  trash: (token: Token) => request<{ documents: Doc[]; retentionDays?: number }>('/documents/trash', token),
   favorites: (token: Token) => request<{ documents: Doc[] }>('/documents/favorites', token),
   recent: (token: Token) => request<{ documents: Doc[] }>('/documents/recent', token),
   search: (token: Token, query: string, scope: SearchScope) =>
@@ -55,6 +55,10 @@ export const api = {
   favorite: (token: Token, id: string, favorite: boolean) =>
     request<{ favorite: boolean }>(doc(id) + '/favorite', token, { method: 'PUT', body: JSON.stringify({ favorite }) }),
   remove: (token: Token, id: string) => request<{ ok: true }>(doc(id), token, { method: 'DELETE' }),
+  /** Empties the whole bin in one call; returns how many rows went. */
+  emptyTrash: (token: Token) => request<{ ok: true; removed: number }>('/documents/trash', token, { method: 'DELETE' }),
+  sweepTrash: (token: Token) =>
+    request<{ ok: true; removed: number; retentionDays: number }>('/documents/trash/sweep', token, { method: 'POST' }),
   restoreFromTrash: (token: Token, id: string) => request<{ ok: true }>(doc(id) + '/restore', token, { method: 'POST' }),
   purge: (token: Token, id: string) => request<{ ok: true }>(doc(id) + '/permanent', token, { method: 'DELETE' }),
 

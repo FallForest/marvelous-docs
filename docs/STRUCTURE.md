@@ -93,6 +93,7 @@ lib/                      Pure logic and browser helpers (no JSX)
   render-html.ts          Tiptap JSON → static HTML for share pages
   motion.ts               Motion contract: durations, spring presets, stagger
   tree.ts                 Tree building, filtering, depth helpers
+  trash.ts                Trash countdown and expiry labels
   types.ts                API payload types
 
 styles/                   CSS layers, imported in cascade order by index.css
@@ -171,7 +172,7 @@ routes/                   One module per REST resource
   auth.ts                 Login, invite redeem, me, invite create
   workspace.ts            Members, stats, templates
   document-reads.ts       Tree, trash, recent, favorites, search, get
-  document-writes.ts      Create, import, update, duplicate, favorite  trash.ts                Soft delete, restore, permanent delete
+  document-writes.ts      Create, import, update, duplicate, favorite  trash.ts                Soft delete, restore, permanent delete, empty, sweep
   export.ts               Export and activity log
   sharing.ts              ACL and public share links
   comments.ts             Comment threads
@@ -194,6 +195,7 @@ lib/                      Pure helpers, unit-tested without PostgreSQL
   rate-limit.ts           Login throttling
   migrations.ts           Migration runner
   font-size.ts            FontSize Markdown round-trip
+  trash.ts                Trash retention window, deadline, and sweep
 migrations/               Idempotent SQL, applied in filename order
 test/                     node --test suites
 ```

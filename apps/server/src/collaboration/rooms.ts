@@ -135,6 +135,28 @@ async function persistRoom(room: Room) {
   } finally { client.release() }
 }
 
+/**
+ * Drops a room without persisting it.
+ *
+ * Used when the document row itself is gone (the retention sweep, an empty of
+ * the bin, a permanent delete): flushing would append version rows for a
+ * document that no longer exists, and an editor still holding the room would
+ * keep writing into a void. Connected sockets are closed here rather than left
+ * to notice on their own, so the client stops editing immediately.
+ */
+export function evictRoom(documentId: string): boolean {
+  const room = rooms.get(documentId)
+  if (!room) return false
+  if (room.timer) { clearTimeout(room.timer); room.timer = undefined }
+  if (room.disposeTimer) { clearTimeout(room.disposeTimer); room.disposeTimer = undefined }
+  rooms.delete(documentId)
+  for (const ws of room.clients.keys()) ws.close(1001, 'Document was deleted')
+  room.clients.clear()
+  room.awareness.destroy()
+  room.doc.destroy()
+  return true
+}
+
 /** Flushes any pending save; call before every REST read of the document. */
 export async function flushRoom(room: Room) {
   if (room.timer) { clearTimeout(room.timer); room.timer = undefined }

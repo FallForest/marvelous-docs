@@ -48,3 +48,4 @@ m-probe*.mjs
 m-shot*.mjs
 *-probe*.mjs
 *-shot*.mjs
+regex-check*.mjs

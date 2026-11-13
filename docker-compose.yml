@@ -24,7 +24,8 @@ services:
       NODE_ENV: production
       PORT: 3000
       HOST: 0.0.0.0
-      APP_VERSION: ${APP_VERSION:-0.1.64}
+      APP_VERSION: ${APP_VERSION:-0.1.65}
+      TRASH_RETENTION_DAYS: ${TRASH_RETENTION_DAYS:-30}
       CORS_ORIGIN: ${CORS_ORIGIN:-}
       COLLAB_PORT: 1234
       DATABASE_URL: postgres://${POSTGRES_USER:-marvelous_docs}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-marvelous_docs}

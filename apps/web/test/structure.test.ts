@@ -184,6 +184,43 @@ test('the motion guide names every style layer', () => {
   }
 })
 
+test('italic text is allowed to actually slope', () => {
+  // Two independent things kept <em> upright, and either one alone is enough to
+  // bring the bug back:
+  //   1. every layer declaring `font-synthesis:none`, which disables the oblique
+  //      fallback for CJK and for any web font that lacks a true italic face;
+  //   2. the Google Fonts URL asking for upright weights only, so DM Sans never
+  //      downloaded an italic and the latin text had nothing to switch to.
+  // The bubble toolbar still lights up the mark in both cases, so the failure is
+  // silent — hence a test rather than a comment.
+  const offenders: string[] = []
+  for (const name of readdirSync(join(SRC, 'styles'))) {
+    if (!name.endsWith('.css')) continue
+    const text = readFileSync(join(SRC, 'styles', name), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+    for (const [i, line] of text.split('\n').entries()) {
+      // The shorthand disables style synthesis when it is `none` or when it
+      // lists axes without `style`; the longhand disables it with `none`.
+      const shorthand = /font-synthesis\s*:\s*([^;}]*)/.exec(line)
+      const longhand = /font-synthesis-style\s*:\s*([^;}]*)/.exec(line)
+      const dropsStyle = shorthand
+        ? /\bnone\b/.test(shorthand[1]!) || !/\bstyle\b/.test(shorthand[1]!)
+        : longhand
+          ? /\bnone\b/.test(longhand[1]!)
+          : false
+      if (dropsStyle) offenders.push(name + ':' + (i + 1) + ' ' + line.trim().slice(0, 70))
+    }
+  }
+  assert.deepEqual(offenders, [], 'keep font-synthesis:style so italics can slant: ' + offenders.join(' | '))
+
+  const index = readFileSync(join(SRC, 'styles/index.css'), 'utf8')
+  const fontImport = /fonts\.googleapis\.com\/css2\?([^')]+)/.exec(index)
+  assert.ok(fontImport, 'the stylesheet must load its web fonts')
+  assert.ok(
+    /DM\+Sans:ital,wght@[^&']*;1,/.test(fontImport[1]!),
+    'request the italic axis for DM Sans (ital,wght with a 1,x tuple)',
+  )
+})
+
 test('every source file is valid UTF-8 without misplaced CJK', () => {
   // Comments were historically stored in the wrong code page, which produced
   // mojibake that still compiled. Guard against reintroducing it.

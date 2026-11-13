@@ -54,6 +54,7 @@ block only runs when the e-mail is unknown.
 | `COLLAB_PORT` | no | Container port for y-websocket (default 1234). |
 | `UPLOAD_DIR` | no | Upload directory inside the API container (default `/data/uploads`, a volume). |
 | `APP_VERSION` | no | Version reported by `GET /api/v1/system/version`; keep equal to the image tag. |
+| `TRASH_RETENTION_DAYS` | no | Days a deleted document stays recoverable (default `30`, clamped to 1–365). The bin is swept at boot and every 15 minutes. `0` is treated as `1`, not "keep forever". |
 | `UPDATE_MANIFEST_URL` | no | HTTPS URL of `latest.json`; empty disables update checks. |
 | `UPDATE_AGENT_URL`, `UPDATE_AGENT_TOKEN` | with updates | Internal agent address (`http://updater:8080`) and its shared secret. |
 | `API_IMAGE`, `WEB_IMAGE` | no | Image names; set released tags to pull instead of building. |

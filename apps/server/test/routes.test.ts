@@ -25,6 +25,8 @@ const EXPECTED_ROUTES = [
   'POST /api/v1/invites',
   'GET /api/v1/documents',
   'GET /api/v1/documents/trash',
+  'DELETE /api/v1/documents/trash',
+  'POST /api/v1/documents/trash/sweep',
   'GET /api/v1/documents/recent',
   'GET /api/v1/documents/favorites',
   'GET /api/v1/documents/search',

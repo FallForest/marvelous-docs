@@ -123,7 +123,16 @@
   font-family:'DM Sans','Noto Sans SC',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   color:var(--text);
   background:var(--surface-muted);
-  font-synthesis:none;
+  /*
+   * Style synthesis stays on; weight synthesis stays off.
+   *
+   * `font-synthesis:none` covered both axes, so every family without a real
+   * italic face — the CJK fallback above all, plus any web font that failed to
+   * load — lost the slant entirely and italic text rendered upright. Only the
+   * synthetic bold is worth suppressing: the loaded families already ship 400
+   * to 700, and a synthesized 650 (used by every heading) looks blotchy.
+   */
+  font-synthesis:style;
   text-rendering:optimizeLegibility;
   font-weight:400;
   font-size:14px;

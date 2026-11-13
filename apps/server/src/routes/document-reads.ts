@@ -7,6 +7,8 @@ import { flushRoom, rooms } from '../collaboration/rooms.js'
 import { recordActivity } from '../access.js'
 import { requireDoc } from '../guards.js'
 import { buildTsQuery, SEARCH_SQL, type SearchRow } from '../lib/search.js'
+import { trashExpiresAt } from '../lib/trash.js'
+import { config } from '../config.js'
 import { snippetFromText } from '../lib/markdown.js'
 import { uuidSchema } from './schemas.js'
 import type { AuthRequest, DocumentRow } from '../types.js'
@@ -33,7 +35,20 @@ export function registerDocumentReadRoutes(app: FastifyInstance, deps: RouteDeps
     const result = await pool.query<DocumentRow>(`SELECT ${DOCUMENT_SUMMARY_COLUMNS} FROM documents d JOIN memberships m ON m.workspace_id=d.workspace_id AND m.user_id=$1
       LEFT JOIN document_acl a ON a.document_id=d.id AND a.user_id=$1 WHERE d.workspace_id=$2 AND d.deleted_at IS NOT NULL
       AND (m.role='admin' OR a.role IS NOT NULL OR d.acl_restricted=false) ORDER BY d.deleted_at DESC`, [auth.user.sub, auth.user.workspaceId])
-    return { documents: result.rows.map(documentSummaryJson) }
+    /*
+     * Each row carries its own purge deadline. The bin used to be manual-only,
+     * so nothing here was time-dependent; with retention in place the client has
+     * to be able to warn before a row disappears, and deriving the deadline from
+     * `deletedAt` here keeps the rule in one place (`lib/trash.ts`) instead of
+     * hoping the client's clock and arithmetic match the sweep's.
+     */
+    return {
+      documents: result.rows.map((row) => ({
+        ...documentSummaryJson(row),
+        expiresAt: trashExpiresAt(row.deleted_at, config.trashRetentionDays),
+      })),
+      retentionDays: config.trashRetentionDays,
+    }
   })
 
   app.get('/api/v1/documents/recent', deps.authenticate, async (request) => {

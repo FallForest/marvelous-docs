@@ -11,7 +11,7 @@ Self-hosted collaborative cloud documents for small teams. One pnpm monorepo hol
 - **Comments** - threaded, anchored, resolvable; open/ resolved status per thread.
 - **Version history** - every REST write, version restore, and persisted collaboration snapshot appends a snapshot; restore with optimistic concurrency.
 - **Search** - case-insensitive title and content search with highlighted snippets.
-- **Favorites, recent, trash** - favourite documents and folders, 50 most recently opened documents, recoverable trash with permanent delete.
+- **Favorites, recent, trash** - favourite documents and folders, 50 most recently opened documents, and a trash that empties itself: delete is recoverable for `TRASH_RETENTION_DAYS` (default 30), the sweep runs at boot and every 15 minutes, and the bin can still be emptied in one click.
 - **Templates** - built-in meeting notes, weekly report, project plan, product spec, release notes.
 - **Markdown import and export** - import Markdown to Tiptap JSON, export Markdown, standalone HTML, or raw JSON.
 - **Sharing and ACL** - workspace roles (`admin`, `member`) plus per-document `owner`/`editor`/`viewer` ACL with restriction per document.

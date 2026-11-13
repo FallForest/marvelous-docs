@@ -10,6 +10,11 @@ export type Doc = {
   version: number
   updatedAt?: string
   createdAt?: string
+  /**
+   * Set only on trash rows: when the retention sweep will delete it for good.
+   * Derived server-side so the countdown and the sweep cannot disagree.
+   */
+  expiresAt?: string | null
 }
 
 export type DocNode = { doc: Doc; children: DocNode[] }

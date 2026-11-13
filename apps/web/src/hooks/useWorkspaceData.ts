@@ -55,6 +55,8 @@ export function useWorkspaceData(options: WorkspaceDataOptions) {
   const [templates, setTemplates] = useState<Template[]>([])
   const [stats, setStats] = useState<WorkspaceStats | null>(null)
   const [trashDocuments, setTrashDocuments] = useState<Doc[]>([])
+  /** Days the server keeps a trashed row; null until the bin has been opened. */
+  const [trashRetentionDays, setTrashRetentionDays] = useState<number | null>(null)
   const [searchResults, setSearchResults] = useState<SearchHit[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
   const [adminMembers, setAdminMembers] = useState<WorkspaceMember[]>([])
@@ -141,7 +143,11 @@ export function useWorkspaceData(options: WorkspaceDataOptions) {
     if (!token || query.homeView !== 'trash') return
     let live = true
     api.trash(token)
-      .then(({ documents: rows }) => { if (live) setTrashDocuments(rows || []) })
+      .then(({ documents: rows, retentionDays }) => {
+        if (!live) return
+        setTrashDocuments(rows || [])
+        if (typeof retentionDays === 'number') setTrashRetentionDays(retentionDays)
+      })
       .catch((error) => { if (live) notify('回收站加载失败：' + error.message) })
     return () => { live = false }
   }, [token, query.homeView, notify])
@@ -190,6 +196,7 @@ export function useWorkspaceData(options: WorkspaceDataOptions) {
     templates,
     stats, refreshStats, refreshDocuments,
     trashDocuments, setTrashDocuments,
+    trashRetentionDays, setTrashRetentionDays,
     searchResults, searchLoading,
     adminMembers, adminMembersBusy,
     updateInfo, setUpdateInfo,

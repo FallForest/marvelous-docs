@@ -20,7 +20,16 @@
  * A new file belongs in an existing layer; if it needs a new layer, add it
  * here and to docs/STRUCTURE.md in the same change.
  */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+/*
+ * DM Sans is requested with its italic axis (ital,wght) on purpose. The first
+ * cut asked for upright weights only, so no italic face ever loaded and — with
+ * style synthesis switched off in tokens.css — <em> rendered perfectly upright:
+ * the toolbar showed the mark as active while the text did not move.
+ *
+ * Noto Sans SC has no italic design, so CJK italic still comes from the
+ * browser's oblique synthesis, which tokens.css now permits.
+ */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
 @import './tokens.css';
 @import './base.css';
 @import './motion.css';

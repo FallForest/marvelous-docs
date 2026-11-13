@@ -162,13 +162,31 @@ Folders accept `title` and `parentId` (rename and move), reject `content` with `
 
 Owners only. Moves the document to the trash. Trashing a folder also trashes every descendant. `200 { "ok": true }`.
 
+A trashed row is kept for `TRASH_RETENTION_DAYS` (default 30) and then removed by
+the retention sweep — on boot, every 15 minutes, and on demand via
+`POST /documents/trash/sweep`. Nothing has to be cleaned up by hand.
+
 ### `POST /documents/:id/restore`
 
-Restores a trashed document or folder. Allowed for document owners, editors, and workspace administrators. Restoring a folder also restores every descendant that is currently in the trash. `200 { "ok": true }`. Untrashed nodes return `404`.
+Restores a trashed document or folder. Allowed for document owners, editors, and workspace administrators. Restoring a folder also restores every descendant that is currently in the trash. `200 { "ok": true, "retentionDays": 30 }`. Untrashed nodes return `404`.
 
 ### `DELETE /documents/:id/permanent`
 
-Permanently deletes a trashed document or folder subtree. Owners and workspace administrators only. `200 { "ok": true }`.
+Permanently deletes a trashed document or folder subtree. Owners and workspace administrators only. `200 { "ok": true }`. Evicts any live collaboration room for the removed rows, so a stale tab cannot keep writing to them.
+
+### `DELETE /documents/trash`
+
+Empties the bin in one call. A workspace administrator removes everything; a
+member removes only the rows they can see (unrestricted, or explicitly granted),
+which is the same visibility rule the trash list uses. `200 { "ok": true, "removed": 12 }`;
+emptying an already empty bin is `removed: 0`, not an error.
+
+### `POST /documents/trash/sweep`
+
+Workspace administrators only. Runs the retention sweep immediately and returns
+`200 { "ok": true, "removed": 3, "retentionDays": 30 }`. The same sweep runs at
+boot and every 15 minutes, so this exists only to see the effect of a changed
+window without waiting.
 
 ### `POST /documents/:id/duplicate`
 
@@ -210,6 +228,22 @@ into the UI. Collapse whitespace before rendering.
 ### `GET /documents/trash`, `GET /documents/recent`, `GET /documents/favorites`
 
 `200 { "documents": [Document] }`. Recent returns the 50 documents the caller opened most recently.
+
+The trash response additionally carries `"retentionDays"`, and each row carries
+`"expiresAt"` — the moment the sweep will remove it, derived from `deletedAt` so
+the countdown in the UI and the sweep cannot disagree:
+
+```json
+{
+  "retentionDays": 30,
+  "documents": [
+    { "id": "...", "title": "...", "deletedAt": "2026-11-01T09:00:00.000Z", "expiresAt": "2026-12-01T09:00:00.000Z" }
+  ]
+}
+```
+
+Only the trash response has these two fields; `recent` and `favorites` never
+include a trashed row at all.
 
 ### `GET /documents/:id/export?format=markdown|html|json`
 
@@ -292,7 +326,7 @@ Every REST content update, version restore, and persisted collaboration edit app
 ## System
 
 - `GET /healthz` — `{ "status": "ok" } ` or `503 DATABASE_UNAVAILABLE`.
-- `GET /system/version` — `{ "version": "0.1.64" }`.
+- `GET /system/version` — `{ "version": "0.1.65" }`.
 - `GET /system/update-check` (authenticated) — `{ "currentVersion", "latestVersion", "updateAvailable", "manifest" }`.
 - `POST /system/update` (workspace administrator) — starts the update agent; `202`.
 - `GET /system/update-status` (workspace administrator) — `{ "update": { "status", "startedAt", "finishedAt", "output", "error" } }`.
