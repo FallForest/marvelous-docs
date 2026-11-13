@@ -19,7 +19,7 @@ type SearchPageProps = {
 }
 
 export default function SearchPage({ query, scope, onScope, results, loading, onOpen }: SearchPageProps) {
-  return <div className="search-page motion-enter" data-vt-scope="main">
+  return <div className="search-page" data-vt-scope="main">
     <div className="search-hero">
       <span {...staggerItemProps(0, 'eyebrow')}>搜索</span>
       <h1 {...staggerItemProps(1)}>{'搜索“' + query + '”'}</h1>

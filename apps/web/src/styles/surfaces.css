@@ -353,7 +353,8 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
   overflow:hidden;
 }
 /* Only width animates: the bar is the one place a layout property is the honest
-   choice — a transform-scaled bar would keep its own corner radius mirrored. */
+   choice — a transform-scaled bar would keep its own corner radius mirrored.
+   motion-check-ignore: layout-animation (deliberate, see above) */
 .pdf-progress-track i{
   display:block;
   height:100%;

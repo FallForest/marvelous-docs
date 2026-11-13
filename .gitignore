@@ -37,3 +37,10 @@ apps/web/vite-out.txt
 # Ad-hoc debugging scripts (not part of the project)
 probe*.mjs
 app-stub*.js
+verify*.mjs
+shot*.mjs
+.shot-*
+*.tmp.mjs
+
+# Local scratch output
+.tmp-scratch/

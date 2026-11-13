@@ -247,15 +247,35 @@ test('focus is drawn once per control', () => {
   }
 });
 
-test('the transition suppresses entries only inside the swapped surface', () => {
-  // Scoping this to the whole document muted every .stagger in the app while a
-  // transition ran; when the attribute cleared, the sidebar's rows restarted
-  // from opacity 0 and the sidebar blinked after each document click.
+test('nothing is muted document-wide during a view transition', () => {
+  // Muting .stagger on `html` stopped every list in the app for the length of a
+  // transition; when the flag cleared the rows restarted from opacity 0 and the
+  // sidebar blinked after every navigation.
   const motion = readFileSync(join(SRC, 'styles/motion.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-  assert.ok(!/html\[data-vt-swapping\]\s+\.stagger/.test(motion), 'a document-wide .stagger mute restarts the sidebar');
-  assert.ok(/html:active-view-transition\s+\[data-vt-scope='main'\]/.test(motion) || /html\[data-vt-swapping\]\s+\[data-vt-scope='main'\]/.test(motion), 'suppression must be scoped to the swapped surface');
+  assert.ok(!/html:active-view-transition\s+\.stagger/.test(motion), 'never mute .stagger for the whole document');
+  assert.ok(!/html\[data-vt-swapping\]\s+\.stagger/.test(motion), 'never mute .stagger for the whole document');
 });
 
+test('a surface named for a view transition carries no entry animation', () => {
+  // This is the fix for "the right pane still flashes". Suppressing the entry
+  // with a flag could not work: the browser holds the new content's animations
+  // until it releases the transition, which is the same frame the flag is
+  // removed. The entrance therefore always started after the suppression ended
+  // and faded the page in a second time. The only reliable fix is for the named
+  // element not to declare an entrance at all — the cross-fade is the entrance.
+  const offenders: string[] = [];
+  for (const file of files) {
+    if (!/\.(tsx?|jsx?)$/.test(file.path)) continue;
+    if (file.path.startsWith('test/')) continue;
+    for (const [index, line] of file.text.split('\n').entries()) {
+      if (!/data-vt-scope=['"]main['"]/.test(line)) continue;
+      if (/\.motion-(enter|rise|sink|sheet|disclose|fade)\b/.test(line)) {
+        offenders.push(file.path + ':' + (index + 1) + ' ' + line.trim().slice(0, 70));
+      }
+    }
+  }
+  assert.deepEqual(offenders, [], 'the transition already animates that surface: ' + offenders.join(' | '));
+});
 test('the sidebar root row shares the tree indent grid', () => {
   // "所有文档" reads as the tree root, so its icon has to sit on the same column
   // as every document icon. It is a <button>, so it also has to be a flex line:

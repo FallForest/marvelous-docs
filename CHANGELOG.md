@@ -8,6 +8,32 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.63] - 2026-11-13
+
+### Fixed
+
+- The in-app update killed its own stack. `scripts/update.sh` included `updater`
+  in the services to recreate, so `compose up -d updater` stopped the container
+  executing the script: the shell died with SIGKILL (exit 137), the health check
+  never ran and the roll back never fired. The stack stayed down until it was
+  restored by hand. The updater is no longer in the recreate list, and the
+  recreate uses `--no-deps` so nothing beyond api/web/caddy is touched.
+- A failed update now rolls back. Compose files and `.env` are snapshotted before
+  anything changes; if the health check does not pass within 60s the snapshots are
+  restored and the previous images come back up.
+- The update ran compose against a single file. Production uses three
+  (`docker-compose.deploy.yml`, `docker-compose.yml`, `docker-compose.oracle.yml`)
+  and omitting the overrides is what produced containers with docker-generated
+  names (`f7e919a8b2a9_marvelous-docs-web-1`). `COMPOSE_FILE` now accepts the
+  space-separated list and the script passes every entry through.
+
+### Changed
+
+- The 立即更新 button works. It queued a confirmation dialog that only renders in
+  the document shell, so from the admin page (which returns before that shell) the
+  click produced no request at all. It now starts the update directly, and the
+  admin page renders the notice toast it was already being given.
+
 ## [0.1.62] - 2026-11-12
 
 ### Added

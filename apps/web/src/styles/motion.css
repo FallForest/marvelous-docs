@@ -183,41 +183,26 @@
 ::view-transition-old(root),::view-transition-new(root){animation:none}
 
 /*
- * No entry animation for the surface a view transition is swapping in.
+ * View transitions and entry animations do not stack.
  *
- * The transition only animates the element named main-content (the page area);
- * every other surface keeps running normally. The suppression has to match that
- * scope exactly, because :active-view-transition is true for the whole document
- * and turning animation off anywhere else creates a second bug rather than
- * fixing the first:
+ * A page swapped by a view transition gets exactly one entrance: the
+ * cross-fade. Nothing inside the named surface is muted, because nothing
+ * needs to be — the page root simply does not carry an entry class any more.
  *
- *   - a tree row that was muted mid-transition loses its fill entirely, so when
- *     the attribute is removed the @keyframes start again from opacity 0 — the
- *     sidebar blinks after every document click;
- *   - the same happens to the toast, the panel and every row added while the
- *     transition is running.
+ * Two attempts at doing this with a flag both failed, and the reason is worth
+ * recording. The browser holds the new content's animations until the
+ * transition releases the surface, and that release is the same frame the
+ * flag is removed. Any suppression window therefore ends before the animation
+ * it was meant to suppress even starts:
  *
- * Two selectors cover the page root: the page itself when it is the named
- * element, and any page-level descendant of the named wrapper that still
- * carries an entrance class.
+ *   - scoping the mute to `html:active-view-transition` muted the whole
+ *     document, so the sidebar blinked on every navigation;
+ *   - scoping it to the named surface was correct in scope but always late,
+ *     so the page still faded in a second time.
  *
- * The workspace is deliberately not listed: its named element
- * (.workspace-content) contains no animated child. The editor column used to
- * carry .motion-enter, and because it was keyed on the document id it remounted
- * AFTER the transition finished — the flag is released by then — so its
- * entrance faded the canvas a second time. Suppression cannot win a race
- * against a remount that has not happened yet, so the duplicate entrance was
- * removed at the source instead.
+ * If a page genuinely needs its own entrance (no transition involved), put
+ * `.motion-enter` on it and do not mark it with data-vt-scope.
  */
-html:active-view-transition [data-vt-scope='main'],
-html[data-vt-swapping] [data-vt-scope='main'],
-html:active-view-transition [data-vt-scope='main'] .motion-enter,
-html[data-vt-swapping] [data-vt-scope='main'] .motion-enter{animation:none !important}
-
-/* The named surface is the one the cross-fade is already animating. */
-html:active-view-transition [data-vt-scope='main'].motion-enter,
-html[data-vt-swapping] [data-vt-scope='main'].motion-enter{animation:none !important}
-
 @media (prefers-reduced-motion:reduce){
   /* withViewTransition() already skips the call; this covers the CSS-only path. */
   ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none !important}
