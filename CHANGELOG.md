@@ -6,6 +6,38 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.68] - 2026-11-14
+
+Attachments large enough to be worth attaching, and an update that stops
+accumulating images.
+
+### Fixed
+
+- **A file over 1 MiB was refused by the proxy, not the API.** `nginx.conf` never
+  set `client_max_body_size`, so the container answered 413 in under a
+  millisecond — before the request reached the server — and the body of that 413
+  is an HTML page naming no limit. The editor could only show 「上传失败」.
+  The front door now sits just above the API's ceiling, streams the body instead
+  of buffering a second copy into the container's filesystem, and allows ten
+  minutes for a slow gigabyte.
+- **The 413 Fastify raises never named the limit.** A body over `bodyLimit` is
+  refused before any route runs, so the upload route's own message never
+  applied and callers saw 「Request body is too large」. It now says 1 GB.
+
+### Changed
+
+- **An uploaded file may be 1 GB, up from 20 MB.** Twenty megabytes is right
+  for a pasted screenshot and useless for the other thing this editor is used
+  for: attaching a long PDF, routinely 200–600 MB. The dialog grew a second
+  picker for it — a non-image upload inserts a link carrying the original name,
+  where before the picker accepted image mimes only and a PDF had no way in.
+  The body is buffered, so one upload costs its size in RSS while in flight.
+- **An update keeps one image tag and no longer rebuilds the updater.**
+  `TAG_KEEP` defaults to 1; selection is by creation time rather than version
+  sort, because on a downgrade the highest version number is the image being
+  replaced. The updater's Dockerfile copies one `.mjs` file, so rebuilding it
+  per update only left the previous image dangling — 89 MB discarded per run.
+
 ### Added
 
 - **手绘组件覆盖补全。** 新增 10 个 AI 图标与铅笔边框材质，统一工作区切换、
