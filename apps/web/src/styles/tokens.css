@@ -15,44 +15,167 @@
  */
 
 :root{
+  /*
+   * ══ colour: the semantic palette ═══════════════════════════════
+   *
+   * This block is the *only* thing a theme replaces. Layout, radii, motion and
+   * layering below stay theme-independent on purpose: a theme that could change
+   * spacing is a second stylesheet, not a palette.
+   *
+   * Three rules kept this honest during the conversion:
+   *   1. A literal colour anywhere outside this file and themes.css is a bug —
+   *      structure.test.ts fails on one. The 180 distinct literals the layers
+   *      used to carry now all resolve to a name below; anything new is named
+   *      here first.
+   *   2. Names describe the *role* (surface-hover, quote-ink, tint-amber-soft),
+   *      never the colour (light-grey-2). A dark theme cannot invert a name
+   *      that spells out #f7f8fa.
+   *   3. The *-rgb channel tokens exist because CSS cannot take the alpha out of
+   *      a hex. Shadows, scrims and rings are written as rgba(var(--x-rgb), a),
+   *      so a theme changes one hex and every derived alpha follows.
+   */
+
   /* ── surfaces ───────────────────────────────────────────────── */
+  --surface-rgb:255,255,255;
   --surface:#ffffff;
+  --surface-soft:#fcfcfd;
   --surface-muted:#f7f8fa;
   --surface-sunken:#f2f3f6;
+  --surface-hover:#eceef2;
+  --surface-active:#e4e7eb;
+  --surface-selected:#e9edf1;
   --surface-raised:#ffffff;
-  --surface-glass:rgba(255,255,255,.72);
-  --scrim:rgba(17,24,39,.42);
+  --surface-glass:rgba(var(--surface-rgb),.72);
+  --surface-code:#252a32;
+  --surface-marker:#ffe58a;
+  --surface-disabled:#a7adb9;
+  --surface-sunken-scroll:#cbd2da;
+  --surface-scroll-hover:#b3bcc7;
+  --scroll-thumb:#d6dae1;
+  --scrim:rgba(var(--shadow-rgb),.42);
 
   /* ── lines ──────────────────────────────────────────────────── */
   --border:#e8eaee;
   --border-strong:#d5d9e0;
   --border-subtle:#eff1f4;
+  /* A border that carries the brand hue: hover rings, soft outlines. */
+  --border-soft-accent:#e6c9bf;
+  /* A hairline that is drawn as a shadow or a swatch border, not a border. */
+  --shadow-hairline-line:rgba(var(--shadow-rgb),.1);
 
   /* ── text ───────────────────────────────────────────────────── */
   --text:#1f2937;
   --text-secondary:#4b5563;
+  --text-soft:#6b7280;
   --text-muted:#5f6673;
   --text-faint:#8a919e;
+  --text-disabled:#b8bdc6;
   --text-on-accent:#ffffff;
+  --text-on-code:#e3e8ed;
 
   /* ── brand accent (AA-safe with white text) ─────────────────── */
+  --accent-rgb:192,83,63;
   --accent:#c0533f;
   --accent-strong:#a8473a;
   --accent-soft:#f7ece8;
-  --accent-ring:rgba(192,83,63,.16);
-  --accent-tint:rgba(192,83,63,.08);
+  --accent-ring:rgba(var(--accent-rgb),.16);
+  --accent-tint:rgba(var(--accent-rgb),.08);
+  --accent-line:rgba(var(--accent-rgb),.2);
 
   /* ── status ─────────────────────────────────────────────────── */
   --danger:#b0453a;
   --danger-strong:#943a30;
   --danger-soft:#fff2ef;
+  --danger-line:#f2d0c8;
   --success:#3d7a54;
   --success-soft:#e8f3ec;
+  --success-line:#cfe8d4;
   --warning:#8a6a26;
+  --warning-strong:#886b2b;
   --warning-soft:#fff8e8;
+  --warning-line:#f1dfb0;
+  /* Informational (update banner): deliberately outside the accent ramp, so a
+     brand recolour can never make a notice look like the primary action. */
+  --info:#3370ff;
+  --info-strong:#245edb;
+  --info-soft:#eef5ff;
+  --info-line:#d8e6fb;
+  --info-ink:#42658f;
 
+  /* Connection and save dots. Brighter than the text ramps on purpose: a 6px
+     dot at body-text lightness reads as grey. */
+  --status-online:#4f9d76;
+  --status-idle:#d3a24b;
+  --status-offline:#c0564a;
+
+  /* ── code syntax ────────────────────────────────────────────────
+     Muted and warm-neutral so a code block reads as part of the document
+     rather than as an IDE. Contrast against --surface-sunken stays ≥4.5:1. */
+  --code-comment:#7c8593;
+  --code-keyword:#8c4a9f;
+  --code-string:#3d7a54;
+  --code-number:#b0553a;
+  --code-name:#2f6fb3;
+  --code-attr:#a06a1e;
+  --code-type:#1f6f6b;
+  --code-meta:#6b7280;
+  --code-success:#059669;
+  --code-success-soft:#ecfdf5;
+  --code-success-line:rgba(5,150,105,.33);
+
+  /* ── quoted text (a comment's anchor) ────────────────────────── */
+  --quote-bg:#faf3e9;
+  --quote-bg-hover:#f7ecdb;
+  --quote-ink:#8a5a2b;
+  --quote-line:#d6a369;
+
+  /* ── tints: one hue ramp per meaning ────────────────────────────
+     What makes the document tree scannable: folders are amber, members blue,
+     comments rose, storage sage. A neutral icon everywhere is the failure
+     mode this set exists to prevent. */
+  --tint-rose-soft:#fbede9;
+  --tint-rose-ink:#c9664f;
+  --tint-rose-line:#f0e3de;
+  --tint-amber-soft:#fbf4e6;
+  --tint-amber-ink:#b28a4e;
+  --tint-gold-soft:#fdf6e3;
+  --tint-gold-hover:#faeecb;
+  --tint-gold-ink:#b8862f;
+  --tint-blue-soft:#eaf1f6;
+  --tint-blue-ink:#57718a;
+  --tint-sage-soft:#dce6e4;
+  --tint-sage-softer:#ecede7;
+  --tint-sage-ink:#3f5f59;
+  --tint-sage-line:#dfe2db;
+  --tint-slate-ink:#5e7387;
+
+  /* ── hero wash (home dashboard) ──────────────────────────────── */
+  --hero-from:#fbf2ee;
+  --hero-mid:#fffaf5;
+  --hero-to:#f8f7f1;
+
+  /* ── alpha channels ─────────────────────────────────────────────
+     The same colours as above, split so one hex drives every derived
+     shadow, scrim, halo and dot. */
+  --shadow-rgb:17,24,39;
+  --danger-rgb:176,69,58;
+  --sage-rgb:72,99,94;
+  --on-accent-rgb:255,255,255;
+
+  /* ── comment markers ────────────────────────────────────────────
+     The highlighter stroke over commented text, and the tint of the card
+     that thread occupies in the panel. Both are the warm butter tone the
+     hand-drawn direction already uses for an annotated phrase — deliberately
+     quieter than --accent, so a heavily reviewed page does not read as a
+     page full of errors. */
+  --comment-mark:#fbf0db;
+  --comment-mark-hover:#f8e7c6;
+  --comment-mark-active:#f6dcb4;
+  --comment-mark-line:#e3c08c;
+  --comment-mark-resolved:#f4f4f1;
   /* ── focus ──────────────────────────────────────────────────── */
   --focus-ring:#c0533f;
+  --focus-ring-soft:rgba(var(--accent-rgb),.25);
   --focus-ring-width:2px;
   --focus-ring-offset:2px;
 
@@ -65,12 +188,12 @@
   --radius-pill:999px;
 
   /* ── elevation: layered, low-contrast, iOS-style depth ──────── */
-  --shadow-hairline:0 0 0 1px rgba(17,24,39,.06);
-  --shadow-control:0 1px 2px rgba(17,24,39,.06),0 0 0 1px rgba(17,24,39,.04);
-  --shadow-popover:0 12px 30px rgba(17,24,39,.14),0 2px 6px rgba(17,24,39,.06);
-  --shadow-modal:0 24px 64px rgba(17,24,39,.24),0 2px 8px rgba(17,24,39,.08);
-  --shadow-toast:0 10px 26px rgba(17,24,39,.16);
-  --shadow-lift:0 4px 14px rgba(40,50,68,.07);
+  --shadow-hairline:0 0 0 1px rgba(var(--shadow-rgb),.06);
+  --shadow-control:0 1px 2px rgba(var(--shadow-rgb),.06),0 0 0 1px rgba(var(--shadow-rgb),.04);
+  --shadow-popover:0 12px 30px rgba(var(--shadow-rgb),.14),0 2px 6px rgba(var(--shadow-rgb),.06);
+  --shadow-modal:0 24px 64px rgba(var(--shadow-rgb),.24),0 2px 8px rgba(var(--shadow-rgb),.08);
+  --shadow-toast:0 10px 26px rgba(var(--shadow-rgb),.16);
+  --shadow-lift:0 4px 14px rgba(var(--shadow-rgb),.07);
 
   /* ── layering ───────────────────────────────────────────────── */
   --z-menu:40;

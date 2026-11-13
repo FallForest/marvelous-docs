@@ -1,0 +1,90 @@
+/*
+ * ══ themes ═════════════════════════════════════════════════════════
+ *
+ * The only file a new theme needs to touch. Everything the client paints is
+ * expressed as var(--token); tokens.css declares the default palette on :root,
+ * and a theme re-declares the tokens it changes under [data-theme='<id>'].
+ *
+ * Why this is a palette and not a stylesheet:
+ *   - switching is a single attribute write, so there is no re-render, no
+ *     stylesheet reload and no flash of the old palette;
+ *   - a theme cannot move anything, because it may not touch layout, radii,
+ *     motion or layering — those stay in tokens.css;
+ *   - the switcher, the stored preference and the pre-paint script in
+ *     index.html all read lib/theme.ts, so adding an entry there plus a block
+ *     here is the whole change.
+ *
+ * The contract, in order of importance:
+ *   1. Prefer overriding the semantic tokens (--surface, --text, --accent…).
+ *      They are what the component layers actually consume; a theme that
+ *      overrides a tint without its ink leaves unreadable pairs.
+ *   2. Override a derived alpha token only through its channel token. Shadows
+ *      are rgba(var(--shadow-rgb), a): change --shadow-rgb, not the shadow.
+ *   3. State the scheme. color-scheme drives scrollbars, form controls and the
+ *      caret; a dark palette with color-scheme:light keeps every <select> white.
+ *   4. Check contrast after the palette is in. Body text must stay ≥4.5:1
+ *      against --surface and --surface-muted, and --text-on-accent ≥4.5:1
+ *      against --accent. test/theme.test.ts reads the computed values back.
+ *
+ * This file loads after tokens.css and before every component layer, so a theme
+ * override never needs !important.
+ */
+
+/* The shipped look.
+ *
+ * Its palette is the :root block in tokens.css, so this rule only states the
+ * scheme — which is exactly what a theme is allowed to be: an override. It is
+ * kept as a real block so the file shows the shape a new theme should copy. */
+[data-theme='paper']{
+  color-scheme:light;
+}
+
+/*
+ * ── template for the next theme ────────────────────────────────────
+ *
+ * Copy the block below, replace the id with one added to THEMES in
+ * lib/theme.ts, and delete the rules you do not need — an omitted token falls
+ * back to the default palette, which is a feature: a theme can recolour only
+ * the accent and leave everything else alone.
+ *
+ * [data-theme='midnight']{
+ *   color-scheme:dark;
+ *
+ *   --surface-rgb:22,24,29;
+ *   --surface:#16181d;
+ *   --surface-soft:#1a1d23;
+ *   --surface-muted:#121419;
+ *   --surface-sunken:#0e1015;
+ *   --surface-hover:#24272e;
+ *   --surface-active:#2c3038;
+ *   --surface-selected:#2a2f38;
+ *   --surface-raised:#1d2027;
+ *   --surface-glass:rgba(var(--surface-rgb),.72);
+ *   --scrim:rgba(0,0,0,.6);
+ *
+ *   --border:#2a2e36;
+ *   --border-strong:#3a3f49;
+ *   --border-subtle:#22262d;
+ *
+ *   --text:#e7e9ee;
+ *   --text-secondary:#c2c7d0;
+ *   --text-soft:#a5abb6;
+ *   --text-muted:#8f96a3;
+ *   --text-faint:#757c89;
+ *   --text-disabled:#5b616c;
+ *   --text-on-code:#e3e8ed;
+ *
+ *   --shadow-rgb:0,0,0;
+ *   --accent:#e0715c;
+ *   --accent-strong:#ef8873;
+ *   --accent-soft:#33211d;
+ *   --accent-rgb:224,113,92;
+ *
+ *   --danger:#e07368;
+ *   --danger-soft:#33201e;
+ *   --success:#6fbf92;
+ *   --success-soft:#152a20;
+ *   --warning:#d9b061;
+ *   --warning-soft:#2b2416;
+ * }
+ */

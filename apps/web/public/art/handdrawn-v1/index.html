@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Marvelous Docs · 手绘美术素材</title>
+  <link rel="stylesheet" href="./art.css">
+  <style>
+    :root { color-scheme: light; font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; color: #353630; background: #f8f5ec; }
+    * { box-sizing: border-box; } body { margin: 0; } button, a { -webkit-tap-highlight-color: transparent; }
+    main { max-width: 1380px; padding: 42px 40px 50px; margin: auto; }
+    header { display: flex; align-items: center; gap: 20px; padding-bottom: 26px; border-bottom: 1px solid #d8d4c8; }
+    header img { width: 76px; height: 76px; } h1 { margin: 3px 0 8px; font-size: 30px; letter-spacing: -.7px; } .eyebrow { margin: 0; font-size: 12px; letter-spacing: 2px; color: #68765b; } .subtitle { margin: 0; color: #706f64; font-size: 14px; line-height: 1.7; }
+    .tag { margin-left: auto; background: #e5ead9; padding: 10px 15px; border-radius: 6px; font-size: 12px; white-space: nowrap; }
+    .section-head { display: flex; align-items: center; gap: 16px; margin: 28px 0 14px; } h2 { font-size: 18px; margin: 0; } .section-head p { color: #777467; font-size: 12px; margin: 0; }
+    .surfaces { display: flex; gap: 6px; margin-left: auto; } .surfaces button { border: 1px solid #c9c7bd; border-radius: 5px; color: #55574c; background: #fffdf6; font: inherit; font-size: 12px; padding: 7px 10px; cursor: pointer; } button:hover { background: #e8eddf; } button:focus-visible, a:focus-visible { outline: 2px solid #45694b; outline-offset: 4px; } .surfaces button[aria-pressed="true"] { border-color: #667c50; background: #e5ead9; }
+    .icon-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+    .asset { overflow: hidden; border: 1px solid #dedbce; border-radius: 10px; background: #fffdf7; }
+    .art-stage { background-color: #f2efe4; min-height: 145px; display: flex; align-items: center; justify-content: center; gap: 20px; padding: 14px; transition: background-color 180ms ease; }
+    .art-stage > img { width: 98px; height: 98px; object-fit: contain; } .sizes { display: flex; align-items: center; gap: 7px; } .sizes img { object-fit: contain; }
+    .asset-info { padding: 12px 13px; } .asset-info strong { font-size: 13px; } .asset-info small { display: block; margin-top: 5px; font-size: 11px; color: #78796c; line-height: 1.5; } .asset-info a { color: #526b45; font-size: 11px; text-decoration: none; margin-left: 8px; } .asset-info a:hover { text-decoration: underline; }
+    .decor-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; } .decor-grid .art-stage { min-height: 118px; } .decor-grid .art-stage > img { width: 90%; height: 65px; } .decor-grid .texture { align-self: stretch; width: 100%; background-image: url('./textures/paper-ivory.webp'); border-radius: 6px; }
+    body[data-surface="white"] .art-stage { background: #fff; } body[data-surface="sage"] .art-stage { background: #c7d4b5; } body[data-surface="checker"] .art-stage { background-color: #fff; background-image: linear-gradient(45deg,#e5e5e5 25%,transparent 25%),linear-gradient(-45deg,#e5e5e5 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e5e5e5 75%),linear-gradient(-45deg,transparent 75%,#e5e5e5 75%); background-size: 18px 18px; background-position: 0 0,0 9px,9px -9px,-9px 0; }
+    .demo { display: grid; grid-template-columns: 210px 1fr 290px; border: 1px solid #cfccbd; border-radius: 10px; overflow: hidden; background: #f0ecdf; }
+    .demo-nav { padding: 23px 18px; display: flex; flex-direction: column; gap: 12px; } .demo-brand { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 14px; } .demo-brand img { width: 32px; height: 32px; } .nav-row { display: flex; align-items: center; gap: 10px; font-size: 13px; padding: 5px 6px; min-height: 34px; } .nav-row img { width: 26px; height: 26px; } .demo-nav .selected { background-image: url('./decor/marker-sage.webp'); background-size: 100% 100%; background-repeat: no-repeat; }
+    .demo-page { padding: 26px 30px; background-color: #fffef9; border-left: 1px solid #dbd7cb; border-right: 1px solid #dbd7cb; } .demo-title { display: flex; align-items: center; gap: 16px; margin-bottom: 13px; } .demo-title > img { width: 60px; height: 60px; } h3 { font-size: 27px; margin: 0; } .demo-page p { font-size: 14px; line-height: 1.9; margin: 16px 0; } .callout { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #eef0e4; border-radius: 7px; font-size: 13px; } .callout img { width: 32px; height: 32px; } .demo-note { color: #79786b; font-size: 11px!important; }
+    .demo-comments { padding: 24px 20px; } .demo-comments h4 { margin: 0 0 30px; font-size: 14px; } .comment-card { position: relative; background: #fffdf6; border: 1px solid #cfcab9; border-radius: 9px; padding: 19px 15px 15px; } .comment-card strong { font-size: 13px; } .comment-card p { font-size: 13px; line-height: 1.9; margin: 8px 0; } .comment-card small { color: #7b7b6d; font-size: 11px; }
+    footer { display: flex; justify-content: space-between; gap: 16px; font-size: 11px; color: #77766a; line-height: 1.8; margin-top: 22px; }
+    @media (max-width: 900px) { main { padding: 26px 20px; } .icon-grid { grid-template-columns: repeat(3,1fr); } .decor-grid { grid-template-columns: repeat(2,1fr); } .art-stage { gap: 8px; } .demo { grid-template-columns: 160px 1fr; } .demo-comments { grid-column: 1/-1; } .tag { display: none; } .section-head { flex-wrap: wrap; } .surfaces { margin-left: 0; } }
+    @media (max-width: 550px) { main { padding: 24px 14px; } h1 { font-size: 23px; } header { gap: 10px; } header img { width: 52px; height: 52px; } .icon-grid { grid-template-columns: repeat(2,1fr); gap: 9px; } .art-stage { min-height: 138px; flex-direction: column; gap: 5px; } .art-stage > img { width: 80px; height: 80px; } .decor-grid { gap: 9px; } .demo { grid-template-columns: 1fr; } .demo-nav { display: none; } .demo-page { padding: 22px 18px; } .demo-title { gap: 8px; } h3 { font-size: 23px; } footer { flex-direction: column; gap: 4px; } .decor-grid .art-stage { min-height: 96px; } .sizes img { max-height: 24px; } }
+    @media (prefers-reduced-motion: reduce) { .art-stage { transition: none; } }
+  </style>
+</head>
+<body data-surface="paper">
+<main>
+  <header><img src="./icons/brand-spark.webp" alt="折纸星标"><div><p class="eyebrow">MARVELOUS DOCS / ART LIBRARY 01</p><h1>把手绘的温度，放进文档。</h1><p class="subtitle">铅笔的颗粒、纸张的纤维、荧光笔留下的边缘。每一份都是可独立使用的 AI 美术素材。</p></div><span class="tag">13 份独立素材 · PNG + WebP</span></header>
+  <div class="section-head"><h2>01 / 手绘图标</h2><p>大图看笔触，小图看实际显示效果</p><div class="surfaces" aria-label="预览背景"><button data-value="paper" aria-pressed="true">纸色</button><button data-value="white" aria-pressed="false">白色</button><button data-value="sage" aria-pressed="false">绿色</button><button data-value="checker" aria-pressed="false">透明检查</button></div></div>
+  <div id="icons" class="icon-grid"></div>
+  <div class="section-head"><h2>02 / 纸笔质感</h2><p>笔触、胶带有透明通道；纸纹为独立底图</p></div><div id="decor" class="decor-grid"></div>
+  <div class="section-head"><h2>03 / 放进界面后的样子</h2><p>以下直接使用上方素材，文字仍然是真实文字</p></div>
+  <section class="demo" aria-label="美术素材接入示例">
+    <div class="demo-nav mdocs-art-paper"><div class="demo-brand"><img src="./icons/brand-spark.webp" alt=""><strong>Marvelous Docs</strong></div><div class="nav-row"><img src="./icons/home.webp" alt="">首页</div><div class="nav-row"><img src="./icons/favorite-star.webp" alt="">收藏</div><div class="nav-row"><img src="./icons/folder.webp" alt="">产品与设计</div><div class="nav-row selected"><img src="./icons/document.webp" alt="">设计协作计划</div></div>
+    <article class="demo-page mdocs-art-paper"><div class="demo-title"><img src="./icons/notebook.webp" alt=""><h3><span class="mdocs-art-mark">设计协作计划</span></h3></div><div class="callout"><img src="./icons/idea-bulb.webp" alt="">让每一个好想法，都有落笔的地方。</div><p>用文档连接想法、<span class="mdocs-art-mark">讨论与行动</span>。<br>在同一页里，一起把事情做好。</p><p class="demo-note">真实文字 + 独立透明素材 · 可选择、可编辑的界面结构</p></article>
+    <aside class="demo-comments"><h4>评论 / 团队讨论</h4><div class="comment-card"><img class="mdocs-art-tape" src="./decor/washi-tape.webp" alt=""><strong>小林</strong><p>这里可以补充一下本周的目标。</p><small>回复　 ·　解决</small></div></aside>
+  </section>
+  <footer><span>AI 原创生成 · 透明素材逐个导出 · 工具栏小符号仍可使用现有矢量图标</span><span id="weight">正在读取素材清单…</span></footer>
+</main>
+<script>
+const definitions = [
+ ['brand-spark','折纸星标','品牌标志 · 40–56 px'],['notebook','手绘笔记本','文档标题 · 56–80 px'],['idea-bulb','灵感灯泡','提示卡片 · 32–48 px'],['folder','纸质文件夹','文档树 · 24–32 px'],['document','折角文档','文档树 · 24–32 px'],['home','首页小屋','导航 · 24–32 px'],['favorite-star','铅笔收藏星','收藏入口 · 24–32 px'],['trash','回收站','导航 · 24–32 px'],['comment','纸质评论气泡','评论入口 · 24–32 px']
+];
+document.querySelector('#icons').innerHTML = definitions.map(([id,name,usage]) => `<article class="asset"><div class="art-stage"><img src="./icons/${id}.webp" alt="${name}"><div class="sizes"><img src="./icons/${id}.webp" width="24" height="24" alt="24像素预览"><img src="./icons/${id}.webp" width="32" height="32" alt="32像素预览"></div></div><div class="asset-info"><strong>${name}</strong><a href="./icons/${id}.png" download>PNG ↓</a><small>${usage}</small></div></article>`).join('');
+const decorations = [['marker-yellow','淡黄荧光笔','标题下划线 / 短语高亮','decor'],['marker-sage','鼠尾草绿涂抹','选中背景 / 章节标记','decor'],['washi-tape','半透纸胶带','评论卡片 / 便签装饰','decor'],['paper-ivory','奶油纸张纹理','背景底图 · 建议低透明度叠加','textures']];
+document.querySelector('#decor').innerHTML = decorations.map(([id,name,usage,dir]) => `<article class="asset"><div class="art-stage">${dir==='textures'?'<div class="texture" role="img" aria-label="奶油纸张纹理"></div>':`<img src="./${dir}/${id}.webp" alt="${name}">`}</div><div class="asset-info"><strong>${name}</strong><a href="./${dir}/${id}.png" download>PNG ↓</a><small>${usage}</small></div></article>`).join('');
+document.querySelectorAll('.surfaces button').forEach(button => button.addEventListener('click', () => { document.body.dataset.surface = button.dataset.value; document.querySelectorAll('.surfaces button').forEach(b => b.setAttribute('aria-pressed', String(b === button))); }));
+fetch('./manifest.json').then(r=>r.json()).then(m=>{document.querySelector('#weight').textContent=`网页 WebP 全套约 ${Math.round(m.assets.reduce((n,a)=>n+a.webpBytes,0)/1024)} KB · 原图另行保留`;}).catch(()=>{document.querySelector('#weight').textContent='PNG / WebP · 高清原图保存在设计目录';});
+</script>
+</body>
+</html>

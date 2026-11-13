@@ -5,6 +5,7 @@
  * architecture: values first, then primitives, then chrome, then screens.
  *
  *   tokens      design values only: colour, type, radii, motion, layering
+ *   themes      palette overrides, one block per [data-theme] (see themes.css)
  *   base        reset + shell geometry; no screen styling
  *   motion      keyframes and motion utilities (.motion-rise, .stagger, ...)
  *   surfaces    shared primitives: buttons, backdrop, toast, stacking
@@ -31,6 +32,9 @@
  */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
 @import './tokens.css';
+/* Themes load immediately after the tokens they override, and before any layer
+   that consumes a colour, so an override never needs !important. */
+@import './themes.css';
 @import './base.css';
 @import './motion.css';
 @import './surfaces.css';

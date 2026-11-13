@@ -58,12 +58,12 @@ test('lib is split by concern, and each sub-folder keeps one job', () => {
   // Tiptap instance lives in editor/, anything on the way out of the editor lives
   // in export/, and a helper used by more than one screen stays at the top level
   // so a page never has to guess which sub-folder to reach into.
-  const EDITOR = ['blocks.ts', 'code-block.ts', 'font-size.ts', 'highlight.ts', 'image.ts', 'index.ts', 'languages.ts']
+  const EDITOR = ['blocks.ts', 'code-block.ts', 'comment-marks.ts', 'font-size.ts', 'highlight.ts', 'image.ts', 'index.ts', 'languages.ts']
   const EXPORT = ['download.ts', 'export-css.ts', 'pdf-pages.ts', 'pdf.ts', 'render-html.ts']
   assert.deepEqual(readdirSync(join(SRC, 'lib/editor')).sort(), EDITOR, 'lib/editor holds the editor-only modules')
   assert.deepEqual(readdirSync(join(SRC, 'lib/export')).sort(), EXPORT, 'lib/export holds the outbound modules')
   const flat = readdirSync(join(SRC, 'lib')).filter((name) => name.endsWith('.ts')).sort()
-  assert.deepEqual(flat, ['api.ts', 'app-types.ts', 'clipboard.ts', 'collab.ts', 'endpoints.ts', 'format.ts', 'motion.ts', 'trash.ts', 'tree.ts', 'types.ts'], 'shared helpers stay flat')
+  assert.deepEqual(flat, ['api.ts', 'app-types.ts', 'clipboard.ts', 'collab.ts', 'endpoints.ts', 'format.ts', 'motion.ts', 'theme.ts', 'trash.ts', 'tree.ts', 'types.ts'], 'shared helpers stay flat')
 })
 test('lib never imports UI code', () => {
   const offenders: string[] = []
@@ -142,11 +142,23 @@ test('styles are layered and the entry point imports them in order', () => {
   const order = [...index.matchAll(/@import\s+'\.\/([a-z-]+)\.css'/g)].map((match) => match[1])
   assert.deepEqual(
     order,
-    ['tokens', 'base', 'motion', 'surfaces', 'dialogs', 'navigation', 'panels', 'editor', 'content', 'shell', 'pages', 'updates'],
+    ['tokens', 'themes', 'base', 'motion', 'surfaces', 'dialogs', 'navigation', 'panels', 'editor', 'content', 'shell', 'pages', 'updates'],
     'style layers must load from broadest to most specific',
   )
   for (const layer of order) {
     assert.ok(statSync(join(SRC, 'styles', `${layer}.css`)).isFile(), `${layer}.css is missing`)
+  }
+})
+
+test('themes load right after tokens and before every consumer', () => {
+  // A theme override has to land before the layers that read the token it
+  // changes, otherwise it needs !important to win — and the moment it needs
+  // !important, a second theme cannot override the first.
+  const index = readFileSync(join(SRC, 'styles/index.css'), 'utf8')
+  const order = [...index.matchAll(/@import\s+'\.\/([a-z-]+)\.css'/g)].map((match) => match[1])
+  assert.equal(order.indexOf('themes'), order.indexOf('tokens') + 1, 'themes must follow tokens directly')
+  for (const consumer of ['base', 'surfaces', 'panels', 'editor', 'shell', 'pages']) {
+    assert.ok(order.indexOf('themes') < order.indexOf(consumer), consumer + ' must load after themes')
   }
 })
 

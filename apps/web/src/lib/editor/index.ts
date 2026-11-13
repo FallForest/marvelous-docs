@@ -18,6 +18,7 @@ import TextAlign from '@tiptap/extension-text-align'
 import { DocumentImage } from './image'
 import { FontSize } from './font-size'
 import { CodeBlockBoundary } from './code-block'
+import { CommentMarks } from './comment-marks'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { lowlight } from './highlight'
 
@@ -43,6 +44,7 @@ export function buildEditorExtensions(options: EditorExtensionOptions = {}) {
       exitOnArrowDown: false,
     }),
     CodeBlockBoundary,
+    CommentMarks,
     Underline,
     Link.configure({ openOnClick: false, autolink: true, HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' } }),
     TextStyle,

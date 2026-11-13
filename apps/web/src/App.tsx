@@ -10,6 +10,7 @@ import { useWorkspaceData } from './hooks/useWorkspaceData'
 import { useSharing } from './hooks/useSharing'
 import { useInvite } from './hooks/useInvite'
 import { useDocumentExport } from './hooks/useDocumentExport'
+import { useTheme } from './hooks/useTheme'
 import { emptyContent } from './lib/types'
 import type { CollabStatus, RightTab, UpdateInfo } from './lib/app-types'
 import type {
@@ -65,6 +66,12 @@ function App() {
   const [conflictDoc, setConflictDoc] = useState<Doc | null>(null)
   const [batchBusy, setBatchBusy] = useState(false)
   const invite = useInvite(token)
+  /*
+   * The palette is applied to <html> by this hook, not rendered by React, so it
+   * is created before any early return (the login screen and the admin page are
+   * separate trees and both should wear the chosen theme).
+   */
+  const { themeId, setTheme } = useTheme()
   const [query, setQuery] = useState('')
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
@@ -72,6 +79,8 @@ function App() {
   const [commentText, setCommentText] = useState('')
   const [commentAnchor, setCommentAnchor] = useState<Comment['anchor']>(null)
   const [commentParentId, setCommentParentId] = useState<string | null>(null)
+  /** The thread whose card and text marker are lit up, if any. */
+  const [activeCommentId, setActiveCommentId] = useState<string | null>(null)
   const [collaborators, setCollaborators] = useState<Array<{ clientId: number; name: string; color: string }>>([])
   const [collabStatus, setCollabStatus] = useState<CollabStatus>('connecting')
   const [expanded, setExpanded] = useState(true)
@@ -82,6 +91,7 @@ function App() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved')
   const [newMenuOpen, setNewMenuOpen] = useState(false)
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false)
   const [moveDoc, setMoveDoc] = useState<Doc | null>(null)
   const [previewVersion, setPreviewVersion] = useState<Version | null>(null)
   const [renameDoc, setRenameDoc] = useState<Doc | null>(null)
@@ -101,12 +111,14 @@ function App() {
   const closeOverlays = useCallback(() => {
     setCommandOpen(false)
     setShowRight(false)
+    setActiveCommentId(null)
     setShowShare(false)
     setShowInvite(false)
     setMoveDoc(null)
     setPreviewVersion(null)
     setNewMenuOpen(false)
     setExportMenuOpen(false)
+    setThemeMenuOpen(false)
     setWorkspaceOpen(false)
   }, [])
 
@@ -332,6 +344,32 @@ function App() {
     return () => window.removeEventListener('mdoc-open-comments', openComments)
   }, [])
 
+  /*
+   * Pressing marked text opens the thread it belongs to.
+   *
+   * The editor only knows the comment id (it is a view decoration, not part of
+   * the document), so the shell resolves it: switch to the comments tab, open
+   * the panel, light up the card, and bring the quoted range into view. If the
+   * thread has been deleted since the page loaded, the press is a no-op rather
+   * than an empty panel.
+   */
+  useEffect(() => {
+    const focusThread = (event: Event) => {
+      const id = (event as CustomEvent<{ id?: string }>).detail?.id
+      if (!id) return
+      const comment = comments.find((row) => row.id === id)
+      if (!comment) return
+      setRightTab('comments')
+      setShowRight(true)
+      setActiveCommentId(id)
+      if (comment.anchor && typeof comment.anchor.from === 'number' && typeof comment.anchor.to === 'number') {
+        window.dispatchEvent(new CustomEvent('mdoc-focus-anchor', { detail: comment.anchor }))
+      }
+    }
+    window.addEventListener('mdoc-focus-comment', focusThread)
+    return () => window.removeEventListener('mdoc-focus-comment', focusThread)
+  }, [comments])
+
   useEffect(() => {
     const showNotice = (event: Event) => setNotice((event as CustomEvent<string>).detail)
     window.addEventListener('mdoc-notice', showNotice)
@@ -369,6 +407,9 @@ function App() {
   useEffect(() => {
     setSaveStatus('saved')
     setCollabStatus(COLLAB_URL ? 'connecting' : 'disconnected')
+    // A thread id belongs to one document; carrying the tint across a switch
+    // would highlight whatever range happens to share that id in the next file.
+    setActiveCommentId(null)
   }, [active?.id])
 
   async function login(email: string, password: string) {
@@ -548,6 +589,7 @@ function App() {
       setCommentText('')
       setCommentAnchor(null)
       setCommentParentId(null)
+      setActiveCommentId(null)
     } catch (error) {
       setNotice('评论失败：' + (error as Error).message)
     }
@@ -685,6 +727,10 @@ function App() {
         hasDocument={Boolean(active)}
         favorite={Boolean(active && favoriteSet.has(active.id))}
         exportOpen={exportMenuOpen}
+        themeId={themeId}
+        themeOpen={themeMenuOpen}
+        onThemeMenu={setThemeMenuOpen}
+        onTheme={setTheme}
         onOpenSidebar={() => setSidebarOpen(true)}
         onFavorite={() => { if (active) void handleDocumentAction('favorite', active) }}
         onExport={(format) => void exportActive(format)}
@@ -715,6 +761,19 @@ function App() {
             onSelection={(anchor) => { setCommentAnchor(anchor) }}
             onExport={(format) => void exportActive(format)}
             onLink={(range) => setLinkPrompt(range)}
+            comments={comments}
+            activeCommentId={activeCommentId}
+            /*
+             * The composer quotes a range, so that range is shown in the text
+             * while the draft exists — the writer sees what the comment will
+             * point at before sending it. Only while the comments tab is
+             * actually visible: selecting a word to bold must not paint a quote
+             * outline that belongs to a panel nobody has opened.
+             */
+            commentDraft={showRight && rightTab === 'comments'
+              && commentAnchor && typeof commentAnchor.from === 'number' && typeof commentAnchor.to === 'number'
+              ? { from: commentAnchor.from, to: commentAnchor.to }
+              : null}
           />
         </section>
         {active && <DocumentPanel
@@ -726,12 +785,21 @@ function App() {
           versions={versions}
           commentText={commentText}
           commentAnchor={commentAnchor}
+          activeCommentId={activeCommentId}
+          onActiveComment={setActiveCommentId}
           onTab={setRightTab}
           onClose={() => setShowRight(false)}
           onCommentText={setCommentText}
           onClearAnchor={() => setCommentAnchor(null)}
           onSubmitComment={() => void addComment()}
-          onReply={(comment) => { setCommentParentId(comment.id); setCommentText('@' + (comment.userName || '成员') + ' ') }}
+          onReply={(comment) => {
+            // Replying points at the parent's words, so the parent's range is
+            // quoted and the marker lights up while the reply is written.
+            setCommentParentId(comment.id)
+            setCommentText('@' + (comment.userName || '成员') + ' ')
+            if (comment.anchor) setCommentAnchor(comment.anchor)
+            setActiveCommentId(comment.id)
+          }}
           onCommentStatus={(comment, status) => void updateCommentStatus(comment, status)}
           onPreviewVersion={setPreviewVersion}
         />}

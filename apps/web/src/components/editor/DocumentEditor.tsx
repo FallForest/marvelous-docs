@@ -23,7 +23,7 @@ import { useBlockAnchor } from '../../hooks/useBlockAnchor'
 import { grammarFor } from '../../lib/editor/highlight'
 import { emptyContent } from '../../lib/types'
 import type { CollabStatus } from '../../lib/app-types'
-import type { Doc, SaveStatus, User } from '../../lib/types'
+import type { Comment, Doc, SaveStatus, User } from '../../lib/types'
 
 type DocumentEditorProps = {
   doc: Doc
@@ -37,9 +37,15 @@ type DocumentEditorProps = {
   onSelection: (anchor: { from: number; to: number; text: string }) => void
   onExport: (format: 'markdown' | 'html' | 'json') => void
   onLink: (range: { from: number; to: number }) => void
+  /** Threads on this document, so the text they are about is marked in place. */
+  comments: Comment[]
+  /** The thread open in the side panel, tinted in the text while it is open. */
+  activeCommentId: string | null
+  /** The range the composer is quoting, marked while the panel is open. */
+  commentDraft: { from: number; to: number } | null
 }
 
-export default function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, onAwareness, onCollabStatus, onSelection, onExport, onLink }: DocumentEditorProps) {
+export default function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, onAwareness, onCollabStatus, onSelection, onExport, onLink, comments, activeCommentId, commentDraft }: DocumentEditorProps) {
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null)
   const [provider, setProvider] = useState<WebsocketProvider | null>(null)
   const [title, setTitle] = useState(doc.title)
@@ -180,6 +186,25 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
   // drag is open so the target cannot change under the user mid-gesture.
   const blockAnchor = useBlockAnchor(editor)
 
+
+  /*
+   * Push the thread list into the editor whenever it changes.
+   *
+   * The markers are view-only decorations, so this is the only wiring they
+   * need: the server stays the source of truth, and a thread that is resolved,
+   * deleted or fetched after a reload re-tints the text without any of it
+   * reaching the document body. `activeCommentId` rides along so opening a
+   * thread in the panel lights up the exact sentence it is about.
+   */
+  useEffect(() => {
+    if (!editor) return
+    editor.commands.setCommentMarks(comments, activeCommentId)
+  }, [editor, comments, activeCommentId])
+
+  useEffect(() => {
+    if (!editor) return
+    editor.commands.setCommentDraft(commentDraft)
+  }, [editor, commentDraft])
 
   // Reveal the quoted text when a comment anchor is clicked in the side panel.
   useEffect(() => {

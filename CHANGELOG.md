@@ -4,6 +4,58 @@ All notable changes to Marvelous Docs are documented in this file. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **主题切换器。** 顶栏新增一个调色板按钮，点开是一份主题列表（单选组：当前
+  主题同时有勾选和高亮行）。第一个版本只有「纸本」一套——也就是现在这套——
+  你之后按下面三步加主题即可，不需要动任何组件。
+
+  `docs/THEMES.md` 写了完整流程：`lib/theme.ts` 里加一条 `THEMES` 记录、
+  `styles/themes.css` 里加一个 `[data-theme='<id>']` 覆盖块、
+  `index.html` 的首帧脚本里加一个 id→[scheme, 页面色] 映射。
+
+  为了让它真的成立，做了一件比切换器本身更大的事：**把 180 个字面量颜色
+  收进了一套语义 token。** 之前 11 个样式层里散落着 `#f7f8fa`、
+  `#eceef1`、`rgba(17,24,39,.14)` 这类值，任何一个都是主题碰不到的像素——
+  换主题只会换掉二十几个变量，剩下的白底照旧。现在：
+
+  - 颜色只在 `tokens.css`（默认调色板）和 `themes.css`（主题覆盖）里出现；
+    组件层里出现一个字面量，`test/theme.test.ts` 直接失败。
+  - 透明色一律走通道 token：`rgba(var(--shadow-rgb),.14)`。改一个 hex，
+    所有阴影、遮罩、光环一起跟着变。
+  - 表单控件默认取 `--surface`。之前没声明背景的 input/textarea 吃的是浏览器
+    白色，浅色下看不出来，深色下是一块白板——这是这次审计里唯一一个真正
+    的 bug，其余都是把值换成名字。
+  - 主题只能改配色：版式、圆角、动效、层级都不在调色板里。
+
+  切换是一次属性写入（`<html data-theme>` + `color-scheme`），不重渲染、
+  不重载样式表；`index.html` 里有一段首帧脚本，在 bundle 解析前就按存的 id
+  上色，深色主题不会白闪。设置存在 `mdocs-theme`。
+
+  校验：`test/theme.test.ts`（列表一致性、存储降级、字面量审计、通道规则）
+  与 `scripts/verify/verify-themes.mjs`（真 Chrome：打开选择器、选主题、
+  再用一段 `[data-theme='probe']` 探针主题读取计算值，确认每个采样表面、
+  输入框和引用条都跟着变、未覆盖的 token 仍然继承、几何尺寸不动、移除探针后
+  数值精确复原）。
+
+## [Unreleased]
+
+### Added
+
+- **被评论的文字现在会在正文里被标出来。** 之前评论只在右侧留下一条引用，
+  回到正文时要靠“定位到引用”重新选中那段文字；一页里讨论多了，谁在说哪句话只能
+  靠记忆。
+
+  标记是运行时的 decoration，不是文档里的 mark：正文、Markdown、HTML、PDF
+  和服务器 schema 都不受影响，已解决的线程换成一条浅色虚线，正在看的那条
+  加深，并且可以在正文里直接点开对应讨论、在面板里点卡片反选正文里的句子，
+  两个方向都会滚动到对方的位置。
+
+  锚点是旧的绝对位置，所以只在“那段文字仍然成立”时才落点，之后跟着编辑
+  一起移动；文字被删掉时标记一并消失，不会去覆盖挪到这些位置上的新内容。
+
 ## [0.1.67] - 2026-11-13
 
 ### Fixed

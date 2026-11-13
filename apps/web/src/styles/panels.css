@@ -109,12 +109,12 @@
 
 .comment-compose span{font-size:11px;color:var(--text-muted)}
 
-.send-btn{height:27px;width:29px;border:0;background:var(--accent);color:#fff;border-radius:var(--radius-xs);display:grid;place-items:center;transition:var(--transition-colors)}
+.send-btn{height:27px;width:29px;border:0;background:var(--accent);color:var(--text-on-accent);border-radius:var(--radius-xs);display:grid;place-items:center;transition:var(--transition-colors)}
 .send-btn:hover:not(:disabled){background:var(--accent-strong)}
 /* the send control is the one press that deserves a beat: it acknowledges that
    the comment is on its way before the list re-renders */
 .send-btn:active:not(:disabled){transform:scale(.92);transition-duration:var(--duration-instant)}
-.send-btn:disabled{background:#9aa1ad;color:#fff}
+.send-btn:disabled{background:var(--surface-disabled);color:var(--text-on-accent)}
 
 /* ── 4. versions ───────────────────────────────────────────────── */
 .version-item{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border-subtle)}
@@ -153,13 +153,25 @@
 
 .comment-resolved{opacity:.65}
 
-.comment-anchor{display:block;border:0;background:#faf3e9;color:#8a5a2b;border-left:2px solid #d6a369;text-align:left;font-size:11px;line-height:1.5;margin:9px 0 0 33px;padding:5px 7px;max-width:calc(100% - 33px);overflow:hidden;text-overflow:ellipsis;transition:var(--transition-colors)}
-.comment-anchor:hover{background:#f7ecdb}
+/*
+ * The card whose text is lit up in the document.
+ *
+ * A left bar rather than a full tint: the list is a reading column, and a
+ * background wash on a 300px panel row collapses the separation between the
+ * thread you are looking at and the ones around it. The bar uses --accent
+ * because it is the same "this one is open" cue the marker's underline uses.
+ */
+.comment.is-active{border-left:2px solid var(--accent);padding-left:12px;margin-left:-14px;background:var(--accent-tint)}
+.comment{cursor:pointer;transition:background-color var(--duration-fast) var(--ease-standard)}
+.comment.is-active .comment-head b{color:var(--accent-strong)}
+
+.comment-anchor{display:block;border:0;background:var(--quote-bg);color:var(--quote-ink);border-left:2px solid var(--quote-line);text-align:left;font-size:11px;line-height:1.5;margin:9px 0 0 33px;padding:5px 7px;max-width:calc(100% - 33px);overflow:hidden;text-overflow:ellipsis;transition:var(--transition-colors)}
+.comment-anchor:hover{background:var(--quote-bg-hover)}
 .comment-anchor:active{transform:scale(.99);transition-duration:var(--duration-instant)}
 
-.anchor-preview{display:flex;align-items:center;gap:5px;background:#faf3e9;color:#8a5a2b;border-left:2px solid #d6a369;padding:5px 7px;font-size:11px;margin-bottom:7px}
+.anchor-preview{display:flex;align-items:center;gap:5px;background:var(--quote-bg);color:var(--quote-ink);border-left:2px solid var(--quote-line);padding:5px 7px;font-size:11px;margin-bottom:7px}
 
-.anchor-preview button{margin-left:auto;border:0;background:transparent;display:grid;place-items:center;color:#8a5a2b;transition:var(--transition-colors)}
+.anchor-preview button{margin-left:auto;border:0;background:transparent;display:grid;place-items:center;color:var(--quote-ink);transition:var(--transition-colors)}
 .anchor-preview button:active{transform:scale(.9);transition-duration:var(--duration-instant)}
 
 .collab-status{z-index:var(--z-menu)}
@@ -169,7 +181,7 @@
 
 .activity-item{display:flex;gap:9px;padding:12px 0;border-bottom:1px solid var(--border-subtle)}
 
-.activity-avatar{width:25px;height:25px;flex:0 0 25px;border-radius:50%;display:grid;place-items:center;background:#eef1f4;color:#5e7387;font-size:11px;font-weight:700}
+.activity-avatar{width:25px;height:25px;flex:0 0 25px;border-radius:50%;display:grid;place-items:center;background:var(--surface-sunken);color:var(--tint-slate-ink);font-size:11px;font-weight:700}
 
 .activity-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
 

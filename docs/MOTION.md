@@ -10,7 +10,8 @@ anything that only changes state, and nothing that makes the user wait.
 
 | File | Owns | Never contains |
 | --- | --- | --- |
-| `styles/tokens.css` | Every duration, easing, spring curve, shadow, radius | Selectors with descendants, layout, state |
+| `styles/tokens.css` | Every duration, easing, spring curve, shadow, radius, and the default colour palette | Selectors with descendants, layout, state |
+| `styles/themes.css` | Palette overrides per `[data-theme]` | Layout, motion, or any value a theme should not move |
 | `styles/motion.css` | Keyframes, motion utilities, reduced-motion rules | Component-specific rules |
 | `lib/motion.ts` | The same numbers for JS, plus `prefersReducedMotion()` | CSS, React |
 

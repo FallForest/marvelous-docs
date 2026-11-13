@@ -1,0 +1,10 @@
+{
+  "desktop": "1440 px",
+  "mobile": "390 px",
+  "icons": 9,
+  "decorations": 4,
+  "brokenImages": 0,
+  "consoleOrHttpErrors": [],
+  "horizontalOverflow": false,
+  "backgroundSwitches": "passed"
+}

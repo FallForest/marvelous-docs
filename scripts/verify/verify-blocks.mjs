@@ -89,15 +89,36 @@ await build({
 
 const { readFile } = await import('node:fs/promises')
 const bundleSource = await readFile(join(WORK, 'harness.js'), 'utf8')
-const cssSource = await readFile(join(WORK, 'harness.css'), 'utf8').catch(() => '')
+/*
+ * Offline first: the @import for the web fonts is unreachable in a verifier and
+ * a pending import keeps the document in "loading" — the harness then renders
+ * nothing and every selector misses. Drop it line-wise (its URL contains
+ * semicolons, so a regex up to the first one leaves a fragment the parser reads
+ * as a selector and silently discards the rest of the sheet).
+ */
+const cssSource = (await readFile(join(WORK, 'harness.css'), 'utf8').catch(() => ''))
+  .replace(/^@import[^\n]*\n/gm, '')
 
+/*
+ * Served as separate files: the bundle carries the literal "</script>" inside
+ * React's error strings, which would end an inline script element early.
+ */
 const page = `<!doctype html><html lang="zh"><head><meta charset="utf-8"><title>block harness</title>
-<style>${cssSource}
-html,body{margin:0;background:#f7f8fa}
-#root{min-height:100vh}
-</style></head><body><div id="root"></div><script>${bundleSource}</script></body></html>`
+<link rel="stylesheet" href="/harness.css">
+<style>html,body{margin:0;background:#f7f8fa}#root{min-height:100vh}</style>
+</head><body><div id="root"></div><script src="/harness.js"></script></body></html>`
 
 const server = createServer((request, response) => {
+  if (request.url === '/harness.js') {
+    response.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8' })
+    response.end(bundleSource)
+    return
+  }
+  if (request.url === '/harness.css') {
+    response.writeHead(200, { 'Content-Type': 'text/css; charset=utf-8' })
+    response.end(cssSource)
+    return
+  }
   response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
   response.end(page)
 })

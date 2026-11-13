@@ -138,14 +138,38 @@ await build({
 })
 
 const bundleSource = await readFile(join(WORK, 'harness.js'), 'utf8')
-const cssSource = await readFile(join(WORK, 'harness.css'), 'utf8').catch(() => '')
+/*
+ * Offline first. The @import for the web fonts is dropped line-wise (its URL
+ * contains semicolons, so a regex up to the first one leaves a fragment the
+ * parser reads as a selector and then drops every rule after it — including the
+ * user-select rules this script exists to check). An unreachable import also
+ * keeps the document in "loading" for as long as the browser will wait, which is
+ * what made the harness look empty.
+ */
+const cssSource = (await readFile(join(WORK, 'harness.css'), 'utf8').catch(() => ''))
+  .replace(/^@import[^\n]*\n/gm, '')
 
+/*
+ * Three files, not one inlined document: the bundle contains the literal text
+ * "</script>" inside React's own error strings, and an inline <script> would end
+ * at the first of them.
+ */
 const page = `<!doctype html><html lang="zh"><head><meta charset="utf-8"><title>selectability</title>
-<style>${cssSource}
-html,body{margin:0;background:#fff}
-</style></head><body><div id="root"></div><script>${bundleSource}</script></body></html>`
+<link rel="stylesheet" href="/harness.css">
+<style>html,body{margin:0;background:#fff}</style>
+</head><body><div id="root"></div><script src="/harness.js"></script></body></html>`
 
 const server = createServer((request, response) => {
+  if (request.url === '/harness.js') {
+    response.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8' })
+    response.end(bundleSource)
+    return
+  }
+  if (request.url === '/harness.css') {
+    response.writeHead(200, { 'Content-Type': 'text/css; charset=utf-8' })
+    response.end(cssSource)
+    return
+  }
   response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
   response.end(page)
 })

@@ -1,0 +1,365 @@
+{
+  "version": 1,
+  "generator": "built-in image_gen",
+  "assets": [
+    {
+      "id": "brand-spark",
+      "name": "折纸星标",
+      "category": "icons",
+      "usage": "品牌标志 · 40–56 px",
+      "png": "icons/brand-spark.png",
+      "webp": "icons/brand-spark.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 75,
+        "top": 131,
+        "width": 1104,
+        "height": 1004
+      },
+      "crop": {
+        "left": 53,
+        "top": 109,
+        "width": 1148,
+        "height": 1048
+      },
+      "transparentFraction": 0.657,
+      "partialAlphaFraction": 0.3429,
+      "pngBytes": 61774,
+      "webpBytes": 14410
+    },
+    {
+      "id": "notebook",
+      "name": "手绘笔记本",
+      "category": "icons",
+      "usage": "文档标题 · 56–80 px",
+      "png": "icons/notebook.png",
+      "webp": "icons/notebook.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 184,
+        "top": 83,
+        "width": 899,
+        "height": 1044
+      },
+      "crop": {
+        "left": 162,
+        "top": 61,
+        "width": 943,
+        "height": 1088
+      },
+      "transparentFraction": 0.5984,
+      "partialAlphaFraction": 0.4015,
+      "pngBytes": 78735,
+      "webpBytes": 18532
+    },
+    {
+      "id": "idea-bulb",
+      "name": "灵感灯泡",
+      "category": "icons",
+      "usage": "提示卡片 · 32–48 px",
+      "png": "icons/idea-bulb.png",
+      "webp": "icons/idea-bulb.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 199,
+        "top": 114,
+        "width": 860,
+        "height": 885
+      },
+      "crop": {
+        "left": 177,
+        "top": 92,
+        "width": 904,
+        "height": 929
+      },
+      "transparentFraction": 0.8231,
+      "partialAlphaFraction": 0.1769,
+      "pngBytes": 57891,
+      "webpBytes": 16410
+    },
+    {
+      "id": "folder",
+      "name": "纸质文件夹",
+      "category": "icons",
+      "usage": "文档树 · 24–32 px",
+      "png": "icons/folder.png",
+      "webp": "icons/folder.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 96,
+        "top": 217,
+        "width": 1056,
+        "height": 829
+      },
+      "crop": {
+        "left": 74,
+        "top": 195,
+        "width": 1100,
+        "height": 873
+      },
+      "transparentFraction": 0.4852,
+      "partialAlphaFraction": 0.5147,
+      "pngBytes": 68541,
+      "webpBytes": 11674
+    },
+    {
+      "id": "document",
+      "name": "折角文档",
+      "category": "icons",
+      "usage": "文档树 · 24–32 px",
+      "png": "icons/document.png",
+      "webp": "icons/document.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 253,
+        "top": 146,
+        "width": 740,
+        "height": 985
+      },
+      "crop": {
+        "left": 231,
+        "top": 124,
+        "width": 784,
+        "height": 1029
+      },
+      "transparentFraction": 0.5462,
+      "partialAlphaFraction": 0.4537,
+      "pngBytes": 78802,
+      "webpBytes": 14782
+    },
+    {
+      "id": "home",
+      "name": "首页小屋",
+      "category": "icons",
+      "usage": "导航 · 24–32 px",
+      "png": "icons/home.png",
+      "webp": "icons/home.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 189,
+        "top": 260,
+        "width": 870,
+        "height": 808
+      },
+      "crop": {
+        "left": 167,
+        "top": 238,
+        "width": 914,
+        "height": 852
+      },
+      "transparentFraction": 0.6923,
+      "partialAlphaFraction": 0.3077,
+      "pngBytes": 91530,
+      "webpBytes": 21352
+    },
+    {
+      "id": "favorite-star",
+      "name": "铅笔收藏星",
+      "category": "icons",
+      "usage": "收藏入口 · 24–32 px",
+      "png": "icons/favorite-star.png",
+      "webp": "icons/favorite-star.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 159,
+        "top": 205,
+        "width": 932,
+        "height": 860
+      },
+      "crop": {
+        "left": 137,
+        "top": 183,
+        "width": 976,
+        "height": 904
+      },
+      "transparentFraction": 0.4992,
+      "partialAlphaFraction": 0.5008,
+      "pngBytes": 75054,
+      "webpBytes": 19658
+    },
+    {
+      "id": "trash",
+      "name": "回收站",
+      "category": "icons",
+      "usage": "导航 · 24–32 px",
+      "png": "icons/trash.png",
+      "webp": "icons/trash.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 221,
+        "top": 184,
+        "width": 796,
+        "height": 902
+      },
+      "crop": {
+        "left": 199,
+        "top": 162,
+        "width": 840,
+        "height": 946
+      },
+      "transparentFraction": 0.6593,
+      "partialAlphaFraction": 0.3407,
+      "pngBytes": 88091,
+      "webpBytes": 18876
+    },
+    {
+      "id": "comment",
+      "name": "纸质评论气泡",
+      "category": "icons",
+      "usage": "评论入口 · 24–32 px",
+      "png": "icons/comment.png",
+      "webp": "icons/comment.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 155,
+        "top": 313,
+        "width": 943,
+        "height": 673
+      },
+      "crop": {
+        "left": 133,
+        "top": 291,
+        "width": 987,
+        "height": 717
+      },
+      "transparentFraction": 0.6579,
+      "partialAlphaFraction": 0.3421,
+      "pngBytes": 67791,
+      "webpBytes": 14268
+    },
+    {
+      "id": "marker-yellow",
+      "name": "淡黄荧光笔",
+      "category": "decor",
+      "usage": "标题下划线 / 短语高亮",
+      "png": "decor/marker-yellow.png",
+      "webp": "decor/marker-yellow.webp",
+      "width": 1024,
+      "height": 85,
+      "sourceWidth": 2172,
+      "sourceHeight": 724,
+      "alphaBounds": {
+        "left": 80,
+        "top": 300,
+        "width": 2005,
+        "height": 145
+      },
+      "crop": {
+        "left": 68,
+        "top": 288,
+        "width": 2029,
+        "height": 169
+      },
+      "transparentFraction": 0.8039,
+      "partialAlphaFraction": 0.1961,
+      "pngBytes": 120448,
+      "webpBytes": 33768
+    },
+    {
+      "id": "marker-sage",
+      "name": "鼠尾草绿涂抹",
+      "category": "decor",
+      "usage": "选中背景 / 章节标记",
+      "png": "decor/marker-sage.png",
+      "webp": "decor/marker-sage.webp",
+      "width": 1024,
+      "height": 106,
+      "sourceWidth": 2172,
+      "sourceHeight": 724,
+      "alphaBounds": {
+        "left": 84,
+        "top": 270,
+        "width": 2006,
+        "height": 186
+      },
+      "crop": {
+        "left": 72,
+        "top": 258,
+        "width": 2030,
+        "height": 210
+      },
+      "transparentFraction": 0.7132,
+      "partialAlphaFraction": 0.2868,
+      "pngBytes": 183619,
+      "webpBytes": 49308
+    },
+    {
+      "id": "washi-tape",
+      "name": "半透纸胶带",
+      "category": "decor",
+      "usage": "评论卡片 / 便签装饰",
+      "png": "decor/washi-tape.png",
+      "webp": "decor/washi-tape.webp",
+      "width": 1024,
+      "height": 227,
+      "sourceWidth": 2172,
+      "sourceHeight": 724,
+      "alphaBounds": {
+        "left": 162,
+        "top": 156,
+        "width": 1833,
+        "height": 387
+      },
+      "crop": {
+        "left": 150,
+        "top": 144,
+        "width": 1857,
+        "height": 411
+      },
+      "transparentFraction": 0.5163,
+      "partialAlphaFraction": 0.4837,
+      "pngBytes": 326868,
+      "webpBytes": 80054
+    },
+    {
+      "id": "paper-ivory",
+      "name": "奶油纸张纹理",
+      "category": "textures",
+      "usage": "背景纹理 · 建议降低不透明度",
+      "png": "textures/paper-ivory.png",
+      "webp": "textures/paper-ivory.webp",
+      "width": 768,
+      "height": 768,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 0,
+        "top": 0,
+        "width": 1254,
+        "height": 1254
+      },
+      "crop": null,
+      "transparentFraction": 0,
+      "partialAlphaFraction": 0,
+      "pngBytes": 671613,
+      "webpBytes": 21634
+    }
+  ]
+}

@@ -48,6 +48,7 @@ hooks/                    State, data ownership, and lifecycle that outlives one
   useSharing.ts           Share dialog data: members, ACL, public links, scope toggle
   useInvite.ts            Invite form: address, role, one-time link, copy feedback
   useDocumentExport.ts    Export menu: markdown/html/json download, print, PDF progress
+  useTheme.ts             Active theme: stored id, apply, switch
 
 pages/                    One file per route-level screen
   LoginPage.tsx           Sign-in and invite redemption
@@ -62,6 +63,7 @@ components/
     Sidebar.tsx           Workspace switcher, search, nav, document tree
     TopBar.tsx            Breadcrumb, save state, presence, document actions
     ExportMenu.tsx        Export format menu
+    ThemeMenu.tsx         Theme picker (radiogroup over the registry)
     TemplateMenu.tsx      New-document menu + template labels
   tree/                   Document tree row
     TreeItem.tsx
@@ -94,6 +96,7 @@ lib/                      Pure logic and browser helpers (no JSX, no React state
   app-types.ts            Shell-level unions shared across pages
   format.ts               Dates, word count, excerpting
   motion.ts               Motion contract: durations, spring presets, stagger
+  theme.ts                Theme registry, storage, and the data-theme write
   tree.ts                 Tree building, filtering, depth helpers
   trash.ts                Trash countdown and expiry labels
   types.ts                API payload types
@@ -103,6 +106,7 @@ lib/                      Pure logic and browser helpers (no JSX, no React state
     index.ts              The extension list DocumentEditor and VersionPreview mount
     blocks.ts             Block spans and move planning for the drag handle
     code-block.ts         Code block boundaries: Enter to leave, Backspace to remove
+    comment-marks.ts      Comment markers: anchors → view decorations, mapped through edits
     font-size.ts          Custom FontSize extension
     highlight.ts          lowlight instance + the grammars the editor ships
     image.ts              DocumentImage extension
@@ -116,8 +120,10 @@ lib/                      Pure logic and browser helpers (no JSX, no React state
 
 styles/                   CSS layers, imported in cascade order by index.css
   index.css               Entry point: font import + ordered layer imports
-  tokens.css              Design values only: colour, type, radii, shadows,
-                          z-index, and every duration / easing / spring curve
+  tokens.css              Design values only: colour palette, type, radii,
+                          shadows, z-index, every duration / easing / spring curve
+  themes.css              Palette overrides per [data-theme] — the only file a
+                          new theme touches (see docs/THEMES.md)
   base.css                Reset + shell geometry; styles no specific screen
   motion.css              Keyframes and motion utilities (.motion-rise,
                           .motion-sheet, .stagger, ...) + reduced-motion rules
@@ -156,6 +162,7 @@ That is what keeps "make it feel snappier" a one-file change — see
 | Styling for an existing component | The matching layer in `styles/` |
 | A new screen's styles | `styles/pages.css`, scoped to that screen's root class |
 | A new design value (colour, duration, curve) | A token in `styles/tokens.css` |
+| A new theme | An entry in `lib/theme.ts`, a block in `styles/themes.css`, and an id in the `index.html` pre-paint map — see [THEMES.md](./THEMES.md) |
 | A new animation | A keyframe + utility in `styles/motion.css` |
 | A new modal | `components/dialogs/`, styled by `styles/dialogs.css` |
 

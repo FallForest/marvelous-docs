@@ -74,7 +74,7 @@
 .version-modal h2{font-size:15px;margin:1px 0 4px}
 .version-modal header p{margin:0;font-size:11px;color:var(--text-muted)}
 
-.version-modal-body{flex:1;min-height:0;overflow:auto;padding:22px 26px;background:#fdfdfe}
+.version-modal-body{flex:1;min-height:0;overflow:auto;padding:22px 26px;background:var(--surface-soft)}
 .version-content{font-size:13px;outline:0}
 .version-state{display:flex;align-items:center;justify-content:center;gap:8px;min-height:180px;font-size:11px;color:var(--text-muted)}
 .version-error{color:var(--danger)}
@@ -101,7 +101,7 @@
 .move-row:hover{background:var(--surface-sunken)}
 .move-row:active{transform:scale(.99);transition-duration:var(--duration-instant)}
 .move-row.selected{background:var(--accent-soft);color:var(--accent-strong);font-weight:600}
-.move-row svg{flex:0 0 auto;color:#b28a4e}
+.move-row svg{flex:0 0 auto;color:var(--tint-amber-ink)}
 .move-empty{padding:20px;text-align:center;font-size:11px;color:var(--text-muted)}
 
 .move-modal>footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;border-top:1px solid var(--border-subtle);padding-top:13px;font-size:11px;color:var(--text-muted)}

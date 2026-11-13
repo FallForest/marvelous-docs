@@ -16,11 +16,14 @@ type DocumentPanelProps = {
   versions: Version[]
   commentText: string
   commentAnchor: Comment['anchor']
+  /** The thread open in the text, highlighted here and scrolled into view. */
+  activeCommentId: string | null
   onTab: (tab: RightTab) => void
   onClose: () => void
   onCommentText: (value: string) => void
   onClearAnchor: () => void
   onSubmitComment: () => void
+  onActiveComment: (id: string | null) => void
   onReply: (comment: Comment) => void
   onCommentStatus: (comment: Comment, status: 'open' | 'resolved') => void
   onPreviewVersion: (version: Version) => void
@@ -37,8 +40,11 @@ type DocumentPanelProps = {
  * as putting it away.
  */
 export default function DocumentPanel(props: DocumentPanelProps) {
-  const { doc, token, open, tab, comments, versions, commentText, commentAnchor } = props
+  const { doc, token, open, tab, comments, versions, commentText, commentAnchor, activeCommentId } = props
   const reduced = useReducedMotion()
+  const panelRef = useRef<HTMLElement | null>(null)
+  /** Cards by comment id, so an opened thread can be scrolled to. */
+  const cards = useRef<Map<string, HTMLDivElement>>(new Map())
   const known = useRef<Set<string>>(new Set())
   const [freshId, setFreshId] = useState('')
 
@@ -56,7 +62,22 @@ export default function DocumentPanel(props: DocumentPanelProps) {
     return () => window.clearTimeout(timer)
   }, [comments, reduced])
 
-  const panelRef = useRef<HTMLElement | null>(null)
+  /**
+   * Brings the open thread into view.
+   *
+   * The tint can start from either side: pressing the marked text scrolls the
+   * card up, and pointing at a card lights the sentence. Scrolling is smooth
+   * only when the user has not asked for reduced motion — the panel slide is
+   * already a cross-fade in that mode, and a long scroll would be the one
+   * movement left that ignores the preference.
+   */
+  useEffect(() => {
+    if (!activeCommentId || !open) return
+    const card = cards.current.get(activeCommentId)
+    if (!card) return
+    card.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' })
+  }, [activeCommentId, open, reduced])
+
   /**
    * inert, not just aria-hidden: the panel stays mounted so it can slide out, and
    * a mounted-but-hidden panel would still expose its buttons to Tab. `inert`
@@ -94,15 +115,37 @@ export default function DocumentPanel(props: DocumentPanelProps) {
       {comments.length === 0
         ? <div className="panel-empty"><MessageCircle size={21} /><b>还没有评论</b><span>选中文本后点击评论开始讨论</span></div>
         : <div className="comment-list">{comments.map((comment) => <div
-          className={'comment' + (comment.status === 'resolved' ? ' comment-resolved' : '') + (comment.id === freshId ? ' stagger' : '')}
+          className={'comment'
+            + (comment.status === 'resolved' ? ' comment-resolved' : '')
+            + (comment.id === freshId ? ' stagger' : '')
+            + (comment.id === activeCommentId ? ' is-active' : '')}
           style={comment.id === freshId ? { animationDelay: '0ms' } : undefined}
           key={comment.id}
+          ref={(node) => {
+            if (node) cards.current.set(comment.id, node)
+            else cards.current.delete(comment.id)
+          }}
+          /* Selecting a card is what ties the panel to the page: the sentence it
+             is about lights up in the text at the same moment. */
+          onClick={() => props.onActiveComment(comment.id)}
         >
           <div className="comment-head">
             <div className="avatar small-avatar">{(comment.userName || '?')[0]!.toUpperCase()}</div>
             <div><b>{comment.userName || '成员'}</b><small>{formatDate(comment.createdAt)}{comment.status === 'resolved' ? ' · 已解决' : ''}</small></div>
           </div>
-          {comment.anchor?.text && <button className="comment-anchor" title="定位到引用" onClick={() => window.dispatchEvent(new CustomEvent('mdoc-focus-anchor', { detail: comment.anchor }))}>“{comment.anchor.text.slice(0, 80)}”</button>}
+          {comment.anchor?.text && <button
+            type="button"
+            className="comment-anchor"
+            title="定位到引用"
+            onClick={(event) => {
+              // The card's own click already marks this thread active; stopping
+              // propagation here would leave the button and the card disagreeing
+              // about which thread is open.
+              event.stopPropagation()
+              props.onActiveComment(comment.id)
+              window.dispatchEvent(new CustomEvent('mdoc-focus-anchor', { detail: comment.anchor }))
+            }}
+          >“{comment.anchor.text.slice(0, 80)}”</button>}
           <p>{comment.body}</p>
           <div className="comment-actions">
             <button type="button" onClick={() => props.onReply(comment)}>回复</button>

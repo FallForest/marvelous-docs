@@ -1,6 +1,7 @@
-import { ArrowDownToLine, ChevronRight, History, MessageCircle, PanelLeftClose, Share2, Star } from 'lucide-react'
+import { ArrowDownToLine, ChevronRight, History, MessageCircle, Palette, PanelLeftClose, Share2, Star } from 'lucide-react'
 import type { CSSProperties } from 'react'
 import ExportMenu from '../layout/ExportMenu'
+import ThemeMenu from '../layout/ThemeMenu'
 import type { CollabStatus } from '../../lib/app-types'
 import type { ExportTarget, SaveStatus } from '../../lib/types'
 
@@ -17,6 +18,11 @@ type TopBarProps = {
   hasDocument: boolean
   favorite: boolean
   exportOpen: boolean
+  /** Current palette id, and whether the appearance menu is open. */
+  themeId: string
+  themeOpen: boolean
+  onThemeMenu: (open: boolean) => void
+  onTheme: (id: string) => void
   onOpenSidebar: () => void
   onFavorite: () => void
   onExport: (format: ExportTarget) => void
@@ -65,6 +71,18 @@ export default function TopBar(props: TopBarProps) {
       <span className="top-divider" aria-hidden="true" />
       <div className="icon-group">
         {props.hasDocument && <button type="button" className={'icon-btn favorite-btn' + (props.favorite ? ' is-favorite' : '')} aria-label={props.favorite ? '取消收藏' : '收藏文档'} aria-pressed={props.favorite} title={props.favorite ? '取消收藏' : '收藏文档'} onClick={props.onFavorite}><Star size={16} fill={props.favorite ? 'currentColor' : 'none'} /></button>}
+        <div className="menu-anchor">
+          <button
+            type="button"
+            className="icon-btn theme-btn"
+            aria-label="切换主题"
+            title="切换主题"
+            aria-haspopup="menu"
+            aria-expanded={props.themeOpen}
+            onClick={() => props.onThemeMenu(!props.themeOpen)}
+          ><Palette size={16} /></button>
+          <ThemeMenu open={props.themeOpen} currentId={props.themeId} onPick={props.onTheme} onClose={() => props.onThemeMenu(false)} />
+        </div>
         <div className="menu-anchor">
           <button type="button" className="icon-btn" aria-label="导出文档" title="导出文档" aria-haspopup="menu" aria-expanded={props.exportOpen} disabled={!props.hasDocument} onClick={() => props.onExportMenu(!props.exportOpen)}><ArrowDownToLine size={16} /></button>
           <ExportMenu open={props.exportOpen} onSelect={props.onExport} onClose={() => props.onExportMenu(false)} />

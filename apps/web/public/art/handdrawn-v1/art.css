@@ -1,0 +1,8 @@
+/* AI-generated material layers. Keep content and hit targets in real HTML. */
+.mdocs-art-icon { display: inline-block; width: var(--art-size, 28px); height: var(--art-size, 28px); object-fit: contain; flex: 0 0 auto; vertical-align: middle; }
+.mdocs-art-mark { position: relative; isolation: isolate; }
+.mdocs-art-mark::before { content: ''; position: absolute; z-index: -1; pointer-events: none; inset: 48% -6px -4px; background: url('./decor/marker-yellow.webp') center / 100% 100% no-repeat; }
+.mdocs-art-mark--sage::before { inset: -3px -10px; background-image: url('./decor/marker-sage.webp'); opacity: .7; }
+.mdocs-art-paper { position: relative; isolation: isolate; background-color: #f8f5ec; }
+.mdocs-art-paper::before { content: ''; position: absolute; z-index: -1; pointer-events: none; inset: 0; background: url('./textures/paper-ivory.webp') repeat; background-size: 768px 768px; opacity: .35; border-radius: inherit; }
+.mdocs-art-tape { position: absolute; width: 70px; height: auto; top: -14px; right: 10px; transform: rotate(13deg); pointer-events: none; }
