@@ -78,14 +78,21 @@ fi
 echo "Pulling configured images"
 compose pull api web
 
-echo "Building the in-app updater"
 services="$(compose config --services)"
 has_service() {
   printf '%s\n' "$services" | grep -Fxq "$1"
 }
-if has_service updater; then
-  compose build updater
-fi
+
+# The updater is NOT rebuilt here.
+#
+# It is the one service built from this directory, and the Dockerfile only
+# copies a single .mjs file, so a rebuild per update accomplished nothing except
+# leaving the previous image dangling — 89 MB discarded on every run, which is
+# how this deployment reached twenty images for four services. The agent answers
+# /status and /update; neither changes between releases. Rebuild it by hand when
+# scripts/update-agent.mjs actually changes:
+#
+#   docker compose build updater && docker compose up -d --no-deps updater
 
 # Recreate only the services that serve traffic.
 #
@@ -110,6 +117,35 @@ done
 
 if [ "$healthy" -eq 1 ]; then
   echo "Update completed successfully"
+
+  # Image retention, same rule as the drive's updater.
+  #
+  # Old tags are not backups: a rollback is wanted inside a run, not across
+  # releases. TAG_KEEP=1 keeps the tags this run landed on and drops the rest.
+  #
+  # Selection is by creation time, never by version sort. On a downgrade the
+  # highest version number is exactly the image being replaced, so "keep the
+  # highest" deletes the one the container is running. The tags .env names are
+  # therefore always included, then the newest TAG_KEEP entries are taken.
+  KEEP_TAGS="${TAG_KEEP:-1}"
+  if [ "$KEEP_TAGS" -gt 0 ]; then
+    for repo in $(sed -n 's/^\(API_IMAGE\|WEB_IMAGE\)=//p' .env | sed 's/:[^:]*$//' | sort -u); do
+      deployed_tag="$(sed -n 's/^\(API_IMAGE\|WEB_IMAGE\)=//p' .env | grep -F "$repo:" | head -1)"
+      keep="$(printf '%s\n' "$deployed_tag" \
+        $(docker image ls --format '{{.Repository}}:{{.Tag}}' --filter "reference=$repo:*" \
+            | head -n "$KEEP_TAGS") \
+        | awk '!seen[$0]++' | head -n "$KEEP_TAGS")"
+      docker image ls --format '{{.Repository}}:{{.Tag}}' --filter "reference=$repo:*" \
+        | while IFS= read -r tag; do
+            if ! printf '%s\n' "$keep" | grep -Fxq "$tag"; then
+              echo "    dropping old image tag $tag"
+              docker rmi "$tag" >/dev/null 2>&1 || true
+            fi
+          done
+      echo "==> keeping $KEEP_TAGS image tag(s) of $repo"
+    done
+    docker image prune -f >/dev/null 2>&1 || true
+  fi
   exit 0
 fi
 
