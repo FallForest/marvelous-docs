@@ -8,10 +8,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- Complete the hand-drawn editor chrome with generated graphite formatting
-  icons, paper avatars, pencil separators, state-aware save marks and a paper
-  status margin with live word counts and keyboard hints. Code blocks now use
-  the same paper treatment for their language, move, delete and copy controls.
+- Complete the hand-drawn editor chrome with a consistent small line-icon
+  family for formatting, paper avatars and state-aware save marks. The tools
+  and status margin share one subtle paper background, light pencil separators
+  and a consistent type scale. Code blocks use paper treatments for their
+  language, move, delete and copy controls.
 - Carry the artwork through page edges, table cells, task checkboxes, quotes
   and the comment composer while retaining native editing and selection.
 - Open New on blank document, folder and Markdown import. Existing office

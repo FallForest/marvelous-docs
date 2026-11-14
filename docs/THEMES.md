@@ -65,6 +65,12 @@ cascade for the top bar, formatting toolbar and status margin. Code text remains
 monospace; task checkboxes remain native inputs with generated background art
 and a forced-colours fallback.
 
+The writing workspace owns one low-opacity paper texture. Its formatting and
+status bars stay transparent to avoid separate coloured bands. Toolbar glyphs
+share one 18px line family and stroke weight; the small command icons do not
+mix the optional bitmap letterforms and stationery illustrations. Pencil frames
+and marker states continue to use the actual generated material.
+
 ## The token contract
 
 | Group | Examples | Notes |

@@ -2,6 +2,10 @@
 
 使用内置 `image_gen`，以 `editor-concept.png` 为风格参考，累计生成 37 份美术素材。本轮新增 11 个格式、代码与任务图标，以及铅笔分隔线、协作头像纸底。每份均保留原始 PNG；网页版本仅整理透明空白、统一图标画布并缩小编码，没有用代码重画素材。
 
+最新 UI 调整中，密集的格式工具栏统一使用同一套小号单色线条图形，避免粗炭笔
+字母、彩色贴纸与细线图标混排。原有光栅工具图标保留在素材库作为备选；纸纹、
+铅笔边框、涂抹、代码块与任务框仍使用实际生成素材。
+
 ## 文件位置
 
 - 高清原图：`sources/`。
@@ -40,9 +44,9 @@
 | selection | 文档多选、任务操作 | 24–28 px |
 | new-document | 新建文档 | 24–28 px |
 | pencil-frame | 真实铅笔颗粒边框 | CSS border-image 九宫格切片，可缩放 |
-| undo / redo | 撤销与重做 | 24 px |
-| bold / italic / underline | 格式工具栏 | 24 px |
-| link / table / code / copy | 链接、表格、代码、复制 | 21–25 px |
+| undo / redo | 备选的手绘撤销与重做图标 | 24 px |
+| bold / italic / underline | 备选格式图标，主工具栏使用统一线条图形 | 24 px |
+| link / table / code / copy | 链接、表格备选图标及代码卡片操作 | 21–25 px |
 | check-empty / check-filled | 原生任务框与真实完成状态 | 25 px |
 | pencil-rule | 工具栏、代码、顶栏、底栏的颗粒分隔线 | 横向拉伸，2–3 px 高 |
 | avatar-badge | 协作成员头像纸底，姓名首字仍为 HTML | 31–35 px |
@@ -99,7 +103,7 @@ React 中使用独立图标：
 - 已验证桌面 1440 px、手机 390 px 下无横向溢出，所有图片加载成功，背景切换正常，无页面脚本及 HTTP 错误。
 - `asset-overview-v3.png` 是实际 HTML 使用这些素材的截图；截图下方示例直接使用真实文字和独立素材。
 - 素材使用固定的奶油、炭灰、淡黄和鼠尾草绿配色，适用于浅色主题；不支持 SVG 的 `currentColor` 换色。
-- 素材现已接入主应用的「手绘纸本」外观，可在顶栏「外观」切换；默认「纸本」仍保留。历史截图位于 `implementation/`、`implementation-v2/`，本轮编辑器、代码、顶部与底部的截图及验收结果位于 `implementation-v3/`。
+- 素材现已接入主应用的「手绘纸本」外观，可在顶栏「外观」切换；默认「纸本」仍保留。历史截图位于 `implementation/`、`implementation-v2/`、`implementation-v3/`，最新两栏协调与背景融合的截图及验收结果位于 `implementation-v4/`。
 
 如需重新导出网页素材：
 

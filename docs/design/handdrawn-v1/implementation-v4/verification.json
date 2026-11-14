@@ -1,0 +1,154 @@
+{
+  "checks": [
+    "Picker changes theme and preserves mounted editor",
+    "Multi-select / New controls are equally sized, aligned and unclipped",
+    "New menu and multi-select toggle/checkbox/batch bar remain functional",
+    "Real task NodeView uses sage checkbox, toggles and strikes completed text",
+    "Toolbar glyphs share 18px/1.65px stroke; controls share 32px height; all desktop commands fit; toolbar and footer inherit one continuous paper background; footer count and status share 14px type",
+    "Code header follows actual pre bounds, language menu opens and Copy returns exact text; code stays monospace",
+    "All visible artwork loads",
+    "Switch round trip preserves text, undo history and comment draft",
+    "Reload restores stored handdrawn theme before app paint",
+    "375 px short phone sidebar actions do not overlap tree; create menu stays inside viewport",
+    "390 px editor/sidebar/home do not overflow horizontally",
+    "New defaults to blank; office catalogue is optional, resets on reopen and disappears when API has no templates; blank POST contains no templateId or preset content",
+    "No page exceptions or missing HTTP assets"
+  ],
+  "screenshots": [
+    "editor-column-detail.png",
+    "handdrawn-editor.png",
+    "editor-toolbar-detail.png",
+    "editor-footer-detail.png",
+    "handdrawn-mobile-editor.png",
+    "paper-editor.png"
+  ],
+  "fixture": "Actual AppRoot and Tiptap, isolated in-memory REST API; live Yjs transport disabled in verifier only.",
+  "chrome": {
+    "width": 900,
+    "scroll": 900,
+    "buttonHeights": [
+      32
+    ],
+    "glyphs": [
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      }
+    ],
+    "toolbarBackground": "rgba(0, 0, 0, 0)",
+    "footerBackground": "rgba(0, 0, 0, 0)",
+    "footerFonts": [
+      "14px",
+      "14px",
+      "14px"
+    ],
+    "workspaceMaterial": "linear-gradient(rgba(255, 254, 249, 0.84), rgba(255, 254, 249, 0.84)), url(\"http://127.0.0.1:53734/art/handdrawn-v1/textures/paper-ivory.webp\")"
+  },
+  "saves": 1
+}

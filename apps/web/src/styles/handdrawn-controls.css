@@ -59,23 +59,7 @@
 [data-theme='handdrawn'] .comment-compose .send-btn:disabled{background:var(--surface-sunken);color:var(--text-muted);opacity:.65;box-shadow:none}
 [data-theme='handdrawn'] .comment-compose .send-btn:hover:not(:disabled){background:var(--surface-selected);color:var(--text)}
 
-/* The toolbar keeps typography commands as vectors, with visible paper selects
-   and marker active states rather than a mixture of stock select treatments. */
-[data-theme='handdrawn'] .editor-toolbar{min-height:50px;height:50px;flex-basis:50px;padding-block:5px;background-color:var(--surface-soft);border-bottom:1px solid var(--border-strong)}
-[data-theme='handdrawn'] .editor-toolbar .tb-btn{border:1px solid transparent;border-radius:6px 8px 5px 7px;color:var(--text-secondary)}
-[data-theme='handdrawn'] .editor-toolbar .tb-btn:hover:not(:disabled){border-color:var(--border);background-color:var(--surface);color:var(--text)}
-[data-theme='handdrawn'] .editor-toolbar .tb-btn.is-active,
-[data-theme='handdrawn'] .editor-toolbar .tb-btn[aria-expanded='true']{
-  border-color:var(--tint-sage-line);background-color:var(--tint-sage-softer);color:var(--accent-strong);
-  background-image:url('/art/handdrawn-v1/decor/marker-sage.webp');background-size:100% 85%;background-position:center;background-repeat:no-repeat;
-}
-[data-theme='handdrawn'] .editor-toolbar .tb-select{height:32px;border:1px solid var(--border-strong);border-radius:7px 5px 8px 6px;padding-inline:8px;background:var(--surface);color:var(--text);font-size:12px}
-[data-theme='handdrawn'] .editor-toolbar .tb-select:hover,
-[data-theme='handdrawn'] .editor-toolbar .tb-select[aria-expanded='true']{background:var(--surface-selected);border-color:var(--accent)}
-[data-theme='handdrawn'] .editor-toolbar .tb-btn .art-icon{width:23px;height:23px;flex-basis:23px}
-[data-theme='handdrawn'] .editor-toolbar .tb-color .art-icon{width:22px;height:22px}
-[data-theme='handdrawn'] .editor-toolbar .tb-color i{bottom:1px}
-[data-theme='handdrawn'] .editor-toolbar .tb-separator{height:20px;background:var(--border-strong);opacity:.7}
+/* Editor chrome is owned by handdrawn-editor-chrome.css. */
 [data-theme='handdrawn'] :is(.tb-menu-item,.menu-item) .art-icon{width:24px;height:24px;flex-basis:24px}
 [data-theme='handdrawn'] .tb-swatch{border-radius:42% 51% 46% 55%;border-color:var(--border-strong);box-shadow:1px 1px 0 rgba(var(--shadow-rgb),.08)}
 
@@ -136,8 +120,4 @@
   [data-theme='handdrawn'] .panel-tabbar .close-panel{width:36px;height:40px;flex-basis:36px}
 }
 @media (max-width:560px){
-  [data-theme='handdrawn'] .editor-toolbar{height:50px;flex-basis:50px;padding:3px 6px;gap:2px}
-  [data-theme='handdrawn'] .editor-toolbar .tb-select{height:44px;min-width:52px;padding-inline:6px}
-  [data-theme='handdrawn'] .editor-toolbar .tb-size{min-width:44px}
-  [data-theme='handdrawn'] .editor-toolbar .tb-btn{height:44px}
 }

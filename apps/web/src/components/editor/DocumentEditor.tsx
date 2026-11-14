@@ -537,7 +537,7 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
     <div className="editor-footer">
       <span className="footer-count">字数 <span className="footer-count-value">{words}</span></span>
       <span className="meta-divider" />
-      <span className={'footer-save ' + saveStatus}>{saveStatus === 'saving' ? '正在保存…' : saveStatus === 'error' ? '保存失败' : '已保存'}</span>
+      <span className={'footer-save ' + saveStatus}>{saveStatus === 'saved' && <Check className="handdrawn-only footer-save-icon" size={14} aria-hidden="true" />}{saveStatus === 'saving' ? '正在保存…' : saveStatus === 'error' ? '保存失败' : '已保存'}</span>
       <span className="footer-spacer" />
       <span className="footer-hint">{provider
         ? <>实时协作已开启 <span className="footer-hint-divider">·</span> <kbd>Ctrl/⌘+S</kbd> 强制保存</>
