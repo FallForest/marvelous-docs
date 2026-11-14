@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 
 type ArtIconName = 'brand-spark' | 'notebook' | 'idea-bulb' | 'folder' | 'document' | 'home' | 'favorite-star' | 'trash' | 'comment'
   | 'search' | 'help' | 'logout' | 'palette' | 'download' | 'history' | 'share' | 'shield' | 'selection' | 'new-document'
+  | 'undo' | 'redo' | 'bold' | 'italic' | 'underline' | 'link' | 'table' | 'check-empty' | 'check-filled' | 'code' | 'copy'
 
 type ArtIconProps = {
   name: ArtIconName

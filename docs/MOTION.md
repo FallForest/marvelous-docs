@@ -18,7 +18,8 @@ anything that only changes state, and nothing that makes the user wait.
 Every other layer — `base.css`, `surfaces.css`, `dialogs.css`,
 `navigation.css`, `panels.css`, `editor.css`, `content.css`, `shell.css`,
 `pages.css`, `updates.css`, `handdrawn.css`, `handdrawn-navigation.css`,
-`handdrawn-content.css`, `handdrawn-controls.css`, `handdrawn-materials.css` — only *uses* these names. The hand-drawn skin replaces
+`handdrawn-content.css`, `handdrawn-controls.css`, `handdrawn-materials.css`,
+`handdrawn-writing.css`, `handdrawn-editor-chrome.css` — only *uses* these names. The hand-drawn skin replaces
 material, radius and shadow treatment under its root theme selector; durations,
 easing and interaction timing continue to use the shared motion tokens. A rule that hard-codes
 `220ms` or `ease-in-out` is a bug: it will not be retuned when the rest of the

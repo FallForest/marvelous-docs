@@ -189,6 +189,19 @@
 [data-theme='handdrawn'] .template-menu .menu-item-copy{min-width:0}
 [data-theme='handdrawn'] .template-menu .menu-item-copy b{font-size:13px;line-height:1.5}
 [data-theme='handdrawn'] .template-menu .menu-item-copy small{font-size:11px;line-height:1.55}
+/* Creation choices exist in both appearances; office templates are an explicit
+   secondary view instead of filling the main New menu. */
+.template-menu .template-menu-body{display:flex;flex-direction:column;gap:2px;min-width:0}
+.template-menu .menu-item.template-primary{min-height:54px;background:var(--surface-muted);border:1px solid var(--border);border-radius:6px}
+.template-menu .template-primary .menu-item-copy small{white-space:normal;line-height:1.5}
+.template-menu .template-office-entry{min-height:48px}
+.template-menu .template-office-entry .template-chevron{margin-left:auto;flex:0 0 14px}
+.template-menu .template-note{margin:0;padding:2px 9px 10px;font-size:11px;line-height:1.65;color:var(--text-muted);white-space:normal}
+.template-menu .template-back{font-size:12px;color:var(--text-secondary)}
+[data-theme='handdrawn'] .template-menu .menu-item.template-primary{min-height:60px;margin-bottom:3px;background:var(--tint-sage-softer);border-color:var(--tint-sage-line);border-radius:6px 9px 5px 8px}
+[data-theme='handdrawn'] .template-menu .template-primary .art-icon{width:29px;height:31px;flex-basis:29px}
+[data-theme='handdrawn'] .template-menu .template-note{padding-inline:10px;font-size:12px;line-height:1.7}
+[data-theme='handdrawn'] .template-menu .menu-item.template-office-entry{min-height:56px}
 [data-theme='handdrawn'] .workspace-menu .workspace-menu-head{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:9px 10px 12px;margin-bottom:5px;border-bottom:1px solid var(--border)}
 [data-theme='handdrawn'] .workspace-menu .workspace-menu-head b{font-family:var(--font-handwritten);font-size:19px;line-height:1.4}
 [data-theme='handdrawn'] .workspace-menu .workspace-menu-head>span{font-size:11px;color:var(--text-muted)}

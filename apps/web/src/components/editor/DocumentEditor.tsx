@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { EditorContent, useEditor } from '@tiptap/react'
 import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
-import { ArrowDown, ArrowUp, Check, Copy as CopyIcon, FileText, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, Check, Code2, Copy as CopyIcon, FileText, Trash2 } from 'lucide-react'
 import EditorToolbar from './EditorToolbar'
 import BubbleToolbar from './BubbleToolbar'
 import { FindReplace, OutlinePanel } from './FindReplace'
@@ -413,6 +413,7 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
         style={{ top: block.top, left: block.left, width: block.width }}
         contentEditable={false}
       >
+        <span className="code-language-art handdrawn-only" aria-hidden="true"><ArtIcon name="code" fallback={<Code2 size={16} />} /></span>
         <LanguagePicker
           value={block.language}
           onChange={(id) => {
@@ -481,11 +482,11 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
               if (!node) return
               editor.view.dispatch(tr.delete(block.pos, block.pos + node.nodeSize))
             }}
-          ><Trash2 size={13} /></button>
+          ><ArtIcon name="trash" fallback={<Trash2 size={13} />} /></button>
         </span>
         <button
           type="button"
-          className={'code-overlay-copy' + (copyState?.pos === block.pos ? (copyState.ok ? ' copied' : ' failed') : '')}
+          className={'code-overlay-copy sketch-frame' + (copyState?.pos === block.pos ? (copyState.ok ? ' copied' : ' failed') : '')}
           aria-label="复制代码"
           title="复制代码"
           onClick={async () => {
@@ -497,8 +498,8 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
         >{copyState?.pos === block.pos
           ? (copyState.ok
             ? <><Check size={13} /><span>已复制</span></>
-            : <><CopyIcon size={13} /><span>复制失败</span></>)
-          : <><CopyIcon size={13} /><span>复制</span></>}
+            : <><ArtIcon name="copy" fallback={<CopyIcon size={13} />} /><span>复制失败</span></>)
+          : <><ArtIcon name="copy" fallback={<CopyIcon size={13} />} /><span>复制</span></>}
         </button>
         <span className="visually-hidden" role="status" aria-live="polite">
           {copyState?.pos === block.pos ? (copyState.ok ? '代码已复制到剪贴板' : '复制失败') : ''}
@@ -534,11 +535,13 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
     {findOpen && <FindReplace editor={editor} initial="" onClose={() => setFindOpen(false)} />}
     {outlineOpen && <OutlinePanel editor={editor} onClose={() => setOutlineOpen(false)} />}
     <div className="editor-footer">
-      <span>字数 {words}</span>
+      <span className="footer-count">字数 <span className="footer-count-value">{words}</span></span>
       <span className="meta-divider" />
       <span className={'footer-save ' + saveStatus}>{saveStatus === 'saving' ? '正在保存…' : saveStatus === 'error' ? '保存失败' : '已保存'}</span>
       <span className="footer-spacer" />
-      <span className="footer-hint">{provider ? '实时协作已开启 · Ctrl/⌘+S 强制保存' : 'Ctrl/⌘+S 保存 · Ctrl/⌘+Shift+E 导出 Markdown'}</span>
+      <span className="footer-hint">{provider
+        ? <>实时协作已开启 <span className="footer-hint-divider">·</span> <kbd>Ctrl/⌘+S</kbd> 强制保存</>
+        : <><kbd>Ctrl/⌘+S</kbd> 保存 <span className="footer-hint-divider">·</span> <kbd>Ctrl/⌘+Shift+E</kbd> 导出 Markdown</>}</span>
     </div>
   </>
 }

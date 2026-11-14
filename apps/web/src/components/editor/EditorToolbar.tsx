@@ -72,15 +72,15 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
 
   return <div className="editor-toolbar" role="toolbar" aria-label="格式工具" onKeyDown={(event) => { if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { const current = event.target as HTMLButtonElement; const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button')).filter((node) => !node.disabled); const position = buttons.indexOf(current); if (position >= 0) { event.preventDefault(); const next = buttons[(position + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length]; next?.focus() } } }}>
     <div className="tb-group tb-group-history">
-      {item('撤销', false, () => editor?.chain().focus().undo().run(), <Undo2 size={16} />)}
-      {item('重做', false, () => editor?.chain().focus().redo().run(), <Redo2 size={16} />)}
+      {item('撤销', false, () => editor?.chain().focus().undo().run(), <ArtIcon name="undo" fallback={<Undo2 size={16} />} />)}
+      {item('重做', false, () => editor?.chain().focus().redo().run(), <ArtIcon name="redo" fallback={<Redo2 size={16} />} />)}
     </div>
 
     <span className="tb-separator" />
 
     <div className="tb-group tb-group-block">
       <div className="tb-anchor">
-        <button type="button" className="tb-select" aria-haspopup="menu" aria-expanded={blockOpen} onMouseDown={(event) => { event.preventDefault(); onInteract?.() }}
+        <button type="button" className="tb-select sketch-frame" aria-haspopup="menu" aria-expanded={blockOpen} onMouseDown={(event) => { event.preventDefault(); onInteract?.() }}
           onClick={() => setBlockOpen((value) => !value)}>
           <span>{editor ? currentBlockLabel(editor) : '正文'}</span><ChevronDown size={13} />
         </button>
@@ -95,7 +95,7 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
       </div>
 
       <div className="tb-anchor">
-        <button type="button" className="tb-select tb-size" aria-haspopup="menu" aria-expanded={sizeOpen} onClick={() => setSizeOpen((value) => !value)}>
+        <button type="button" className="tb-select tb-size sketch-frame" aria-haspopup="menu" aria-expanded={sizeOpen} onClick={() => setSizeOpen((value) => !value)}>
           <span>{editor?.getAttributes('textStyle').fontSize?.replace('px', '') || '16'}</span><ChevronDown size={12} />
         </button>
         <Popover open={sizeOpen} onClose={() => setSizeOpen(false)} label="字号" align="left" className="tb-menu tb-size-menu">
@@ -109,11 +109,11 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
     <span className="tb-separator" />
 
     <div className="tb-group tb-group-inline">
-      {item('加粗', !!editor?.isActive('bold'), () => editor?.chain().focus().toggleBold().run(), <Bold size={16} />)}
-      {item('斜体', !!editor?.isActive('italic'), () => editor?.chain().focus().toggleItalic().run(), <Italic size={16} />)}
-      {item('下划线', !!editor?.isActive('underline'), () => editor?.chain().focus().toggleUnderline().run(), <Underline size={16} />)}
+      {item('加粗', !!editor?.isActive('bold'), () => editor?.chain().focus().toggleBold().run(), <ArtIcon name="bold" fallback={<Bold size={16} />} />)}
+      {item('斜体', !!editor?.isActive('italic'), () => editor?.chain().focus().toggleItalic().run(), <ArtIcon name="italic" fallback={<Italic size={16} />} />)}
+      {item('下划线', !!editor?.isActive('underline'), () => editor?.chain().focus().toggleUnderline().run(), <ArtIcon name="underline" fallback={<Underline size={16} />} />)}
       {item('删除线', !!editor?.isActive('strike'), () => editor?.chain().focus().toggleStrike().run(), <Strikethrough size={16} />)}
-      {item('行内代码', !!editor?.isActive('code'), () => editor?.chain().focus().toggleCode().run(), <Code2 size={16} />)}
+      {item('行内代码', !!editor?.isActive('code'), () => editor?.chain().focus().toggleCode().run(), <ArtIcon name="code" fallback={<Code2 size={16} />} />)}
     </div>
 
     <span className="tb-separator" />
@@ -161,15 +161,15 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
       {item('编号列表', !!editor?.isActive('orderedList'), () => editor?.chain().focus().toggleOrderedList().run(), <ListOrdered size={16} />)}
       {item('任务列表', !!editor?.isActive('taskList'), () => editor?.chain().focus().toggleTaskList().run(), <ArtIcon name="selection" fallback={<span className="tb-task">☑</span>} />)}
       {item('引用', !!editor?.isActive('blockquote'), () => editor?.chain().focus().toggleBlockquote().run(), <Quote size={16} />)}
-      {item('代码块', !!editor?.isActive('codeBlock'), () => editor?.chain().focus().toggleCodeBlock().run(), <span className="tb-mono">{'</>'}</span>)}
+      {item('代码块', !!editor?.isActive('codeBlock'), () => editor?.chain().focus().toggleCodeBlock().run(), <ArtIcon name="code" fallback={<span className="tb-mono">{'</>'}</span>} />)}
     </div>
 
     <span className="tb-separator" />
 
     <div className="tb-group tb-group-insert">
-      {item('链接', !!editor?.isActive('link'), actions.onLink, <Link2 size={16} />)}
+      {item('链接', !!editor?.isActive('link'), actions.onLink, <ArtIcon name="link" fallback={<Link2 size={16} />} />)}
       {item('图片', false, actions.onImage, <ImagePlus size={16} />)}
-      {item('表格', !!editor?.isActive('table'), () => editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(), <Table2 size={16} />)}
+      {item('表格', !!editor?.isActive('table'), () => editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(), <ArtIcon name="table" fallback={<Table2 size={16} />} />)}
       <div className="tb-anchor">
         <button type="button" className="tb-btn" title="更多插入" aria-label="更多插入" aria-haspopup="menu" aria-expanded={insertOpen} onClick={() => setInsertOpen((value) => !value)}><ChevronDown size={15} /></button>
         <Popover open={insertOpen} onClose={() => setInsertOpen(false)} label="插入" align="right" className="tb-menu">
@@ -225,7 +225,7 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
           ['代码块', Code2, () => editor?.chain().focus().toggleCodeBlock().run()],
         ] as const).map(([label, Icon, run]) => (
           <button key={label} type="button" role="menuitem" className="tb-menu-item" onClick={() => { run(); setMoreOpen(false) }}>
-            <Icon size={15} /><span>{label}</span>
+            {label === '代码块' ? <ArtIcon name="code" fallback={<Icon size={15} />} /> : <Icon size={15} />}<span>{label}</span>
           </button>
         ))}
         <div className="tb-more-section">插入</div>
@@ -236,7 +236,7 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
           ['文档大纲', ListOrdered, () => actions.onOutline()],
         ] as const).map(([label, Icon, run]) => (
           <button key={label} type="button" role="menuitem" className="tb-menu-item" onClick={() => { run(); setMoreOpen(false) }}>
-            {label === '查找替换' ? <ArtIcon name="search" fallback={<Icon size={15} />} /> : <Icon size={15} />}<span>{label}</span>
+            {label === '查找替换' ? <ArtIcon name="search" fallback={<Icon size={15} />} /> : label === '表格' ? <ArtIcon name="table" fallback={<Icon size={15} />} /> : <Icon size={15} />}<span>{label}</span>
           </button>
         ))}
       </Popover>

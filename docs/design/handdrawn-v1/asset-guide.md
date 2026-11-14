@@ -1,16 +1,16 @@
-# Docs 手绘 UI 美术素材 v2
+# Docs 手绘 UI 美术素材 v3
 
-使用内置 `image_gen`，以 `editor-concept.png` 为风格参考，累计生成 24 份美术素材，第二批新增 10 个图标和 1 份铅笔边框。每份均保留原始 PNG；网页版本仅整理透明空白、统一图标画布并缩小编码，没有用代码重画素材。
+使用内置 `image_gen`，以 `editor-concept.png` 为风格参考，累计生成 37 份美术素材。本轮新增 11 个格式、代码与任务图标，以及铅笔分隔线、协作头像纸底。每份均保留原始 PNG；网页版本仅整理透明空白、统一图标画布并缩小编码，没有用代码重画素材。
 
 ## 文件位置
 
 - 高清原图：`sources/`。
 - 可直接部署的网页素材：`../../../apps/web/public/art/handdrawn-v1/`。
 - 素材预览页：`../../../apps/web/public/art/handdrawn-v1/index.html`，可以直接用浏览器打开；开发服务器下路径为 `/art/handdrawn-v1/index.html`。
-- 生图完整提示词：`asset-prompts.md`、`asset-prompts-v2.md`。
+- 生图完整提示词：`asset-prompts.md`、`asset-prompts-v2.md`、`asset-prompts-v3.md`。
 - 素材清单、尺寸、透明像素比例及体积：网页素材目录的 `manifest.json`。
 - 配套样式：网页素材目录的 `art.css`。
-- 最新网页素材压缩包：`marvelous-docs-handdrawn-v2-web.zip`，包含图标、装饰、字体与预览页；原 v1 包仍保留。
+- 最新网页素材压缩包：`marvelous-docs-handdrawn-v3-web.zip`，包含图标、装饰、字体与预览页；原 v1、v2 包仍保留。
 
 ## 素材用途
 
@@ -40,8 +40,14 @@
 | selection | 文档多选、任务操作 | 24–28 px |
 | new-document | 新建文档 | 24–28 px |
 | pencil-frame | 真实铅笔颗粒边框 | CSS border-image 九宫格切片，可缩放 |
+| undo / redo | 撤销与重做 | 24 px |
+| bold / italic / underline | 格式工具栏 | 24 px |
+| link / table / code / copy | 链接、表格、代码、复制 | 21–25 px |
+| check-empty / check-filled | 原生任务框与真实完成状态 | 25 px |
+| pencil-rule | 工具栏、代码、顶栏、底栏的颗粒分隔线 | 横向拉伸，2–3 px 高 |
+| avatar-badge | 协作成员头像纸底，姓名首字仍为 HTML | 31–35 px |
 
-除纸纹外的 23 份素材有真实透明通道；纸纹本身为不透明图像。19 个图标使用统一的 256 × 256 透明画布，同时提供 PNG 和 WebP，整套图像 WebP 共约 577 KB（不含字体）。笔触、纸纹与边框保留了更大尺寸。原图保留在设计目录，后续需要更大尺寸时可重新导出。
+除纸纹外的 36 份素材有真实透明通道；纸纹本身为不透明图像。30 个图标使用统一的 256 × 256 透明画布，同时提供 PNG 和 WebP，整套图像 WebP 共 815,900 字节，约 797 KiB（不含字体）。笔触、纸纹与边框保留了更大尺寸。原图保留在设计目录，后续需要更大尺寸时可重新导出。
 
 ## 前端接入
 
@@ -91,9 +97,9 @@ React 中使用独立图标：
 - 已检查生成 PNG 的真实 alpha 通道，并保留透明边缘。
 - 预览页有纸色、白色、绿色和棋盘格背景，可以切换观察边缘。
 - 已验证桌面 1440 px、手机 390 px 下无横向溢出，所有图片加载成功，背景切换正常，无页面脚本及 HTTP 错误。
-- `asset-overview.png` 是实际 HTML 使用这些素材的截图；截图下方示例直接使用真实文字和独立素材。
+- `asset-overview-v3.png` 是实际 HTML 使用这些素材的截图；截图下方示例直接使用真实文字和独立素材。
 - 素材使用固定的奶油、炭灰、淡黄和鼠尾草绿配色，适用于浅色主题；不支持 SVG 的 `currentColor` 换色。
-- 素材现已接入主应用的「手绘纸本」外观，可在顶栏「外观」切换；默认「纸本」仍保留。首版截图位于 `implementation/`，本轮组件补全的最新截图与验收结果位于 `implementation-v2/`。
+- 素材现已接入主应用的「手绘纸本」外观，可在顶栏「外观」切换；默认「纸本」仍保留。历史截图位于 `implementation/`、`implementation-v2/`，本轮编辑器、代码、顶部与底部的截图及验收结果位于 `implementation-v3/`。
 
 如需重新导出网页素材：
 

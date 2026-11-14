@@ -59,6 +59,12 @@ decorative alongside real text and controls. They must not replace editable text
 encode document state, cover pointer targets, or force an editor remount. Read
 the asset guide in `docs/design/handdrawn-v1/` for sizes and material usage.
 
+`handdrawn-writing.css` applies the actual pencil material to the page, tables,
+code cards and comment composer. `handdrawn-editor-chrome.css` follows it in the
+cascade for the top bar, formatting toolbar and status margin. Code text remains
+monospace; task checkboxes remain native inputs with generated background art
+and a forced-colours fallback.
+
 ## The token contract
 
 | Group | Examples | Notes |

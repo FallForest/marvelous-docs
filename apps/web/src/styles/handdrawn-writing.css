@@ -1,0 +1,227 @@
+/* Real graphite and marker materials on the writing surface. Borders belong
+ * to the native scroll boxes, so they remain stationary while the page scrolls.
+ * No drawing layer covers editable text, selected table cells or resize handles. */
+.editor-footer kbd{font:inherit}
+
+[data-theme='handdrawn'] .paper{
+  border:1px solid transparent;
+  border-image-source:url('/art/handdrawn-v1/decor/pencil-frame.webp');
+  border-image-slice:64;
+  border-image-width:10px;
+  border-image-repeat:stretch;
+  background-clip:padding-box;
+  box-shadow:3px 4px 0 rgba(var(--shadow-rgb),.09);
+}
+[data-theme='handdrawn'] .paper::before{opacity:.27}
+[data-theme='handdrawn'] .document-heading{
+  border-bottom:0;
+  background-image:url('/art/handdrawn-v1/decor/pencil-rule.webp');
+  background-size:100% 3px;
+  background-position:center bottom;
+  background-repeat:no-repeat;
+}
+
+/* A translucent marker sweep rather than a stock rounded callout box. */
+[data-theme='handdrawn'] .tiptap-content blockquote{
+  position:relative;
+  border:0;
+  border-radius:0;
+  padding:15px 21px;
+  color:var(--text-secondary);
+  background-color:transparent;
+  background-image:url('/art/handdrawn-v1/decor/marker-sage.webp');
+  background-position:center;
+  background-size:100% 100%;
+  background-repeat:no-repeat;
+}
+[data-theme='handdrawn'] .tiptap-content blockquote::before{
+  content:'';
+  position:absolute;
+  inset:7px auto 7px 5px;
+  width:3px;
+  background:url('/art/handdrawn-v1/decor/pencil-rule.webp') center / 100% 100% no-repeat;
+  pointer-events:none;
+}
+
+/* Native inputs retain their checked state, keyboard activation and accessible
+ * labels. Only their visible face becomes an independently generated drawing. */
+[data-theme='handdrawn'] .tiptap-content ul[data-type='taskList'] li[data-checked]>label input[type='checkbox']{
+  appearance:none;
+  -webkit-appearance:none;
+  width:25px;
+  height:25px;
+  margin:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+  background-color:transparent;
+  background-image:url('/art/handdrawn-v1/icons/check-empty.webp');
+  background-position:center;
+  background-size:contain;
+  background-repeat:no-repeat;
+}
+[data-theme='handdrawn'] .tiptap-content ul[data-type='taskList'] li[data-checked]>label input[type='checkbox']:checked{background-image:url('/art/handdrawn-v1/icons/check-filled.webp')}
+[data-theme='handdrawn'] .tiptap-content ul[data-type='taskList'] li[data-checked]>label input[type='checkbox']:focus-visible{outline:2px solid var(--focus-ring);outline-offset:3px;border-radius:4px}
+[data-theme='handdrawn'] .tiptap-content ul[data-type='taskList'] li[data-checked]>label input[type='checkbox']:disabled{opacity:.5}
+
+/* Keep the table and each cell as real table layout boxes. border-image adds
+ * pencil grain without occupying the ::after selected-cell overlay. */
+[data-theme='handdrawn'] .tiptap-content table{border-collapse:separate;border-spacing:0;border:0}
+[data-theme='handdrawn'] .tiptap-content :is(th,td){
+  border:1px solid transparent;
+  border-image-source:url('/art/handdrawn-v1/decor/pencil-frame.webp');
+  border-image-slice:64;
+  border-image-width:5px;
+  border-image-repeat:stretch;
+  background-clip:padding-box;
+}
+[data-theme='handdrawn'] .tiptap-content th{
+  background-color:var(--tint-sage-softer);
+  background-image:url('/art/handdrawn-v1/textures/paper-ivory.webp');
+  background-size:768px;
+  background-blend-mode:multiply;
+}
+
+/* Code is one paper card, with the fixed geometry toolbar measured from its
+ * actual <pre>. The header is 40px high and the text reserves 56px above it. */
+[data-theme='handdrawn'] .tiptap-content pre{
+  border:1px solid transparent;
+  border-image-source:url('/art/handdrawn-v1/decor/pencil-frame.webp');
+  border-image-slice:64;
+  border-image-width:9px;
+  border-image-repeat:stretch;
+  border-radius:7px 10px 6px 9px;
+  background-color:var(--surface-soft);
+  background-image:url('/art/handdrawn-v1/textures/paper-ivory.webp');
+  background-size:768px;
+  background-blend-mode:multiply;
+  box-shadow:2px 3px 0 rgba(var(--shadow-rgb),.07);
+}
+[data-theme='handdrawn'] .tiptap-content pre code{
+  padding:56px 18px 18px;
+  font-family:ui-monospace,SFMono-Regular,'JetBrains Mono',Menlo,Consolas,monospace;
+  font-size:14px;
+  line-height:1.8;
+  background:none;
+  border:0;
+  color:var(--text);
+}
+[data-theme='handdrawn'] .code-overlay{
+  height:40px;
+  padding:3px 10px;
+  gap:7px;
+  border:1px solid transparent;
+  border-image-source:url('/art/handdrawn-v1/decor/pencil-frame.webp');
+  border-image-slice:64;
+  border-image-width:7px;
+  border-image-repeat:stretch;
+  border-radius:7px 10px 3px 4px;
+  background-color:var(--tint-sage-softer);
+  background-image:url('/art/handdrawn-v1/textures/paper-ivory.webp');
+  background-size:768px;
+  background-blend-mode:multiply;
+}
+[data-theme='handdrawn'] .code-overlay::after{
+  content:'';
+  position:absolute;
+  inset:auto 3px -1px;
+  height:3px;
+  background:url('/art/handdrawn-v1/decor/pencil-rule.webp') center / 100% 100% no-repeat;
+  pointer-events:none;
+}
+[data-theme='handdrawn'] .code-language-art{display:inline-flex;flex:0 0 25px;align-items:center;pointer-events:none}
+[data-theme='handdrawn'] .code-language-art .art-icon{width:25px;height:25px}
+[data-theme='handdrawn'] .code-overlay .lang-picker-button{
+  min-height:29px;
+  height:29px;
+  padding:2px 8px;
+  gap:7px;
+  border:1px solid transparent;
+  border-image-source:url('/art/handdrawn-v1/decor/pencil-frame.webp');
+  border-image-slice:64;
+  border-image-width:6px;
+  border-image-repeat:stretch;
+  background:var(--surface);
+  box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.07);
+  font-family:var(--font-handwritten);
+  font-size:15px;
+  color:var(--text);
+}
+[data-theme='handdrawn'] .code-overlay .lang-picker-button:is(:hover,.is-open){background:var(--surface-selected)}
+[data-theme='handdrawn'] .code-overlay-actions{gap:3px;margin-right:4px}
+[data-theme='handdrawn'] .code-overlay-icon{
+  width:28px;height:28px;padding:5px;
+  border-radius:6px 8px 5px 7px;
+  color:var(--text-secondary);
+}
+[data-theme='handdrawn'] .code-overlay-icon>svg{width:16px;height:16px}
+[data-theme='handdrawn'] .code-overlay-icon .art-icon{width:21px;height:21px}
+[data-theme='handdrawn'] .code-overlay-icon:hover{border-color:var(--border-strong);background:var(--surface);color:var(--text)}
+[data-theme='handdrawn'] .code-overlay-icon.danger:hover{border-color:var(--danger-line);background:var(--danger-soft);color:var(--danger)}
+[data-theme='handdrawn'] .code-overlay-copy{
+  height:29px;
+  padding:3px 8px;
+  gap:6px;
+  background:var(--surface);
+  font-size:13px;
+  font-weight:600;
+  box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.07);
+}
+[data-theme='handdrawn'] .code-overlay-copy .art-icon{width:21px;height:21px}
+[data-theme='handdrawn'] .code-overlay-copy.copied{color:var(--success);background:var(--success-soft)}
+[data-theme='handdrawn'] .code-overlay-copy.failed{color:var(--danger);background:var(--danger-soft)}
+
+/* The composer is a small writable note with a genuine graphite edge. */
+[data-theme='handdrawn'] .comment-compose{
+  padding:16px;
+  border-top:0;
+  background-color:var(--surface-muted);
+  background-image:url('/art/handdrawn-v1/decor/pencil-rule.webp');
+  background-size:100% 3px;
+  background-position:center top;
+  background-repeat:no-repeat;
+}
+[data-theme='handdrawn'] .comment-compose textarea{
+  display:block;
+  min-height:108px;
+  height:108px;
+  padding:14px 16px;
+  border:1px solid transparent;
+  border-image-source:url('/art/handdrawn-v1/decor/pencil-frame.webp');
+  border-image-slice:64;
+  border-image-width:8px;
+  border-image-repeat:stretch;
+  border-radius:7px 10px 6px 9px;
+  background-color:var(--surface);
+  background-image:url('/art/handdrawn-v1/textures/paper-ivory.webp');
+  background-size:768px;
+  background-blend-mode:multiply;
+  font-size:14px;
+  line-height:1.8;
+  color:var(--text);
+  box-shadow:2px 3px 0 rgba(var(--shadow-rgb),.06);
+}
+[data-theme='handdrawn'] .comment-compose textarea:focus-visible{outline:2px solid var(--focus-ring);outline-offset:3px;box-shadow:none}
+[data-theme='handdrawn'] .comment-compose>div:last-child{padding-top:6px}
+
+@media(max-width:640px){
+  [data-theme='handdrawn'] .tiptap-content pre code{padding:60px 14px 16px;font-size:13px}
+  [data-theme='handdrawn'] .code-overlay{height:44px;padding:3px 6px;gap:4px}
+  [data-theme='handdrawn'] .code-language-art{display:none}
+  [data-theme='handdrawn'] .code-overlay .lang-picker-button{height:34px;min-height:34px;padding:3px 7px;font-size:14px}
+  [data-theme='handdrawn'] .code-overlay .lang-picker-label{max-width:70px}
+  [data-theme='handdrawn'] .code-overlay-actions{gap:1px;margin-right:0}
+  [data-theme='handdrawn'] .code-overlay-icon{width:30px;height:34px;padding:5px}
+  [data-theme='handdrawn'] .code-overlay-copy{width:34px;min-width:34px;height:34px;padding:5px;justify-content:center;font-size:0;gap:0}
+  [data-theme='handdrawn'] .code-overlay-copy>svg{width:19px;height:19px}
+  [data-theme='handdrawn'] .code-overlay-copy .art-icon{width:23px;height:23px}
+  [data-theme='handdrawn'] .comment-compose textarea{min-height:100px;height:100px;font-size:15px}
+}
+
+@media(forced-colors:active){
+  [data-theme='handdrawn'] .tiptap-content ul[data-type='taskList'] li[data-checked]>label input[type='checkbox']{
+    appearance:auto;-webkit-appearance:auto;background:none;border:revert;accent-color:auto;
+  }
+  [data-theme='handdrawn'] :is(.paper,.tiptap-content pre,.tiptap-content th,.tiptap-content td,.comment-compose textarea){border-image:none;border:1px solid currentColor}
+}

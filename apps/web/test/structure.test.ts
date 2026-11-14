@@ -142,7 +142,7 @@ test('styles are layered and the entry point imports them in order', () => {
   const order = [...index.matchAll(/@import\s+'\.\/([a-z-]+)\.css'/g)].map((match) => match[1])
   assert.deepEqual(
     order,
-    ['tokens', 'themes', 'base', 'motion', 'surfaces', 'dialogs', 'navigation', 'panels', 'editor', 'content', 'shell', 'pages', 'updates', 'handdrawn', 'handdrawn-navigation', 'handdrawn-content', 'handdrawn-controls', 'handdrawn-materials'],
+    ['tokens', 'themes', 'base', 'motion', 'surfaces', 'dialogs', 'navigation', 'panels', 'editor', 'content', 'shell', 'pages', 'updates', 'handdrawn', 'handdrawn-navigation', 'handdrawn-content', 'handdrawn-controls', 'handdrawn-materials', 'handdrawn-writing', 'handdrawn-editor-chrome'],
     'style layers must load from broadest to most specific',
   )
   for (const layer of order) {

@@ -35,9 +35,22 @@ const definitions = [
   ['selection', '多选清单', 'icons', '文档批量选择'],
   ['new-document', '新建纸页', 'icons', '新建文档'],
   ['pencil-frame', '铅笔边框', 'decor', '九宫格边框材质 / 按钮与输入框'],
+  ['undo', '手绘撤销', 'icons', '编辑工具栏'],
+  ['redo', '手绘重做', 'icons', '编辑工具栏'],
+  ['bold', '手绘加粗', 'icons', '格式工具栏'],
+  ['italic', '手绘斜体', 'icons', '格式工具栏'],
+  ['underline', '手绘下划线', 'icons', '格式工具栏'],
+  ['link', '手绘链接', 'icons', '链接 / 插入'],
+  ['table', '手绘表格', 'icons', '表格 / 插入'],
+  ['check-empty', '空任务框', 'icons', '原生任务复选框背景'],
+  ['check-filled', '完成任务框', 'icons', '任务完成状态背景'],
+  ['code', '手绘代码', 'icons', '代码块 / 行内代码'],
+  ['copy', '手绘复制', 'icons', '代码复制按钮'],
+  ['pencil-rule', '铅笔分隔线', 'decor', '顶部 / 底部 / 表格 / 代码块分隔'],
+  ['avatar-badge', '协作头像纸底', 'decor', '实时头像背景，字母仍为HTML'],
 ]
 
-const manifest = { version: 2, generator: 'built-in image_gen', assets: [] }
+const manifest = { version: 3, generator: 'built-in image_gen', assets: [] }
 for (const [id, name, category, usage] of definitions) {
   const sourcePath = path.join(sourceDir, id + '.png')
   const source = await sharp(sourcePath).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
@@ -59,12 +72,12 @@ for (const [id, name, category, usage] of definitions) {
     throw new Error(id + ': expected a genuine transparent background')
   }
   const alphaBounds = { left: minX, top: minY, width: maxX - minX + 1, height: maxY - minY + 1 }
-  const padding = category === 'icons' ? 22 : 12
+  const padding = id === 'pencil-rule' ? 2 : category === 'icons' ? 22 : 12
   const left = Math.max(0, minX - padding), top = Math.max(0, minY - padding)
   const crop = { left, top, width: Math.min(width, maxX + padding + 1) - left, height: Math.min(height, maxY + padding + 1) - top }
   let pipeline = sharp(sourcePath)
   if (category !== 'textures') pipeline = pipeline.extract(crop)
-  if (category === 'icons') pipeline = pipeline.resize(256, 256, { fit: 'contain', background: '#00000000' })
+  if (category === 'icons' || id === 'avatar-badge') pipeline = pipeline.resize(256, 256, { fit: 'contain', background: '#00000000' })
   else pipeline = pipeline.resize({ width: category === 'textures' ? 768 : 1024, withoutEnlargement: true })
   const folder = path.join(outputDir, category)
   await fs.mkdir(folder, { recursive: true })

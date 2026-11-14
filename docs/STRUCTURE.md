@@ -140,6 +140,8 @@ styles/                   CSS layers, imported in cascade order by index.css
   handdrawn-content.css    Theme-scoped editor, comments, home and login
   handdrawn-controls.css   Theme-scoped toolbars, tabs and editor popup controls
   handdrawn-materials.css  Graphite frame, search/admin and dialog internals
+  handdrawn-writing.css    Paper, tables, tasks, comment composition and code blocks
+  handdrawn-editor-chrome.css Toolbar, breadcrumbs, presence and editor status strip
 ```
 
 Each layer answers one question. `tokens.css` owns *what a value is*,

@@ -6,6 +6,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Complete the hand-drawn editor chrome with generated graphite formatting
+  icons, paper avatars, pencil separators, state-aware save marks and a paper
+  status margin with live word counts and keyboard hints. Code blocks now use
+  the same paper treatment for their language, move, delete and copy controls.
+- Carry the artwork through page edges, table cells, task checkboxes, quotes
+  and the comment composer while retaining native editing and selection.
+- Open New on blank document, folder and Markdown import. Existing office
+  presets live behind an optional catalogue, and only templates advertised by
+  the server are shown.
+
 ## [0.1.70] - 2026-11-14
 
 Paste a screenshot and it lands in the document. Make the 20 MB ceiling real.

@@ -1,4 +1,4 @@
-import { ArrowDownToLine, ChevronRight, History, MessageCircle, Palette, PanelLeftClose, Share2, Star } from 'lucide-react'
+import { ArrowDownToLine, ChevronRight, FileText, History, MessageCircle, Palette, PanelLeftClose, Share2, Star } from 'lucide-react'
 import type { CSSProperties } from 'react'
 import ExportMenu from '../layout/ExportMenu'
 import ThemeMenu from '../layout/ThemeMenu'
@@ -44,16 +44,16 @@ export default function TopBar(props: TopBarProps) {
     {!props.sidebarOpen && <button type="button" className="icon-btn" aria-label="展开侧边栏" title="展开侧边栏" onClick={props.onOpenSidebar}><PanelLeftClose size={17} /></button>}
     <div className="breadcrumbs">
       {props.showRoot && <><span className="crumb-root">我的文档</span><ChevronRight size={13} className="crumb-sep" /></>}
-      <strong>{props.title}</strong>
+      <strong><span className="handdrawn-only crumb-title-art" aria-hidden="true"><ArtIcon name="document" fallback={<FileText size={17} />} /></span><span className="crumb-title-copy">{props.title}</span></strong>
     </div>
     <div className="top-actions">
-      <span className={'save-state save-' + props.saveStatus} role="status" aria-live="polite">
+      <span className={'save-state sketch-frame save-' + props.saveStatus} role="status" aria-live="polite">
         <span className="save-dot" />{props.saveStatus === 'saving' ? '保存中…' : props.saveStatus === 'error' ? '保存失败' : '已保存'}
       </span>
       <span className="top-divider" aria-hidden="true" />
-      <div className="collaborators" role="group" aria-label="在线成员">
+      <div className="collaborators sketch-frame" role="group" aria-label="在线成员">
         <div className="presence-stack">
-          <div className="mini-avatar green" title="你">{props.userInitial}</div>
+          <div className="mini-avatar green" title="你"><span className="presence-letter">{props.userInitial}</span></div>
           {props.collaborators.slice(0, 3).map((person, index) => <div
             key={person.clientId}
             className="mini-avatar presence-enter"
@@ -61,7 +61,7 @@ export default function TopBar(props: TopBarProps) {
             // Arriving collaborators pop in one step apart; a stable key means
             // only the new avatar animates, not the whole stack.
             style={{ background: person.color + '24', color: person.color, '--i': index } as CSSProperties}
-          >{person.name[0]?.toUpperCase()}</div>)}
+          ><span className="presence-letter">{person.name[0]?.toUpperCase()}</span></div>)}
           {props.collaborators.length > 3 && <span className="presence-more">{'+' + (props.collaborators.length - 3)}</span>}
         </div>
         <span className={'connection-dot ' + props.collabStatus} aria-hidden="true" />

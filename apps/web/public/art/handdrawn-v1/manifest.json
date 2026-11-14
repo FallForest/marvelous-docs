@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "generator": "built-in image_gen",
   "assets": [
     {
@@ -668,6 +668,370 @@
       "partialAlphaFraction": 0.0573,
       "pngBytes": 169534,
       "webpBytes": 75386
+    },
+    {
+      "id": "undo",
+      "name": "手绘撤销",
+      "category": "icons",
+      "usage": "编辑工具栏",
+      "png": "icons/undo.png",
+      "webp": "icons/undo.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 192,
+        "top": 351,
+        "width": 843,
+        "height": 630
+      },
+      "crop": {
+        "left": 170,
+        "top": 329,
+        "width": 887,
+        "height": 674
+      },
+      "transparentFraction": 0.9352,
+      "partialAlphaFraction": 0.0648,
+      "pngBytes": 27840,
+      "webpBytes": 9980
+    },
+    {
+      "id": "redo",
+      "name": "手绘重做",
+      "category": "icons",
+      "usage": "编辑工具栏",
+      "png": "icons/redo.png",
+      "webp": "icons/redo.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 177,
+        "top": 268,
+        "width": 897,
+        "height": 745
+      },
+      "crop": {
+        "left": 155,
+        "top": 246,
+        "width": 941,
+        "height": 789
+      },
+      "transparentFraction": 0.9164,
+      "partialAlphaFraction": 0.0836,
+      "pngBytes": 31901,
+      "webpBytes": 11344
+    },
+    {
+      "id": "bold",
+      "name": "手绘加粗",
+      "category": "icons",
+      "usage": "格式工具栏",
+      "png": "icons/bold.png",
+      "webp": "icons/bold.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 242,
+        "top": 145,
+        "width": 757,
+        "height": 985
+      },
+      "crop": {
+        "left": 220,
+        "top": 123,
+        "width": 801,
+        "height": 1029
+      },
+      "transparentFraction": 0.6584,
+      "partialAlphaFraction": 0.3416,
+      "pngBytes": 92478,
+      "webpBytes": 30402
+    },
+    {
+      "id": "italic",
+      "name": "手绘斜体",
+      "category": "icons",
+      "usage": "格式工具栏",
+      "png": "icons/italic.png",
+      "webp": "icons/italic.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 333,
+        "top": 240,
+        "width": 617,
+        "height": 811
+      },
+      "crop": {
+        "left": 311,
+        "top": 218,
+        "width": 661,
+        "height": 855
+      },
+      "transparentFraction": 0.7641,
+      "partialAlphaFraction": 0.2359,
+      "pngBytes": 42467,
+      "webpBytes": 16302
+    },
+    {
+      "id": "underline",
+      "name": "手绘下划线",
+      "category": "icons",
+      "usage": "格式工具栏",
+      "png": "icons/underline.png",
+      "webp": "icons/underline.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 322,
+        "top": 350,
+        "width": 607,
+        "height": 630
+      },
+      "crop": {
+        "left": 300,
+        "top": 328,
+        "width": 651,
+        "height": 674
+      },
+      "transparentFraction": 0.8995,
+      "partialAlphaFraction": 0.1005,
+      "pngBytes": 68765,
+      "webpBytes": 24166
+    },
+    {
+      "id": "link",
+      "name": "手绘链接",
+      "category": "icons",
+      "usage": "链接 / 插入",
+      "png": "icons/link.png",
+      "webp": "icons/link.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 173,
+        "top": 188,
+        "width": 931,
+        "height": 931
+      },
+      "crop": {
+        "left": 151,
+        "top": 166,
+        "width": 975,
+        "height": 975
+      },
+      "transparentFraction": 0.771,
+      "partialAlphaFraction": 0.2289,
+      "pngBytes": 78604,
+      "webpBytes": 20394
+    },
+    {
+      "id": "table",
+      "name": "手绘表格",
+      "category": "icons",
+      "usage": "表格 / 插入",
+      "png": "icons/table.png",
+      "webp": "icons/table.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1536,
+      "sourceHeight": 1024,
+      "alphaBounds": {
+        "left": 240,
+        "top": 333,
+        "width": 1054,
+        "height": 360
+      },
+      "crop": {
+        "left": 218,
+        "top": 311,
+        "width": 1098,
+        "height": 404
+      },
+      "transparentFraction": 0.8391,
+      "partialAlphaFraction": 0.1609,
+      "pngBytes": 29590,
+      "webpBytes": 8614
+    },
+    {
+      "id": "check-empty",
+      "name": "空任务框",
+      "category": "icons",
+      "usage": "原生任务复选框背景",
+      "png": "icons/check-empty.png",
+      "webp": "icons/check-empty.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 206,
+        "top": 223,
+        "width": 839,
+        "height": 824
+      },
+      "crop": {
+        "left": 184,
+        "top": 201,
+        "width": 883,
+        "height": 868
+      },
+      "transparentFraction": 0.5651,
+      "partialAlphaFraction": 0.4349,
+      "pngBytes": 107362,
+      "webpBytes": 19666
+    },
+    {
+      "id": "check-filled",
+      "name": "完成任务框",
+      "category": "icons",
+      "usage": "任务完成状态背景",
+      "png": "icons/check-filled.png",
+      "webp": "icons/check-filled.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 154,
+        "top": 176,
+        "width": 936,
+        "height": 931
+      },
+      "crop": {
+        "left": 132,
+        "top": 154,
+        "width": 980,
+        "height": 975
+      },
+      "transparentFraction": 0.4627,
+      "partialAlphaFraction": 0.5373,
+      "pngBytes": 133480,
+      "webpBytes": 27400
+    },
+    {
+      "id": "code",
+      "name": "手绘代码",
+      "category": "icons",
+      "usage": "代码块 / 行内代码",
+      "png": "icons/code.png",
+      "webp": "icons/code.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 146,
+        "top": 347,
+        "width": 963,
+        "height": 596
+      },
+      "crop": {
+        "left": 124,
+        "top": 325,
+        "width": 1007,
+        "height": 640
+      },
+      "transparentFraction": 0.8614,
+      "partialAlphaFraction": 0.1386,
+      "pngBytes": 39835,
+      "webpBytes": 16294
+    },
+    {
+      "id": "copy",
+      "name": "手绘复制",
+      "category": "icons",
+      "usage": "代码复制按钮",
+      "png": "icons/copy.png",
+      "webp": "icons/copy.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 248,
+        "top": 215,
+        "width": 748,
+        "height": 838
+      },
+      "crop": {
+        "left": 226,
+        "top": 193,
+        "width": 792,
+        "height": 882
+      },
+      "transparentFraction": 0.6317,
+      "partialAlphaFraction": 0.3683,
+      "pngBytes": 90438,
+      "webpBytes": 16712
+    },
+    {
+      "id": "pencil-rule",
+      "name": "铅笔分隔线",
+      "category": "decor",
+      "usage": "顶部 / 底部 / 表格 / 代码块分隔",
+      "png": "decor/pencil-rule.png",
+      "webp": "decor/pencil-rule.webp",
+      "width": 1024,
+      "height": 10,
+      "sourceWidth": 2172,
+      "sourceHeight": 724,
+      "alphaBounds": {
+        "left": 92,
+        "top": 353,
+        "width": 1988,
+        "height": 15
+      },
+      "crop": {
+        "left": 90,
+        "top": 351,
+        "width": 1992,
+        "height": 19
+      },
+      "transparentFraction": 0.9764,
+      "partialAlphaFraction": 0.0236,
+      "pngBytes": 16955,
+      "webpBytes": 8070
+    },
+    {
+      "id": "avatar-badge",
+      "name": "协作头像纸底",
+      "category": "decor",
+      "usage": "实时头像背景，字母仍为HTML",
+      "png": "decor/avatar-badge.png",
+      "webp": "decor/avatar-badge.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 165,
+        "top": 163,
+        "width": 923,
+        "height": 937
+      },
+      "crop": {
+        "left": 153,
+        "top": 151,
+        "width": 947,
+        "height": 961
+      },
+      "transparentFraction": 0.5711,
+      "partialAlphaFraction": 0.4289,
+      "pngBytes": 83801,
+      "webpBytes": 15530
     }
   ]
 }
