@@ -3,13 +3,14 @@
 Every appearance has a **semantic palette**. Every colour the client paints
 resolves through a custom property declared in `styles/tokens.css`; its palette
 re-declares the changed tokens under `[data-theme='<id>']` in `styles/themes.css`.
-A visual appearance may also have a separate, explicitly theme-scoped layer for
-artwork, borders and spacing. Switching writes the attribute on `<html>` without
+A visual appearance has a separate, explicitly theme-scoped layer for artwork,
+colours and border treatment. Component geometry and typography belong to
+`styles/layout.css` and are identical in both appearances. Switching writes the attribute on `<html>` without
 replacing the mounted editor, its document, selection or undo history.
 
-The shipped appearances are **纸本** (`paper`, the unchanged default) and
+The shipped appearances are **纸本** (`paper`) and
 **手绘纸本** (`handdrawn`, ivory paper, graphite lines and AI-generated stationery
-art). The latter uses pale sage and yellow for decoration, with a darker sage
+art, the default). The latter uses pale sage and yellow for decoration, with a darker sage
 control accent so action labels remain readable.
 
 ## Add a palette
@@ -43,16 +44,23 @@ Three edits, no component changes:
    the two lists disagree, or if `themes.css` lacks a block for a registered id.
 
 The picker reads `THEMES`; the shell reads the same hook; the pre-paint script
-paints the stored id on the first frame. Keep `paper` as the default unless a
-separate product decision explicitly changes it; adding an appearance does not
-migrate an existing preference.
+paints the stored id on the first frame. An empty, invalid or inaccessible stored
+preference falls back to `handdrawn`; a previously selected `paper` preference
+continues to take priority. Changing the default does not overwrite a choice.
 
 ## Add an art direction
 
 The hand-drawn appearance also loads component styling after the normal layers.
 Every visual override must begin with `[data-theme='handdrawn']`, including rules
-inside media queries, so changing back to `paper` restores the original design.
+inside media queries, so changing back to `paper` restores its plain artwork.
 Use semantic colour tokens in these layers just as in the base components.
+
+Skins must not declare layout or typography: no width/height, spacing, display,
+positioning, grid/flex, font metrics or geometry tokens. Put these in `layout.css`
+so both appearances share the same rules and breakpoints. Illustration slots
+exist in both themes; `ArtIcon` swaps the pixels inside a fixed box. Only its
+inner image/fallback variants may differ in display. `theme-layout.test.ts`
+guards this boundary, including the typography that could alter wrapping.
 
 The transparent PNG/WebP artwork lives at `/art/handdrawn-v1/`. Images are
 decorative alongside real text and controls. They must not replace editable text,

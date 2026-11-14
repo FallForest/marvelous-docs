@@ -39,7 +39,7 @@ export default function LoginPage({ onLogin, onAccepted, error, busy }: LoginPag
     }
   }
   return <div className="login-screen" data-vt-scope="main">
-  <aside className="handdrawn-only login-art-intro" aria-hidden="true">
+  <aside className="theme-decoration login-art-intro" aria-hidden="true">
     <ArtIcon name="notebook" fallback={<FileText size={64} />} />
     <span className="login-art-kicker">THE TEAM NOTEBOOK</span>
     <h2>让好想法，<br />在这里落笔。</h2>

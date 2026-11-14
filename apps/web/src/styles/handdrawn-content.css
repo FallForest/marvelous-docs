@@ -1,82 +1,34 @@
 /*
- * Hand-drawn paper surfaces. The original paper appearance stays untouched;
- * every material is a separate AI raster, while the content remains real HTML.
+ * Hand-drawn paint for shared content boxes. Every material is a separate AI
+ * raster, while geometry and typography belong to layout.css.
  */
 
 /* A notebook beside the title is chrome, never persisted editor content. */
 [data-theme='handdrawn'] .paper{
-  width:calc(100% - 36px);
-  max-width:920px;
-  margin:18px auto 14px;
-  padding:38px clamp(30px,5vw,62px) 100px;
-  border:1px solid var(--border-strong);
   border-radius:12px 9px 11px 8px / 9px 11px 8px 12px;
   background:var(--surface);
   box-shadow:2px 3px 0 rgba(var(--shadow-rgb),.09);
-  isolation:isolate;
 }
 [data-theme='handdrawn'] .paper::before{
-  content:'';
-  position:absolute;
-  inset:0;
-  z-index:-1;
-  pointer-events:none;
   border-radius:inherit;
   background:url('/art/handdrawn-v1/textures/paper-ivory.webp') repeat;
   background-size:768px;
   opacity:.23;
 }
-[data-theme='handdrawn'] .document-heading{
-  padding-bottom:21px;
-  margin-bottom:26px;
-  border-bottom:1px solid var(--border-subtle);
-}
-[data-theme='handdrawn'] .document-title-row{display:flex;align-items:center;gap:17px;min-width:0}
-[data-theme='handdrawn'] .document-title-art{flex:0 0 63px;line-height:0;pointer-events:none}
-[data-theme='handdrawn'] .document-title-art .art-icon{width:63px;height:70px}
-[data-theme='handdrawn'] .document-title-field{min-width:0;flex:1;position:relative;isolation:isolate}
 [data-theme='handdrawn'] .document-title-field::after{
-  content:'';
-  position:absolute;
-  left:-2px;
-  right:0;
-  bottom:-7px;
-  max-width:420px;
-  height:11px;
-  z-index:-1;
-  pointer-events:none;
   background:url('/art/handdrawn-v1/decor/marker-yellow.webp') center / 100% 100% no-repeat;
 }
-[data-theme='handdrawn'] .document-heading input{
-  min-height:49px;
-  font-family:var(--font-handwritten);
-  font-size:36px;
-  font-weight:700;
-  line-height:1.35;
-  letter-spacing:.01em;
-}
 [data-theme='handdrawn'] .document-heading input:focus{box-shadow:0 2px 0 var(--accent-line)}
-[data-theme='handdrawn'] .doc-meta{margin:12px 0 0 80px;font-size:12px;line-height:1.5}
-[data-theme='handdrawn'] .tiptap-content{font-size:16px;line-height:1.9}
-[data-theme='handdrawn'] .tiptap-content :is(h1,h2,h3){font-family:var(--font-handwritten);letter-spacing:.01em}
-[data-theme='handdrawn'] .tiptap-content h1{font-size:29px;margin-top:30px}
-[data-theme='handdrawn'] .tiptap-content h2{font-size:25px;margin-top:27px}
-[data-theme='handdrawn'] .tiptap-content h3{font-size:21px}
 [data-theme='handdrawn'] .tiptap-content blockquote{
-  border-left-width:2px;
   background:var(--tint-sage-softer);
   border-radius:3px 10px 8px 2px;
-  padding:11px 17px;
 }
 [data-theme='handdrawn'] .tiptap-content pre{border-color:var(--border-strong);border-radius:7px 10px 6px 8px}
 [data-theme='handdrawn'] .tiptap-content table{border-color:var(--border-strong)}
 [data-theme='handdrawn'] .tiptap-content th{background:var(--tint-sage-softer)}
 [data-theme='handdrawn'] .tiptap-content :is(th,td){border-color:var(--border-strong)}
 /* Native checkboxes retain keyboard/editing behavior and follow the sage ink. */
-[data-theme='handdrawn'] .tiptap-content ul[data-type='taskList'] li[data-checked]{gap:9px}
-[data-theme='handdrawn'] .tiptap-content ul[data-type='taskList'] li[data-checked]>label{display:flex;align-items:center;justify-content:center;flex:0 0 26px;min-height:40px;margin-top:3px;cursor:pointer}
-[data-theme='handdrawn'] .tiptap-content ul[data-type='taskList'] li[data-checked]>label input[type='checkbox']{display:block;width:19px;height:19px;margin:0;accent-color:var(--accent);cursor:pointer}
-[data-theme='handdrawn'] .tiptap-content ul[data-type='taskList'] li[data-checked]>div{min-width:0;flex:1}
+[data-theme='handdrawn'] .tiptap-content ul[data-type='taskList'] li[data-checked]>label input[type='checkbox']{accent-color:var(--accent)}
 /* Only this task's own blocks are crossed out; nested task labels stay native. */
 [data-theme='handdrawn'] .tiptap-content ul[data-type='taskList'] li[data-checked='true']>div>:is(p,h1,h2,h3){color:var(--text-muted);text-decoration-line:line-through;text-decoration-color:var(--text-soft);text-decoration-thickness:1px}
 [data-theme='handdrawn'] .tiptap-content .is-commented{
@@ -87,192 +39,60 @@
 }
 [data-theme='handdrawn'] .tiptap-content .is-commented-resolved:not(.is-commented-active){background-image:none}
 [data-theme='handdrawn'] .tiptap-content .is-commented-active{background-color:var(--comment-mark-active);border-bottom-color:var(--accent)}
-[data-theme='handdrawn'] .editor-footer{padding-inline:24px;background:var(--surface-muted);border-top-color:var(--border-strong);font-size:12px}
+[data-theme='handdrawn'] .editor-footer{background:var(--surface-muted);border-top-color:var(--border-strong)}
 
 /* Comment cards use a real torn-fibre washi tape layer on the first thread. */
 [data-theme='handdrawn'] .right-panel{background:var(--surface-muted);border-left-color:var(--border-strong)}
-[data-theme='handdrawn'] .panel-tabbar{min-height:54px;background:var(--surface-muted);backdrop-filter:none;-webkit-backdrop-filter:none;border-bottom-color:var(--border-strong)}
-[data-theme='handdrawn'] .panel-tabbar .panel-tabs{height:53px;flex-basis:53px}
-[data-theme='handdrawn'] .panel-tabs>button:not(.icon-btn){position:relative;min-height:50px;font-size:13px;border-bottom:0;padding-inline:10px;color:var(--text-muted)}
-[data-theme='handdrawn'] .panel-tabs>button.active{color:var(--text);font-weight:600}
+[data-theme='handdrawn'] .panel-tabbar{background:var(--surface-muted);backdrop-filter:none;-webkit-backdrop-filter:none;border-bottom-color:var(--border-strong)}
+[data-theme='handdrawn'] .panel-tabs>button:not(.icon-btn){color:var(--text-muted)}
+[data-theme='handdrawn'] .panel-tabs>button.active{color:var(--text)}
 [data-theme='handdrawn'] .panel-tabs>button.active::after{
-  content:'';position:absolute;left:8px;right:8px;bottom:3px;height:5px;pointer-events:none;
   background:url('/art/handdrawn-v1/decor/marker-sage.webp') center / 100% 100% no-repeat;
 }
-[data-theme='handdrawn'] .panel-tabs .art-icon{width:22px;height:22px}
-[data-theme='handdrawn'] .panel-intro{padding:20px 18px 17px}
-[data-theme='handdrawn'] .panel-intro b{font-family:var(--font-handwritten);font-size:20px}
-[data-theme='handdrawn'] .panel-intro span{font-size:12px}
-[data-theme='handdrawn'] .comment-list{padding:12px 16px 16px;scroll-padding-block:14px}
 [data-theme='handdrawn'] .comment{
-  position:relative;
-  margin:0 0 18px;
-  padding:16px 13px 13px;
-  border:1px solid var(--border-strong);
   border-radius:11px 8px 10px 7px / 8px 11px 7px 10px;
   background:var(--surface);
   box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.04);
 }
 [data-theme='handdrawn'] .comment:first-child::before{
-  content:'';position:absolute;top:-10px;right:8px;width:46px;height:19px;pointer-events:none;
   background:url('/art/handdrawn-v1/decor/washi-tape.webp') center / contain no-repeat;
-  transform:rotate(14deg);
 }
-[data-theme='handdrawn'] .comment.is-active{margin-left:0;padding-left:12px;border-left:2px solid var(--accent);background:var(--accent-soft)}
-[data-theme='handdrawn'] .comment-head{gap:9px}
-[data-theme='handdrawn'] .comment-head b{font-size:13px}
-[data-theme='handdrawn'] .comment-head small{font-size:11px;line-height:1.5}
-[data-theme='handdrawn'] .comment :is(p,.comment-actions,.comment-anchor){margin-left:0}
-[data-theme='handdrawn'] .comment p{font-size:13px;line-height:1.8;margin-top:12px;color:var(--text)}
-[data-theme='handdrawn'] .comment-anchor{max-width:100%;margin-top:13px;padding:5px 8px;border-left-width:2px;font-size:12px}
-[data-theme='handdrawn'] .comment-actions{gap:14px;margin-top:11px}
-[data-theme='handdrawn'] .comment-actions button{min-height:30px;font-size:12px}
-[data-theme='handdrawn'] .small-avatar{width:29px;height:29px;border:1px solid var(--border-strong);background:var(--tint-sage-soft);color:var(--text)}
-[data-theme='handdrawn'] .comment-compose{padding:14px 16px;border-top-color:var(--border-strong);background:var(--surface-muted)}
-[data-theme='handdrawn'] .comment-compose textarea{height:88px;padding:11px;border-color:var(--border-strong);border-radius:9px 7px 10px 8px;font-size:13px;line-height:1.7}
-[data-theme='handdrawn'] .send-btn{width:34px;height:34px;border-radius:7px 5px 8px 6px}
-[data-theme='handdrawn'] .panel-empty{padding:28px 18px;text-align:center;gap:11px}
-[data-theme='handdrawn'] .panel-empty>.art-icon{width:64px;height:64px}
-[data-theme='handdrawn'] .panel-empty :is(b,span){font-size:12px;line-height:1.7}
-[data-theme='handdrawn'] .version-item{padding:17px 0}
-[data-theme='handdrawn'] .version-copy b{font-size:12px}
+[data-theme='handdrawn'] .comment.is-active{background:var(--accent-soft)}
+[data-theme='handdrawn'] .comment p{color:var(--text)}
+[data-theme='handdrawn'] .small-avatar{background:var(--tint-sage-soft);color:var(--text)}
+[data-theme='handdrawn'] .comment-compose{border-top-color:var(--border-strong);background:var(--surface-muted)}
+[data-theme='handdrawn'] .comment-compose textarea{border-color:var(--border-strong);border-radius:9px 7px 10px 8px}
+[data-theme='handdrawn'] .send-btn{border-radius:7px 5px 8px 6px}
 
 /* Home is a working notebook: compact art, real recent documents and actions. */
-[data-theme='handdrawn'] :is(.home-dashboard,.folder-overview){padding:30px clamp(22px,4vw,58px) 60px}
 [data-theme='handdrawn'] .home-hero{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) auto;
-  align-items:center;
-  gap:20px 24px;
-  min-height:205px;
-  padding:29px 33px;
   border-color:var(--border-strong);
   border-radius:13px 9px 11px 8px;
   background:var(--surface);
   box-shadow:2px 3px 0 rgba(var(--shadow-rgb),.07);
 }
-[data-theme='handdrawn'] .home-hero::after{display:none}
-[data-theme='handdrawn'] .home-hero-copy{grid-column:1;min-width:0}
-[data-theme='handdrawn'] .home-hero h1{position:relative;isolation:isolate;display:table;margin:6px 0 10px;font-family:var(--font-handwritten);font-size:34px;letter-spacing:.01em}
-[data-theme='handdrawn'] .home-hero h1::after{content:'';position:absolute;inset:auto -5px -3px;height:10px;z-index:-1;pointer-events:none;background:url('/art/handdrawn-v1/decor/marker-yellow.webp') center / 100% 100% no-repeat}
-[data-theme='handdrawn'] .home-hero p{font-size:13px;line-height:1.8;max-width:520px}
-[data-theme='handdrawn'] .home-hero-art{grid-column:2;grid-row:1 / span 2;align-self:center;pointer-events:none;transform:translate3d(0,var(--hero-shift,0),0)}
-[data-theme='handdrawn'] .home-hero-art .art-icon{width:112px;height:112px}
-[data-theme='handdrawn'] .hero-actions{grid-column:1;justify-content:flex-start;gap:9px}
-[data-theme='handdrawn'] .home-hero>.secondary-btn{grid-column:1;justify-self:start}
-[data-theme='handdrawn'] .stats-grid{gap:12px;margin-top:20px}
-[data-theme='handdrawn'] .stat-card{min-height:72px;border-color:var(--border-strong);border-radius:9px 7px 10px 8px;background:var(--surface);box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.04)}
+[data-theme='handdrawn'] .home-hero h1::after{background:url('/art/handdrawn-v1/decor/marker-yellow.webp') center / 100% 100% no-repeat}
+[data-theme='handdrawn'] .stat-card{border-color:var(--border-strong);border-radius:9px 7px 10px 8px;background:var(--surface);box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.04)}
 [data-theme='handdrawn'] .stat-icon{border-radius:9px 6px 8px 5px}
-[data-theme='handdrawn'] .stat-copy b{font-family:var(--font-handwritten);font-size:23px}
-[data-theme='handdrawn'] .stat-copy small{font-size:12px}
-[data-theme='handdrawn'] .home-section{margin-top:30px}
-[data-theme='handdrawn'] .home-section-head{margin-bottom:13px}
-[data-theme='handdrawn'] .home-section-head h2{font-family:var(--font-handwritten);font-size:20px;gap:9px}
-[data-theme='handdrawn'] .home-section-head>span{font-size:12px}
-[data-theme='handdrawn'] .home-grid{gap:13px}
-[data-theme='handdrawn'] .home-card{min-height:80px;padding:13px 14px;border-color:var(--border-strong);border-radius:10px 7px 9px 8px;box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.05)}
-[data-theme='handdrawn'] .home-card:hover{transform:none;background:var(--surface-soft);border-color:var(--accent);box-shadow:2px 3px 0 rgba(var(--shadow-rgb),.08)}
-[data-theme='handdrawn'] .home-card:active{transform:none;background:var(--surface-active)}
-[data-theme='handdrawn'] .home-card b{font-size:13px}
-[data-theme='handdrawn'] .home-card small{font-size:11px;line-height:1.5}
-[data-theme='handdrawn'] .home-card-icon{width:41px;height:44px;flex-basis:41px;background:transparent}
+[data-theme='handdrawn'] .home-card{border-color:var(--border-strong);border-radius:10px 7px 9px 8px;box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.05)}
+[data-theme='handdrawn'] .home-card:hover{background:var(--surface-soft);border-color:var(--accent);box-shadow:2px 3px 0 rgba(var(--shadow-rgb),.08)}
+[data-theme='handdrawn'] .home-card:active{background:var(--surface-active)}
+[data-theme='handdrawn'] .home-card-icon{background:transparent}
 [data-theme='handdrawn'] .home-card-icon.folder{background:transparent}
-[data-theme='handdrawn'] .home-card-icon .art-icon{width:38px;height:41px}
-[data-theme='handdrawn'] .home-empty{min-height:94px;border-color:var(--border-strong);border-radius:10px 8px 11px 7px;font-size:12px}
-[data-theme='handdrawn'] .home-card-actions button{min-height:32px;font-size:12px}
-[data-theme='handdrawn'] .folder-overview{width:min(100%,1020px)}
-[data-theme='handdrawn'] .folder-overview-head{padding-bottom:25px;border-bottom-color:var(--border-strong)}
-[data-theme='handdrawn'] .folder-large-icon{width:66px;height:63px;background:transparent}
-[data-theme='handdrawn'] .folder-large-icon .art-icon{width:63px;height:63px}
-[data-theme='handdrawn'] .folder-overview-head h1{font-family:var(--font-handwritten);font-size:31px;overflow-wrap:anywhere}
-[data-theme='handdrawn'] .folder-overview-head p{font-size:12px}
-[data-theme='handdrawn'] .folder-items{gap:10px;padding-top:22px}
-[data-theme='handdrawn'] .folder-item{min-height:64px;border:1px solid var(--border);border-radius:9px 6px 10px 8px;background:var(--surface);font-size:13px}
-[data-theme='handdrawn'] .folder-item-icon .art-icon{width:32px;height:32px}
-[data-theme='handdrawn'] .folder-empty-icon{width:86px;height:76px;background:transparent}
-[data-theme='handdrawn'] .folder-empty-icon .art-icon{width:80px;height:76px}
-[data-theme='handdrawn'] .folder-empty h2{font-family:var(--font-handwritten);font-size:25px}
-[data-theme='handdrawn'] .folder-empty p{font-size:13px;line-height:1.8}
+[data-theme='handdrawn'] .home-empty{border-color:var(--border-strong);border-radius:10px 8px 11px 7px}
+[data-theme='handdrawn'] .folder-overview-head{border-bottom-color:var(--border-strong)}
+[data-theme='handdrawn'] .folder-large-icon{background:transparent}
+[data-theme='handdrawn'] .folder-item{border-radius:9px 6px 10px 8px;background:var(--surface)}
+[data-theme='handdrawn'] .folder-empty-icon{background:transparent}
 
 /* The sign-in form stays a form; the notebook illustration lives beside it. */
-[data-theme='handdrawn'] .login-screen{display:flex;align-items:center;justify-content:center;gap:clamp(48px,8vw,112px);padding:48px 32px;background:var(--surface-muted)}
-[data-theme='handdrawn'] .login-art-intro{display:flex;flex-direction:column;align-items:flex-start;flex:0 1 310px;max-width:310px}
-[data-theme='handdrawn'] .login-art-intro>.art-icon{width:142px;height:154px;margin-bottom:22px}
-[data-theme='handdrawn'] .login-art-kicker{font-size:11px;letter-spacing:.16em;color:var(--text-muted)}
-[data-theme='handdrawn'] .login-art-intro h2{font-family:var(--font-handwritten);font-size:43px;line-height:1.55;letter-spacing:.02em;margin:13px 0 17px}
-[data-theme='handdrawn'] .login-art-intro p{margin:0;font-size:13px;line-height:1.8;color:var(--text-secondary)}
-[data-theme='handdrawn'] .login-card{position:relative;isolation:isolate;flex:0 1 410px;width:min(100%,410px);padding:36px 37px 28px;border:1px solid var(--border-strong);border-radius:13px 9px 12px 8px;box-shadow:4px 5px 0 rgba(var(--shadow-rgb),.09)}
-[data-theme='handdrawn'] .login-card::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:url('/art/handdrawn-v1/textures/paper-ivory.webp') repeat;opacity:.25;border-radius:inherit}
-[data-theme='handdrawn'] .login-brand{font-size:17px;gap:12px;margin-bottom:30px;font-family:var(--font-handwritten)}
-[data-theme='handdrawn'] .login-brand .brand-mark{width:42px;height:42px;flex-basis:42px;border:0;border-radius:0;box-shadow:none;background:transparent}
-[data-theme='handdrawn'] .login-brand .brand-mark .art-icon{width:42px;height:42px}
-[data-theme='handdrawn'] .login-card h1{font-family:var(--font-handwritten);font-size:32px;line-height:1.4}
-[data-theme='handdrawn'] .login-card>p{font-size:13px;margin-bottom:26px}
-[data-theme='handdrawn'] .login-card label{font-size:13px;gap:9px}
-[data-theme='handdrawn'] .login-card input{height:44px;border-color:var(--border-strong);border-radius:7px 5px 8px 6px;font-size:14px}
-[data-theme='handdrawn'] .login-submit{min-height:44px;margin-top:7px}
-[data-theme='handdrawn'] .login-foot{font-size:12px;padding-top:19px;line-height:1.7}
-
-@media(max-width:1100px){
-  [data-theme='handdrawn'] .paper{padding:32px 34px 90px;margin:14px auto 12px;width:calc(100% - 28px)}
-  [data-theme='handdrawn'] .document-title-row{gap:13px}
-  [data-theme='handdrawn'] .document-title-art{flex-basis:53px}
-  [data-theme='handdrawn'] .document-title-art .art-icon{width:53px;height:60px}
-  [data-theme='handdrawn'] .document-heading input{font-size:31px;min-height:43px}
-  [data-theme='handdrawn'] .doc-meta{margin-left:66px}
-  [data-theme='handdrawn'] .home-hero{padding:26px 24px}
-  [data-theme='handdrawn'] .home-hero-art .art-icon{width:91px;height:99px}
-}
-@media(max-width:760px){
-  [data-theme='handdrawn'] .login-screen{gap:32px;padding:36px 24px;flex-direction:column}
-  [data-theme='handdrawn'] .login-art-intro{display:none}
-  [data-theme='handdrawn'] .login-card{flex-basis:auto}
-  [data-theme='handdrawn'] :is(.home-dashboard,.folder-overview){padding:22px 20px 44px}
-  [data-theme='handdrawn'] .home-hero{gap:18px 14px;min-height:190px;padding:23px}
-  [data-theme='handdrawn'] .home-hero h1{font-size:30px}
-  [data-theme='handdrawn'] .home-hero-art .art-icon{width:86px;height:92px}
-  [data-theme='handdrawn'] .folder-overview-head{flex-wrap:wrap;gap:10px}
-  [data-theme='handdrawn'] .folder-overview-head>div:nth-child(2){min-width:0;flex:1}
-  [data-theme='handdrawn'] .folder-head-actions{width:100%;margin-top:9px;margin-left:0;flex-wrap:wrap}
-}
+[data-theme='handdrawn'] .login-screen{background:var(--surface-muted)}
+[data-theme='handdrawn'] .login-art-kicker{color:var(--text-muted)}
+[data-theme='handdrawn'] .login-art-intro p{color:var(--text-secondary)}
+[data-theme='handdrawn'] .login-card{border-radius:13px 9px 12px 8px;box-shadow:4px 5px 0 rgba(var(--shadow-rgb),.09)}
+[data-theme='handdrawn'] .login-card::before{background:url('/art/handdrawn-v1/textures/paper-ivory.webp') repeat;opacity:.25;border-radius:inherit}
+[data-theme='handdrawn'] .login-brand .brand-mark{border-radius:0;box-shadow:none;background:transparent}
+[data-theme='handdrawn'] .login-card input{border-color:var(--border-strong);border-radius:7px 5px 8px 6px}
 @media(max-width:560px){
-  [data-theme='handdrawn'] .paper{width:calc(100% - 20px);margin:10px auto;padding:26px 23px 70px;border-radius:9px 7px 10px 8px}
-  [data-theme='handdrawn'] .document-title-row{gap:11px}
-  [data-theme='handdrawn'] .document-title-art{flex-basis:42px}
-  [data-theme='handdrawn'] .document-title-art .art-icon{width:42px;height:48px}
-  [data-theme='handdrawn'] .document-heading{padding-bottom:18px;margin-bottom:20px}
-  [data-theme='handdrawn'] .document-heading input{font-size:27px;min-height:39px}
-  [data-theme='handdrawn'] .doc-meta{margin-left:53px;margin-top:12px;font-size:11px}
-  [data-theme='handdrawn'] .tiptap-content{font-size:16px;line-height:1.85}
-  [data-theme='handdrawn'] .tiptap-content h2{font-size:23px}
-  [data-theme='handdrawn'] .editor-footer{padding-inline:14px;font-size:11px}
-  [data-theme='handdrawn'] :is(.home-dashboard,.folder-overview){padding:17px 14px 36px}
-  [data-theme='handdrawn'] .home-hero{gap:16px 8px;padding:21px 18px;min-height:180px}
-  [data-theme='handdrawn'] .home-hero h1{font-size:29px}
-  [data-theme='handdrawn'] .home-hero p{font-size:12px}
-  [data-theme='handdrawn'] .home-hero-art{grid-row:1}
-  [data-theme='handdrawn'] .home-hero-art .art-icon{width:66px;height:76px}
-  [data-theme='handdrawn'] .hero-actions{grid-column:1 / -1;gap:8px}
-  [data-theme='handdrawn'] .hero-actions :is(.primary-btn,.secondary-btn){flex:1;justify-content:center;font-size:12px;min-height:40px;padding-inline:10px}
-  [data-theme='handdrawn'] .home-section{margin-top:25px}
-  [data-theme='handdrawn'] .home-section-head h2{font-size:19px}
-  [data-theme='handdrawn'] .home-grid{gap:10px}
-  [data-theme='handdrawn'] .home-card{padding:12px;gap:9px;min-height:76px}
-  [data-theme='handdrawn'] .home-card-actions button{min-height:38px;padding-inline:7px}
-  [data-theme='handdrawn'] .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-  [data-theme='handdrawn'] .stat-card{padding:11px 10px;gap:8px}
-  [data-theme='handdrawn'] .stat-copy small{font-size:11px}
-  [data-theme='handdrawn'] .folder-large-icon{width:52px;height:54px}
-  [data-theme='handdrawn'] .folder-large-icon .art-icon{width:51px;height:53px}
-  [data-theme='handdrawn'] .folder-overview-head h1{font-size:27px}
-  [data-theme='handdrawn'] .folder-empty p{font-size:12px}
-  [data-theme='handdrawn'] .comment-list{padding:12px 13px}
-  [data-theme='handdrawn'] .comment-actions button{min-height:38px}
-  [data-theme='handdrawn'] .comment-compose textarea{font-size:14px}
-  [data-theme='handdrawn'] .send-btn{width:44px;height:44px}
-  [data-theme='handdrawn'] .login-screen{padding:28px 20px}
-  [data-theme='handdrawn'] .login-card{padding:30px 25px 24px}
-}
-@media(prefers-reduced-motion:reduce){
-  [data-theme='handdrawn'] .home-hero-art{transform:none}
+  [data-theme='handdrawn'] .paper{border-radius:9px 7px 10px 8px}
 }

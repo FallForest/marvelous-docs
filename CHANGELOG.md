@@ -8,6 +8,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Make hand-drawn the default when no valid appearance preference is stored.
+  Explicit choices of the plain paper theme are retained. Both appearances now
+  use the same component geometry, typography, illustration slots and responsive
+  rules; switching changes artwork and palette without moving or resizing UI.
+- Isolate dashboard statistic variants with `stat-*` classes. The pending-comment
+  statistic previously inherited comment-panel spacing through `.comment`, making
+  its card shorter than its neighbours. All statistic cards now stretch equally.
 - Complete the hand-drawn editor chrome with a consistent small line-icon
   family for formatting, paper avatars and state-aware save marks. The tools
   and status margin share one subtle paper background, light pencil separators

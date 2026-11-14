@@ -44,7 +44,7 @@ export default function TopBar(props: TopBarProps) {
     {!props.sidebarOpen && <button type="button" className="icon-btn" aria-label="展开侧边栏" title="展开侧边栏" onClick={props.onOpenSidebar}><PanelLeftClose size={17} /></button>}
     <div className="breadcrumbs">
       {props.showRoot && <><span className="crumb-root">我的文档</span><ChevronRight size={13} className="crumb-sep" /></>}
-      <strong><span className="handdrawn-only crumb-title-art" aria-hidden="true"><ArtIcon name="document" fallback={<FileText size={17} />} /></span><span className="crumb-title-copy">{props.title}</span></strong>
+      <strong><span className="theme-decoration crumb-title-art" aria-hidden="true"><ArtIcon name="document" fallback={<FileText size={17} />} /></span><span className="crumb-title-copy">{props.title}</span></strong>
     </div>
     <div className="top-actions">
       <span className={'save-state sketch-frame save-' + props.saveStatus} role="status" aria-live="polite">
@@ -81,7 +81,7 @@ export default function TopBar(props: TopBarProps) {
             aria-haspopup="menu"
             aria-expanded={props.themeOpen}
             onClick={() => props.onThemeMenu(!props.themeOpen)}
-          ><ArtIcon name="palette" fallback={<Palette size={16} />} /><span className="theme-trigger-label handdrawn-only">外观</span></button>
+          ><ArtIcon name="palette" fallback={<Palette size={16} />} /><span className="theme-trigger-label theme-decoration">外观</span></button>
           <ThemeMenu open={props.themeOpen} currentId={props.themeId} onPick={props.onTheme} onClose={() => props.onThemeMenu(false)} />
         </div>
         <div className="menu-anchor">

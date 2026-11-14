@@ -43,17 +43,18 @@ export type Theme = {
 /**
  * The built-in list.
  *
- * `paper` is the shipped look and the default; the others are declared here
+ * `handdrawn` is the default; an explicitly stored `paper` choice is retained.
+ * Every available appearance is declared here
  * because the switcher, the storage key and the pre-paint script need a closed
  * set to validate against, and an id that is not in this list must never reach
  * the DOM.
  */
 export const THEMES: Theme[] = [
-  { id: 'paper', name: '纸本', hint: '默认：暖白纸面、炭灰墨线', scheme: 'light', swatch: ['#ffffff', '#f7f8fa', '#c0533f'] },
-  { id: 'handdrawn', name: '手绘纸本', hint: '铅笔线条、纸张纹理与手绘图标', scheme: 'light', swatch: ['#fffef9', '#eeeadd', '#526442'] },
+  { id: 'paper', name: '纸本', hint: '暖白纸面、炭灰墨线', scheme: 'light', swatch: ['#ffffff', '#f7f8fa', '#c0533f'] },
+  { id: 'handdrawn', name: '手绘纸本', hint: '默认：铅笔线条、纸张纹理与手绘图标', scheme: 'light', swatch: ['#fffef9', '#eeeadd', '#526442'] },
 ]
 
-export const DEFAULT_THEME_ID = 'paper'
+export const DEFAULT_THEME_ID = 'handdrawn'
 
 /** localStorage key. Kept short because it is read before first paint. */
 export const THEME_STORAGE_KEY = 'mdocs-theme'

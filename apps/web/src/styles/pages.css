@@ -284,25 +284,25 @@
 
 @media(max-width:560px){.home-dashboard{padding:18px 14px 36px}.home-hero{align-items:flex-start;flex-direction:column;gap:17px;padding:21px 19px}.home-hero h1{font-size:22px}.home-hero>.primary-btn{width:100%}.home-section{margin-top:24px}.home-grid{grid-template-columns:1fr;gap:8px}.home-card{min-height:64px;padding:10px}.home-card-actions{gap:4px}.home-card-actions button{padding:0 7px}.home-card-main{gap:8px}}
 
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-top:22px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));grid-auto-rows:1fr;align-items:stretch;gap:10px;margin-top:22px}
 
-.stat-card{display:flex;align-items:center;gap:10px;min-height:64px;padding:11px 13px;border:1px solid var(--border);border-radius:7px;background:var(--surface)}
+.stat-card{display:flex;align-items:center;align-self:stretch;gap:10px;min-width:0;min-height:72px;height:100%;margin:0;padding:13px 14px;border:1px solid var(--border);border-radius:7px;background:var(--surface);text-align:left}
 
-.stat-icon{width:32px;height:32px;flex:0 0 32px;border-radius:7px;display:grid;place-items:center;background:var(--surface-muted);color:var(--tint-slate-ink)}
+.stat-icon{width:40px;height:40px;flex:0 0 40px;border-radius:7px;display:grid;place-items:center;background:var(--surface-muted);color:var(--tint-slate-ink)}
 
-.stat-card.folder .stat-icon{background:var(--tint-amber-soft);color:var(--tint-amber-ink)}
+.stat-card.stat-folder .stat-icon{background:var(--tint-amber-soft);color:var(--tint-amber-ink)}
 
-.stat-card.member .stat-icon{background:var(--tint-blue-soft);color:var(--tint-blue-ink)}
+.stat-card.stat-member .stat-icon{background:var(--tint-blue-soft);color:var(--tint-blue-ink)}
 
-.stat-card.comment .stat-icon{background:var(--tint-rose-soft);color:var(--tint-rose-ink)}
+.stat-card.stat-comment .stat-icon{background:var(--tint-rose-soft);color:var(--tint-rose-ink)}
 
-.stat-card.trash .stat-icon{background:var(--surface-sunken);color:var(--text-muted)}
+.stat-card.stat-trash .stat-icon{background:var(--surface-sunken);color:var(--text-muted)}
 
-.stat-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+.stat-copy{display:flex;flex-direction:column;justify-content:center;align-self:stretch;gap:3px;min-width:0;flex:1}
 
 .stat-copy b{font-size:16px;font-weight:650;line-height:1;color:var(--text)}
 
-.stat-copy small{font-size:11px;color:var(--text-muted)}
+.stat-copy small{display:block;font-size:11px;line-height:1.5;color:var(--text-muted)}
 
 .hero-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 

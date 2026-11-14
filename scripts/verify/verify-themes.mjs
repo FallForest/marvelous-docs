@@ -243,7 +243,7 @@ const mounted = await evaluate(`(() => ({
 }))()`)
 log('mounted: ' + JSON.stringify(mounted))
 if (!mounted.shell) failures.push('the harness did not render')
-if (mounted.theme !== 'paper') failures.push('the root is not on the default theme: ' + mounted.theme)
+if (mounted.theme !== 'handdrawn') failures.push('the root is not on the hand-drawn default theme: ' + mounted.theme)
 if (!mounted.trigger) failures.push('the topbar has no theme control')
 
 /* ---- 1. the picker lists every registered theme ---- */
@@ -291,8 +291,8 @@ else {
     await writeFile(join(shotDir, 'verify-theme-menu.png'), Buffer.from(shotMenu.data, 'base64'))
   }
 
-  /* ---- 2. picking writes the root, the store and closes the menu ---- */
-  await evaluate(`document.querySelector('.theme-item')?.click()`)
+  /* ---- 2. choosing paper overrides the new default and survives a reload ---- */
+  await evaluate(`document.querySelector('.theme-item[aria-checked="false"]')?.click()`)
   await sleep(260)
   const picked = await evaluate(`(() => ({
     theme: document.documentElement.getAttribute('data-theme'),
@@ -304,6 +304,17 @@ else {
   if (picked.theme !== 'paper') failures.push('picking a theme did not write data-theme')
   if (picked.stored !== 'paper') failures.push('picking a theme did not store the preference')
   if (picked.open) failures.push('the picker stayed open after a choice')
+
+  await send('Page.reload', {}, sessionId)
+  await sleep(1200)
+  const restoredPreference = await evaluate(`(() => ({
+    theme: document.documentElement.getAttribute('data-theme'),
+    stored: localStorage.getItem('mdocs-theme'),
+  }))()`)
+  log('restored preference: ' + JSON.stringify(restoredPreference))
+  if (restoredPreference.theme !== 'paper' || restoredPreference.stored !== 'paper') {
+    failures.push('the hand-drawn default replaced an explicitly chosen paper preference')
+  }
 }
 
 /* ---- 3. a theme block keyed by data-theme reaches every surface ---- */

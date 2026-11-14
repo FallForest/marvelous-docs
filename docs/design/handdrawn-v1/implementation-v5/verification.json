@@ -1,0 +1,353 @@
+{
+  "checks": [
+    "Fresh storage paints handdrawn by default",
+    "Picker changes theme and preserves mounted editor",
+    "Multi-select / New controls are equally sized, aligned and unclipped",
+    "New menu and multi-select toggle/checkbox/batch bar remain functional",
+    "Real task NodeView uses sage checkbox, toggles and strikes completed text",
+    "Toolbar glyphs share 18px/1.65px stroke; controls share 32px height; all desktop commands fit; toolbar and footer inherit one continuous paper background; footer count and status share 14px type",
+    "Code header follows actual pre bounds, language menu opens and Copy returns exact text; code stays monospace",
+    "All visible artwork loads",
+    "Switch round trip preserves text, undo history and comment draft",
+    "Reload restores stored handdrawn theme before app paint",
+    "375 px short phone sidebar actions do not overlap tree; create menu stays inside viewport",
+    "390 px editor/sidebar/home do not overflow horizontally",
+    "New defaults to blank; office catalogue is optional, resets on reopen and disappears when API has no templates; blank POST contains no templateId or preset content",
+    "No page exceptions or missing HTTP assets"
+  ],
+  "screenshots": [
+    "handdrawn-home.png",
+    "paper-home.png",
+    "stats-handdrawn.png",
+    "stats-paper.png",
+    "handdrawn-editor.png",
+    "paper-editor.png",
+    "handdrawn-mobile-editor.png",
+    "handdrawn-mobile-home.png"
+  ],
+  "fixture": "Actual AppRoot and Tiptap, isolated in-memory REST API; live Yjs transport disabled in verifier only.",
+  "geometry": [
+    {
+      "view": "paper-editor",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "components": 329,
+      "differences": 0
+    },
+    {
+      "view": "handdrawn-create-menu",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "components": 348,
+      "differences": 0
+    },
+    {
+      "view": "handdrawn-office-templates",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "components": 350,
+      "differences": 0
+    },
+    {
+      "view": "handdrawn-selection",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "components": 321,
+      "differences": 0
+    },
+    {
+      "view": "handdrawn-editor",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "components": 332,
+      "differences": 0
+    },
+    {
+      "view": "handdrawn-writing-details",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "components": 331,
+      "differences": 0
+    },
+    {
+      "view": "handdrawn-command-palette",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "components": 358,
+      "differences": 0
+    },
+    {
+      "view": "handdrawn-home",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "components": 239,
+      "differences": 0
+    },
+    {
+      "view": "paper-home",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "components": 239,
+      "differences": 0
+    },
+    {
+      "view": "handdrawn-favorites",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "components": 141,
+      "differences": 0
+    },
+    {
+      "view": "handdrawn-search",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "components": 111,
+      "differences": 0
+    },
+    {
+      "view": "handdrawn-admin",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "components": 60,
+      "differences": 0
+    },
+    {
+      "view": "handdrawn-share",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "components": 341,
+      "differences": 0
+    },
+    {
+      "view": "handdrawn-mobile-editor",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "components": 177,
+      "differences": 0
+    },
+    {
+      "view": "handdrawn-mobile-sidebar",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "components": 258,
+      "differences": 0
+    },
+    {
+      "view": "handdrawn-mobile-create-menu",
+      "viewport": {
+        "width": 375,
+        "height": 667
+      },
+      "components": 277,
+      "differences": 0
+    },
+    {
+      "view": "handdrawn-mobile-home",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "components": 152,
+      "differences": 0
+    },
+    {
+      "view": "handdrawn-login",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "components": 22,
+      "differences": 0
+    }
+  ],
+  "chrome": {
+    "width": 900,
+    "scroll": 900,
+    "buttonHeights": [
+      32
+    ],
+    "glyphs": [
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      },
+      {
+        "width": 18,
+        "height": 18,
+        "stroke": "1.65px"
+      }
+    ],
+    "toolbarBackground": "rgba(0, 0, 0, 0)",
+    "footerBackground": "rgba(0, 0, 0, 0)",
+    "footerFonts": [
+      "14px",
+      "14px",
+      "14px"
+    ],
+    "workspaceMaterial": "linear-gradient(rgba(255, 254, 249, 0.84), rgba(255, 254, 249, 0.84)), url(\"http://127.0.0.1:54973/art/handdrawn-v1/textures/paper-ivory.webp\")"
+  },
+  "stats": [
+    {
+      "x": 391.5,
+      "y": 327.890625,
+      "width": 206.390625,
+      "height": 72
+    },
+    {
+      "x": 609.890625,
+      "y": 327.890625,
+      "width": 206.40625,
+      "height": 72
+    },
+    {
+      "x": 828.296875,
+      "y": 327.890625,
+      "width": 206.390625,
+      "height": 72
+    },
+    {
+      "x": 1046.6875,
+      "y": 327.890625,
+      "width": 206.40625,
+      "height": 72
+    },
+    {
+      "x": 1265.09375,
+      "y": 327.890625,
+      "width": 206.390625,
+      "height": 72
+    }
+  ],
+  "saves": 1
+}

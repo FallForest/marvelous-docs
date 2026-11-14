@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f5f6f8" />
+    <meta name="theme-color" content="#fffef9" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Marvelous Docs</title>
     <!--
@@ -23,7 +23,7 @@
         var themes = { paper: ['light', '#ffffff'], handdrawn: ['light', '#fffef9'] };
         var id = null;
         try { id = localStorage.getItem('mdocs-theme') } catch (error) { id = null }
-        if (!Object.prototype.hasOwnProperty.call(themes, id)) id = 'paper';
+        if (!Object.prototype.hasOwnProperty.call(themes, id)) id = 'handdrawn';
         var theme = themes[id];
         var root = document.documentElement;
         root.setAttribute('data-theme', id);

@@ -41,6 +41,11 @@ test('every theme id is unique and the default exists', () => {
   assert.ok(THEMES.length >= 1)
 })
 
+test('hand-drawn is the default and only its picker hint labels it as such', () => {
+  assert.equal(DEFAULT_THEME_ID, 'handdrawn')
+  assert.deepEqual(THEMES.filter((theme) => theme.hint.startsWith('默认：')).map((theme) => theme.id), ['handdrawn'])
+})
+
 test('a theme entry carries everything the picker and the root need', () => {
   for (const theme of THEMES) {
     assert.match(theme.id, /^[a-z][a-z0-9-]*$/, 'id must be a plain attribute value: ' + theme.id)
@@ -69,8 +74,13 @@ test('an unknown id never reaches the DOM', () => {
 test('a stored theme is read back, and anything else falls back', () => {
   const storage = (value: string | null) => ({ getItem: () => value })
   for (const theme of THEMES) assert.equal(readStoredTheme(storage(theme.id)), theme.id)
-  assert.equal(readStoredTheme(storage(null)), DEFAULT_THEME_ID)
-  assert.equal(readStoredTheme(storage('from-a-build-that-is-gone')), DEFAULT_THEME_ID)
+  for (const value of [null, '', 'from-a-build-that-is-gone', '__proto__', 'constructor']) {
+    assert.equal(readStoredTheme(storage(value)), 'handdrawn')
+  }
+})
+
+test('an existing explicit paper preference takes priority over the hand-drawn default', () => {
+  assert.equal(readStoredTheme({ getItem: () => 'paper' }), 'paper')
 })
 
 test('blocked storage never throws on read or write', () => {
@@ -79,13 +89,16 @@ test('blocked storage never throws on read or write', () => {
   const blocked = { getItem: () => { throw new Error('blocked') } }
   assert.equal(readStoredTheme(blocked), DEFAULT_THEME_ID)
 
-  const original = globalThis.localStorage
-  Object.defineProperty(globalThis, 'localStorage', { configurable: true, get() { throw new Error('blocked') } })
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'window')
+  Object.defineProperty(globalThis, 'window', { configurable: true, value: {
+    get localStorage() { throw new Error('blocked') },
+  } })
   try {
     assert.equal(readStoredTheme(), DEFAULT_THEME_ID)
     assert.doesNotThrow(() => storeTheme('paper'))
   } finally {
-    Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: original })
+    if (original) Object.defineProperty(globalThis, 'window', original)
+    else Reflect.deleteProperty(globalThis, 'window')
   }
 })
 
@@ -167,7 +180,7 @@ test('first paint restores every appearance and safely rejects stale or hostile 
   for (const value of [null, '', 'deleted-appearance', '__proto__', 'constructor']) {
     assert.deepEqual(paint(value), { id: fallback.id, scheme: fallback.scheme, colour: fallback.swatch[0] })
   }
-  assert.deepEqual(paint('handdrawn', true), { id: fallback.id, scheme: fallback.scheme, colour: fallback.swatch[0] })
+  assert.deepEqual(paint('paper', true), { id: fallback.id, scheme: fallback.scheme, colour: fallback.swatch[0] })
 })
 
 /** sRGB relative luminance used by the WCAG contrast formula. */

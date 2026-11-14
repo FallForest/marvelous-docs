@@ -15,7 +15,7 @@ export default function StatsCards({ stats }: { stats: WorkspaceStats | null }) 
     {CARDS.map((card) => {
       const Icon = card.icon
       const value = stats ? stats[card.key] : undefined
-      return <div className={'stat-card ' + card.tone} key={card.key}>
+      return <div className={'stat-card stat-' + card.tone} key={card.key}>
         <span className="stat-icon">{card.art ? <ArtIcon name={card.art} fallback={<Icon size={16} />} /> : <Icon size={16} />}</span>
         <span className="stat-copy">
           <b>{typeof value === 'number' ? value : '—'}</b>

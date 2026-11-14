@@ -86,7 +86,7 @@ export default function Sidebar(props: SidebarProps) {
   return <aside className={'sidebar' + (floating ? ' sidebar-floating' : '')} aria-label="文档导航">
     <div className="brand-row">
       <div className="brand-mark"><ArtIcon name="brand-spark" fallback={<Sparkles size={16} />} /></div>
-      <span className="brand-name"><small className="brand-byline handdrawn-only" aria-hidden="true">ZHZ’s</small><span className="brand-title">Marvelous Docs</span></span>
+      <span className="brand-name"><small className="brand-byline theme-decoration" aria-hidden="true">ZHZ’s</small><span className="brand-title">Marvelous Docs</span></span>
       <button type="button" className="icon-btn push" aria-label="收起侧边栏" title="收起侧边栏" onClick={props.onClose}><PanelLeftClose size={17} /></button>
     </div>
 
@@ -143,7 +143,7 @@ export default function Sidebar(props: SidebarProps) {
           aria-label={props.checkedIds ? '退出多选' : '多选文档'}
           title={props.checkedIds ? '退出多选' : '多选文档'}
           onClick={() => props.checkedIds ? props.onExitSelection() : props.onEnterSelection()}
-        ><span className="handdrawn-only tree-action-art"><ArtIcon name="selection" fallback={<CheckSquare size={16} />} /></span><span>{props.checkedIds ? '完成' : '多选'}</span></button>
+        ><span className="theme-decoration tree-action-art"><ArtIcon name="selection" fallback={<CheckSquare size={16} />} /></span><span>{props.checkedIds ? '完成' : '多选'}</span></button>
         <div className="new-menu-anchor">
           <button type="button" className="new-doc-btn sketch-frame" aria-haspopup="menu" aria-expanded={props.newMenuOpen} title="新建" onClick={() => props.onNewMenu(!props.newMenuOpen)}><ArtIcon name="new-document" fallback={<Plus size={14} />} /><span>新建</span><ChevronDown size={12} className="new-doc-chevron" /></button>
           <TemplateMenu

@@ -1,6 +1,6 @@
 /*
- * Hand-drawn material skin. Palette ownership stays in themes.css; every
- * structural rule below is gated by the theme. AI artwork is a real image layer,
+ * Hand-drawn material skin. Palette ownership stays in themes.css.
+ * Shared geometry lives in layout.css. AI artwork is a real image layer,
  * while text, hit targets, editor nodes and focus indicators stay native HTML.
  */
 @font-face{
@@ -10,19 +10,14 @@
   font-weight:400;
   font-display:swap;
 }
-.handdrawn-only{display:none}
-.art-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;vertical-align:middle;line-height:0}
 .art-icon-image{display:none}
 .art-icon-fallback{display:inline-flex;align-items:center;justify-content:center}
-[data-theme='handdrawn'] .handdrawn-only{display:block}
-[data-theme='handdrawn'] .art-icon{width:28px;height:28px}
 [data-theme='handdrawn'] .art-icon-image{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none}
 [data-theme='handdrawn'] .art-icon-fallback{display:none}
 [data-theme='handdrawn'] .art-icon[data-art-failed] .art-icon-image{display:none}
 [data-theme='handdrawn'] .art-icon[data-art-failed] .art-icon-fallback{display:inline-flex}
 
 [data-theme='handdrawn']{
-  --font-handwritten:'Docs Hand','KaiTi','STKaiti','Noto Sans SC',serif;
   --shadow-control:1px 2px 0 rgba(var(--shadow-rgb),.1);
   --shadow-popover:3px 4px 0 rgba(var(--shadow-rgb),.13),0 8px 24px rgba(var(--shadow-rgb),.07);
   --shadow-modal:5px 6px 0 rgba(var(--shadow-rgb),.15),0 18px 50px rgba(var(--shadow-rgb),.12);
@@ -33,7 +28,7 @@
 }
 [data-theme='handdrawn'] body{background:var(--surface-muted)}
 [data-theme='handdrawn'] .app-shell{background:var(--surface-muted)}
-[data-theme='handdrawn'] :is(.primary-btn,.secondary-btn,.share-btn,.dialog-confirm-btn){border-radius:7px 10px 6px 9px;border:1px solid var(--border-strong);box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.15);font-weight:600}
+[data-theme='handdrawn'] :is(.primary-btn,.secondary-btn,.share-btn,.dialog-confirm-btn){border-radius:7px 10px 6px 9px;box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.15)}
 [data-theme='handdrawn'] :is(.primary-btn,.secondary-btn,.share-btn,.dialog-confirm-btn):hover{box-shadow:2px 3px 0 rgba(var(--shadow-rgb),.15)}
 [data-theme='handdrawn'] :is(.primary-btn,.secondary-btn,.share-btn,.dialog-confirm-btn):active{box-shadow:0 1px 0 rgba(var(--shadow-rgb),.12)}
 [data-theme='handdrawn'] .primary-btn{background:var(--accent);color:var(--text-on-accent)}
@@ -41,13 +36,7 @@
 [data-theme='handdrawn'] .icon-btn{border-radius:6px 9px 5px 8px}
 [data-theme='handdrawn'] .popover{background:var(--surface);border-color:var(--border-strong);border-radius:9px 12px 8px 11px;backdrop-filter:none}
 [data-theme='handdrawn'] :is(.modal-panel,.share-modal,.invite-modal,.move-modal,.version-modal,.command-palette){border-color:var(--border-strong);border-radius:12px 16px 10px 14px;background-color:var(--surface)}
-[data-theme='handdrawn'] :is(.modal-panel,.share-modal,.invite-modal,.move-modal,.version-modal)::before{pointer-events:none}
 [data-theme='handdrawn'] :is(.search-page,.admin-shell,.shared-page){background-color:var(--surface-muted);background-image:url('/art/handdrawn-v1/textures/paper-ivory.webp');background-size:768px 768px}
-[data-theme='handdrawn'] :is(.search-hero h1,.admin-topbar h1,.shared-header h1){font-family:var(--font-handwritten);font-weight:700}
 [data-theme='handdrawn'] :is(.search-hit,.admin-section,.stat-card){border-color:var(--border);border-radius:9px 12px 8px 10px;background-color:var(--surface)}
-[data-theme='handdrawn'] .shared-content{background:var(--surface);border:1px solid var(--border-strong);border-radius:9px 12px 7px 10px;box-shadow:3px 4px 0 rgba(var(--shadow-rgb),.09);padding:40px clamp(22px,5vw,64px)}
-[data-theme='handdrawn'] .shared-logo{background:transparent;box-shadow:none;border:0;font-size:0;background-image:url('/art/handdrawn-v1/icons/brand-spark.webp');background-position:center;background-repeat:no-repeat;background-size:contain}
-
-@media (max-width:600px){
-  [data-theme='handdrawn'] .shared-content{padding:26px 20px}
-}
+[data-theme='handdrawn'] .shared-content{background:var(--surface);border-radius:9px 12px 7px 10px;box-shadow:3px 4px 0 rgba(var(--shadow-rgb),.09)}
+[data-theme='handdrawn'] .shared-logo{background:transparent;box-shadow:none}

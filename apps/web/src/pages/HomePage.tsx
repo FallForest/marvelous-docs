@@ -81,7 +81,7 @@ export default function HomeDashboard({ documents, favorites, query, trash, favo
         ? '恢复误删的文档。删除满 ' + trashRetentionDays + ' 天后会自动永久删除，也可以现在一次清空。'
         : '恢复误删的文档，或永久清理不再需要的内容。'}</p>
     </div>
-    <span className="handdrawn-only home-hero-art" aria-hidden="true"><ArtIcon name="trash" fallback={<Trash2 size={48} />} /></span>
+    <span className="theme-decoration home-hero-art" aria-hidden="true"><ArtIcon name="trash" fallback={<Trash2 size={48} />} /></span>
     {visible.length > 0 && <button className="secondary-btn" onClick={onEmptyTrash}><Trash2 size={15} />清空回收站</button>}</div>
     <section className="home-section">
       <div className="home-section-head"><h2><Trash2 size={16} />已删除文档</h2><span>{visible.length + ' 项'}</span></div>
@@ -103,7 +103,7 @@ export default function HomeDashboard({ documents, favorites, query, trash, favo
   </div>
   const favoriteDocs = visible.filter((doc) => favorites.has(doc.id))
   if (favoritesView) return <div className="home-dashboard" data-vt-scope="main" ref={rootRef}>
-    <div className="home-hero"><div className="home-hero-copy"><span {...heroLine(0, 'eyebrow')}>我的收藏</span><h1 {...heroLine(1)}>收藏</h1><p {...heroLine(2)}>标星过的文档和文件夹集中在这里，方便随时回到常用内容。</p></div><span className="handdrawn-only home-hero-art" aria-hidden="true"><ArtIcon name="favorite-star" fallback={<Star size={48} />} /></span></div>
+    <div className="home-hero"><div className="home-hero-copy"><span {...heroLine(0, 'eyebrow')}>我的收藏</span><h1 {...heroLine(1)}>收藏</h1><p {...heroLine(2)}>标星过的文档和文件夹集中在这里，方便随时回到常用内容。</p></div><span className="theme-decoration home-hero-art" aria-hidden="true"><ArtIcon name="favorite-star" fallback={<Star size={48} />} /></span></div>
     <section className="home-section">
       <div className="home-section-head"><h2><Star size={16} />已收藏</h2><span>{favoriteDocs.length + ' 项'}</span></div>
       {favoriteDocs.length ? <div className="home-grid">{favoriteDocs.map((doc, index) => <button {...staggerItemProps(index, 'home-card')} key={doc.id} onClick={() => onOpen(doc)}>
@@ -122,7 +122,7 @@ export default function HomeDashboard({ documents, favorites, query, trash, favo
   return <div className="home-dashboard" data-vt-scope="main" ref={rootRef}>
     <div className="home-hero">
       <div className="home-hero-copy"><span {...heroLine(0, 'eyebrow')}>工作区</span><h1 {...heroLine(1)}>欢迎回来</h1><p {...heroLine(2)}>继续处理你的文档，或创建一个新的知识空间。</p></div>
-      <span className="handdrawn-only home-hero-art" aria-hidden="true"><ArtIcon name="notebook" fallback={<FileText size={48} />} /></span>
+      <span className="theme-decoration home-hero-art" aria-hidden="true"><ArtIcon name="notebook" fallback={<FileText size={48} />} /></span>
       <div className="hero-actions">
         <button className="secondary-btn" onClick={onImport}><Upload size={15} />导入 Markdown</button>
         <button className="secondary-btn" onClick={onCreateFolder}><FolderPlus size={15} />新建文件夹</button>

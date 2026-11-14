@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { API } from '../lib/api'
 import { renderDocHTML } from '../lib/export/render-html'
+import { Sparkles } from 'lucide-react'
+import ArtIcon from '../components/ui/ArtIcon'
 
 /** Public, unauthenticated view of a document reached through a share link. */
 export default function SharedDocumentPage({ token }: { token: string }) {
@@ -19,13 +21,13 @@ export default function SharedDocumentPage({ token }: { token: string }) {
       .finally(() => setLoading(false))
   }, [token])
 
-  if (loading) return <div className="shared-page" data-vt-scope="main"><div className="shared-header"><div className="shared-logo">M</div><h1>Marvelous Docs</h1></div><p className="shared-state"><span className="login-spinner" aria-hidden="true" />正在加载文档…</p></div>
-  if (error || !doc) return <div className="shared-page" data-vt-scope="main"><div className="shared-header"><div className="shared-logo">M</div><h1>Marvelous Docs</h1></div><div className="shared-content"><p className="shared-state">{error || '文档不存在或链接已过期'}</p></div></div>
+  if (loading) return <div className="shared-page" data-vt-scope="main"><div className="shared-header"><div className="shared-logo"><ArtIcon name="brand-spark" fallback={<Sparkles size={28} />} /></div><h1>Marvelous Docs</h1></div><p className="shared-state"><span className="login-spinner" aria-hidden="true" />正在加载文档…</p></div>
+  if (error || !doc) return <div className="shared-page" data-vt-scope="main"><div className="shared-header"><div className="shared-logo"><ArtIcon name="brand-spark" fallback={<Sparkles size={28} />} /></div><h1>Marvelous Docs</h1></div><div className="shared-content"><p className="shared-state">{error || '文档不存在或链接已过期'}</p></div></div>
 
   const content = doc.content as { doc?: { type: string; content?: unknown[] } }
   return <div className="shared-page" data-vt-scope="main">
     <div className="shared-header">
-      <div className="shared-logo">M</div>
+      <div className="shared-logo"><ArtIcon name="brand-spark" fallback={<Sparkles size={28} />} /></div>
       <h1>Marvelous Docs</h1>
       <span className="shared-badge">{doc.permission === 'commenter' ? '可评论' : '仅查看'}</span>
     </div>

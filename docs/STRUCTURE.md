@@ -135,6 +135,7 @@ styles/                   CSS layers, imported in cascade order by index.css
   shell.css               Sidebar + topbar consolidation (single source)
   pages.css               Home, folder, search, palette, login, admin screens
   updates.css             Updater banner and links
+  layout.css              Shared component geometry and typography for both themes
   handdrawn.css            Shared material skin, font, art-icon fallback
   handdrawn-navigation.css Theme-scoped sidebar, tree and topbar treatments
   handdrawn-content.css    Theme-scoped editor, comments, home and login
