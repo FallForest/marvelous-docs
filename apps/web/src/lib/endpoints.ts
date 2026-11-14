@@ -1,7 +1,7 @@
 import { request } from './api'
 import type {
-  Comment, Doc, DocumentPermission, SearchHit, SearchScope, Template, User,
-  Version, WorkspaceMember, WorkspaceStats,
+  Comment, Doc, DocumentPermission, SearchHit, SearchScope, ShareLinkPermission, Template, User,
+  HistoryPage, Version, WorkspaceMember, WorkspaceStats,
 } from './types'
 
 /**
@@ -39,7 +39,8 @@ export const api = {
   recent: (token: Token) => request<{ documents: Doc[] }>('/documents/recent', token),
   search: (token: Token, query: string, scope: SearchScope) =>
     request<{ results: SearchHit[] }>('/documents/search?q=' + encodeURIComponent(query) + '&scope=' + scope, token),
-  document: (token: Token, id: string) => request<{ document: Doc }>(doc(id), token),
+  documentVersion: (token: Token, id: string) => request<{ version: number; updatedAt: string }>('/documents/' + id + '/version', token),
+  document: (token: Token, id: string, visit = false) => request<{ document: Doc }>(doc(id) + (visit ? '?visit=1' : ''), token),
 
   /* ---- documents: writes ---- */
   createDocument: (token: Token, payload: Record<string, unknown>) =>
@@ -75,8 +76,11 @@ export const api = {
 
   /* ---- versions ---- */
   versions: (token: Token, id: string) => request<{ versions: Version[] }>(doc(id) + '/versions', token),
-  restoreVersion: (token: Token, id: string, versionId: string, expectedVersion: number) =>
-    request<{ document: Doc }>(doc(id) + '/versions/' + versionId + '/restore', token, { method: 'POST', body: JSON.stringify({ expectedVersion }) }),
+  version: (token: Token, id: string, versionId: string) => request<{ version: Version }>(doc(id) + '/versions/' + encodeURIComponent(versionId), token),
+  history: (token: Token, id: string, cursor?: string | null, limit = 20) =>
+    request<HistoryPage>(doc(id) + '/history?limit=' + limit + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''), token),
+  restoreVersion: (token: Token, id: string, versionId: string, expectedVersion: number, expectedStateVector?: string) =>
+    request<{ document: Doc }>(doc(id) + '/versions/' + versionId + '/restore', token, { method: 'POST', body: JSON.stringify({ expectedVersion, expectedStateVector }) }),
 
   /* ---- sharing ---- */
   acl: (token: Token, id: string) => request<{ restricted: boolean; permissions: DocumentPermission[] }>(doc(id) + '/acl', token),
@@ -84,7 +88,7 @@ export const api = {
     request<{ ok: true }>(doc(id) + '/acl', token, { method: 'PUT', body: JSON.stringify(payload) }),
   shareLinks: (token: Token, id: string) =>
     request<{ shareLinks: ShareLink[] }>(doc(id) + '/share-link', token),
-  createShareLink: (token: Token, id: string, permission: 'viewer' | 'commenter') =>
+  createShareLink: (token: Token, id: string, permission: ShareLinkPermission) =>
     request<{ shareLink: ShareLink }>(doc(id) + '/share-link', token, { method: 'POST', body: JSON.stringify({ permission }) }),
   revokeShareLink: (token: Token, id: string, linkId: string) =>
     request<{ ok: true }>(doc(id) + '/share-link/' + linkId, token, { method: 'DELETE' }),
@@ -95,9 +99,6 @@ export const api = {
   startUpdate: (token: Token) => request<{ update: unknown }>('/system/update', token, { method: 'POST' }),
   updateStatus: (token: Token) =>
     request<{ update: { status: 'running' | 'completed' | 'failed'; error?: string } }>('/system/update-status', token),
-
-  /* ---- activity ---- */
-  activity: (token: Token, id: string) => request<{ activity: unknown[] }>(doc(id) + '/activity', token),
 }
 
 export type ShareLink = { id: string; token: string; permission: string; expiresAt: string | null }

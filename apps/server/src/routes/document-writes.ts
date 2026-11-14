@@ -6,7 +6,8 @@ import { fail, parse } from '../core/http.js'
 import { documentJson, recordActivity } from '../domain/access.js'
 import { assertFolderParent, insertDocument } from '../domain/documents.js'
 import { createYDoc, yState } from '../collaboration/ydoc.js'
-import { flushRoom, rooms, syncRoomFromContent } from '../collaboration/rooms.js'
+import { applyPreparedRoomContent, prepareRoomContent, scheduleDocumentHistory, withRoomMutation } from '../collaboration/rooms.js'
+import { noteHistoryEdit } from '../domain/history.js'
 import { requireNode } from '../domain/guards.js'
 import { firstHeadingTitle, markdownToTiptap } from '../lib/markdown/index.js'
 import { getTemplate } from '../lib/templates.js'
@@ -91,18 +92,37 @@ export function registerDocumentWriteRoutes(app: FastifyInstance, deps: RouteDep
     return reply.code(201).send({ document: documentJson(row) })
   })
 
-  app.put('/api/v1/documents/:id', deps.authenticate, async (request, reply) => {
+  /*
+   * Throttled because it is the one endpoint that can be driven in a loop: a
+   * scripted client holding a valid token could otherwise rewrite a document
+   * thousands of times a minute, and every write bumps the version, appends a
+   * history row and rebuilds the search index. 120/min is far above what the
+   * editor produces (its autosave debounce is 700ms and it stops when idle) and
+   * far below what a runaway loop looks like.
+   */
+  app.put('/api/v1/documents/:id', { preHandler: [deps.authenticate.preHandler, deps.rateLimit(120, 60 * 1000)] }, async (request, reply) => {
     const auth = request as AuthRequest
     const params = parse(idParams, request.params)
     if (!params) return fail(reply, 400, 'INVALID_ID', 'Document id must be a UUID.')
 
-    // Flush first: the optimistic check must compare against persisted state.
-    const roomBeforeUpdate = rooms.get(params.id)
-    if (roomBeforeUpdate) await flushRoom(roomBeforeUpdate)
-
+    /*
+     * Authorise before queueing, not inside the mutation.
+     *
+     * `withRoomMutation` serialises every write for one document behind a single
+     * promise. Doing the access check inside it put a database round trip between
+     * taking the lock and using it - and a caller that reacts to that query (a
+     * client retrying, a test observing the read) would queue a second write behind
+     * the one waiting on it. One request could deadlock the document.
+     *
+     * The check itself is still authoritative: `requireNode` reads the row, and the
+     * mutation re-reads it with `FOR UPDATE` before using `expectedVersion`, so a
+     * permission revoked in between is caught by the version comparison rather than
+     * by stale state.
+     */
     const access = await requireNode(auth, reply, params.id, 'editor')
     if (!access) return
 
+    return withRoomMutation(params.id, async (room) => {
     const input = parse(z.object({
       title: z.string().trim().min(1).max(500).optional(),
       parentId: uuidSchema.nullable().optional(),
@@ -153,22 +173,24 @@ export function registerDocumentWriteRoutes(app: FastifyInstance, deps: RouteDep
         return fail(reply, 409, 'VERSION_CONFLICT', `Document is at version ${old.version}; reload and retry.`)
       }
       const naming = savedDocumentTitle(old.title, old.title_mode, input.content ?? old.content, input.title)
-      await client.query(
-        'INSERT INTO document_versions(document_id,version,title,content,created_by) VALUES ($1,$2,$3,$4,$5)',
-        [old.id, old.version, old.title, old.content, old.updated_by])
+      const prepared = room && input.content ? prepareRoomContent(room, input.content.doc) : undefined
       const updated = await client.query<DocumentRow>(`UPDATE documents SET title=COALESCE($2,title), parent_id=CASE WHEN $3 THEN $4 ELSE parent_id END,
         content=COALESCE($5,content), yjs_state=COALESCE($7,yjs_state), title_mode=$8, version=version+1, updated_by=$6, updated_at=now() WHERE id=$1 RETURNING *`,
-        [params.id, naming.title, input.parentId !== undefined, input.parentId ?? null, input.content ?? null, auth.user.sub, replacementState, naming.titleMode])
+        [params.id, naming.title, input.parentId !== undefined, input.parentId ?? null, input.content ?? null, auth.user.sub, prepared?.state ?? replacementState, naming.titleMode])
+      const changed = await noteHistoryEdit(client, old, updated.rows[0]!)
       await client.query('COMMIT')
 
-      const activeRoom = input.content ? rooms.get(params.id) : undefined
-      if (activeRoom) await syncRoomFromContent(activeRoom, input.content!.doc)
-      if (input.content) await recordActivity(params.id, auth.user.sub, 'edit', app.log)
+      if (room && prepared) applyPreparedRoomContent(room, prepared)
+      void scheduleDocumentHistory(params.id)
+      if (input.title !== undefined && old.title !== updated.rows[0]!.title) await recordActivity(params.id, auth.user.sub, 'rename', app.log, { beforeTitle: old.title, afterTitle: updated.rows[0]!.title })
+      if (old.parent_id !== updated.rows[0]!.parent_id) await recordActivity(params.id, auth.user.sub, 'move', app.log, { fromParentId: old.parent_id, toParentId: updated.rows[0]!.parent_id })
+      if (input.content && changed) await recordActivity(params.id, auth.user.sub, 'edit', app.log)
       return { document: documentJson(updated.rows[0]!) }
     } catch (error) {
       await client.query('ROLLBACK')
       throw error
     } finally { client.release() }
+    })
   })
 
   app.post('/api/v1/documents/:id/duplicate', deps.authenticate, async (request, reply) => {

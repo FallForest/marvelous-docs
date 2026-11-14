@@ -17,13 +17,20 @@ anything that only changes state, and nothing that makes the user wait.
 
 Every other layer — `base.css`, `surfaces.css`, `dialogs.css`,
 `navigation.css`, `panels.css`, `editor.css`, `content.css`, `shell.css`,
-`pages.css`, `updates.css`, `layout.css`, `handdrawn.css`, `handdrawn-navigation.css`,
-`handdrawn-content.css`, `handdrawn-controls.css`, `handdrawn-materials.css`,
-`handdrawn-writing.css`, `handdrawn-editor-chrome.css` — only *uses* these names. The hand-drawn skin replaces
-material, radius and shadow treatment under its root theme selector; durations,
-easing and interaction timing continue to use the shared motion tokens. A rule that hard-codes
-`220ms` or `ease-in-out` is a bug: it will not be retuned when the rest of the
-app is, and `structure.test.ts` fails on it.
+`pages.css`, `layout.css`, `history.css`, `handdrawn.css`,
+`handdrawn-navigation.css`, `handdrawn-content.css`, `handdrawn-controls.css`,
+`handdrawn-materials.css`, `handdrawn-writing.css`,
+`handdrawn-editor-chrome.css` — only *uses* these names. The hand-drawn skin
+replaces material, radius and shadow treatment under its root theme selector;
+durations, easing and interaction timing continue to use the shared motion
+tokens. A rule that hard-codes `220ms` or `ease-in-out` is a bug: it will not
+be retuned when the rest of the app is, and `structure.test.ts` fails on it.
+
+`history.css` loads last because the history panel is the newest surface and
+paints over both appearances: it carries geometry for the day groups, the
+timeline, and the version-diff preview, and its hand-drawn block only adds
+texture. Its one movement is the day chevron, a `transform` rotate at
+`--duration-fast` that is dropped under `prefers-reduced-motion`.
 
 ## Choosing a motion
 

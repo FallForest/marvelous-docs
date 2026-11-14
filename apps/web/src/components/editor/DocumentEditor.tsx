@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import type { Editor } from '@tiptap/react'
 import { EditorContent, ReactNodeViewRenderer, useEditor } from '@tiptap/react'
 import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
@@ -12,7 +13,9 @@ import { Dialog } from '../ui/Dialog'
 import ArtIcon from '../ui/ArtIcon'
 import DocumentCreatedTime from '../ui/DocumentCreatedTime'
 import { API, request } from '../../lib/api'
+import { api } from '../../lib/endpoints'
 import { COLLAB_URL } from '../../lib/collab'
+import { visualViewportRect } from '../../lib/viewport'
 import { buildEditorExtensions } from '../../lib/editor'
 import { useBlockGeometry } from '../../hooks/useBlockGeometry'
 import { wordCount, formatDate } from '../../lib/format'
@@ -22,7 +25,13 @@ import BlockHandle from './BlockHandle'
 import { useBlockAnchor } from '../../hooks/useBlockAnchor'
 import { emptyContent } from '../../lib/types'
 import type { CollabStatus } from '../../lib/app-types'
-import type { Comment, Doc, SaveStatus, User } from '../../lib/types'
+import type { Comment, Doc, DocJson, SaveStatus, User } from '../../lib/types'
+
+export type DocumentEditorHandle = {
+  snapshot: () => { documentId: string; content: DocJson; title: string; stateVector?: string }
+  flushTitle: () => Promise<void>
+  setLocked: (locked: boolean) => void
+}
 
 type DocumentEditorProps = {
   doc: Doc
@@ -44,7 +53,21 @@ type DocumentEditorProps = {
   commentDraft: { from: number; to: number } | null
 }
 
-export default function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, onAwareness, onCollabStatus, onSelection, onExport, onLink, comments, activeCommentId, commentDraft }: DocumentEditorProps) {
+/**
+ * Word count from the incrementally maintained storage, not from the document.
+ *
+ * `@tiptap/extension-character-count` recomputes on each transaction and keeps the
+ * total in `editor.storage`, so reading it costs nothing. `getText()` walks the
+ * whole document and allocates the full text just to count it - measurable on a
+ * long document, and paid on every debounce tick while typing. The fallback keeps
+ * the footer honest if the extension is ever removed from the schema.
+ */
+function countWords(editor: Editor): number {
+  const stored = (editor.storage as { characterCount?: { words?: () => number } }).characterCount
+  if (stored && typeof stored.words === 'function') return stored.words()
+  return wordCount(editor.getText())
+}
+const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, onAwareness, onCollabStatus, onSelection, onExport, onLink, comments, activeCommentId, commentDraft }: DocumentEditorProps, ref) {
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null)
   const [provider, setProvider] = useState<WebsocketProvider | null>(null)
   const [title, setTitle] = useState(doc.title)
@@ -67,6 +90,9 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
   const titleWritePending = useRef(false)
   const titleOrigin = useRef<Pick<Doc, 'title' | 'titleMode'>>(doc)
   const live = useRef(true)
+  const restoreLock = useRef(false)
+  const [locked, setLocked] = useState(false)
+  const titleRequest = useRef<Promise<Doc | null> | null>(null)
 
   useEffect(() => {
     if (!titleEditing.current && !titleWritePending.current) setTitle(doc.title)
@@ -141,11 +167,19 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
    */
   async function confirmPersisted(local: unknown) {
     try {
-      const latest = await request<{ document: Doc }>('/documents/' + doc.id, token)
-      if (!live.current) return
-      if (latest.document.version > persistedVersion.current) {
-        persistedVersion.current = latest.document.version
-        window.dispatchEvent(new CustomEvent('mdoc-updated', { detail: latest.document }))
+      // Version only. The old poll pulled the whole document body - and, on a
+      // collaborative document, made the server flush the room to answer - once a
+      // second for as long as the write took. The confirmation only needed the
+      // number.
+      //
+      // The `mdoc-updated` event still carries a document, because two listeners
+      // (the shell and the history panel) refresh from its payload; sending only a
+      // version would leave them stale. They are triggered by the writes that have
+      // a document in hand, not by this poll.
+      const latest = await api.documentVersion(token, doc.id)
+      if (!live.current || restoreLock.current) return
+      if (latest.version > persistedVersion.current) {
+        persistedVersion.current = latest.version
         onSaveStatus('saved')
         return
       }
@@ -166,10 +200,16 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
     content: doc.content?.doc || emptyContent.doc,
     autofocus: doc.titleMode === 'auto' && doc.title === '未命名文档' && doc.version === 1 ? 'start' : false,
     onUpdate: ({ editor: instance }) => {
-      // Counting the whole document on every keystroke is O(n); the footer only
-      // needs to be roughly current.
+      if (restoreLock.current) return
+      /*
+       * The footer needs a word count that is roughly current, not exact. Counting
+       * the whole document on every keystroke was O(n) per character typed; the
+       * character-count extension already maintains the number incrementally, so
+       * reading it is O(1). The debounce stays: the footer is not worth a re-render
+       * per keystroke either way.
+       */
       window.clearTimeout(wordTimer.current)
-      wordTimer.current = window.setTimeout(() => setWords(wordCount(instance.getText())), 300)
+      wordTimer.current = window.setTimeout(() => setWords(countWords(instance)), 300)
       if (provider) {
         /* Collaborative edits reach the server through the Yjs room, which
            debounces and writes asynchronously. Reporting "saved" on a timer would
@@ -182,7 +222,7 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
         persist(instance.getJSON())
       }
     },
-    onCreate: ({ editor: instance }) => setWords(wordCount(instance.getText())),
+    onCreate: ({ editor: instance }) => setWords(countWords(instance)),
     onBlur: () => setBubbleAnchor(null),
     onSelectionUpdate: ({ editor: instance }) => {
       const { from, to } = instance.state.selection
@@ -192,7 +232,18 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
         onSelection({ from, to, text: instance.state.doc.textBetween(from, to, ' ').slice(0, 500) })
         const start = instance.view.coordsAtPos(from)
         const end = instance.view.coordsAtPos(to)
-        setBubbleAnchor({ left: Math.max(12, (start.left + end.left) / 2 - 150), top: Math.max(64, Math.min(start.top, end.top) - 52) })
+        /*
+         * Clamped to the visual viewport, not the window: on a phone the software
+         * keyboard shrinks `visualViewport` without touching `innerHeight`, so a
+         * toolbar positioned against the window sits under the keyboard where
+         * nobody can reach it.
+         */
+        const view = visualViewportRect()
+        const top = Math.min(start.top, end.top) - 52
+        setBubbleAnchor({
+          left: Math.max(12, Math.min(view.left + view.width - 312, (start.left + end.left) / 2 - 150)),
+          top: Math.max(view.top + 8, top),
+        })
       } else {
         setBubbleAnchor(null)
       }
@@ -269,17 +320,41 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
       // Never trigger inside code blocks: file paths such as /usr/local/bin/xray
       // are ordinary text there, not a command.
       if ($from.parent.type.name === 'codeBlock') { setSlash(null); return }
-      // Only paragraphs and headings host the insertion command.
-      if ($from.parent.type.name !== 'paragraph' && $from.parent.type.name !== 'heading') { setSlash(null); return }
+      /*
+       * List items and quotes host the command too. They were excluded because the
+       * handler used to look at `$from.parent`, but the parent of a caret in a list
+       * item is the list item - so the one place a writer most wants to add a block
+       * (continuing a list with a table, say) was the one place it did not work.
+       */
+      const hosts = ['paragraph', 'heading', 'listItem', 'taskItem', 'blockquote']
+      if (!hosts.includes($from.parent.type.name)) { setSlash(null); return }
       const textBefore = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc')
-      const match = /(^|\s)\/([^\s/]*)$/.exec(textBefore)
+      /*
+       * A trigger after any break, not only after ASCII whitespace. Chinese prose
+       * rarely has a space before a slash: it follows `，`, `。` or `：` directly, so
+       * `/(^|\s)\//` made the command nearly unusable in the language this product
+       * is written in.
+       */
+      const match = /(^|[\s，。！？、；：）」』】》])\/([^\s/]*)$/.exec(textBefore)
       if (!match) { setSlash(null); return }
       const query = match[2] || ''
       // Hide the menu when nothing matches so it cannot cover the document.
-      const hasMatch = SLASH_ITEMS.some((item) => !query || item.label.includes(query) || item.hint.includes(query))
+      const needle = query.trim().toLowerCase()
+      const hasMatch = SLASH_ITEMS.some((item) => !needle
+        || item.label.includes(needle)
+        || item.hint.includes(needle)
+        || item.keywords.some((word) => word.startsWith(needle)))
       if (!hasMatch) { setSlash(null); return }
       const coords = editor.view.coordsAtPos($from.pos)
-      setSlash({ left: Math.max(12, Math.min(window.innerWidth - 280, coords.left)), top: coords.bottom + 6, query, range: { from: $from.pos - query.length - 1, to: $from.pos } })
+      // Same reason as the bubble menu: a slash menu under the keyboard is a slash
+      // menu the writer cannot see.
+      const view = visualViewportRect()
+      setSlash({
+        left: Math.max(12, Math.min(view.left + view.width - 280, coords.left)),
+        top: Math.min(view.top + view.height - 60, coords.bottom + 6),
+        query,
+        range: { from: $from.pos - query.length - 1, to: $from.pos },
+      })
     }
     editor.on('update', update)
     editor.on('selectionUpdate', update)
@@ -296,8 +371,28 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
     return () => window.removeEventListener('mdoc-insert-link', handler)
   }, [editor])
 
+  /*
+   * `Ctrl+K` with text selected asks for a link, by way of the shell.
+   *
+   * The shell owns the keyboard map and the editor owns the selection, so the key
+   * crosses the boundary as an event rather than as a prop. The range is read here,
+   * where it is authoritative, and the link prompt is opened through the same
+   * `onLink` the toolbar uses — one prompt, two ways in.
+   */
+  useEffect(() => {
+    if (!editor) return
+    const openLink = () => {
+      const { from, to } = editor.state.selection
+      if (from === to) return
+      onLink({ from, to })
+    }
+    window.addEventListener('mdoc-link-selection', openLink)
+    return () => window.removeEventListener('mdoc-link-selection', openLink)
+  }, [editor, onLink])
+
   useEffect(() => {
     const handler = () => {
+      if (restoreLock.current) return
       if (provider) {
         onSaveStatus('saving')
         request<{ document: Doc }>('/documents/' + doc.id, token)
@@ -381,10 +476,16 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
     return true
   }
 
-  async function saveTitle(next: string) {
+  function saveTitle(next: string) {
+    const pending = writeTitle(next)
+    titleRequest.current = pending
+    return pending
+  }
+
+  async function writeTitle(next: string): Promise<Doc | null> {
     const clean = next.trim()
     titleDirty.current = false
-    if (!clean) { setTitle(currentDocument.current.title); return }
+    if (!clean) { setTitle(currentDocument.current.title); return currentDocument.current }
     const origin = titleOrigin.current
     titleWritePending.current = true
     setTitleSaving(true)
@@ -402,7 +503,7 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
           const result = await request<{ document: Doc }>('/documents/' + doc.id, token, { method: 'PUT', body: JSON.stringify({ title: clean, expectedVersion: latest.document.version }) })
           if (live.current) setTitle(result.document.title)
           window.dispatchEvent(new CustomEvent('mdoc-updated', { detail: result.document }))
-          return
+          return result.document
         } catch (error) {
           if ((error as { status?: number }).status !== 409 || attempt > 0) throw error
         }
@@ -410,11 +511,37 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
     } catch (error) {
       if (live.current) setTitle(currentDocument.current.title)
       window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '标题保存失败：' + (error as Error).message }))
+      return null
     } finally {
       titleWritePending.current = false
       if (live.current) setTitleSaving(false)
     }
+    return null
   }
+
+  useImperativeHandle(ref, () => ({
+    snapshot: () => {
+      if (!editor) throw new Error('编辑器正在加载，请稍后重试。')
+      const vector = provider && ydoc ? Y.encodeStateVector(ydoc) : undefined
+      return {
+        documentId: doc.id,
+        content: { schemaVersion: 1, doc: editor.getJSON() },
+        title: titleDirty.current || titleWritePending.current ? title : currentDocument.current.title,
+        stateVector: vector ? btoa(Array.from(vector, (byte) => String.fromCharCode(byte)).join('')) : undefined,
+      }
+    },
+    flushTitle: async () => {
+      if (COLLAB_URL && (!provider || !provider.wsconnected || !provider.synced || !ydoc)) throw new Error('等待实时协作同步完成后再恢复。')
+      if (titleRequest.current && !await titleRequest.current) throw new Error('标题尚未保存成功，请先处理后再恢复。')
+      if (titleDirty.current && !await saveTitle(title)) throw new Error('标题尚未保存成功，请先处理后再恢复。')
+    },
+    setLocked: (value) => {
+      restoreLock.current = value
+      setLocked(value)
+      if (editor && !editor.isDestroyed) editor.setEditable(!value)
+      if (value) window.clearTimeout(statusTimer.current)
+    },
+  }))
 
   return <>
     <EditorToolbar
@@ -435,7 +562,7 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
           <span className="theme-decoration document-title-art" aria-hidden="true"><ArtIcon name="notebook" fallback={<FileText size={40} />} /></span>
           <div className="document-title-field"><input
           aria-label="文档标题"
-          disabled={titleSaving}
+          disabled={titleSaving || locked}
           maxLength={500}
           title={doc.titleMode === 'auto' ? '根据正文自动命名；手动修改后固定名称' : '修改文档标题'}
           value={title}
@@ -487,4 +614,6 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
         : <><kbd>Ctrl/⌘+S</kbd> 保存 <span className="footer-hint-divider">·</span> <kbd>Ctrl/⌘+Shift+E</kbd> 导出 Markdown</>}</span>
     </div>
   </>
-}
+})
+
+export default DocumentEditor

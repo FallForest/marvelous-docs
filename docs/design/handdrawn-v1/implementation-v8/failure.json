@@ -1,0 +1,53 @@
+{
+  "error": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(!textOf(restored.content.doc).includes('尚未自动保存的最新内容'))\n",
+  "result": {
+    "checks": [
+      "Two tabs only; unified date-grouped history is lightweight and paginated, shows real names; selected version has text/code/table differences and complete read-only original; restore confirmation can cancel"
+    ],
+    "screenshots": [
+      "history-timeline.png",
+      "history-changes.png",
+      "history-original.png",
+      "history-restore-confirmation.png"
+    ],
+    "fixture": "Actual AppRoot and Tiptap, isolated in-memory REST API with auto/manual title and createdAt contract; live Yjs transport disabled in verifier only. This verifies browser behavior, not the real server implementation.",
+    "geometry": [
+      {
+        "view": "history-timeline",
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "components": 332,
+        "differences": 0
+      },
+      {
+        "view": "history-changes",
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "components": 397,
+        "differences": 0
+      },
+      {
+        "view": "history-original",
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "components": 406,
+        "differences": 0
+      },
+      {
+        "view": "history-restore-confirmation",
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "components": 406,
+        "differences": 0
+      }
+    ]
+  }
+}

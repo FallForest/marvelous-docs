@@ -27,8 +27,19 @@ export type Room = {
   saveQueue: Promise<void>
   suppressSave: boolean
   dirty: boolean
+  /**
+   * `content` lags `yjs_state`.
+   *
+   * The projection is derived data and expensive to write (it rebuilds the search
+   * indexes), so it is refreshed on a slower clock than the durable state. Anything
+   * that reads `content` has to go through `flushRoom`, which forces a projection.
+   */
+  projectionDirty: boolean
+  /** When `content` was last written, for the projection interval. */
+  projectedAt: number
   changeSeq: number
   lastActor?: string
+  historyTimer?: NodeJS.Timeout
 }
 
 export type UpdateManifest = { version: string; releaseUrl?: string; notesUrl?: string; apiImage?: string; webImage?: string; sha256?: string }

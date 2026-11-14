@@ -63,6 +63,10 @@
 
 .primary-btn .login-spinner{border-color:rgba(var(--on-accent-rgb),0.42);border-top-color:var(--surface)}
 
+/* The boot screen reuses the login card so the swap from "opening" to "signed
+   in" is a change of message, not of layout. */
+.login-boot{display:flex;align-items:center;justify-content:center;gap:9px;margin:26px 0 4px;font-size:12px;color:var(--text-muted)}
+
 /* ══ admin shell ═══════════════════════════════════════════════ */
 
 .admin-shell{min-height:100vh;display:flex;background:var(--surface-muted);color:var(--text)}

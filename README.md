@@ -137,8 +137,18 @@ pnpm build       # type-check and bundle every package
 pnpm clean       # remove dist output and tsbuildinfo files
 ```
 
-CI runs exactly these steps on every push and pull request
-(`.github/workflows/ci.yml`).
+CI runs these on every push and pull request (`.github/workflows/ci.yml`),
+plus `node scripts/release/bump-version.mjs --check` and a separate
+browser job. The checks live in `ci-checks.yml` because the release
+workflow calls the same file:
+
+```sh
+pnpm verify:browser   # six headless-Chrome verifiers from scripts/verify/*.mjs
+```
+
+The verifiers need a real Chrome, and `CHROME_PATH` when it is not at the
+Windows default; CI installs CJK fonts first, because they measure geometry
+around Chinese text.
 
 ## Repository layout
 
@@ -194,6 +204,8 @@ commit `.env` or backup files - both are ignored by git.
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) - prerequisites, scripts, conventions, migrations, debugging
 - [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) - production, TLS, updates, backup, upgrades
 - [docs/SECURITY.md](docs/SECURITY.md) - auth, roles, uploads, rate limiting, hardening
+- [docs/ROADMAP.md](docs/ROADMAP.md) - known gaps, prioritised, with file-and-line evidence
+- [docs/PERFORMANCE.md](docs/PERFORMANCE.md) - what a keystroke costs in a long document, and how it is measured
 - [CONTRIBUTING.md](CONTRIBUTING.md) - workflow, commit style, checks
 - [CHANGELOG.md](CHANGELOG.md) - release notes
 - [packages/cli/README.md](packages/cli/README.md) - CLI reference

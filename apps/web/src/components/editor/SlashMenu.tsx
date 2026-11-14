@@ -6,7 +6,22 @@ import { staggerStyle } from '../../lib/motion'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 
 type Range = { from: number; to: number }
-type SlashItem = { id: string; label: string; hint: string; icon: LucideIcon; run: (editor: Editor, range: Range) => void }
+type SlashItem = {
+  id: string
+  label: string
+  hint: string
+  /**
+   * Latin, pinyin and common aliases.
+   *
+   * Typing `/h1` or `/biaoti` used to return nothing: the filter only looked at
+   * the Chinese label and hint, so a writer who thinks in English or in pinyin
+   * had to switch to the mouse. These are search terms, not display text - the
+   * menu still shows the Chinese label.
+   */
+  keywords: string[]
+  icon: LucideIcon
+  run: (editor: Editor, range: Range) => void
+}
 
 type Props = {
   editor: Editor | null
@@ -21,18 +36,18 @@ type Props = {
 const STAGGER_LIMIT = 10
 
 export const SLASH_ITEMS: SlashItem[] = [
-  { id: 'text', label: '正文', hint: '普通文本段落', icon: Type, run: (editor, range) => editor.chain().focus().deleteRange(range).setParagraph().run() },
-  { id: 'h1', label: '标题 1', hint: '大标题', icon: Heading1, run: (editor, range) => editor.chain().focus().deleteRange(range).setHeading({ level: 1 }).run() },
-  { id: 'h2', label: '标题 2', hint: '章节标题', icon: Heading2, run: (editor, range) => editor.chain().focus().deleteRange(range).setHeading({ level: 2 }).run() },
-  { id: 'h3', label: '标题 3', hint: '小节标题', icon: Heading3, run: (editor, range) => editor.chain().focus().deleteRange(range).setHeading({ level: 3 }).run() },
-  { id: 'bullet', label: '无序列表', hint: '项目符号列表', icon: List, run: (editor, range) => editor.chain().focus().deleteRange(range).toggleBulletList().run() },
-  { id: 'ordered', label: '有序列表', hint: '编号列表', icon: ListOrdered, run: (editor, range) => editor.chain().focus().deleteRange(range).toggleOrderedList().run() },
-  { id: 'task', label: '任务列表', hint: '带勾选框的待办', icon: CheckSquare, run: (editor, range) => editor.chain().focus().deleteRange(range).toggleTaskList().run() },
-  { id: 'quote', label: '引用', hint: '引用一段内容', icon: Quote, run: (editor, range) => editor.chain().focus().deleteRange(range).toggleBlockquote().run() },
-  { id: 'code', label: '代码块', hint: '等宽代码区域', icon: Code2, run: (editor, range) => editor.chain().focus().deleteRange(range).toggleCodeBlock().run() },
-  { id: 'table', label: '表格', hint: '3×3 表格', icon: Table2, run: (editor, range) => editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
-  { id: 'divider', label: '分割线', hint: '一条分隔线', icon: Minus, run: (editor, range) => editor.chain().focus().deleteRange(range).setHorizontalRule().run() },
-  { id: 'image', label: '图片', hint: '从网址或上传插入', icon: ImagePlus, run: (editor, range) => editor.chain().focus().deleteRange(range).run() },
+  { id: 'text', label: '正文', keywords: 'text body paragraph zhengwen'.split(' '), hint: '普通文本段落', icon: Type, run: (editor, range) => editor.chain().focus().deleteRange(range).setParagraph().run() },
+  { id: 'h1', label: '标题 1', keywords: 'h1 heading1 title1 biaoti da biaoti'.split(' '), hint: '大标题', icon: Heading1, run: (editor, range) => editor.chain().focus().deleteRange(range).setHeading({ level: 1 }).run() },
+  { id: 'h2', label: '标题 2', keywords: 'h2 heading2 title2 biaoti zhangjie'.split(' '), hint: '章节标题', icon: Heading2, run: (editor, range) => editor.chain().focus().deleteRange(range).setHeading({ level: 2 }).run() },
+  { id: 'h3', label: '标题 3', keywords: 'h3 heading3 title3 biaoti xiaojie'.split(' '), hint: '小节标题', icon: Heading3, run: (editor, range) => editor.chain().focus().deleteRange(range).setHeading({ level: 3 }).run() },
+  { id: 'bullet', label: '无序列表', keywords: 'bullet ul list wuxu liebiao'.split(' '), hint: '项目符号列表', icon: List, run: (editor, range) => editor.chain().focus().deleteRange(range).toggleBulletList().run() },
+  { id: 'ordered', label: '有序列表', keywords: 'ordered ol number youxu liebiao'.split(' '), hint: '编号列表', icon: ListOrdered, run: (editor, range) => editor.chain().focus().deleteRange(range).toggleOrderedList().run() },
+  { id: 'task', label: '任务列表', keywords: 'task todo checkbox renwu daiban'.split(' '), hint: '带勾选框的待办', icon: CheckSquare, run: (editor, range) => editor.chain().focus().deleteRange(range).toggleTaskList().run() },
+  { id: 'quote', label: '引用', keywords: 'quote blockquote yinyong'.split(' '), hint: '引用一段内容', icon: Quote, run: (editor, range) => editor.chain().focus().deleteRange(range).toggleBlockquote().run() },
+  { id: 'code', label: '代码块', keywords: 'code pre snippet daima'.split(' '), hint: '等宽代码区域', icon: Code2, run: (editor, range) => editor.chain().focus().deleteRange(range).toggleCodeBlock().run() },
+  { id: 'table', label: '表格', keywords: 'table grid biaoge'.split(' '), hint: '3×3 表格', icon: Table2, run: (editor, range) => editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
+  { id: 'divider', label: '分割线', keywords: 'divider hr rule fengexian'.split(' '), hint: '一条分隔线', icon: Minus, run: (editor, range) => editor.chain().focus().deleteRange(range).setHorizontalRule().run() },
+  { id: 'image', label: '图片', keywords: 'image img picture tupian'.split(' '), hint: '从网址或上传插入', icon: ImagePlus, run: (editor, range) => editor.chain().focus().deleteRange(range).run() },
 ]
 
 export default function SlashMenu({ editor, anchor, query, range, onClose, onImage }: Props) {
@@ -41,9 +56,18 @@ export default function SlashMenu({ editor, anchor, query, range, onClose, onIma
   const reduced = useReducedMotion()
   const filtered = useMemo(() => {
     if (!query) return SLASH_ITEMS
-    const byLabel = SLASH_ITEMS.filter((item) => item.label.includes(query))
+    const needle = query.trim().toLowerCase()
+    if (!needle) return SLASH_ITEMS
+    /*
+     * Label first, then hint, then aliases: the label is what the writer sees, so a
+     * match there is what they meant. Aliases only widen the search - they never
+     * outrank a real match, which is why they are a third pass rather than a union.
+     */
+    const byLabel = SLASH_ITEMS.filter((item) => item.label.includes(needle))
     if (byLabel.length) return byLabel
-    return SLASH_ITEMS.filter((item) => item.hint.includes(query))
+    const byHint = SLASH_ITEMS.filter((item) => item.hint.includes(needle))
+    if (byHint.length) return byHint
+    return SLASH_ITEMS.filter((item) => item.keywords.some((word) => word.startsWith(needle)))
   }, [query])
 
   useEffect(() => { setIndex(0) }, [query])
@@ -51,7 +75,10 @@ export default function SlashMenu({ editor, anchor, query, range, onClose, onIma
   useEffect(() => {
     if (!anchor) return
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { event.preventDefault(); onClose(); return }
+      // stopPropagation, not just preventDefault: the shell listens on `window`
+      // and closes every overlay on Escape, so without this one press closed the
+      // menu *and* the right panel behind it.
+      if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onClose(); return }
       if (event.key === 'ArrowDown') { event.preventDefault(); setIndex((value) => Math.min(value + 1, Math.max(0, filtered.length - 1))) }
       if (event.key === 'ArrowUp') { event.preventDefault(); setIndex((value) => Math.max(value - 1, 0)) }
       if (event.key === 'Enter') {

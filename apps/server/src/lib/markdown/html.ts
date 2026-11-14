@@ -30,9 +30,23 @@ function safeColor(value: unknown): string | null {
   return /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value) ? value : null;
 }
 
-function alignStyle(node: TiptapNode): string {
-  const align = node.attrs?.textAlign;
-  return align === 'center' || align === 'right' || align === 'justify' ? ' style="text-align:' + align + '"' : '';
+/**
+ * Inline style for a block's attributes: text alignment, and indentation.
+ *
+ * Both live on the node rather than in a container, so the export has to render them
+ * or a document loses its shape on the way out. Indentation is a `padding-inline-start`
+ * in `em`, matching the editor's rule - a margin would collapse through the container
+ * edge in some renderers and the first indented paragraph would sit flush.
+ */
+const INDENT_STEP_EM = 1.6
+
+function blockStyle(node: TiptapNode): string {
+  const declarations: string[] = []
+  const align = node.attrs?.textAlign
+  if (align === 'center' || align === 'right' || align === 'justify') declarations.push('text-align:' + align)
+  const indent = Number(node.attrs?.indent ?? 0)
+  if (Number.isFinite(indent) && indent > 0) declarations.push('padding-inline-start:' + (indent * INDENT_STEP_EM).toFixed(1) + 'em')
+  return declarations.length ? ' style="' + declarations.join(';') + '"' : ''
 }
 
 function renderHtmlTextNode(node: TiptapNode): string {
@@ -77,11 +91,11 @@ function renderHtmlBlock(node: TiptapNode): string {
   switch (node.type) {
     case 'paragraph': {
       const inner = renderHtmlInline(node.content);
-      return '<p' + alignStyle(node) + '>' + inner + '</p>';
+      return '<p' + blockStyle(node) + '>' + inner + '</p>';
     }
     case 'heading': {
       const level = Math.min(6, Math.max(1, Number(node.attrs?.level ?? 1) || 1));
-      return '<h' + level + alignStyle(node) + '>' + renderHtmlInline(node.content) + '</h' + level + '>';
+      return '<h' + level + blockStyle(node) + '>' + renderHtmlInline(node.content) + '</h' + level + '>';
     }
     case 'image': {
       const src = typeof node.attrs?.src === 'string' ? safeHref(node.attrs.src) : '';

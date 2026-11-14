@@ -27,6 +27,9 @@ export type WorkspaceMember = User
 
 export type DocumentPermission = { userId: string; email: string; name: string; role: 'owner' | 'editor' | 'viewer' }
 
+/** What a public share link grants. Mirrors the enum in routes/sharing.ts. */
+export type ShareLinkPermission = 'viewer' | 'commenter'
+
 export type Comment = {
   id: string
   body: string
@@ -48,9 +51,24 @@ export type Version = {
   title?: string
   createdByName?: string
   content?: DocJson
+  reason?: string
+  summary?: VersionSummary
 }
 
-export type ActivityEntry = { id: string; userId: string; userName: string; action: string; createdAt: string }
+export type VersionSummary = { label: string; added: number; removed: number; titleChanged: boolean; previousTitle?: string }
+type HistoryBase = { id: string; createdAt: string; userId: string; userName: string }
+export type HistoryEventDetails = {
+  beforeTitle?: string; afterTitle?: string; fromParentId?: string | null; toParentId?: string | null
+  fromParentTitle?: string; toParentTitle?: string
+  targetUserId?: string; targetUserName?: string; beforeRole?: string | null; afterRole?: string | null
+  beforeRestricted?: boolean; afterRestricted?: boolean; permission?: string; expiresAt?: string | null
+  sourceVersionId?: string; sourceVersion?: number; fromVersion?: number; toVersion?: number; affectedCount?: number
+}
+export type HistoryItem = HistoryBase & (
+  { kind: 'snapshot'; versionId: string; version: number; title: string; reason?: string; summary?: VersionSummary }
+  | { kind: 'event'; action: string; details?: HistoryEventDetails }
+)
+export type HistoryPage = { items: HistoryItem[]; nextCursor: string | null }
 
 export type WorkspaceStats = {
   documents: number

@@ -116,13 +116,30 @@ test('a child deleted separately expires with its parent folder', async () => {
   const { db, workspaceId, userId } = await seed()
   const folder = await insert(db, workspaceId, userId, 'folder', { ageDays: 40 })
   const child = await insert(db, workspaceId, userId, 'child', { parentId: folder, ageDays: 2 })
-  const grandchild = await insert(db, workspaceId, userId, 'grandchild', { parentId: child, ageDays: null })
 
-  // The folder's window governs the subtree: a child that still has 28 days on
-  // its own clock cannot outlive it as an orphan re-parented to the workspace.
+  // The folder's window governs what is still trashed underneath it: a child
+  // holding 28 days of its own clock cannot outlive the folder as an orphan.
   const removed = await purgeExpiredTrash(db, 30)
-  assert.deepEqual(removed.sort(), [folder, child, grandchild].sort())
+  assert.deepEqual(removed.sort(), [folder, child].sort())
   assert.deepEqual(await titles(db), [])
+  await db.close()
+})
+
+test('the cascade stops at a live row, which is restored rather than trashed', async () => {
+  const { db, workspaceId, userId } = await seed()
+  const folder = await insert(db, workspaceId, userId, 'folder', { ageDays: 40 })
+  // Trashed with the folder, then restored on its own while the folder stayed in
+  // the bin: it keeps its parent_id, and it is live again.
+  const child = await insert(db, workspaceId, userId, 'restored', { parentId: folder, ageDays: null })
+  await insert(db, workspaceId, userId, 'live', { parentId: child, ageDays: null })
+
+  // A live row is not part of the cascade. Deleting it here would be the one
+  // unrecoverable mistake in this module: the sweep runs on a timer, so nobody
+  // sees the delete at all. The parent foreign key is ON DELETE SET NULL, so
+  // survivors surface at the workspace root instead of vanishing with the folder.
+  const removed = await purgeExpiredTrash(db, 30)
+  assert.deepEqual(removed, [folder])
+  assert.deepEqual(await titles(db), ['live', 'restored'])
   await db.close()
 })
 

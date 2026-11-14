@@ -12,11 +12,11 @@ apps/
   updater/       Update agent: Dockerfile + update-agent.mjs (Docker socket + compose project)
 packages/
   cli/           Dependency-free Node client for the REST API (mdocs)
-docs/            API contract, architecture, development, security
+docs/            API contract, architecture, development, security, roadmap
 scripts/
   deploy/        Host-side operations: backup, restore, update
   release/       Image build/publish for a release
-  verify/        Browser verifiers driven over the DevTools protocol
+  verify/        Browser verifiers and the editor cost measurement (DevTools protocol)
 release/         Committed release manifest (latest.json) for the updater
 ```
 
@@ -53,6 +53,7 @@ hooks/                    State, data ownership, and lifecycle that outlives one
 pages/                    One file per route-level screen
   LoginPage.tsx           Sign-in and invite redemption
   HomePage.tsx            Home dashboard, favorites, trash, folder overview
+  BootScreen.tsx          Shown while a stored token is being restored
   SearchPage.tsx          Search results
   CommandPalette.tsx      Cmd/Ctrl+K palette
   AdminPage.tsx           Workspace admin: members, invites, updates
@@ -77,8 +78,8 @@ components/
     TableMenu.tsx         Table context menu
     FindReplace.tsx       Find/replace and outline panels
   panels/                 Right-hand document panels
-    DocumentPanel.tsx     Tabbed comments / history / activity panel
-    ActivityPanel.tsx     Per-document activity log
+    DocumentPanel.tsx     Tabbed comments / history panel
+    HistoryPanel.tsx      Paged document history: day groups, snapshots, changes
     VersionPreview.tsx    Version snapshot preview
   dialogs/                Modal surfaces
     MoveDialog.tsx        Move a document into a folder
@@ -100,7 +101,9 @@ lib/                      Pure logic and browser helpers (no JSX, no React state
   format.ts               Dates, word count, excerpting
   motion.ts               Motion contract: durations, spring presets, stagger
   theme.ts                Theme registry, storage, and the data-theme write
-  tree.ts                 Tree building, filtering, depth helpers
+  tree.ts                 Tree building, filtering, ancestor trail
+  url.ts                  The document address: `?doc=` parsing and rewriting
+  viewport.ts             The visual viewport, so overlays clear the software keyboard
   trash.ts                Trash countdown and expiry labels
   types.ts                API payload types
   collab.ts               Collaboration URL resolution
@@ -110,6 +113,8 @@ lib/                      Pure logic and browser helpers (no JSX, no React state
     blocks.ts             Block spans and move planning for the drag handle
     code-block.ts         Code block boundaries: Enter to leave, Backspace to remove
     comment-marks.ts      Comment markers: anchors → view decorations, mapped through edits
+    block-shortcuts.ts    Keyboard bindings for the block commands the gutter calls
+    tab-in-prose.ts       Tab/Shift-Tab: indent lists, never drop focus out of prose
     font-size.ts          Custom FontSize extension
     highlight.ts          lowlight instance + the grammars the editor ships
     image.ts              DocumentImage extension
@@ -137,7 +142,7 @@ styles/                   CSS layers, imported in cascade order by index.css
   content.css             Code blocks, share links, public share page
   shell.css               Sidebar + topbar consolidation (single source)
   pages.css               Home, folder, search, palette, login, admin screens
-  updates.css             Updater banner and links
+  history.css             Document history panel and version-diff preview
   layout.css              Shared component geometry and typography for both themes
   handdrawn.css            Shared material skin, font, art-icon fallback
   handdrawn-navigation.css Theme-scoped sidebar, tree and topbar treatments

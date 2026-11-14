@@ -13,6 +13,7 @@
  * expects from "quar" and what the previous ILIKE scan did for free.
  */
 
+
 export type SearchScope = 'all' | 'title' | 'content'
 
 /** Ideographs, kana, and hangul: one lexeme each after tokenisation. */
@@ -67,33 +68,39 @@ export function buildTsQuery(input: string): string | null {
 }
 
 /**
- * The search statement.
+ * The search statement, parameterised on how visibility is decided.
  *
- * Ordered by "title matched first, then relevance, then recency": a document
+ * `lib/` may not import `domain/` (structure.test.ts enforces the direction), so
+ * the caller hands in the recursive fragment and this file only composes it into
+ * the statement it belongs to. Keeping the two together matters: the query this
+ * replaced tested `d.acl_restricted` on the row itself, so a document filed under
+ * a restricted folder stayed searchable - and `body_text` was selected before the
+ * row was ever checked, which shipped the text itself.
+ *
+ * Ordering is "title matched first, then relevance, then recency": a document
  * named after the query is what the user meant, and relevance alone ranks a
- * one-word title below a long document that repeats the term.
+ * one-word title below a long document that repeats the term. `body_text` is
+ * selected so the snippet can be built without shipping every hit's Tiptap
+ * JSON to Node.
  *
- * `body_text` is selected so the snippet can be built without shipping the
- * whole Tiptap JSON of every hit to Node (or to the browser).
+ * @param visibleCte a `WITH RECURSIVE` body defining `visible_documents`
  */
-export const SEARCH_SQL = `
+export function searchSql(visibleCte: string) {
+  return `WITH RECURSIVE ${visibleCte}
   SELECT d.id, d.title, d.title_mode AS "titleMode", d.kind, d.parent_id AS "parentId", d.created_at AS "createdAt", d.updated_at AS "updatedAt", d.version,
          CASE WHEN d.search_title @@ to_tsquery('simple', $3) THEN 1 ELSE 0 END AS title_match,
          ts_rank(d.search_vector, to_tsquery('simple', $3))
            + 2 * ts_rank(d.search_title, to_tsquery('simple', $3)) AS rank,
          marvelous_doc_text(d.content) AS body_text
     FROM documents d
-    JOIN memberships m ON m.workspace_id = d.workspace_id AND m.user_id = $1
-    LEFT JOIN document_acl a ON a.document_id = d.id AND a.user_id = $1
-   WHERE d.workspace_id = $2
-     AND d.deleted_at IS NULL
-     AND (m.role = 'admin' OR a.role IS NOT NULL OR d.acl_restricted = false)
+   WHERE d.id IN (SELECT id FROM visible_documents)
      AND (($4 = 'title' AND d.search_title @@ to_tsquery('simple', $3))
        OR ($4 = 'content' AND d.search_vector @@ to_tsquery('simple', $3))
        OR ($4 = 'all' AND (d.search_title @@ to_tsquery('simple', $3)
                         OR d.search_vector @@ to_tsquery('simple', $3))))
    ORDER BY title_match DESC, rank DESC, d.updated_at DESC
    LIMIT $5`
+}
 
 /** One row of {@link SEARCH_SQL}, before it is trimmed for the client. */
 export type SearchRow = {

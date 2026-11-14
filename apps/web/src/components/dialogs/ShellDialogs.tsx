@@ -1,5 +1,4 @@
 import { Dialog, PromptDialog } from '../ui/Dialog'
-import type { UpdateInfo } from '../../lib/app-types'
 import type { Doc } from '../../lib/types'
 
 type ShellDialogsProps = {
@@ -9,7 +8,6 @@ type ShellDialogsProps = {
   /** How many rows the empty-trash confirmation would remove; 0 closes it. */
   emptyTrashCount: number
   emptyTrashBusy: boolean
-  updatePrompt: UpdateInfo | null
   helpOpen: boolean
   linkPrompt: { from: number; to: number } | null
   onRename: (doc: Doc, title: string) => void
@@ -20,8 +18,6 @@ type ShellDialogsProps = {
   onCancelPurge: () => void
   onConfirmEmptyTrash: () => void
   onCancelEmptyTrash: () => void
-  onConfirmUpdate: () => void
-  onCancelUpdate: () => void
   onCloseHelp: () => void
   onInsertLink: (range: { from: number; to: number }, href: string) => void
   onCancelLink: () => void
@@ -29,6 +25,7 @@ type ShellDialogsProps = {
 
 const SHORTCUTS: Array<[string, string[]]> = [
   ['搜索与命令面板', ['Ctrl', 'K']],
+  ['给选中的文字加链接（有选中时）', ['Ctrl', 'K']],
   ['强制保存', ['Ctrl', 'S']],
   ['导出 Markdown', ['Ctrl', 'Shift', 'E']],
   ['关闭弹层 / 面板', ['Esc']],
@@ -45,7 +42,7 @@ const SHORTCUTS: Array<[string, string[]]> = [
  * rather than a wall of modal definitions.
  */
 export default function ShellDialogs(props: ShellDialogsProps) {
-  const { renameDoc, deleteDoc, purgeDoc, updatePrompt, helpOpen, linkPrompt } = props
+  const { renameDoc, deleteDoc, purgeDoc, helpOpen, linkPrompt } = props
 
   return <>
     {renameDoc && <PromptDialog
@@ -90,14 +87,6 @@ export default function ShellDialogs(props: ShellDialogsProps) {
       busy={props.emptyTrashBusy}
       onConfirm={props.onConfirmEmptyTrash}
       onClose={props.onCancelEmptyTrash}
-    />}
-
-    {updatePrompt && <Dialog
-      title={'更新到 ' + updatePrompt.version + '？'}
-      description="系统会先备份数据库，然后拉取新镜像并短暂重启服务。更新期间建议暂停编辑。"
-      confirmLabel="开始更新"
-      onConfirm={props.onConfirmUpdate}
-      onClose={props.onCancelUpdate}
     />}
 
     {helpOpen && <Dialog

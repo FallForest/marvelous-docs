@@ -16,7 +16,10 @@
  *   content     code blocks, share links, public share page
  *   shell       sidebar + topbar consolidation (single source of truth)
  *   pages       home, folder, search, palette, login, admin
- *   updates     updater banner and links
+ *   layout      both appearances share this geometry; the skins below only paint
+ *   handdrawn*  the drawn skin: navigation, content, controls, materials,
+ *               writing, editor chrome - each paints one earlier layer
+ *   history     version timeline, day grouping and diff geometry
  *
  * A new file belongs in an existing layer; if it needs a new layer, add it
  * here and to docs/STRUCTURE.md in the same change.
@@ -45,7 +48,6 @@
 @import './content.css';
 @import './shell.css';
 @import './pages.css';
-@import './updates.css';
 /* Both appearances share geometry; the following skins only paint it. */
 @import './layout.css';
 @import './handdrawn.css';
@@ -55,3 +57,4 @@
 @import './handdrawn-materials.css';
 @import './handdrawn-writing.css';
 @import './handdrawn-editor-chrome.css';
+@import './history.css';

@@ -104,6 +104,8 @@ function Harness() {
     <div className="main-area">
       <TopBar
         userInitial="A" title="设计协作计划" showRoot saveStatus="saved" collabStatus="connected"
+        // A real path, so the breadcrumb under test is the one a reader sees.
+        trail={[{ id: 'f1', title: '产品' }]} onOpenTrail={noop}
         collaborators={[]} sidebarOpen hasDocument favorite exportOpen={false}
         themeId={themeId} themeOpen={themeOpen} onThemeMenu={setThemeOpen} onTheme={setTheme}
         onOpenSidebar={noop} onFavorite={noop} onExport={noop} onExportMenu={noop}

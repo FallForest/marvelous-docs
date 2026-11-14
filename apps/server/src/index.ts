@@ -10,7 +10,7 @@ import { purgeExpiredTrash } from './lib/trash.js'
 import { UPLOAD_MIME_TYPES } from './routes/uploads.js'
 import { registerRoutes } from './routes/index.js'
 import { registerUpgradeHandler } from './collaboration/socket.js'
-import { flushRoom, rooms, setRoomLogger, evictRoom } from './collaboration/rooms.js'
+import { flushRoom, rooms, setRoomLogger, evictRoom, resumeHistoryCheckpoints } from './collaboration/rooms.js'
 /**
  * API entry point.
  *
@@ -20,7 +20,14 @@ import { flushRoom, rooms, setRoomLogger, evictRoom } from './collaboration/room
  * helpers). See docs/ARCHITECTURE.md for the module map.
  */
 
-const app = Fastify({ logger: true, bodyLimit: 25 * 1024 * 1024 })
+const app = Fastify({
+  logger: true,
+  bodyLimit: 25 * 1024 * 1024,
+  // `request.ip` must be the client, not the nginx container: the login and
+  // anonymous rate-limit buckets are keyed on it. See `config.trustProxy` for
+  // why this is a setting rather than a constant.
+  trustProxy: config.trustProxy,
+})
 
 // Uploads arrive as raw bodies, so they bypass JSON parsing.
 //
@@ -98,6 +105,7 @@ const wsHttpServer = createServer()
 const wsServer = registerUpgradeHandler(wsHttpServer, app)
 
 await initializeWorkspace({ info: (message) => app.log.info(message) })
+await resumeHistoryCheckpoints()
 
 /*
  * Trash retention.
@@ -129,6 +137,32 @@ void sweepTrash()
 const trashTimer = setInterval(() => void sweepTrash(), config.trashSweepIntervalMs)
 trashTimer.unref()
 
+/*
+ * Version retention.
+ *
+ * `document_versions` stores a full copy of the content per row and nothing ever
+ * removed one, so the table grew for as long as the workspace was used. The
+ * function and its policy live in migrations/007; this only decides when to run
+ * it.
+ *
+ * Daily rather than on a timer with the trash: pruning is housekeeping, not a
+ * guarantee anyone can observe, and running it once a day keeps it off the
+ * collaboration write path entirely. A failure is logged and retried tomorrow -
+ * the table is append-only, so falling behind is not a correctness problem.
+ */
+async function pruneVersions() {
+  try {
+    const result = await pool.query<{ removed: number }>('SELECT marvelous_prune_document_versions() AS removed')
+    const removed = result.rows[0]?.removed ?? 0
+    if (removed > 0) app.log.info({ removed }, 'Pruned old document versions')
+  } catch (error) {
+    app.log.error(error, 'Version retention sweep failed')
+  }
+}
+void pruneVersions()
+const versionTimer = setInterval(() => void pruneVersions(), 24 * 60 * 60 * 1000)
+versionTimer.unref()
+
 await app.listen({ port: config.port, host: config.host })
 await new Promise<void>((resolve, reject) => {
   wsHttpServer.once('error', reject)
@@ -138,6 +172,7 @@ await new Promise<void>((resolve, reject) => {
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, async () => {
     clearInterval(trashTimer)
+    clearInterval(versionTimer)
     for (const ws of wsServer.clients) ws.close(1001, 'Server shutting down')
     await Promise.all([...rooms.values()].map(flushRoom))
     wsServer.close()

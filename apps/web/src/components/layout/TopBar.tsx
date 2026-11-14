@@ -12,6 +12,9 @@ type TopBarProps = {
   userInitial: string
   title: string
   showRoot: boolean
+  /** Folders above the open document, root first; empty at the workspace root. */
+  trail: Array<{ id: string; title: string }>
+  onOpenTrail: (id: string) => void
   saveStatus: SaveStatus
   collabStatus: CollabStatus
   collaborators: Presence[]
@@ -34,6 +37,19 @@ type TopBarProps = {
 }
 
 /**
+ * Folds a long ancestor trail down to its last three entries.
+ *
+ * Three is the number of levels a breadcrumb can carry beside a title before the
+ * title starts to truncate at the common 1280px width. The fold is marked with a
+ * collapsed segment rather than silently dropping the head, so the reader can
+ * tell the difference between "at the root" and "deep in a tree".
+ */
+function foldTrail(trail: TopBarProps['trail']): Array<{ id: string | null; title: string }> {
+  if (trail.length <= 3) return trail.map((entry) => ({ id: entry.id, title: entry.title }))
+  const tail = trail.slice(-2)
+  return [{ id: null, title: '' }, ...tail.map((entry) => ({ id: entry.id, title: entry.title }))]
+}
+/**
  * Top bar: breadcrumb, save state, live presence, then document actions.
  *
  * The share button is the only filled control in the row, which keeps the
@@ -44,6 +60,18 @@ export default function TopBar(props: TopBarProps) {
     {!props.sidebarOpen && <button type="button" className="icon-btn" aria-label="展开侧边栏" title="展开侧边栏" onClick={props.onOpenSidebar}><PanelLeftClose size={17} /></button>}
     <div className="breadcrumbs">
       {props.showRoot && <><span className="crumb-root">我的文档</span><ChevronRight size={13} className="crumb-sep" /></>}
+      {/*
+       * The path, not just the parent: `parentId` is on every row, so the whole
+       * chain costs one walk. A deep path is folded from the left - the folder the
+       * reader came from matters more than the one at the top, and a breadcrumb
+       * that pushes the title off the bar has stopped being useful.
+       */}
+      {foldTrail(props.trail).map((crumb, index) => <span key={crumb.id ?? 'gap-' + index} className="crumb-branch">
+        {crumb.id
+          ? <button type="button" className="crumb-link" onClick={() => props.onOpenTrail(crumb.id!)}>{crumb.title}</button>
+          : <span className="crumb-link is-folded" aria-hidden="true">…</span>}
+        <ChevronRight size={13} className="crumb-sep" />
+      </span>)}
       <strong><span className="theme-decoration crumb-title-art" aria-hidden="true"><ArtIcon name="document" fallback={<FileText size={17} />} /></span><span className="crumb-title-copy">{props.title}</span></strong>
     </div>
     <div className="top-actions">

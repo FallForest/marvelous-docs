@@ -1,4 +1,4 @@
-import { getSchema } from '@tiptap/core';
+import { getSchema, Extension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
@@ -15,6 +15,35 @@ import FontFamily from '@tiptap/extension-font-family';
 import TextAlign from '@tiptap/extension-text-align';
 import { DocumentImage } from './image.js';
 import { FontSize } from './font-size.js';
+
+/**
+ * Paragraph and heading indentation, in steps of one.
+ *
+ * Tab in prose used to only indent list items; a plain paragraph swallowed the key
+ * with nothing to show for it. The attribute is the smallest representation that
+ * works everywhere: one integer, no nested container, no change to how the document
+ * is serialised - a reader who does not know the attribute still sees the text.
+ *
+ * Declared here and in the client extension because the two schemas must accept the
+ * same documents. A node the client can produce and the server rejects makes every
+ * REST save return 400 while collaboration keeps working, which is the trap recorded
+ * in lib/editor/image.ts.
+ */
+const Indent = Extension.create({
+  name: 'indent',
+  addGlobalAttributes() {
+    return [{
+      types: ['paragraph', 'heading'],
+      attributes: {
+        indent: {
+          default: 0,
+          parseHTML: (element) => Number(element.getAttribute('data-indent') || 0),
+          renderHTML: (attributes) => (attributes.indent ? { 'data-indent': attributes.indent } : {}),
+        },
+      },
+    }]
+  },
+})
 
 /**
  * Editor extensions shared by the REST API and the collaboration layer. The
@@ -38,6 +67,7 @@ export const editorExtensions = [
   TableCell,
   TableHeader,
   DocumentImage,
+  Indent,
 ];
 
 /** ProseMirror schema derived from {@link editorExtensions}. */

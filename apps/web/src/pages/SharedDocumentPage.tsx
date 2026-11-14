@@ -29,7 +29,10 @@ export default function SharedDocumentPage({ token }: { token: string }) {
     <div className="shared-header">
       <div className="shared-logo"><ArtIcon name="brand-spark" fallback={<Sparkles size={28} />} /></div>
       <h1>Marvelous Docs</h1>
-      <span className="shared-badge">{doc.permission === 'commenter' ? '可评论' : '仅查看'}</span>
+      {/* The public page has no comment box, so it must not promise commenting:
+          a "commenter" link still resolves to a read-only render here, and the
+          badge says what the page can actually do. */}
+      <span className="shared-badge">仅查看</span>
     </div>
     {/* Keyed on the token so a second share link replays the entry instead of
         silently swapping the text in place. */}

@@ -5,6 +5,7 @@ import type { FastifyInstance } from 'fastify'
 import type { Pool } from 'pg'
 import { PGlite } from '@electric-sql/pglite'
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket'
+import { socketUrl } from './socket-url.js'
 import { prosemirrorToYXmlFragment } from 'y-prosemirror'
 
 const WS = '11111111-1111-4111-8111-111111111111'
@@ -44,9 +45,11 @@ test.before(async () => {
   }
   // REST syncs an already-open room after committing its transaction. That
   // housekeeping can borrow another pool connection before the first releases.
-  server = new PGLiteSocketServer({ db, port: 5603, host: '127.0.0.1', maxConnections: 4 })
+  server = new PGLiteSocketServer({ db, port: 0, host: '127.0.0.1', maxConnections: 4 })
   await server.start()
-  process.env.DATABASE_URL = 'postgresql://postgres:postgres@127.0.0.1:5603/postgres'
+  // The port is assigned by the OS: a fixed one collides with the suite that ran
+  // before, and a killed-but-lingering process blocks the next run with EADDRINUSE.
+  process.env.DATABASE_URL = socketUrl(server)
   process.env.JWT_SECRET = 'document-title-route-secret-long-enough'
   pool = (await import('../src/core/db.js')).pool
   collaboration = await import('../src/collaboration/rooms.js')
@@ -62,10 +65,23 @@ test.before(async () => {
 
 test.after(async () => {
   if (collaboration) for (const id of collaboration.rooms.keys()) collaboration.evictRoom(id)
-  await app?.close()
-  await pool?.end()
-  await server?.stop()
-  await db?.close()
+  /*
+   * Each close is time-boxed. A PGlite socket server or a pool with a leaked
+   * connection can keep its handle open indefinitely, and a teardown that never
+   * settles turns a passing file into a timeout with no failing assertion in it -
+   * which reads like a hang in the code under test.
+   */
+  const within = (work: Promise<unknown> | undefined, label: string) => Promise.race([
+    Promise.resolve(work).catch(() => undefined),
+    new Promise<void>((resolve) => setTimeout(() => {
+      console.warn('teardown: ' + label + ' did not finish in 5s')
+      resolve()
+    }, 5000).unref?.()),
+  ])
+  await within(app?.close(), 'app.close')
+  await within(pool?.end(), 'pool.end')
+  await within(server?.stop(), 'server.stop')
+  await within(db?.close(), 'db.close')
 })
 
 async function create(fields: Record<string, unknown> = {}) {

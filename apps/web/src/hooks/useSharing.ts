@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { api } from '../lib/endpoints'
 import { copyText } from '../lib/clipboard'
-import type { Doc, DocumentPermission, WorkspaceMember } from '../lib/types'
+import type { Doc, DocumentPermission, ShareLinkPermission, WorkspaceMember } from '../lib/types'
 
 type ShareLink = { id: string; token: string; permission: string; expiresAt: string | null }
 
@@ -58,10 +58,17 @@ export function useSharing({ token, userId, notify }: Options) {
     }
   }, [token, loadLinks])
 
-  const createLink = useCallback(async (doc: Doc) => {
+  /**
+   * Mints a link with the requested access.
+   *
+   * The server has accepted 'commenter' since the table was created; hard-coding
+   * 'viewer' here meant the stronger link could not be created from the UI at
+   * all, and the dialog then had nothing to show but "read only".
+   */
+  const createLink = useCallback(async (doc: Doc, permission: ShareLinkPermission = 'viewer') => {
     setBusy(true)
     try {
-      const data = await api.createShareLink(token, doc.id, 'viewer')
+      const data = await api.createShareLink(token, doc.id, permission)
       const url = window.location.origin + '/shared/' + data.shareLink.token
       setShareLinks((previous) => [
         { id: data.shareLink.id, token: data.shareLink.token, permission: data.shareLink.permission, expiresAt: null },

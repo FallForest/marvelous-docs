@@ -44,11 +44,26 @@ export function useBlockGeometry(editor: Editor | null, enabled = true): BlockGe
     if (!dom) return
 
     let frame = 0
+    /** Last ancestor walk, keyed on the editor's own box. */
+    let cachedAncestors: { signature: string; top: number; bottom: number; left: number; right: number } | null = null
     const measure = () => {
       frame = 0
       if (editor.isDestroyed) return
       let clipTop = 0, clipBottom = window.innerHeight
       let clipLeft = 0, clipRight = window.innerWidth
+      /*
+       * The ancestor walk is capped and cached.
+       *
+       * It ran on every transaction - every keystroke - up the whole tree, and each
+       * step asked for two forced reads (`getComputedStyle` and a rect). The answer
+       * only changes when an ancestor's box or overflow changes, which is a resize
+       * or a panel toggle rather than a keystroke, so the walk is skipped while the
+       * editor's own rect is unchanged. Widths that do change are what the
+       * ResizeObserver below already watches.
+       */
+      const editorBox = dom.getBoundingClientRect()
+      const ancestorSignature = editorBox.width + ':' + editorBox.height
+      if (ancestorSignature !== cachedAncestors?.signature) {
       for (let parent = dom.parentElement; parent; parent = parent.parentElement) {
         const style = getComputedStyle(parent)
         const rect = parent.getBoundingClientRect()
@@ -61,6 +76,22 @@ export function useBlockGeometry(editor: Editor | null, enabled = true): BlockGe
           clipRight = Math.min(clipRight, rect.right)
         }
       }
+        cachedAncestors = { signature: ancestorSignature, top: clipTop, bottom: clipBottom, left: clipLeft, right: clipRight }
+      } else {
+        clipTop = cachedAncestors.top; clipBottom = cachedAncestors.bottom
+        clipLeft = cachedAncestors.left; clipRight = cachedAncestors.right
+      }
+      /*
+       * Only the tracked nodes are visited. `descendants` walks every node in the
+       * document - a long table alone is a hundred - and the old version asked for a
+       * `nodeDOM` and a rect for each of the ones it kept. The filter runs first here,
+       * so the cost is proportional to the number of tables, images, code blocks and
+       * dividers, not to the size of the prose.
+       *
+       * The rect is still read per candidate. Skipping that would mean trusting a
+       * layout that has not happened yet; the viewport test after it is what keeps a
+       * fixed-position toolbar from floating over blocks that are scrolled away.
+       */
       const found: BlockGeometry[] = []
       editor.state.doc.descendants((node, pos) => {
         const kind = node.type.name as BlockKind

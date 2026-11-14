@@ -16,6 +16,8 @@ Fastify API, a React client, a CLI, the deployment stack, and the documentation.
    pnpm typecheck
    pnpm test
    pnpm build
+   node scripts/release/bump-version.mjs --check   # release copies agree
+   pnpm verify:browser                            # headless Chrome, needs CHROME_PATH
    ```
 5. Commit with a conventional message and open a pull request.
 
@@ -73,18 +75,25 @@ screenshots.
 
 ## Checks
 
-`.github/workflows/ci.yml` runs on every push and pull request:
+`.github/workflows/ci.yml` runs on every push and pull request; the steps are in
+`ci-checks.yml`, which the release workflow calls before building images:
 
 | Step | Command |
 | --- | --- |
 | Install | `pnpm install --frozen-lockfile` |
+| Version copies | `node scripts/release/bump-version.mjs --check` |
 | Lint | `pnpm lint` |
 | Typecheck | `pnpm typecheck` |
 | Tests | `pnpm test` |
 | Build | `pnpm build` |
+| Browser verifiers (separate job) | `pnpm verify:browser` |
 
-Releases are tag-driven (`v*.*.*`) and publish multi-arch images plus
-`release/latest.json` through `.github/workflows/release.yml`.
+Releases are tag-driven (`v*.*.*`). `.github/workflows/release.yml` runs the
+checks first (it calls `ci-checks.yml` as a job, so a red suite blocks the
+images), then builds them natively on an arm64 runner and publishes
+`release/latest.json`. Each run publishes one architecture: the dispatch
+`arch` input selects arm64 (default, the deploy host) or amd64. amd64 is a
+separate dispatch, not a QEMU-emulated second half of the same build.
 
 ## Code style
 

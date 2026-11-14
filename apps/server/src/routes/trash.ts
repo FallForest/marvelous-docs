@@ -1,13 +1,13 @@
 import type { FastifyInstance } from 'fastify'
 import { pool } from '../core/db.js'
 import { fail, parse } from '../core/http.js'
-import { accessRoleFor, recordActivity, ROLE_LEVEL } from '../domain/access.js'
+import { getDocumentAccess, recordActivity, ROLE_LEVEL, visibleDocumentsCte } from '../domain/access.js'
 import { requireNode } from '../domain/guards.js'
 import { idParams } from './schemas.js'
 import { config } from '../core/config.js'
 import { purgeExpiredTrash } from '../lib/trash.js'
 import { evictRoom } from '../collaboration/rooms.js'
-import type { AuthRequest, DocumentRow } from '../core/types.js'
+import type { AuthRequest } from '../core/types.js'
 import type { RouteDeps } from './deps.js'
 
 /**
@@ -40,20 +40,15 @@ export function registerTrashRoutes(app: FastifyInstance, deps: RouteDeps) {
     if (!member.rowCount) return fail(reply, 403, 'FORBIDDEN', 'You do not have permission for this operation.')
 
     const visibleOnly = member.rows[0]!.role !== 'admin'
+    // The bin's visibility rule is the same one the list uses; only the scope
+    // differs ('any' because the rows here are all deleted).
     const result = await pool.query<{ id: string }>(
-      `WITH RECURSIVE visible AS (
-          SELECT d.id FROM documents d
-            LEFT JOIN document_acl a ON a.document_id=d.id AND a.user_id=$1
-           WHERE d.workspace_id=$2 AND d.acl_restricted=false
-          UNION
-          SELECT d.id FROM documents d
-            JOIN document_acl a ON a.document_id=d.id AND a.user_id=$1
-           WHERE d.workspace_id=$2
-        ), subtree AS (
+      `WITH RECURSIVE ${visibleDocumentsCte('any')}, subtree AS (
           SELECT d.id FROM documents d WHERE d.workspace_id=$2 AND d.deleted_at IS NOT NULL
-             AND ($3::boolean = false OR d.id IN (SELECT id FROM visible))
+             AND ($3::boolean = false OR d.id IN (SELECT id FROM visible_documents))
           UNION ALL
           SELECT child.id FROM documents child JOIN subtree s ON child.parent_id = s.id
+           WHERE child.deleted_at IS NOT NULL
         )
         DELETE FROM documents WHERE id IN (SELECT id FROM subtree) RETURNING id`,
       [auth.user.sub, auth.user.workspaceId, visibleOnly])
@@ -69,11 +64,20 @@ export function registerTrashRoutes(app: FastifyInstance, deps: RouteDeps) {
     if (!params) return fail(reply, 400, 'INVALID_ID', 'Document id must be a UUID.')
     if (!await requireNode(auth, reply, params.id, 'owner')) return
 
-    await pool.query(`WITH RECURSIVE subtree AS (
+    const removed = await pool.query(`WITH RECURSIVE subtree AS (
         SELECT id FROM documents WHERE id=$1 AND workspace_id=$3
         UNION ALL SELECT d.id FROM documents d JOIN subtree s ON d.parent_id=s.id
       ) UPDATE documents SET deleted_at=now(),updated_at=now(),updated_by=$2
         WHERE id IN (SELECT id FROM subtree) AND deleted_at IS NULL`, [params.id, auth.user.sub, auth.user.workspaceId])
+    if (removed.rowCount) await recordActivity(params.id, auth.user.sub, 'trash', app.log, { affectedCount: removed.rowCount })
+    /*
+     * A trashed document is gone from every read path, so a tab still attached to
+     * it is editing something the rest of the workspace can no longer see. Only
+     * permanent deletion, emptying the bin, and the retention sweep used to evict
+     * the room; a plain delete left the socket alive and its debounced save kept
+     * writing into a row nobody could open.
+     */
+    evictRoom(params.id)
     return { ok: true }
   })
 
@@ -82,23 +86,22 @@ export function registerTrashRoutes(app: FastifyInstance, deps: RouteDeps) {
     const params = parse(idParams, request.params)
     if (!params) return fail(reply, 400, 'INVALID_ID', 'Document id must be a UUID.')
 
-    // Trashed rows are invisible to requireNode, so resolve the role here.
-    const result = await pool.query<DocumentRow & { role: string | null; member_role: string }>(`SELECT d.*, da.role, m.role AS member_role FROM documents d
-      JOIN memberships m ON m.workspace_id=d.workspace_id AND m.user_id=$2
-      LEFT JOIN document_acl da ON da.document_id=d.id AND da.user_id=$2
-      WHERE d.id=$1 AND d.workspace_id=$3`, [params.id, auth.user.sub, auth.user.workspaceId])
-    if (!result.rowCount || !result.rows[0]!.deleted_at) return fail(reply, 404, 'NOT_FOUND', 'Document was not found.')
-
-    const row = result.rows[0]!
-    if (ROLE_LEVEL[accessRoleFor(row)]! < ROLE_LEVEL.editor!) {
+    // Trashed rows are invisible to requireNode, so the decision is made here.
+    // It used to be a second implementation (`accessRoleFor` on a hand-written
+    // query) that ignored the ancestor chain, so a member denied on a restricted
+    // folder could still restore a document inside it. `getDocumentAccess` now
+    // takes an `includeDeleted` flag instead of being bypassed.
+    const access = await getDocumentAccess(auth.user, params.id, { includeDeleted: true })
+    if (!access || !access.row.deleted_at) return fail(reply, 404, 'NOT_FOUND', 'Document was not found.')
+    if (ROLE_LEVEL[access.role]! < ROLE_LEVEL.editor!) {
       return fail(reply, 403, 'FORBIDDEN', 'You do not have permission for this operation.')
     }
-    await pool.query(`WITH RECURSIVE subtree AS (
+    const restored = await pool.query(`WITH RECURSIVE subtree AS (
         SELECT id FROM documents WHERE id=$1
         UNION ALL SELECT d.id FROM documents d JOIN subtree s ON d.parent_id=s.id
       ) UPDATE documents SET deleted_at=NULL,updated_at=now(),updated_by=$2
         WHERE id IN (SELECT id FROM subtree) AND deleted_at IS NOT NULL`, [params.id, auth.user.sub])
-    await recordActivity(params.id, auth.user.sub, 'restore', app.log)
+    if (restored.rowCount) await recordActivity(params.id, auth.user.sub, 'trash_restore', app.log, { affectedCount: restored.rowCount })
     return { ok: true, retentionDays: config.trashRetentionDays }
   })
 

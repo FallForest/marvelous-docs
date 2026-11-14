@@ -56,6 +56,8 @@ export type HomeDashboardProps = {
   query: string
   trash: boolean
   favoritesView: boolean
+  /** The "recently opened" view: server-ordered, not a slice of the tree. */
+  recentView: boolean
   stats: WorkspaceStats | null
   /** Days the server keeps a trashed row; 0 or undefined hides the countdown. */
   trashRetentionDays?: number
@@ -68,11 +70,34 @@ export type HomeDashboardProps = {
   onEmptyTrash: () => void
 }
 
-export default function HomeDashboard({ documents, favorites, query, trash, favoritesView, stats, trashRetentionDays, onOpen, onCreate, onImport, onCreateFolder, onRestore, onPermanentDelete, onEmptyTrash }: HomeDashboardProps) {
+export default function HomeDashboard({ documents, favorites, query, trash, favoritesView, recentView, stats, trashRetentionDays, onOpen, onCreate, onImport, onCreateFolder, onRestore, onPermanentDelete, onEmptyTrash }: HomeDashboardProps) {
   const reduced = useReducedMotion()
-  const view = trash ? 'trash' : favoritesView ? 'favorites' : 'home'
+  const view: 'home' | 'trash' | 'favorites' | 'recent' = trash ? 'trash' : favoritesView ? 'favorites' : recentView ? 'recent' : 'home'
   const rootRef = useHeroShift(reduced, view)
   const visible = documents.filter((doc) => !query || doc.title.toLowerCase().includes(query.toLowerCase()))
+  /*
+   * "Recent" is its own screen rather than a card on the home dashboard: it is a
+   * list to scan, not a summary to glance at, and it is ordered by the server's
+   * record of what this account opened. Reusing the home grid would sort it by
+   * `updatedAt`, which is the question the tree already answers.
+   */
+  if (recentView) return <div className="home-dashboard" data-vt-scope="main" ref={rootRef}>
+    <div className="home-hero"><div className="home-hero-copy">
+      <span {...heroLine(0, 'eyebrow')}>工作区</span>
+      <h1 {...heroLine(1)}>最近访问</h1>
+      <p {...heroLine(2)}>你打开过的文档，按打开时间排序。</p>
+    </div></div>
+    <section className="home-section">
+      <div className="home-section-head"><h2><Clock3 size={16} />最近打开的文档</h2><span>{visible.length + ' 项'}</span></div>
+      {visible.length ? <div className="home-grid">{visible.map((doc, index) => <div {...staggerItemProps(index, 'home-card')} key={doc.id}>
+        <button className="home-card-main" onClick={() => onOpen(doc)}>
+          <span className="home-card-icon"><ArtIcon name="document" fallback={<FileText size={17} />} /></span>
+          <span><b>{doc.title}</b><small>{formatDate(doc.updatedAt) || '刚刚'}</small></span>
+        </button>
+      </div>)}</div>
+        : <div className="home-empty"><ArtIcon name="recent" fallback={<Clock3 size={16} />} />还没有打开过任何文档。</div>}
+    </section>
+  </div>
   if (trash) return <div className="home-dashboard" data-vt-scope="main" ref={rootRef}>
     <div className="home-hero"><div className="home-hero-copy">
       <span {...heroLine(0, 'eyebrow')}>文档管理</span>

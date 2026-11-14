@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { PGlite } from '@electric-sql/pglite'
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket'
+import { settle, socketUrl } from './socket-url.js'
 
 /**
  * The trash endpoints, through Fastify.
@@ -28,10 +29,12 @@ test.before(async () => {
     await db.exec(strip(await readFile(new URL(name, dir), 'utf8')))
   }
 
-  server = new PGLiteSocketServer({ db, port: 5601, host: '127.0.0.1' })
+  server = new PGLiteSocketServer({ db, port: 0, host: '127.0.0.1' })
   await server.start()
 
-  process.env.DATABASE_URL = 'postgresql://postgres:postgres@127.0.0.1:5601/postgres'
+  // The port is assigned by the OS: a fixed one collides with the suite that ran
+  // before, and a killed-but-lingering process blocks the next run with EADDRINUSE.
+  process.env.DATABASE_URL = socketUrl(server)
   process.env.JWT_SECRET = 'trash-route-secret-that-is-long-enough'
   process.env.BOOTSTRAP_ADMIN_EMAIL = 'admin@example.com'
   process.env.BOOTSTRAP_ADMIN_PASSWORD = 'correct horse battery staple'
@@ -43,7 +46,7 @@ test.before(async () => {
   const rawQuery = pool.query.bind(pool)
   pool.query = ((sql: unknown, params?: unknown[]) =>
     rawQuery(typeof sql === 'string' ? strip(sql) : sql, params)) as typeof pool.query
-  await dbModule.initializeWorkspace({ info: () => undefined })
+  await dbModule.initializeWorkspace({ info: () => undefined }, { prepare: strip })
 
   const Fastify = (await import('fastify')).default
   const jwt = (await import('@fastify/jwt')).default
@@ -78,10 +81,10 @@ test.before(async () => {
 })
 
 test.after(async () => {
-  await app.close()
-  await pool.end()
-  await server.stop()
-  await db.close()
+  await settle('close(app)', app?.close())
+  await settle('pool.end', pool?.end())
+  await settle('stop(server)', server?.stop())
+  await settle('close(db)', db?.close())
 })
 
 const auth = (bearer: string) => ({ authorization: 'Bearer ' + bearer })

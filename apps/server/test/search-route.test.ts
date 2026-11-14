@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { PGlite } from '@electric-sql/pglite'
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket'
+import { settle, socketUrl } from './socket-url.js'
 
 /**
  * The search endpoint, through Fastify.
@@ -35,10 +36,12 @@ test.before(async () => {
   await db.exec(strip(await readFile(new URL('002_share_links.sql', dir), 'utf8')))
   await db.exec(strip(await readFile(new URL('003_full_text_search.sql', dir), 'utf8')))
 
-  server = new PGLiteSocketServer({ db, port: 5599, host: '127.0.0.1' })
+  server = new PGLiteSocketServer({ db, port: 0, host: '127.0.0.1' })
   await server.start()
 
-  process.env.DATABASE_URL = 'postgresql://postgres:postgres@127.0.0.1:5599/postgres'
+  // The port is assigned by the OS: a fixed one collides with the suite that ran
+  // before, and a killed-but-lingering process blocks the next run with EADDRINUSE.
+  process.env.DATABASE_URL = socketUrl(server)
   process.env.JWT_SECRET = 'route-test-secret-that-is-long-enough'
   process.env.BOOTSTRAP_ADMIN_EMAIL = 'admin@example.com'
   process.env.BOOTSTRAP_ADMIN_PASSWORD = 'correct horse battery staple'
@@ -50,7 +53,7 @@ test.before(async () => {
   const rawQuery = pool.query.bind(pool) as (sql: unknown, params?: unknown) => Promise<unknown>
   ;(pool as unknown as { query: unknown }).query = (sql: unknown, params?: unknown) =>
     rawQuery(typeof sql === 'string' ? strip(sql) : sql, params)
-  await dbModule.initializeWorkspace({ info: () => undefined })
+  await dbModule.initializeWorkspace({ info: () => undefined }, { prepare: strip })
 
   const Fastify = (await import('fastify')).default
   const jwt = (await import('@fastify/jwt')).default
@@ -89,14 +92,25 @@ test.before(async () => {
 })
 
 test.after(async () => {
-  await app.close()
-  await pool.end()
-  await server.stop()
-  await db.close()
+  await settle('close(app)', app?.close())
+  await settle('pool.end', pool?.end())
+  await settle('stop(server)', server?.stop())
+  await settle('close(db)', db?.close())
 })
 
 const auth = (bearer: string) => ({ authorization: 'Bearer ' + bearer })
 
+/** A folder in the workspace, for the inheritance cases. */
+async function createFolder(title: string) {
+  const response = await app.inject({
+    method: 'POST',
+    url: '/api/v1/documents',
+    headers: auth(token),
+    payload: { title, kind: 'folder' },
+  })
+  assert.equal(response.statusCode, 201, response.body)
+  return response.json().document.id as string
+}
 async function createDocument(title: string, text: string, restricted = false) {
   const response = await app.inject({
     method: 'POST',
@@ -184,3 +198,38 @@ test('search requires a session', async () => {
   const anonymous = await app.inject({ method: 'GET', url: '/api/v1/documents/search?q=x' })
   assert.equal(anonymous.statusCode, 401)
 });
+
+test('a restricted folder hides its children from search, grant or no grant', async () => {
+  // The leak this covers: the row's own `acl_restricted` was the only test, so a
+  // child of a restricted folder was findable - and the snippet came from
+  // `body_text`, so the searcher read the text without opening anything.
+  const folder = await createFolder('受限文件夹')
+  const inside = await createDocument('文件夹内文档', '机密内容只在受限文件夹里')
+  await pool.query('UPDATE documents SET parent_id=$1 WHERE id=$2', [folder, inside.id])
+  await pool.query('UPDATE documents SET acl_restricted=true WHERE id=$1', [folder])
+
+  // Searched as the member, not as the admin: an admin outranks every document
+  // rule and is supposed to see it, which is why this case needs a plain account.
+  const hit = await search('机密内容', { bearer: memberToken })
+  assert.equal(hit.statusCode, 200)
+  assert.deepEqual(hit.json().results.map((row: { title: string }) => row.title), [])
+
+  // The admin still finds it, so the restriction narrows visibility rather than
+  // breaking the index.
+  const asAdmin = await search('机密内容')
+  assert.deepEqual(asAdmin.json().results.map((row: { title: string }) => row.title), ['文件夹内文档'])
+})
+
+test('a grant on a restricted folder opens it and everything under it', async () => {
+  // Sharing a folder is the reason restrictions exist; before this, the inherited
+  // grant was gated on the chain being unrestricted, which made it unreachable.
+  const folder = await createFolder('共享文件夹')
+  const inside = await createDocument('共享文档', '共享文件夹里的可见内容')
+  await pool.query('UPDATE documents SET parent_id=$1 WHERE id=$2', [folder, inside.id])
+  await pool.query('UPDATE documents SET acl_restricted=true WHERE id=$1', [folder])
+  const memberId = (await pool.query('SELECT id FROM users WHERE email=$1', ['member@example.com'])).rows[0].id
+  await pool.query("INSERT INTO document_acl(document_id,user_id,role) VALUES ($1,$2,'viewer')", [folder, memberId])
+
+  const asMember = await search('共享文件夹里的可见内容', { bearer: memberToken })
+  assert.deepEqual(asMember.json().results.map((row: { title: string }) => row.title), ['共享文档'])
+})

@@ -477,6 +477,21 @@
  * as a form, not as text — and the grip is the only place the drag starts, so a
  * normal text selection still drags text rather than lifting the block.
  */
+/*
+ * Touch has no hover, so the 56px band that reveals the gutter is never entered on a
+ * phone and the structural commands are unreachable. A long press now pins the anchor
+ * (useBlockAnchor), which makes the gutter mount; on a touch viewport it is also made
+ * bigger and permanently laid out at a readable size, because a 14px grip is a
+ * 14px target for a finger. The `pointer:coarse` query is the honest test - a
+ * narrow window on a desktop still has a mouse.
+ */
+@media (pointer:coarse){
+  .block-gutter{gap:4px}
+  .block-grip,.block-add{width:30px;height:30px}
+  /* The gutter is pinned by the long press, so the fade that assumes a hover-in
+     would leave the buttons half transparent for the whole gesture. */
+  .block-gutter{animation:none}
+}
 .block-gutter{
   position:fixed;
   z-index:var(--z-menu);

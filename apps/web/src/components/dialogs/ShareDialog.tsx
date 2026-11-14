@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { Copy, Share2, X } from 'lucide-react'
 import { usePresence } from '../../hooks/usePresence'
-import type { DocumentPermission, WorkspaceMember } from '../../lib/types'
+import type { DocumentPermission, ShareLinkPermission, WorkspaceMember } from '../../lib/types'
 
 type ShareDialogProps = {
   title: string
@@ -10,7 +11,7 @@ type ShareDialogProps = {
   busy: boolean
   shareLinks: Array<{ id: string; token: string; permission: string; expiresAt: string | null }>
   shareLinkCopied: boolean
-  onCreateShareLink: () => void
+  onCreateShareLink: (permission: ShareLinkPermission) => void
   onRevokeShareLink: (linkId: string) => void
   onRestrictedChange: (restricted: boolean) => void
   onPermissionChange: (member: WorkspaceMember, role: DocumentPermission['role'] | null) => void
@@ -19,6 +20,9 @@ type ShareDialogProps = {
 
 /** Per-document ACL editor plus public share-link management. */
 export default function ShareDialog({ title, members, permissions, restricted, busy, shareLinks, shareLinkCopied, onCreateShareLink, onRevokeShareLink, onRestrictedChange, onPermissionChange, onClose }: ShareDialogProps) {
+  // Which access the next link carries. Local because it only describes the
+  // button the user is about to press, never a value the server has to agree with.
+  const [linkPermission, setLinkPermission] = useState<ShareLinkPermission>('viewer')
   const permissionMap = new Map(permissions.map((permission) => [permission.userId, permission]))
   const { closing, requestClose, onAnimationEnd } = usePresence(onClose)
   return <div className={'modal-backdrop' + (closing ? ' is-closing' : '')} onMouseDown={(event) => { if (event.target === event.currentTarget) requestClose() }}>
@@ -35,7 +39,17 @@ export default function ShareDialog({ title, members, permissions, restricted, b
         <b>分享链接</b>
         <p className="share-link-hint">生成公开链接，任何拥有链接的人可查看文档。</p>
         <div className="share-link-actions">
-          <button type="button" className="primary-btn" onClick={onCreateShareLink} disabled={busy}>
+          <select
+            className="share-link-permission"
+            aria-label="分享链接权限"
+            value={linkPermission}
+            disabled={busy}
+            onChange={(event) => setLinkPermission(event.target.value as ShareLinkPermission)}
+          >
+            <option value="viewer">仅查看</option>
+            <option value="commenter">可评论</option>
+          </select>
+          <button type="button" className="primary-btn" onClick={() => onCreateShareLink(linkPermission)} disabled={busy}>
             <Copy size={14} />{shareLinkCopied ? '已复制链接' : '生成并复制链接'}
           </button>
         </div>

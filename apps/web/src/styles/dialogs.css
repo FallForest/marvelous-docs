@@ -33,6 +33,10 @@
 .share-member-copy small{font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .share-member select{height:29px;border:1px solid var(--border-strong);border-radius:var(--radius-xs);background:var(--surface);padding:0 7px;outline:0;font-size:11px;color:var(--text-secondary);transition:var(--transition-colors)}
 .share-member select:focus-visible{border-color:var(--accent)}
+/* The link-permission picker sits next to a primary button, so it borrows the
+   member row's field treatment instead of the browser default. */
+.share-link-permission{height:32px;border:1px solid var(--border-strong);border-radius:var(--radius-xs);background:var(--surface);padding:0 7px;outline:0;font-size:12px;color:var(--text-secondary);transition:var(--transition-colors)}
+.share-link-permission:focus-visible{border-color:var(--accent)}
 .share-admin{font-size:11px;color:var(--warning);background:var(--warning-soft);padding:5px 7px;border-radius:var(--radius-xs)}
 .share-empty{padding:22px;text-align:center;font-size:11px;color:var(--text-muted)}
 

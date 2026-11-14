@@ -5,6 +5,19 @@ name: Release
 # runner needs QEMU emulation and hung for 10+ minutes per tag; a native arm64
 # runner needs no emulation at all.
 #
+# The arm64 platform is therefore deliberate, not an oversight. amd64 hosts (an
+# x86 VPS, a laptop, a CI smoke test) get their images from the amd64 path below,
+# which is manual on purpose: it uses the same Docker files and the same tags, so
+# publishing an amd64 image cannot change what the arm64 deploy host pulls.
+#
+# Do not "simplify" the two build steps into platforms: linux/amd64,linux/arm64.
+# On the arm runner the amd64 half would be QEMU-emulated, which is the exact
+# hang this file exists to avoid. The working multi-arch shape is a second job
+# on ubuntu-latest that builds linux/amd64 natively and pushes the same tags,
+# followed by `docker buildx imagetools create` to merge the two manifests into
+# one tag. That is a three-part change (a second job, identical tags, a merge
+# step) and it deserves its own pull request.
+#
 # If the arm runner is unavailable for the repository, fall back to building on
 # the deploy host with scripts/release/publish-images.sh and run this workflow manually
 # with workflow_dispatch once the images exist in GHCR.
@@ -17,14 +30,41 @@ on:
       tag:
         description: Existing tag to publish, e.g. v0.1.36
         required: true
+      arch:
+        description: Architecture to build
+        type: choice
+        default: arm64
+        options: [arm64, amd64]
+      images-exist:
+        description: Images are already in GHCR; only publish the release entry
+        type: boolean
+        default: false
 
 permissions:
   contents: write
   packages: write
 
 jobs:
+  # Nothing is pushed before the suite and the browser verifiers pass (P0-8).
+  #
+  # The dependency is a called workflow, not workflow_run. workflow_run only
+  # fires after a run of another workflow on the default branch, so a tag push
+  # would never start the release; making release.yml trigger on CI completion
+  # instead would also let one green PR run publish whatever tag happened to be
+  # pushed, and a manual dispatch would have to wait for an unrelated run.
+  # Calling the checks keeps "a tag publishes only green code" true without
+  # that coupling, and keeps the step list in one file.
+  ci:
+    uses: ./.github/workflows/ci-checks.yml
+    # Re-publishing a manifest for images that already exist does not need it.
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.images-exist) }}
+
   release:
-    runs-on: ubuntu-24.04-arm
+    needs: ci
+    # needs: skips the dependent job when ci is skipped, which is exactly the
+    # manual "images exist" path; without this it would never run.
+    if: ${{ !cancelled() && !failure() }}
+    runs-on: ${{ inputs.arch == 'amd64' && 'ubuntu-latest' || 'ubuntu-24.04-arm' }}
     steps:
       - uses: actions/checkout@v4
       - name: Resolve tag
@@ -34,43 +74,55 @@ jobs:
           if [ -z "$tag" ]; then tag="${GITHUB_REF_NAME}"; fi
           echo "name=$tag" >> "$GITHUB_OUTPUT"
           echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+      - name: Resolve platform
+        id: platform
+        # One place decides the platform for both images, so the two build steps
+        # cannot drift apart.
+        run: |
+          arch="${{ inputs.arch }}"
+          if [ -z "$arch" ]; then arch=arm64; fi
+          echo "platform=linux/$arch" >> "$GITHUB_OUTPUT"
       - name: Log in to GHCR
+        if: ${{ !inputs.images-exist }}
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Docker Buildx
+        if: ${{ !inputs.images-exist }}
         uses: docker/setup-buildx-action@v3
       - name: Compute image prefix
         id: image
         run: echo "prefix=ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/marvelous-docs" >> "$GITHUB_OUTPUT"
       - name: Build and push API image
+        if: ${{ !inputs.images-exist }}
         uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/server/Dockerfile
-          platforms: linux/arm64
+          platforms: ${{ steps.platform.outputs.platform }}
           push: true
           provenance: false
-          cache-from: type=gha,scope=api
-          cache-to: type=gha,mode=max,scope=api
+          cache-from: type=gha,scope=api-${{ steps.platform.outputs.platform }}
+          cache-to: type=gha,mode=max,scope=api-${{ steps.platform.outputs.platform }}
           tags: |
             ${{ steps.image.outputs.prefix }}-api:${{ steps.tag.outputs.version }}
             ${{ steps.image.outputs.prefix }}-api:latest
       - name: Build and push web image
+        if: ${{ !inputs.images-exist }}
         uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/web/Dockerfile
-          platforms: linux/arm64
+          platforms: ${{ steps.platform.outputs.platform }}
           build-args: |
             VITE_API_URL=
             VITE_COLLAB_URL=
           push: true
           provenance: false
-          cache-from: type=gha,scope=web
-          cache-to: type=gha,mode=max,scope=web
+          cache-from: type=gha,scope=web-${{ steps.platform.outputs.platform }}
+          cache-to: type=gha,mode=max,scope=web-${{ steps.platform.outputs.platform }}
           tags: |
             ${{ steps.image.outputs.prefix }}-web:${{ steps.tag.outputs.version }}
             ${{ steps.image.outputs.prefix }}-web:latest

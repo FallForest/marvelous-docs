@@ -112,6 +112,9 @@ function Harness() {
     <div className="main-area">
       <TopBar
         userInitial="A" title="产品路线图" showRoot saveStatus="saved" collabStatus="connected"
+        // The breadcrumb takes a trail now; a real path keeps the topbar markup
+        // identical to what ships.
+        trail={[{ id: 'f1', title: '产品' }]} onOpenTrail={noop}
         collaborators={[]} sidebarOpen hasDocument favorite={false} exportOpen={false}
         onOpenSidebar={noop} onFavorite={noop} onExport={noop} onExportMenu={noop}
         onHistory={noop} onComments={noop} onShare={noop}

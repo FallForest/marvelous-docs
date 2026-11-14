@@ -5,21 +5,25 @@ import { api } from './lib/endpoints'
 import { Dialog } from './components/ui/Dialog'
 import { withViewTransition } from './lib/motion'
 import { COLLAB_URL } from './lib/collab'
-import { buildDocTree, filterDocTree } from './lib/tree'
+import { ancestorsOf, buildDocTree, filterDocTree } from './lib/tree'
 import { useWorkspaceData } from './hooks/useWorkspaceData'
 import { useSharing } from './hooks/useSharing'
 import { useInvite } from './hooks/useInvite'
 import { useDocumentExport } from './hooks/useDocumentExport'
 import { useTheme } from './hooks/useTheme'
 import { emptyContent } from './lib/types'
-import type { CollabStatus, RightTab, UpdateInfo } from './lib/app-types'
+import { DocumentSaveQueue } from './lib/document-saves'
+import { syncDocumentUrl } from './lib/url'
+import type { CollabStatus, HomeView, RightTab } from './lib/app-types'
+import { FAVORITES_SCOPE } from './lib/app-types'
 import type {
-  Comment, Doc, SaveStatus, SearchScope, TreeAction, Version,
+  Comment, Doc, DocJson, SaveStatus, SearchScope, TreeAction, Version,
 } from './lib/types'
 import AdminWorkspace from './pages/AdminPage'
 import CommandPalette from './pages/CommandPalette'
 import HomeDashboard, { FolderOverview } from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
+import BootScreen from './pages/BootScreen'
 import SearchPage from './pages/SearchPage'
 import SharedDocumentPage from './pages/SharedDocumentPage'
 import ShellDialogs from './components/dialogs/ShellDialogs'
@@ -27,7 +31,7 @@ import ShareDialog from './components/dialogs/ShareDialog'
 import InviteDialog from './components/dialogs/InviteDialog'
 import MoveDialog from './components/dialogs/MoveDialog'
 import TemplateLibrary from './components/dialogs/TemplateLibrary'
-import DocumentEditor from './components/editor/DocumentEditor'
+import DocumentEditor, { type DocumentEditorHandle } from './components/editor/DocumentEditor'
 import { templateLabel } from './components/layout/TemplateMenu'
 import DocumentPanel from './components/panels/DocumentPanel'
 import Sidebar from './components/layout/Sidebar'
@@ -86,7 +90,7 @@ function App() {
   const [collabStatus, setCollabStatus] = useState<CollabStatus>('connecting')
   const [expanded, setExpanded] = useState(true)
   const [commandOpen, setCommandOpen] = useState(false)
-  const [homeView, setHomeView] = useState<'home' | 'search' | 'trash' | 'favorites'>('home')
+  const [homeView, setHomeView] = useState<HomeView>('home')
   const [searchScope, setSearchScope] = useState<SearchScope>('all')
   const [commandIndex, setCommandIndex] = useState(0)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved')
@@ -96,13 +100,17 @@ function App() {
   const [themeMenuOpen, setThemeMenuOpen] = useState(false)
   const [moveDoc, setMoveDoc] = useState<Doc | null>(null)
   const [previewVersion, setPreviewVersion] = useState<Version | null>(null)
+  const [previewCurrent, setPreviewCurrent] = useState<{ content?: DocJson; title?: string }>({})
+  const [editorEpoch, setEditorEpoch] = useState(0)
+  const editorHandle = useRef<DocumentEditorHandle | null>(null)
+  const restoreTarget = useRef<string | null>(null)
+  const saveQueue = useRef(new DocumentSaveQueue())
   const [renameDoc, setRenameDoc] = useState<Doc | null>(null)
   const [deleteDoc, setDeleteDoc] = useState<Doc | null>(null)
   const [purgeDoc, setPurgeDoc] = useState<Doc | null>(null)
   /** Confirmation for emptying the whole bin; null when the dialog is closed. */
   const [emptyTrashOpen, setEmptyTrashOpen] = useState(false)
   const [emptyTrashBusy, setEmptyTrashBusy] = useState(false)
-  const [updatePrompt, setUpdatePrompt] = useState<UpdateInfo | null>(null)
   const [linkPrompt, setLinkPrompt] = useState<{ from: number; to: number } | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
   const [workspaceOpen, setWorkspaceOpen] = useState(false)
@@ -132,7 +140,7 @@ function App() {
   const draftKey = (id: string) => 'mdocs-draft-' + id
 
   const persist = useCallback((json: Record<string, unknown>, immediate = false) => {
-    if (!token || !activeRef.current) return
+    if (!token || !activeRef.current || restoreTarget.current === activeRef.current.id) return
     const source = activeRef.current
     // A new document must not cancel the previous document's pending save or
     // cause that body/title to be written into the newly active document.
@@ -147,9 +155,15 @@ function App() {
       const doc = activeRef.current?.id === source.id ? activeRef.current : source
       if (activeRef.current?.id === source.id) setSaveStatus('saving')
       try {
-        const result = await api.saveContent(token, doc.id, json, doc.version)
-        setActive((current) => current?.id === result.document.id ? result.document : current)
-        setDocuments((items) => items.map((item) => item.id === result.document.id ? result.document : item))
+        const saved = await saveQueue.current.enqueue(doc.id, async (previous) => {
+          const current = activeRef.current?.id === doc.id ? activeRef.current : doc
+          const version = Math.max(current.version, previous?.version ?? 0)
+          const result = await api.saveContent(token, doc.id, json, version)
+          if (activeRef.current?.id === doc.id) activeRef.current = result.document
+          return result.document
+        })
+        setActive((current) => current?.id === saved.id ? saved : current)
+        setDocuments((items) => items.map((item) => item.id === saved.id ? saved : item))
         if (activeRef.current?.id === source.id) setSaveStatus('saved')
         // The server accepted this edit, so the local safety copy is stale.
         try { window.localStorage.removeItem(draftKey(doc.id)) } catch { /* private mode */ }
@@ -223,11 +237,11 @@ function App() {
     documents, setDocuments,
     active, setActive, activeRef,
     comments, setComments,
-    versions, setVersions,
     favoriteIds, favoriteSet, setFavorites,
     templates,
     stats, refreshStats, refreshDocuments,
     trashDocuments, setTrashDocuments,
+    recentDocuments,
     trashRetentionDays,
     searchResults, searchLoading,
     adminMembers, adminMembersBusy,
@@ -262,9 +276,8 @@ function App() {
     setActive(null)
     setDocuments([])
     setComments([])
-    setVersions([])
     setWorkspaceView('documents')
-  }, [setUser, setActive, setDocuments, setComments, setVersions])
+  }, [setUser, setActive, setDocuments, setComments])
 
   const startUpdate = useCallback(async () => {
     // Every early return has to say why: a silent no-op is indistinguishable from
@@ -272,7 +285,6 @@ function App() {
     if (!token) { setNotice('请先登录后再检查更新。'); return }
     if (!updateInfo) { setNotice('当前没有可用的更新信息，请稍后重试。'); return }
     if (updateInfo.status === 'running') { setNotice('更新正在进行中，请稍候…'); return }
-    setUpdatePrompt(null)
     setUpdateInfo((current) => current ? { ...current, status: 'running' } : current)
     try {
       await api.startUpdate(token)
@@ -301,13 +313,46 @@ function App() {
     }
   }, [token, updateInfo, setUpdateInfo])
 
+  /*
+   * Keep the address bar pointing at the open document.
+   *
+   * One effect rather than a `syncDocumentUrl` beside every `setActive`: there are
+   * a dozen places that select a document (open, create, import, duplicate,
+   * restore, delete-then-fall-back), and the one that was forgotten would be the
+   * one that leaves the address pointing at a document the reader is no longer
+   * looking at. Reading `active` covers every path by construction.
+   *
+   * The shared-document route is excluded: `/shared/<token>` addresses a public
+   * view, and rewriting its query would break a link somebody pasted into a chat.
+   */
+  useEffect(() => {
+    if (window.location.pathname.startsWith('/shared/')) return
+    syncDocumentUrl(active?.kind === 'document' ? active.id : null)
+  }, [active])
   // Keyboard shortcuts, viewport tracking, document title, and the
   // unsaved-changes guard. These belong to the shell: they describe how the
   // workspace behaves, not what it contains.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const modifier = event.metaKey || event.ctrlKey
-      if (modifier && event.key.toLowerCase() === 'k') { event.preventDefault(); setCommandOpen(true); setCommandIndex(0) }
+      /*
+       * `Ctrl+K` means "link this text" while text is selected, and "open the palette"
+       * otherwise. The palette claimed the chord outright, so a writer with a sentence
+       * highlighted got a search box - the opposite of what every editor with this
+       * shortcut does.
+       *
+       * The selection is read from the DOM rather than from the editor handle: the
+       * shell does not own the editor's state, and asking it here would couple the
+       * keyboard map to the editor's internals for one key.
+       */
+      const selection = window.getSelection()?.toString() ?? ''
+      const inEditor = Boolean(document.activeElement?.closest('.tiptap-content'))
+      if (modifier && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        if (inEditor && selection.trim()) { window.dispatchEvent(new CustomEvent('mdoc-link-selection')); return }
+        setCommandOpen(true)
+        setCommandIndex(0)
+      }
       else if (modifier && event.key.toLowerCase() === 's') { event.preventDefault(); window.dispatchEvent(new Event('mdoc-force-save')) }
       else if (modifier && event.shiftKey && event.key.toLowerCase() === 'e') { event.preventDefault(); void exportActive('markdown') }
       if (event.key === 'Escape') closeOverlays()
@@ -393,13 +438,11 @@ function App() {
   useEffect(() => {
     if (!token || !active || active.kind === 'folder') return
     let live = true
-    api.document(token, active.id)
+    api.document(token, active.id, true)
       .then(({ document: document }) => { if (live) setActive(document) })
       .catch((error) => { if (live) setNotice(error.message) })
     api.comments(token, active.id)
       .then(({ comments: rows }) => { if (live) setComments(rows || []) }).catch(() => undefined)
-    api.versions(token, active.id)
-      .then(({ versions: rows }) => { if (live) setVersions(rows || []) }).catch(() => undefined)
     return () => { live = false }
   }, [token, active?.id])
 
@@ -407,11 +450,7 @@ function App() {
   // while the panel was closed show up without a page reload.
   useEffect(() => {
     if (!token || !active) return
-    if (rightTab === 'history') {
-      api.versions(token, active.id)
-        .then(({ versions: rows }) => setVersions(rows || []))
-        .catch(() => undefined)
-    } else if (rightTab === 'comments') {
+    if (rightTab === 'comments') {
       api.comments(token, active.id)
         .then(({ comments: rows }) => setComments(rows || []))
         .catch(() => undefined)
@@ -570,7 +609,10 @@ function App() {
     setNotice(failed
       ? `已移到回收站 ${ids.length - failed} 项，${failed} 项失败`
       : `已把 ${ids.length} 项移到回收站`)
-    window.dispatchEvent(new Event('mdoc-reload'))
+    // The tree has to be re-read: the row that was just deleted is still in
+    // `documents`, and this used to dispatch a 'mdoc-reload' event that no
+    // component had ever listened for, so the deleted rows stayed visible.
+    await refreshDocuments()
   }
 
   async function batchFavorite() {
@@ -630,30 +672,92 @@ function App() {
     return () => window.removeEventListener('mdoc-comment-status', handler)
   }, [comments, active])
 
-  async function restoreVersion(versionId: string) {
-    if (!active) return false
+  function openVersionPreview(version: Version) {
     try {
-      const { document: restored } = await api.restoreVersion(token, active.id, versionId, active.version)
-      setActive(restored)
+      const current = editorHandle.current?.snapshot()
+      setPreviewCurrent({ content: current?.content || activeRef.current?.content, title: current?.title || activeRef.current?.title })
+    } catch {
+      setPreviewCurrent({ content: activeRef.current?.content, title: activeRef.current?.title })
+    }
+    setPreviewVersion(version)
+  }
+
+  async function restoreVersion(versionId: string) {
+    const source = activeRef.current
+    const handle = editorHandle.current
+    if (!source || !handle || restoreTarget.current) return false
+    restoreTarget.current = source.id
+    handle.setLocked(true)
+    try {
+      await handle.flushTitle()
+      if (pendingSave.current?.id === source.id) {
+        window.clearTimeout(saveTimer.current)
+        const pending = pendingSave.current
+        pendingSave.current = null
+        await pending.run()
+      }
+      await saveQueue.current.wait(source.id)
+      const snapshot = handle.snapshot()
+      if (snapshot.documentId !== source.id || activeRef.current?.id !== source.id) throw new Error('当前文档已切换，请重新选择历史版本。')
+      let latest = (await api.document(token, source.id)).document
+      if (!snapshot.stateVector) {
+        // The REST editor has no room that the server can flush. Persist its
+        // exact local body before restoring, so that it becomes the backup.
+        try {
+          latest = await saveQueue.current.enqueue(source.id, async () => (await api.saveContent(token, source.id, snapshot.content.doc, latest.version)).document)
+        } catch (error) {
+          try { localStorage.setItem(draftKey(source.id), JSON.stringify(snapshot.content.doc)) } catch { /* quota */ }
+          throw error
+        }
+      }
+      if (activeRef.current?.id !== source.id) throw new Error('当前文档已切换，恢复已取消。')
+      const { document: restored } = await api.restoreVersion(token, source.id, versionId, latest.version, snapshot.stateVector)
+      if (activeRef.current?.id === source.id) {
+        activeRef.current = restored
+        setActive(restored)
+        // Only an explicit replacement recreates the editor. Routine autosaves
+        // keep the same instance, selection and undo stack.
+        setEditorEpoch((epoch) => epoch + 1)
+        setSaveStatus('saved')
+        setCommentAnchor(null)
+        setActiveCommentId(null)
+      }
       setDocuments((rows) => rows.map((row) => row.id === restored.id ? restored : row))
-      setNotice('已恢复到此版本')
-      api.versions(token, restored.id)
-        .then(({ versions: rows }) => setVersions(rows || []))
-        .catch(() => undefined)
+      try { localStorage.removeItem(draftKey(source.id)) } catch { /* private mode */ }
+      window.dispatchEvent(new CustomEvent('mdoc-updated', { detail: restored }))
+      setNotice('已恢复此版本，恢复前的内容已保留在历史中')
       return true
     } catch (error) {
-      setNotice('恢复失败：' + (error as Error).message)
+      const failure = error as Error & { code?: string }
+      setNotice(failure.code === 'SYNC_PENDING' ? '最近的编辑尚未同步完成，请稍后重试恢复。' : '恢复失败：' + failure.message)
       return false
+    } finally {
+      restoreTarget.current = null
+      handle.setLocked(false)
     }
   }
 
-  const treeQuery = query === '__favorites__' ? '' : query.trim().toLowerCase()
+  /*
+   * The breadcrumb path for whatever is open. A folder shows its own ancestors; a
+   * document shows the folders above it. Computed here rather than in TopBar so
+   * the bar stays a projection of shell state, like every other prop it takes.
+   */
+  const breadcrumbTrail = useMemo(() => {
+    const anchorId = active?.id ?? selectedFolderId
+    if (!anchorId) return []
+    return ancestorsOf(anchorId, documents).map((entry) => ({ id: entry.id, title: entry.title }))
+  }, [active?.id, selectedFolderId, documents])
+  const treeQuery = query === FAVORITES_SCOPE ? '' : query.trim().toLowerCase()
   const tree = useMemo(() => buildDocTree(documents), [documents])
   const visibleTree = useMemo(() => filterDocTree(tree, treeQuery), [tree, treeQuery])
   const selectedFolder = documents.find((doc) => doc.id === selectedFolderId && doc.kind === 'folder') || null
   const folderChildren = documents.filter((doc) => (doc.parentId || null) === selectedFolderId)
   const showingSearch = homeView === 'search' && !!treeQuery && treeQuery.length > 0
 
+  // A stored token with no user yet means the session is being restored, not
+  // that there is no session. Returning the login form here made every reload
+  // flash a password prompt before the workspace appeared.
+  if (token && !user) return <BootScreen />
   if (!token || !user) return <LoginPage onLogin={login} onAccepted={({ token: acceptedToken, user: acceptedUser }) => { setToken(acceptedToken); setUser(acceptedUser) }} error={loginError} busy={busy} />
   if (workspaceView === 'admin' && user.role === 'admin') return <AdminWorkspace
     user={user}
@@ -688,7 +792,7 @@ function App() {
       expandedFolders={expandedFolders}
       homeView={homeView}
       emptyMessage={treeQuery ? '没有匹配的文档' : '暂无文档或文件夹'}
-      query={query === '__favorites__' ? '' : query}
+      query={query === FAVORITES_SCOPE ? '' : query}
       narrow={narrow}
       floating={narrow}
       workspaceOpen={workspaceOpen}
@@ -704,6 +808,7 @@ function App() {
       }}
       onHome={() => { withViewTransition(() => { setHomeView('home'); setActive(null); setSelectedFolderId(null); setQuery(''); setShowRight(false) }); if (narrow) setSidebarOpen(false) }}
       onAdmin={() => { withViewTransition(() => setWorkspaceView('admin')); if (narrow) setSidebarOpen(false) }}
+      onRecent={() => { withViewTransition(() => { setHomeView('recent'); setActive(null); setSelectedFolderId(null); setQuery('') }); if (narrow) setSidebarOpen(false) }}
       onFavorites={() => { withViewTransition(() => { setHomeView('favorites'); setActive(null); setSelectedFolderId(null); setQuery('') }); if (narrow) setSidebarOpen(false) }}
       onTrash={() => { withViewTransition(() => { setHomeView('trash'); setActive(null); setSelectedFolderId(null); setQuery('') }); if (narrow) setSidebarOpen(false) }}
       onToggleTree={() => setExpanded((value) => !value)}
@@ -734,6 +839,11 @@ function App() {
         userInitial={(user.name || user.email)[0].toUpperCase()}
         title={active?.title || selectedFolder?.title || (showingSearch ? '搜索' : '所有文档')}
         showRoot={!narrow}
+        trail={breadcrumbTrail}
+        onOpenTrail={(id) => {
+          const folder = documents.find((entry) => entry.id === id)
+          if (folder) { setSelectedFolderId(folder.id); setActive(null); setHomeView('home') }
+        }}
         saveStatus={saveStatus}
         collabStatus={collabStatus}
         collaborators={collaborators}
@@ -763,7 +873,8 @@ function App() {
             the canvas in a second time. One region, one entrance. */}
         <section className="editor-column" key={active.id}>
           <DocumentEditor
-            key={active.id}
+            key={active.id + ':' + editorEpoch}
+            ref={editorHandle}
             doc={active}
             token={token}
             persist={persist}
@@ -796,7 +907,6 @@ function App() {
           open={showRight}
           tab={rightTab}
           comments={comments}
-          versions={versions}
           commentText={commentText}
           commentAnchor={commentAnchor}
           activeCommentId={activeCommentId}
@@ -815,7 +925,7 @@ function App() {
             setActiveCommentId(comment.id)
           }}
           onCommentStatus={(comment, status) => void updateCommentStatus(comment, status)}
-          onPreviewVersion={setPreviewVersion}
+          onPreviewVersion={openVersionPreview}
         />}
       </div> : selectedFolder ? <FolderOverview
         // Remounting per folder replays the entry animation, so opening another
@@ -838,11 +948,12 @@ function App() {
         // One component serves home, favorites and trash; the key makes each
         // view a fresh mount so its cards stagger in on arrival.
         key={homeView}
-        documents={homeView === 'trash' ? trashDocuments : documents}
+        documents={homeView === 'trash' ? trashDocuments : homeView === 'recent' ? recentDocuments : documents}
         favorites={favoriteSet}
-        query={query === '__favorites__' ? '' : query}
+        query={query === FAVORITES_SCOPE ? '' : query}
         trash={homeView === 'trash'}
         favoritesView={homeView === 'favorites'}
+        recentView={homeView === 'recent'}
         stats={stats}
         onOpen={(doc) => { setActive(doc); setSelectedFolderId(doc.parentId || null) }}
         onCreate={() => void createDocument('document')}
@@ -918,7 +1029,7 @@ function App() {
       busy={sharing.busy}
       shareLinks={sharing.shareLinks}
       shareLinkCopied={sharing.linkCopied}
-      onCreateShareLink={() => void sharing.createLink(active)}
+      onCreateShareLink={(permission) => void sharing.createLink(active, permission)}
       onRevokeShareLink={(linkId: string) => void sharing.revokeLink(active, linkId)}
       onRestrictedChange={(value) => void sharing.setRestriction(active, value)}
       onPermissionChange={(member, role) => void sharing.setPermission(active, member, role)}
@@ -939,7 +1050,7 @@ function App() {
       onClose={() => setShowInvite(false)}
     />}
     {moveDoc && <MoveDialog doc={moveDoc} documents={documents} busy={busy} onMove={(parentId) => void moveDocument(moveDoc, parentId)} onClose={() => setMoveDoc(null)} />}
-    {previewVersion && active && <VersionPreview token={token} documentId={active.id} version={previewVersion} onRestore={restoreVersion} onClose={() => setPreviewVersion(null)} />}
+    {previewVersion && active && <VersionPreview token={token} documentId={active.id} version={previewVersion} currentContent={previewCurrent.content} currentTitle={previewCurrent.title} onRestore={restoreVersion} onClose={() => setPreviewVersion(null)} />}
     <input ref={importInput} className="visually-hidden" type="file" accept=".md,.markdown,.txt" aria-label="导入 Markdown 文件" onChange={(event) => void handleImport(event)} />
     <ShellDialogs
       renameDoc={renameDoc}
@@ -947,7 +1058,6 @@ function App() {
       purgeDoc={purgeDoc}
       emptyTrashCount={emptyTrashOpen ? trashDocuments.length : 0}
       emptyTrashBusy={emptyTrashBusy}
-      updatePrompt={updatePrompt}
       helpOpen={helpOpen}
       linkPrompt={linkPrompt}
       onRename={(doc, title) => void updateDocument(doc, { title })}
@@ -985,8 +1095,6 @@ function App() {
         finally { setEmptyTrashBusy(false) }
       }}
       onCancelEmptyTrash={() => setEmptyTrashOpen(false)}
-      onConfirmUpdate={async () => { setUpdatePrompt(null); await startUpdate() }}
-      onCancelUpdate={() => setUpdatePrompt(null)}
       onCloseHelp={() => setHelpOpen(false)}
       onInsertLink={(range, href) => window.dispatchEvent(new CustomEvent('mdoc-insert-link', { detail: { from: range.from, to: range.to, href } }))}
       onCancelLink={() => setLinkPrompt(null)}

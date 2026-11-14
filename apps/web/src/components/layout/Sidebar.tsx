@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react'
-import { BookOpen, CheckSquare, ChevronDown, ChevronRight, Folder, Home, LogOut, PanelLeftClose, Plus, Search, ShieldCheck, Sparkles, Star, Trash2 } from 'lucide-react'
+import { BookOpen, CheckSquare, ChevronDown, ChevronRight, Clock3, Folder, Home, LogOut, PanelLeftClose, Plus, Search, ShieldCheck, Sparkles, Star, Trash2 } from 'lucide-react'
 import TemplateMenu from '../layout/TemplateMenu'
 import TreeItem from '../tree/TreeItem'
 import Popover from '../ui/Popover'
 import ArtIcon from '../ui/ArtIcon'
 import type { Doc, DocNode, TreeAction, User } from '../../lib/types'
+import type { HomeView } from '../../lib/app-types'
 
 type SidebarProps = {
   user: User
@@ -13,7 +14,7 @@ type SidebarProps = {
   activeId: string | null
   selectedFolderId: string | null
   expandedFolders: Set<string>
-  homeView: 'home' | 'search' | 'trash' | 'favorites'
+  homeView: HomeView
   emptyMessage: string
   query: string
   narrow: boolean
@@ -26,6 +27,7 @@ type SidebarProps = {
   onSearch: (value: string) => void
   onHome: () => void
   onAdmin: () => void
+  onRecent: () => void
   onFavorites: () => void
   onTrash: () => void
   onOpenTemplates: () => void
@@ -125,13 +127,25 @@ export default function Sidebar(props: SidebarProps) {
         </div>
       </div>
 
-      <div className="nav-label">导航</div>
+      {/*
+       * Grouped, not one flat list. Five peer rows made every view look equally
+       * important and equally distant: "where do I go to read something" and "where
+       * do I clean up" were adjacent, and adding a sixth view meant adding a sixth
+       * peer. The groups answer the question the reader is actually asking, and a
+       * seventh view now has an obvious home.
+       */}
+      <div className="nav-label">工作区</div>
       <nav className="nav-list" aria-label="工作区导航">
         <button type="button" className="nav-row" aria-current={homeView === 'home' && !activeId && !selectedFolderId ? 'page' : undefined} onClick={props.onHome}><ArtIcon name="home" fallback={<Home size={16} />} />首页</button>
-        {user.role === 'admin' && <button type="button" className="nav-row" onClick={props.onAdmin}><ArtIcon name="shield" fallback={<ShieldCheck size={16} />} />管理中心</button>}
+        <button type="button" className="nav-row" aria-current={homeView === 'recent' ? 'page' : undefined} onClick={props.onRecent}><ArtIcon name="recent" fallback={<Clock3 size={16} />} />最近</button>
         <button type="button" className="nav-row" aria-current={homeView === 'favorites' ? 'page' : undefined} onClick={props.onFavorites}><ArtIcon name="favorite-star" fallback={<Star size={16} />} />收藏 {favoriteSet.size > 0 && <span className="nav-count">{favoriteSet.size}</span>}</button>
-        <button type="button" className="nav-row" aria-current={homeView === 'trash' ? 'page' : undefined} onClick={props.onTrash}><ArtIcon name="trash" fallback={<Trash2 size={16} />} />回收站</button>
+      </nav>
+
+      <div className="nav-label">团队</div>
+      <nav className="nav-list" aria-label="团队">
         <button type="button" className="nav-row creation-library-entry" onClick={props.onOpenTemplates}><ArtIcon name="notebook" fallback={<BookOpen size={16} />} />模板库</button>
+        {user.role === 'admin' && <button type="button" className="nav-row" onClick={props.onAdmin}><ArtIcon name="shield" fallback={<ShieldCheck size={16} />} />管理中心</button>}
+        <button type="button" className="nav-row" aria-current={homeView === 'trash' ? 'page' : undefined} onClick={props.onTrash}><ArtIcon name="trash" fallback={<Trash2 size={16} />} />回收站</button>
       </nav>
 
       <div className="tree-heading">

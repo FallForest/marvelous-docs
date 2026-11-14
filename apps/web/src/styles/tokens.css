@@ -243,6 +243,13 @@
     transform var(--duration-base) var(--ease-spring-snappy);
 
   /* ── base typography ────────────────────────────────────────── */
+  /*
+   * The code stack is a token because three layers had already written it out
+   * by hand (editor.css, content.css, layout.css) and a fourth used a name that
+   * did not exist. One declaration means the fallback chain is decided once, and
+   * theme.test.ts can prove nothing consumes a name nobody declared.
+   */
+  --font-mono:ui-monospace,SFMono-Regular,'JetBrains Mono',Menlo,Consolas,monospace;
   font-family:'DM Sans','Noto Sans SC',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   color:var(--text);
   background:var(--surface-muted);

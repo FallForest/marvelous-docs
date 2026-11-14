@@ -2,6 +2,7 @@ import type { Doc as YDoc } from 'yjs'
 import type { NodeViewRenderer } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
+import CharacterCount from '@tiptap/extension-character-count'
 import Collaboration from '@tiptap/extension-collaboration'
 import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
@@ -20,6 +21,8 @@ import { DocumentImage } from './image'
 import { FontSize } from './font-size'
 import { CodeBlockBoundary } from './code-block'
 import { CommentMarks } from './comment-marks'
+import { BlockShortcuts } from './block-shortcuts'
+import { Indent, TabInProse } from './tab-in-prose'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { lowlight } from './highlight'
 
@@ -46,6 +49,9 @@ export function buildEditorExtensions(options: EditorExtensionOptions = {}) {
       exitOnArrowDown: false,
     }),
     CodeBlockBoundary,
+    Indent,
+    TabInProse,
+    BlockShortcuts,
     CommentMarks,
     Underline,
     Link.configure({ openOnClick: false, autolink: true, HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' } }),
@@ -55,6 +61,7 @@ export function buildEditorExtensions(options: EditorExtensionOptions = {}) {
     FontSize,
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
     Highlight.configure({ multicolor: true }),
+    CharacterCount,
     TaskList,
     TaskItem.configure({ nested: true }),
     Table.configure({ resizable: true }),

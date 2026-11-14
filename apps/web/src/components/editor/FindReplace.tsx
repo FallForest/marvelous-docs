@@ -120,14 +120,30 @@ export function FindReplace({ editor, initial, onClose }: Props) {
 }
 
 export function OutlinePanel({ editor, onClose }: { editor: Editor | null; onClose: () => void }) {
+  // Bumped on every editor transaction so the memo below recomputes. The doc
+  // object is replaced on each edit, but nothing re-renders this panel when it
+  // changes, so a dependency alone would only refresh on an unrelated render —
+  // which is why the outline kept showing the headings the document had when
+  // the panel opened.
+  const [docRevision, setDocRevision] = useState(0)
+  useEffect(() => {
+    if (!editor) return
+    const bump = () => setDocRevision((current) => current + 1)
+    editor.on('update', bump)
+    return () => { editor.off('update', bump) }
+  }, [editor])
+
   const headings = useMemo(() => {
+    // Read, not used: `docRevision` is the subscription that makes this recompute,
+    // and the linter only accepts a dependency it can see referenced in the body.
+    void docRevision
     if (!editor) return [] as Array<{ level: number; text: string; pos: number }>
     const list: Array<{ level: number; text: string; pos: number }> = []
     editor.state.doc.descendants((node, pos) => {
       if (node.type.name === 'heading') list.push({ level: node.attrs.level as number, text: node.textContent, pos })
     })
     return list
-  }, [editor])
+  }, [editor, docRevision])
 
   return <div className="outline-panel motion-sink" role="dialog" aria-label="文档大纲">
     <div className="find-head"><b>文档大纲</b><button type="button" className="icon-btn" aria-label="关闭大纲" onClick={onClose}><X size={15} /></button></div>

@@ -438,3 +438,17 @@
 .tiptap-content img:not([src]),.tiptap-content img[src=""]{
   border:1px dashed var(--border-strong);
 }
+
+/*
+ * Paragraph indentation (the `indent` attribute, one step per Tab).
+ *
+ * `padding-inline-start` rather than margin: a margin would collapse through the
+ * container edge and the first indented paragraph would sit flush anyway. `em` so
+ * the step follows the text size a theme sets.
+ */
+[data-indent='1']{padding-inline-start:1.6em}
+[data-indent='2']{padding-inline-start:3.2em}
+[data-indent='3']{padding-inline-start:4.8em}
+[data-indent='4']{padding-inline-start:6.4em}
+[data-indent='5']{padding-inline-start:8em}
+[data-indent='6']{padding-inline-start:9.6em}

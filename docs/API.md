@@ -156,6 +156,14 @@ Converts Markdown (headings, paragraphs, emphasis, links, lists, task lists, blo
 
 Flushes pending collaboration state, records a `view` activity entry, and returns `200 { "document": Document }`.
 
+### `GET /documents/:id/version`
+
+`200 { "version": 3, "updatedAt": "..." }`. The number alone, for a client waiting
+on its own write: the editor confirms a save by polling this instead of the full
+document, which on a collaborative document would pull the whole body and flush the
+room on every poll. It deliberately does **not** flush, so it observes what the room
+actually persisted rather than forcing it.
+
 ### `PUT /documents/:id`
 
 Editors and owners only.
@@ -341,6 +349,7 @@ Every REST content update, version restore, and persisted collaboration edit app
 
 - `GET /healthz` — `{ "status": "ok" } ` or `503 DATABASE_UNAVAILABLE`.
 - `GET /system/version` — `{ "version": "0.1.71" }`.
+- `GET /system/metrics` (workspace administrator) — operational counters: `{ "version", "uptimeSeconds", "workspace": { documents, versions, trashed, members }, "collaboration": { rooms, clients, dirtyRooms, roomsAwaitingProjection, queuedDocumentOperations, scheduledHistoryCheckpoints }, "database": { total, idle, waiting }, "migrations": [{ filename, applied_at }] }`. JSON rather than a Prometheus exposition, because the documented deployment is one compose stack and the operator reads this with `curl`.
 - `GET /system/update-check` (authenticated) — `{ "currentVersion", "latestVersion", "updateAvailable", "manifest" }`.
 - `POST /system/update` (workspace administrator) — starts the update agent; `202`.
 - `GET /system/update-status` (workspace administrator) — `{ "update": { "status", "startedAt", "finishedAt", "output", "error" } }`.
@@ -353,7 +362,7 @@ The API process also listens on `COLLAB_PORT` (default `1234`) for y-websocket v
 wss://<host>/collab/<documentId>?token=<jwt>
 ```
 
-Non-browser clients may send `Authorization: Bearer <jwt>` instead. The room name must be the document UUID. The document is loaded from its stored Tiptap JSON, and the server persists Yjs state and a Tiptap JSON snapshot 500 ms after edits go idle. Viewers receive state, may publish awareness, and have sync-step-2/update messages ignored. The REST API and the collaboration layer share the same PostgreSQL row; GET and version history flush pending room state first.
+Non-browser clients may send `Authorization: Bearer <jwt>` instead. The room name must be the document UUID. The document is loaded from its stored Tiptap JSON. The durable Yjs state is written 500 ms after edits go idle; the Tiptap JSON projection, which feeds the search index, is written on a slower clock (10 s) and forced by any REST read, so a reader never sees a stale body. Viewers receive state, may publish awareness, and have sync-step-2/update messages ignored. The REST API and the collaboration layer share the same PostgreSQL row; GET and version history flush pending room state first.
 
 ## CLI mapping
 

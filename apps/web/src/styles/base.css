@@ -39,7 +39,11 @@ button{color:inherit;cursor:pointer}
 
 button:disabled{cursor:not-allowed;opacity:.55}
 
-.app-shell{height:100vh;min-height:560px;display:flex;overflow:hidden;background:var(--surface)}
+/* `100vh` on a phone is the height with the address bar hidden, so a full-height
+   shell is taller than the screen while the bar is showing and the footer is cut
+   off. `dvh` tracks the bar; the `vh` line before it is the fallback for engines
+   without dynamic units, which keep the old behaviour rather than a height of 0. */
+.app-shell{height:100vh;height:100dvh;min-height:560px;display:flex;overflow:hidden;background:var(--surface)}
 
 .sidebar{width:254px;flex:0 0 254px;background:var(--surface-muted);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:15px 11px 10px}
 
@@ -175,6 +179,22 @@ button:disabled{cursor:not-allowed;opacity:.55}
 
 .meta-divider{width:1px;height:12px;background:var(--border)}
 
+/*
+ * Layout is the dominant per-keystroke cost in a long document (docs/PERFORMANCE.md):
+ * the browser re-measures every block because every block is in the layout tree.
+ * `content-visibility:auto` lets it skip the ones outside the viewport without
+ * removing them from the DOM - which matters, because the block handle, the comment
+ * decorations and ProseMirror's own `posAtCoords` all depend on real nodes.
+ *
+ * `contain-intrinsic-size` supplies a placeholder height so the scrollbar does not
+ * jump while the skips are recomputed. It is an estimate on purpose: the alternative
+ * is measuring the block, which is the work being avoided.
+ *
+ * Scoped to top-level children only. A nested `content-visibility` would let the
+ * browser skip a paragraph inside a visible table cell, and the cell's height would
+ * then be wrong.
+ */
+.tiptap-content > *{content-visibility:auto;contain-intrinsic-size:auto 1200px}
 .tiptap-content{outline:0;min-height:260px;color:var(--text-secondary);font-size:15px;line-height:1.8}
 
 .tiptap-content p{margin:0 0 14px}

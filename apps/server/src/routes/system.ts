@@ -1,5 +1,6 @@
 import { compareVersions } from '../lib/version.js'
 import { pool } from '../core/db.js'
+import { roomMetrics } from '../collaboration/rooms.js'
 import { fail } from '../core/http.js'
 import { config } from '../core/config.js'
 import { z } from 'zod'
@@ -15,6 +16,45 @@ export function registerSystemRoutes(app: FastifyInstance, deps: RouteDeps) {
   })
 
   app.get('/api/v1/system/version', async () => ({ version: config.appVersion }))
+
+  /*
+   * Operational metrics, admin-only.
+   *
+   * JSON rather than a Prometheus exposition because there is no Prometheus here:
+   * the documented deployment is one compose stack, and the operator reads this
+   * with curl during an incident. A scraper can be pointed at it later without
+   * changing the shape of the numbers.
+   *
+   * Deliberately not under `/healthz`: that answer has to be cheap and constant, and
+   * this one runs aggregate queries.
+   */
+  app.get('/api/v1/system/metrics', deps.authenticate, async (request, reply) => {
+    const auth = request as AuthRequest
+    if (!await requireWorkspaceAdmin(auth, reply)) return
+    const [counts, migrations] = await Promise.all([
+      pool.query<{ documents: string; versions: string; trashed: string; members: string }>(`
+        SELECT (SELECT count(*) FROM documents WHERE workspace_id=$1 AND deleted_at IS NULL) AS documents,
+               (SELECT count(*) FROM document_versions v JOIN documents d ON d.id=v.document_id WHERE d.workspace_id=$1) AS versions,
+               (SELECT count(*) FROM documents WHERE workspace_id=$1 AND deleted_at IS NOT NULL) AS trashed,
+               (SELECT count(*) FROM memberships WHERE workspace_id=$1) AS members`, [auth.user.workspaceId]),
+      pool.query<{ filename: string; applied_at: string }>('SELECT filename, applied_at FROM schema_migrations ORDER BY filename')
+        .catch(() => ({ rows: [] as Array<{ filename: string; applied_at: string }> })),
+    ])
+    const row = counts.rows[0]
+    return {
+      version: config.appVersion,
+      uptimeSeconds: Math.round(process.uptime()),
+      workspace: {
+        documents: Number(row?.documents ?? 0),
+        versions: Number(row?.versions ?? 0),
+        trashed: Number(row?.trashed ?? 0),
+        members: Number(row?.members ?? 0),
+      },
+      collaboration: roomMetrics(),
+      database: { total: pool.totalCount, idle: pool.idleCount, waiting: pool.waitingCount },
+      migrations: migrations.rows,
+    }
+  })
 
   app.get('/api/v1/system/update-check', deps.authenticate, async () => {
     const latest = await readUpdateManifest()

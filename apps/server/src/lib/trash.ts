@@ -57,13 +57,20 @@ export function trashExpiresAt(deletedAt: Date | string | null | undefined, rete
 type Queryable = { query: (sql: string, params?: unknown[]) => Promise<{ rows: Array<{ id: string }> }> }
 
 /**
- * Removes every trashed row whose deadline has passed, plus the subtree under
- * each one, and returns the ids it removed.
+ * Removes every trashed row whose deadline has passed, plus the trashed subtree
+ * under each one, and returns the ids it removed.
  *
  * The cascade is deliberate and matches trashing: a folder's deadline governs
- * its contents, so a child that was deleted separately (and therefore expires
- * later) cannot survive as an orphan re-parented to the workspace root. One
- * statement, so it is safe to run on every boot and on a timer.
+ * what is still in the bin beneath it, so a child that was deleted separately
+ * (and therefore expires later) cannot survive as an orphan re-parented to the
+ * workspace root.
+ *
+ * The cascade stops at a live row. A child that was restored on its own while
+ * its folder stayed in the bin is a live document again, and deleting it here
+ * would be invisible: the sweep runs on a timer, so nobody sees it happen.
+ * `parent_id` is ON DELETE SET NULL, so a surviving child surfaces at the
+ * workspace root instead of disappearing with its folder. One statement, so it
+ * is safe to run on every boot and on a timer.
  *
  * Returning ids rather than a count matters at the call site: a document with a
  * live collaboration room must have that room evicted, or the next keystroke
@@ -78,6 +85,7 @@ export async function purgeExpiredTrash(db: Queryable, retentionDays: number): P
            AND deleted_at < now() - ($1::int * interval '1 day')
         UNION ALL
         SELECT d.id FROM documents d JOIN expired e ON d.parent_id = e.id
+         WHERE d.deleted_at IS NOT NULL
       )
       DELETE FROM documents WHERE id IN (SELECT id FROM expired) RETURNING id`, [days])
   return result.rows.map((row) => row.id)

@@ -81,7 +81,7 @@ function DialogHarness() {
     <ShellDialogs
       renameDoc={null} deleteDoc={null} purgeDoc={null}
       emptyTrashCount={open ? DOCS.length : 0} emptyTrashBusy={false}
-      updatePrompt={null} helpOpen={false} linkPrompt={null}
+      helpOpen={false} linkPrompt={null}
       onRename={noop} onCancelRename={noop}
       onConfirmDelete={noop} onCancelDelete={noop}
       onConfirmPurge={noop} onCancelPurge={noop}

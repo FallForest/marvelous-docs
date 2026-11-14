@@ -44,6 +44,28 @@ export function descendantIds(rootId: string, documents: Doc[]): Set<string> {
   return found
 }
 
+/**
+ * Ancestors of a document, root first, excluding the document itself.
+ *
+ * The breadcrumb needs the path, not the depth: `parentId` is already on every
+ * row, so the whole chain is a walk up the list. The walk stops on a cycle or a
+ * dangling parent instead of trusting the data to be a tree — a folder moved
+ * into its own descendant would otherwise hang the render, and a row whose
+ * parent was just deleted must still render its own title.
+ */
+export function ancestorsOf(docId: string, documents: Doc[]): Doc[] {
+  const byId = new Map(documents.map((doc) => [doc.id, doc]))
+  const chain: Doc[] = []
+  const seen = new Set<string>([docId])
+  let parent = byId.get(docId)?.parentId ? byId.get(byId.get(docId)!.parentId!) : undefined
+  while (parent && !seen.has(parent.id)) {
+    seen.add(parent.id)
+    chain.unshift(parent)
+    parent = parent.parentId ? byId.get(parent.parentId) : undefined
+  }
+  return chain
+}
+
 export function treeDepth(doc: Doc, byId: Map<string, Doc>): number {
   let depth = 0
   let parent = doc.parentId ? byId.get(doc.parentId) : undefined

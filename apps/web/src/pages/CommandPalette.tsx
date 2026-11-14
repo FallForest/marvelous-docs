@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react'
 import ArtIcon from '../components/ui/ArtIcon'
 import { staggerItemProps } from '../components/ui/Stagger'
 import { useReducedMotion } from '../hooks/useReducedMotion'
+import { FAVORITES_SCOPE } from '../lib/app-types'
 import { excerpt, snippetText, untitledCreatedTime } from '../lib/format'
 import type { Doc, SearchHit, SearchScope } from '../lib/types'
 
@@ -84,7 +85,7 @@ export default function CommandPalette({ query, onQuery, scope, onScope, index, 
     <section className="command-palette" role="dialog" aria-modal="true" aria-label="命令面板">
       <div className="command-input">
         <ArtIcon name="search" fallback={<Search size={17} />} />
-        <input autoFocus role="combobox" aria-expanded="true" aria-controls="command-results" aria-autocomplete="list" aria-label="搜索文档或输入命令" placeholder="搜索文档或输入命令" value={query === '__favorites__' ? '' : query} onChange={(event) => onQuery(event.target.value)} />
+        <input autoFocus role="combobox" aria-expanded="true" aria-controls="command-results" aria-autocomplete="list" aria-label="搜索文档或输入命令" placeholder="搜索文档或输入命令" value={query === FAVORITES_SCOPE ? '' : query} onChange={(event) => onQuery(event.target.value)} />
         <kbd>ESC</kbd>
       </div>
       <div className="command-scope" role="group" aria-label="搜索范围">

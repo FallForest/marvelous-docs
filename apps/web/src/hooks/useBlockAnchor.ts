@@ -163,16 +163,63 @@ export function useBlockAnchor(editor: Editor | null, enabled = true) {
       setAnchor((current) => (current && measure(editor, current.pos)) ?? current)
     }
 
+    /*
+     * Touch: hold still for a moment and the block under the finger gets its menu.
+     *
+     * The anchor is produced by `pointermove`, so on a device without hover it never
+     * appeared at all - the gutter, the drag handle and every structural command
+     * were unreachable on a phone. A long press is the gesture that already means
+     * "act on this thing" on touch, and it is the only one that does not fight text
+     * selection: a short drag still selects, a tap still places the caret.
+     *
+     * The press is cancelled by movement, not by `pointercancel` alone, because a
+     * scroll that starts on the document does not always deliver one.
+     */
+    let pressTimer: number | undefined
+    const cancelPress = () => {
+      if (pressTimer === undefined) return
+      window.clearTimeout(pressTimer)
+      pressTimer = undefined
+    }
+    const onTouchStart = (event: PointerEvent) => {
+      if (event.pointerType === 'mouse') return
+      if (pinned.current !== null) return
+      const { clientX, clientY } = event
+      cancelPress()
+      pressTimer = window.setTimeout(() => {
+        pressTimer = undefined
+        const pos = locate(editor, clientX, clientY)
+        if (pos === null) return
+        const next = measure(editor, pos)
+        // Pin it: without a hover-out there is nothing to unpin the anchor, and the
+        // menu that opens next is what closes it.
+        if (next) { pinned.current = next.pos; setAnchor(next) }
+      }, 400)
+    }
+    const onTouchMove = (event: PointerEvent) => {
+      if (event.pointerType === 'mouse') return
+      cancelPress()
+    }
+
     dom.addEventListener('pointermove', onMove)
     dom.addEventListener('pointerleave', onLeave)
+    dom.addEventListener('pointerdown', onTouchStart)
+    dom.addEventListener('pointermove', onTouchMove)
+    dom.addEventListener('pointerup', cancelPress)
+    dom.addEventListener('pointercancel', cancelPress)
     window.addEventListener('scroll', remeasure, true)
     window.addEventListener('resize', remeasure)
     editor.on('update', remeasure)
     editor.on('selectionUpdate', remeasure)
 
     return () => {
+      cancelPress()
       dom.removeEventListener('pointermove', onMove)
       dom.removeEventListener('pointerleave', onLeave)
+      dom.removeEventListener('pointerdown', onTouchStart)
+      dom.removeEventListener('pointermove', onTouchMove)
+      dom.removeEventListener('pointerup', cancelPress)
+      dom.removeEventListener('pointercancel', cancelPress)
       window.removeEventListener('scroll', remeasure, true)
       window.removeEventListener('resize', remeasure)
       editor.off('update', remeasure)

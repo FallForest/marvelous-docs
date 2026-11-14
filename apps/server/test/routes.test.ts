@@ -16,6 +16,7 @@ import { registerRoutes } from '../src/routes/index.js'
 const EXPECTED_ROUTES = [
   'GET /healthz',
   'GET /api/v1/system/version',
+  'GET /api/v1/system/metrics',
   'GET /api/v1/system/update-check',
   'POST /api/v1/system/update',
   'GET /api/v1/system/update-status',
@@ -28,6 +29,7 @@ const EXPECTED_ROUTES = [
   'DELETE /api/v1/documents/trash',
   'POST /api/v1/documents/trash/sweep',
   'GET /api/v1/documents/recent',
+  'GET /api/v1/documents/:id/version',
   'GET /api/v1/documents/favorites',
   'GET /api/v1/documents/search',
   'POST /api/v1/documents',
@@ -41,6 +43,7 @@ const EXPECTED_ROUTES = [
   'POST /api/v1/documents/:id/duplicate',
   'PUT /api/v1/documents/:id/favorite',
   'GET /api/v1/documents/:id/activity',
+  'GET /api/v1/documents/:id/history',
   'GET /api/v1/documents/:id/acl',
   'PUT /api/v1/documents/:id/acl',
   'POST /api/v1/documents/:id/share-link',

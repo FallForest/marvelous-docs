@@ -11,8 +11,18 @@ export const pool = new Pool({ connectionString: process.env.DATABASE_URL })
  * Applies migrations, then creates the bootstrap administrator when the
  * configured e-mail does not exist yet. Safe to run on every boot.
  */
-export async function initializeWorkspace(log: { info: (message: string) => void }): Promise<void> {
-  await applyMigrations(pool)
+export async function initializeWorkspace(
+  log: { info: (message: string) => void },
+  /**
+   * Passed through to the migration runner. The test suites use an in-process
+   * engine without `pgcrypto` and strip that line from every file; without this
+   * they would apply the files unmodified and fail on an extension the engine
+   * does not ship.
+   */
+  options: { prepare?: (sql: string) => string } = {},
+): Promise<void> {
+  // The runner warns about checksum drift; `initializeWorkspace` only carries `info`.
+  await applyMigrations(pool, { log: { info: log.info, warn: log.info }, prepare: options.prepare })
   const { email, password, name } = config.bootstrap
   if (!email || !password) return
   const client = await pool.connect()

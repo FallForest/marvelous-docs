@@ -1,0 +1,135 @@
+name: Checks
+
+# The test pipeline, defined once and called from two places: ci.yml on every
+# push and pull request, and release.yml before a tag publishes images. Only the
+# triggers and the cancel-in-progress group live in ci.yml; everything that
+# actually checks the code lives here, so a tag cannot ship a different suite
+# from the one the branch ran.
+#
+# Why a separate file instead of `uses: ./.github/workflows/ci.yml`: a reusable
+# workflow is a restricted context (it cannot use `concurrency`, and the caller
+# suppresses some workflow-level keys). Splitting keeps `concurrency:`
+# cancel-in-progress on the push/PR entry point while the called file stays
+# inside what GitHub allows a reusable workflow to contain.
+on:
+  workflow_call:
+    inputs:
+      browser:
+        description: Run the browser verifiers (they spawn a real headless Chrome)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      # Eight files restate the release version. A tag is named after the root
+      # manifest, so a copy that scripts/release/bump-version.mjs did not carry
+      # over is a silent lie: the API reports one version and the bundle another.
+      # Seconds to run, and nothing else in the pipeline looks at these copies.
+      - name: Version copies agree
+        run: node scripts/release/bump-version.mjs --check
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Test
+        run: pnpm test
+      - name: Build
+        run: pnpm build
+
+  # Deliberately not folded into `verify`. The verifiers take minutes and drive a
+  # browser; sharing a job would hide which half failed and make every red run
+  # slower to read. They are the only check that catches a regression in block
+  # geometry, comment decorations, theme leaks and the PDF raster (P0-8 in
+  # docs/ROADMAP.md), so their result has to be visible on its own.
+  #
+  # Prerequisites: `pnpm install` and nothing else. Each script bundles the real
+  # sources with esbuild (resolved from apps/web's own dependencies), serves them
+  # from an in-process node:http server, and loads /art/* from apps/web/public.
+  # No dev server, no `pnpm build` output, no database, no API.
+  browser:
+    name: Browser verifiers (headless Chrome)
+    if: ${{ inputs.browser }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Every script reads CHROME_PATH and falls back to a Windows Chrome path,
+      # so a Linux run has to name the binary. ubuntu-latest ships google-chrome;
+      # the chromium fallbacks cover images where it is absent.
+      #
+      # Launches normally need no --no-sandbox as the non-root runner user, but a
+      # runner that blocks unprivileged user namespaces dies with "Failed to move
+      # to new namespace". A shim keeps the verifiers runnable without teaching
+      # six scripts a CI-only flag.
+      - name: Locate Chrome
+        run: |
+          chrome="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          if [ -z "$chrome" ]; then
+            echo "no Chrome on this runner" >&2
+            exit 1
+          fi
+          # Probe once, with a deadline: this is also what catches a launch that
+          # would otherwise hang the job.
+          if ! timeout 30 "$chrome" --headless=new --disable-gpu --dump-dom about:blank >/dev/null 2>&1; then
+            shim="$RUNNER_TEMP/chrome"
+            printf '#!/bin/sh\\nexec "%s" --no-sandbox "$@"\\n' "$chrome" > "$shim"
+            chmod +x "$shim"
+            chrome="$shim"
+          fi
+          "$chrome" --version
+          echo "CHROME_PATH=$chrome" >> "$GITHUB_ENV"
+
+      # The verifiers measure geometry around CJK text ("第一段 alpha"). Without a
+      # CJK font every glyph is a tofu box: the assertions still pass, but the
+      # widths no longer match a real browser, so a layout regression could hide
+      # behind identical boxes.
+      - name: Install CJK fonts
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk
+
+      - name: Run browser verifiers
+        run: pnpm verify:browser
+
+      # A verifier writes its artefact to the repository root, and a geometry
+      # failure is far easier to read from the PDF or the canvas than from the
+      # assertion text.
+      - name: Upload verifier artefacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-verifier-artefacts
+          path: |
+            .tmp-export.pdf
+            .tmp-export-canvas.png
+          if-no-files-found: ignore

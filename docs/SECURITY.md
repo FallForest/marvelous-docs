@@ -46,14 +46,49 @@ Document roles (`document_acl`):
 | `owner` | Editor plus delete, permanent delete, duplication decisions, and ACL management. |
 
 Effective role is the workspace admin override (`owner`), otherwise the explicit
-ACL row when present, otherwise the default (`editor` for workspace members when
-the document is not restricted). An explicit `viewer` therefore stays read-only
-even on an unrestricted document. Setting or removing an ACL entry turns on `restricted`, after which
-only listed users and workspace admins can see the document. Owners cannot
-remove their own owner role, which prevents an orphaned document.
+ACL row when present, otherwise a grant inherited from an ancestor folder,
+otherwise the default (`editor` for workspace members when the document is not
+restricted). An explicit `viewer` therefore stays read-only even on an
+unrestricted document. Setting or removing an ACL entry turns on `restricted`,
+after which only listed users and workspace admins can see the document. Owners
+cannot remove their own owner role, which prevents an orphaned document.
+
+**One rule, one place.** Whether a user may see a document is answered by
+`getDocumentAccess` for a single document and by `visibleDocumentsCte` for every
+list query (tree, trash, recent, favorites, search, and the bin's bulk empty).
+They have to agree: the list queries once tested only the row's own
+`acl_restricted`, so a document inside a restricted folder stayed searchable -
+and search shipped `body_text`, which leaked the text itself.
+
+A grant is what unlocks a restricted subtree. A restricted folder with no grant
+for anyone is a folder nobody can open, so sharing has to mean "the folder and
+everything under it", not the folder alone.
+
+Permission also has to reach live connections. Changing an ACL closes the
+document's writable sockets (`revokeRoomWriters`), a soft delete evicts the room,
+and `collaboration/socket.ts` re-reads the role when a socket writes after a
+minute of staleness - which covers the changes no single room can observe, such
+as a restriction added three folders up.
 
 Folders carry no content, comments, versions, or collaboration endpoints; only
 folders may be a `parentId`. Endpoints that mutate content reject folder ids.
+## Share links
+
+`POST /documents/:id/share-link` mints an anonymous capability: the token is the
+whole credential, and `/shared/:token` reads the document without a session.
+
+- Tokens are 24 random bytes, base64url, and are stored as a SHA-256 digest -
+  the plaintext is returned once, in the creation response, and never again.
+  Reading the table therefore yields nothing that can be replayed, which matches
+  how `invites` already stores its tokens.
+- Expiry is optional and bounded to 365 days.
+- Reading is throttled (120/min) because one link is otherwise an unlimited
+  scrape.
+- A share link is not a bypass around deletion: a trashed document stops
+  resolving. It *is* a bypass around a later ACL change - the link was minted
+  when the document was public, and revoking an individual's access does not
+  revoke somebody else's copy. Delete the link (`DELETE
+  /documents/:id/share-link/:linkId`) when that matters.
 
 ## Uploads
 
@@ -81,6 +116,25 @@ e-mails does not bypass the IP bucket. A successful login clears both buckets,
 and the limiter caps its bucket map at 5000 entries and sweeps expired windows
 periodically.
 
+The `ip:` bucket is only meaningful if the address is the client's. Fastify has
+`trustProxy` on by default here (`TRUST_PROXY`), because the documented stack
+never publishes the API port: Caddy terminates TLS and nginx sets
+`X-Forwarded-For` itself. With the header ignored, every request arrives from the
+nginx container, one bucket serves the whole workspace, and ten failures lock
+everybody out. A deployment that exposes `:3000` directly must set
+`TRUST_PROXY=false`, or a client can claim any address it likes.
+
+### Other throttled endpoints
+
+| Endpoint | Budget | Why |
+| --- | --- | --- |
+| `GET /documents/search` | 120 / min | one query per keystroke |
+| `PUT /documents/:id` | 120 / min | the one endpoint a script can drive in a loop; every write bumps the version and rebuilds the search index |
+| `GET /documents/:id/export` | 60 / 5 min | CPU-bound serialisation |
+| `PUT /uploads` | 30 / 10 min | disk writes |
+| `POST /markdown/convert` | 60 / 5 min | CPU-bound parsing |
+| `GET /shared/:token` | 120 / min | anonymous by design; the budget is what stops one link becoming an unlimited scrape |
+
 Because the limiter is per process, a multi-instance deployment would need a
 shared store. Keep a second line of defence at the edge, for example in Caddy:
 
@@ -94,9 +148,9 @@ rate_limit {
 }
 ```
 
-Uploads and document writes are bounded by the 20 MB and body-limit checks; the
-workspace member list is the real authorization boundary, so keep it small and
-review it (`GET /api/v1/workspace/members`).
+Uploads are also bounded by the 20 MB and body-limit checks. The workspace member
+list is the real authorization boundary, so keep it small and review it
+(`GET /api/v1/workspace/members`).
 
 ## Secrets
 

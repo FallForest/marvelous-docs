@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../lib/endpoints'
 import { emptyContent } from '../lib/types'
-import type { UpdateInfo } from '../lib/app-types'
+import { FAVORITES_SCOPE } from '../lib/app-types'
+import { readDocumentId } from '../lib/url'
+import type { HomeView, UpdateInfo } from '../lib/app-types'
 import type {
-  Comment, Doc, SearchHit, SearchScope, Template, User, Version,
+  Comment, Doc, SearchHit, SearchScope, Template, User,
   WorkspaceMember, WorkspaceStats,
 } from '../lib/types'
 
 type WorkspaceQuery = {
   commandOpen: boolean
-  homeView: 'home' | 'search' | 'trash' | 'favorites'
+  homeView: HomeView
   query: string
   searchScope: SearchScope
   workspaceView: 'documents' | 'admin'
@@ -22,6 +24,24 @@ type WorkspaceDataOptions = {
   onSessionExpired: () => void
   notify: (message: string) => void
   leaveAdmin: () => void
+}
+
+/**
+ * Reads the locally cached favourite ids.
+ *
+ * The cache only exists to paint the stars on the very first frame, before
+ * `/documents/favorites` answers. It is written by this file and by nothing
+ * else, so its only possible damage is a hand-edited or half-written value —
+ * and an exception here runs before the component tree exists, which takes the
+ * whole app down instead of losing a few stars.
+ */
+function readStoredFavorites(): string[] {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem('mdocs-favorites') || '[]')
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : []
+  } catch {
+    return []
+  }
 }
 
 /**
@@ -50,11 +70,12 @@ export function useWorkspaceData(options: WorkspaceDataOptions) {
   const [documents, setDocuments] = useState<Doc[]>([])
   const [active, setActive] = useState<Doc | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
-  const [versions, setVersions] = useState<Version[]>([])
-  const [favoriteIds, setFavoriteIds] = useState<string[]>(() => JSON.parse(localStorage.getItem('mdocs-favorites') || '[]'))
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(readStoredFavorites)
   const [templates, setTemplates] = useState<Template[]>([])
   const [stats, setStats] = useState<WorkspaceStats | null>(null)
   const [trashDocuments, setTrashDocuments] = useState<Doc[]>([])
+  /** The fifty documents this account opened most recently, newest first. */
+  const [recentDocuments, setRecentDocuments] = useState<Doc[]>([])
   /** Days the server keeps a trashed row; null until the bin has been opened. */
   const [trashRetentionDays, setTrashRetentionDays] = useState<number | null>(null)
   const [searchResults, setSearchResults] = useState<SearchHit[]>([])
@@ -107,12 +128,33 @@ export function useWorkspaceData(options: WorkspaceDataOptions) {
         const favoriteRows = favorites.documents || []
         setFavoriteIds(favoriteRows.map((doc) => doc.id))
         localStorage.setItem('mdocs-favorites', JSON.stringify(favoriteRows.map((doc) => doc.id)))
-        const firstDocument = docs.documents?.find((entry) => entry.kind !== 'folder')
+        /*
+         * The address bar wins over "whatever sorts first". A reload has to reopen
+         * the document that was open, and a link a colleague was sent has to land
+         * on the document it names - neither is possible if bootstrap always picks
+         * the first entry in the tree.
+         *
+         * A `?doc=` that names nothing (deleted, or a document this user cannot
+         * see) is not an error: the fallback is the old behaviour, and the shell
+         * corrects the address on the next selection.
+         */
+        const requested = readDocumentId(window.location.search)
+        const documents = docs.documents || []
+        const requestedDocument = requested ? documents.find((entry) => entry.id === requested && entry.kind !== 'folder') : undefined
+        const firstDocument = requestedDocument ?? documents.find((entry) => entry.kind !== 'folder')
         if (!activeRef.current && firstDocument) setActive(firstDocument)
       })
-      .catch(() => { if (live) onSessionExpired() })
+      // Only a 401/403 means the session is gone. Treating every rejection as
+      // an expired session signed the user out on one dropped request and threw
+      // away a still-valid token; anything else keeps the session and lets the
+      // next refresh retry.
+      .catch((error: Error & { status?: number }) => {
+        if (!live) return
+        if (error?.status === 401 || error?.status === 403) onSessionExpired()
+        else notify('工作区加载失败：' + error.message)
+      })
     return () => { live = false }
-  }, [token, onSessionExpired])
+  }, [token, onSessionExpired, notify])
 
   useEffect(() => {
     if (!token) { setTemplates([]); return }
@@ -139,6 +181,20 @@ export function useWorkspaceData(options: WorkspaceDataOptions) {
     return () => { live = false }
   }, [token, user?.role, query.workspaceView, leaveAdmin, notify])
 
+  /*
+   * "Recent" is the server's record of what this account opened, not a slice of the
+   * tree by `updatedAt`. The two are different questions: a document somebody else
+   * edited yesterday is not recent to me if I have never opened it, and the tree's
+   * ordering already answers the other one.
+   */
+  useEffect(() => {
+    if (!token || query.homeView !== 'recent') return
+    let live = true
+    api.recent(token)
+      .then(({ documents: rows }) => { if (live) setRecentDocuments(rows || []) })
+      .catch((error) => { if (live) notify('最近访问加载失败：' + error.message) })
+    return () => { live = false }
+  }, [token, query.homeView, notify])
   useEffect(() => {
     if (!token || query.homeView !== 'trash') return
     let live = true
@@ -154,7 +210,7 @@ export function useWorkspaceData(options: WorkspaceDataOptions) {
 
   // Debounced search: the palette and the search page share one request path.
   useEffect(() => {
-    const trimmed = query.query === '__favorites__' ? '' : query.query.trim()
+    const trimmed = query.query === FAVORITES_SCOPE ? '' : query.query.trim()
     if (!token || (!query.commandOpen && query.homeView !== 'search') || trimmed.length < 1) {
       setSearchResults([])
       setSearchLoading(false)
@@ -191,11 +247,11 @@ export function useWorkspaceData(options: WorkspaceDataOptions) {
     documents, setDocuments,
     active, setActive, activeRef,
     comments, setComments,
-    versions, setVersions,
     favoriteIds, setFavoriteIds, favoriteSet, setFavorites,
     templates,
     stats, refreshStats, refreshDocuments,
     trashDocuments, setTrashDocuments,
+    recentDocuments,
     trashRetentionDays, setTrashRetentionDays,
     searchResults, searchLoading,
     adminMembers, adminMembersBusy,

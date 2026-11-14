@@ -2,7 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { PGlite } from '@electric-sql/pglite'
-import { buildTsQuery, SEARCH_SQL } from '../src/lib/search.js'
+import { buildTsQuery, searchSql } from '../src/lib/search.js'
+import { visibleDocumentsCte } from '../src/domain/access.js'
 
 /**
  * Search is split in two: parsing the user's words into a `tsquery`, and the
@@ -95,7 +96,7 @@ async function insertDocument(db: PGlite, title: string, body: string, options: 
 async function search(db: PGlite, q: string, scope = 'all', user = ADMIN) {
   const tsquery = buildTsQuery(q)
   if (!tsquery) return []
-  const result = await db.query(SEARCH_SQL, [user, WS, tsquery, scope, 20])
+  const result = await db.query(searchSql(visibleDocumentsCte('live')), [user, WS, tsquery, scope, 20])
   return result.rows as Array<{ title: string; title_match: number; body_text: string; rank: number }>
 }
 

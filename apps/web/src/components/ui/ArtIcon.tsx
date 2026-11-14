@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 
 type ArtIconName = 'brand-spark' | 'notebook' | 'idea-bulb' | 'folder' | 'document' | 'home' | 'favorite-star' | 'trash' | 'comment'
-  | 'search' | 'help' | 'logout' | 'palette' | 'download' | 'history' | 'share' | 'shield' | 'selection' | 'new-document'
+  | 'search' | 'help' | 'logout' | 'palette' | 'download' | 'history' | 'share' | 'shield' | 'selection' | 'new-document' | 'recent'
   | 'undo' | 'redo' | 'bold' | 'italic' | 'underline' | 'link' | 'table' | 'check-empty' | 'check-filled' | 'code' | 'copy'
 
 type ArtIconProps = {

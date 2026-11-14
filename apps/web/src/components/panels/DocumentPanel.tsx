@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { Clock3, History, MessageCircle, Send, Activity, X } from 'lucide-react'
-import ActivityPanel from '../panels/ActivityPanel'
+import { History, MessageCircle, Send, X } from 'lucide-react'
+import HistoryPanel from './HistoryPanel'
 import ArtIcon from '../ui/ArtIcon'
 import { formatDate } from '../../lib/format'
-import { staggerDelay } from '../../lib/motion'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import type { RightTab } from '../../lib/app-types'
 import type { Comment, Doc, Version } from '../../lib/types'
@@ -14,7 +13,7 @@ type DocumentPanelProps = {
   open: boolean
   tab: RightTab
   comments: Comment[]
-  versions: Version[]
+  historyRefreshKey?: string | number
   commentText: string
   commentAnchor: Comment['anchor']
   /** The thread open in the text, highlighted here and scrolled into view. */
@@ -31,7 +30,7 @@ type DocumentPanelProps = {
 }
 
 /**
- * Right-hand document panel: comments, version history, and activity.
+ * Right-hand document panel: comments and one combined document history.
  *
  * It owns no state — the shell keeps comment drafts and version selection so
  * closing the panel never discards what the user typed.
@@ -41,7 +40,7 @@ type DocumentPanelProps = {
  * as putting it away.
  */
 export default function DocumentPanel(props: DocumentPanelProps) {
-  const { doc, token, open, tab, comments, versions, commentText, commentAnchor, activeCommentId } = props
+  const { doc, token, open, tab, comments, commentText, commentAnchor, activeCommentId } = props
   const reduced = useReducedMotion()
   const panelRef = useRef<HTMLElement | null>(null)
   /** Cards by comment id, so an opened thread can be scrolled to. */
@@ -106,7 +105,6 @@ export default function DocumentPanel(props: DocumentPanelProps) {
       <div className="panel-tabs" role="tablist" aria-label="侧边栏标签">
         <button type="button" role="tab" id="tab-comments" aria-controls="panel-comments" aria-selected={tab === 'comments'} className={tab === 'comments' ? 'active' : ''} onClick={() => props.onTab('comments')}><ArtIcon name="comment" fallback={<MessageCircle size={15} />} />评论</button>
         <button type="button" role="tab" id="tab-history" aria-controls="panel-history" aria-selected={tab === 'history'} className={tab === 'history' ? 'active' : ''} onClick={() => props.onTab('history')}><ArtIcon name="history" fallback={<History size={15} />} />历史</button>
-        <button type="button" role="tab" id="tab-activity" aria-controls="panel-activity" aria-selected={tab === 'activity'} className={tab === 'activity' ? 'active' : ''} onClick={() => props.onTab('activity')}><ArtIcon name="selection" fallback={<Activity size={15} />} />动态</button>
       </div>
       <button type="button" className="icon-btn close-panel" aria-label="关闭面板" title="关闭面板" onClick={props.onClose}><X size={16} /></button>
     </div>
@@ -165,24 +163,6 @@ export default function DocumentPanel(props: DocumentPanelProps) {
         />
         <div><span>Ctrl + Enter 发送</span><button type="button" className="send-btn sketch-frame" aria-label="发送评论" title="发送评论" onClick={props.onSubmitComment} disabled={!commentText.trim()}><Send size={15} /></button></div>
       </div>
-    </div> : tab === 'history' ? <div className="panel-body motion-enter" key="history" role="tabpanel" id="panel-history" aria-labelledby="tab-history">
-      <div className="panel-intro"><b>版本历史</b><span>{versions.length + ' 个版本'}</span></div>
-      {versions.length === 0
-        ? <div className="panel-empty"><ArtIcon name="history" fallback={<Clock3 size={21} />} /><b>暂无历史记录</b><span>文档更改后会保留版本</span></div>
-        : <div className="version-list">{versions.map((version, index) => <div
-          className="version-item stagger"
-          style={{ animationDelay: staggerDelay(index) + 'ms' }}
-          key={version.id}
-        >
-          <button type="button" className="version-line" onClick={() => props.onPreviewVersion(version)} aria-label={'预览版本 ' + version.version}>
-            <span className="version-dot" />
-            <span className="version-copy"><b>版本 {version.version}</b><small>{version.createdBy || '成员'} · {formatDate(version.createdAt)}</small></span>
-          </button>
-          <div className="version-actions">
-            <button type="button" onClick={() => props.onPreviewVersion(version)}>预览</button>
-            <button type="button" onClick={() => props.onPreviewVersion(version)}>恢复</button>
-          </div>
-        </div>)}</div>}
-    </div> : <ActivityPanel token={token} documentId={doc.id} />}
+    </div> : <HistoryPanel token={token} documentId={doc.id} refreshKey={props.historyRefreshKey} active={open} onPreviewVersion={props.onPreviewVersion} />}
   </aside>
 }

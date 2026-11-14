@@ -58,12 +58,12 @@ test('lib is split by concern, and each sub-folder keeps one job', () => {
   // Tiptap instance lives in editor/, anything on the way out of the editor lives
   // in export/, and a helper used by more than one screen stays at the top level
   // so a page never has to guess which sub-folder to reach into.
-  const EDITOR = ['blocks.ts', 'code-block.ts', 'comment-marks.ts', 'font-size.ts', 'highlight.ts', 'image.ts', 'index.ts', 'languages.ts']
+  const EDITOR = ['block-shortcuts.ts', 'blocks.ts', 'code-block.ts', 'comment-marks.ts', 'font-size.ts', 'highlight.ts', 'image.ts', 'index.ts', 'languages.ts', 'tab-in-prose.ts']
   const EXPORT = ['download.ts', 'export-css.ts', 'pdf-pages.ts', 'pdf.ts', 'render-html.ts']
   assert.deepEqual(readdirSync(join(SRC, 'lib/editor')).sort(), EDITOR, 'lib/editor holds the editor-only modules')
   assert.deepEqual(readdirSync(join(SRC, 'lib/export')).sort(), EXPORT, 'lib/export holds the outbound modules')
   const flat = readdirSync(join(SRC, 'lib')).filter((name) => name.endsWith('.ts')).sort()
-  assert.deepEqual(flat, ['api.ts', 'app-types.ts', 'clipboard.ts', 'collab.ts', 'endpoints.ts', 'format.ts', 'motion.ts', 'theme.ts', 'trash.ts', 'tree.ts', 'types.ts'], 'shared helpers stay flat')
+  assert.deepEqual(flat, ['api.ts', 'app-types.ts', 'clipboard.ts', 'collab.ts', 'document-saves.ts', 'endpoints.ts', 'format.ts', 'history.ts', 'motion.ts', 'theme.ts', 'trash.ts', 'tree.ts', 'types.ts', 'url.ts', 'viewport.ts'], 'shared helpers stay flat')
 })
 test('lib never imports UI code', () => {
   const offenders: string[] = []
@@ -142,7 +142,7 @@ test('styles are layered and the entry point imports them in order', () => {
   const order = [...index.matchAll(/@import\s+'\.\/([a-z-]+)\.css'/g)].map((match) => match[1])
   assert.deepEqual(
     order,
-    ['tokens', 'themes', 'base', 'motion', 'surfaces', 'dialogs', 'navigation', 'panels', 'editor', 'content', 'shell', 'pages', 'updates', 'layout', 'handdrawn', 'handdrawn-navigation', 'handdrawn-content', 'handdrawn-controls', 'handdrawn-materials', 'handdrawn-writing', 'handdrawn-editor-chrome'],
+    ['tokens', 'themes', 'base', 'motion', 'surfaces', 'dialogs', 'navigation', 'panels', 'editor', 'content', 'shell', 'pages', 'layout', 'handdrawn', 'handdrawn-navigation', 'handdrawn-content', 'handdrawn-controls', 'handdrawn-materials', 'handdrawn-writing', 'handdrawn-editor-chrome', 'history'],
     'style layers must load from broadest to most specific',
   )
   for (const layer of order) {
@@ -403,3 +403,20 @@ test('the phone toolbar fits without horizontal scrolling', () => {
   assert.ok(/\.tb-more\{display:flex\}/.test(mobile), 'the phone row needs the overflow menu');
   assert.ok(!/\.editor-toolbar\{[^}]*overflow-x:auto/.test(mobile), 'the phone row must not rely on horizontal scrolling');
 });
+
+test('content-visibility is scoped to the editor, never to the export', () => {
+  // `content-visibility:auto` lets the browser skip layout for offscreen blocks, which
+  // is what makes a long document cheap to type in (docs/PERFORMANCE.md). It is also a
+  // lie in a document that is about to be rasterised: the PDF export walks every block
+  // and a skipped one has no height. The rule therefore has to stay inside the editor's
+  // own selector, and the export stylesheet must never carry it.
+  // Comments name the property while explaining it, so they are removed first.
+  const base = readFileSync(join(SRC, 'styles/base.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+  const rules = [...base.matchAll(/([^{}]+)\{[^}]*content-visibility[^}]*\}/g)].map((match) => match[1].trim())
+  assert.ok(rules.length > 0, 'the editor skip rule disappeared; docs/PERFORMANCE.md measures its effect')
+  for (const selector of rules) {
+    assert.ok(selector.startsWith('.tiptap-content'), 'content-visibility must stay inside the editor, got: ' + selector)
+  }
+  const exportCss = readFileSync(join(SRC, 'lib/export/export-css.ts'), 'utf8')
+  assert.ok(!exportCss.includes('content-visibility'), 'the export stylesheet must not skip layout')
+})

@@ -48,7 +48,7 @@ A single Node.js process serves three surfaces:
 | --- | --- | --- |
 | REST | `PORT` (3000) | `/api/v1` document, comment, version, ACL, upload, and system routes; `/healthz`. |
 | WebSocket | `COLLAB_PORT` (1234) | y-websocket v2 rooms for live editing. |
-| Migrations | - | Applies `migrations/*.sql` at startup, idempotently. |
+| Migrations | - | Applies `migrations/*.sql` at startup, idempotently, under an advisory lock. |
 
 `index.ts` only assembles the process. REST resources live one-per-module in
 `src/routes/` and are registered by `routes/index.ts`; room lifecycle and the
@@ -159,10 +159,19 @@ migrations applied.
 - Room lifetime: created on first join from the stored Tiptap JSON converted to a
   Y.Doc with the server schema; kept in memory, evicted five minutes after the
   last client disconnects. PostgreSQL is always the durable copy.
-- Write path: Yjs updates are applied in memory immediately and persisted after a
-  500 ms idle debounce. Persistence writes `documents.yjs_state`, the projected
-  Tiptap JSON in `documents.content`, bumps `version`, and appends the previous
-  state to `document_versions`.
+- Write path: Yjs updates are applied in memory immediately and the durable Yjs
+  state is written after a 500 ms idle debounce. The Tiptap JSON projection in
+  `documents.content` is written on a slower clock, because that column feeds the
+  generated `tsvector` columns and therefore rebuilds two GIN indexes on every
+  write - projecting at the durability rate made an idle typing pause rebuild the
+  search index twice a second. Reads flush both first, so the projection lag is
+  never observable through REST.
+- History: a write advances `version` and records the edit; the snapshot itself is
+  taken on the idle (2 min) and interval (10 min) clocks in
+  `domain/history.ts`, deduplicated by a content fingerprint.
+- Retention: `document_versions` is pruned daily by
+  `marvelous_prune_document_versions()` (migrations/007): everything from the last
+  seven days, four snapshots per older day, never fewer than fifty per document.
 - Read path: `GET /documents/:id` and version-history reads flush pending room
   state first, so REST readers never observe a stale document.
 - Authorization: viewers receive sync step 1 and may publish awareness, but their
@@ -202,9 +211,20 @@ so connected editors converge on the new state.
 - **Workspace roles**: `admin` (manage members, invites, workspace stats,
   updates, every document) and `member` (documents subject to ACL).
 - **Document roles**: `viewer < editor < owner`. Effective role is the maximum of
-  the workspace admin override, the explicit `document_acl` row, and the default
-  workspace access (`editor`) when the document is not restricted. A restricted
-  document is visible only to listed users and workspace admins.
+  the workspace admin override, the explicit `document_acl` row, a grant inherited
+  from an ancestor folder, and the default workspace access (`editor`) when the
+  document is not restricted. A restricted folder is visible to listed users and
+  workspace admins, and a grant on it covers everything beneath it - otherwise
+  sharing a folder would be something you can do and nobody can receive.
+- **One visibility rule**: `getDocumentAccess` answers for a single document and
+  `visibleDocumentsCte('live' | 'any')` answers for the list queries (tree, trash,
+  recent, favorites, search, and the bin's bulk empty). They have to agree; when
+  list queries tested only the row's own flag, a document inside a restricted
+  folder stayed searchable and search shipped its text as a snippet.
+- **Live permissions**: an ACL change revokes that document's writers, a soft
+  delete evicts its room, and a socket re-reads its role after a minute of
+  staleness. A `canWrite` snapshot taken at handshake would let a demoted editor
+  keep typing until they happened to reconnect.
 - **Invites**: one-time, hashed at rest, seven-day expiry, redeemed through
   `POST /auth/accept-invite`, which creates the account and burns the token.
 - **Uploads**: allow-listed MIME types, 20 MB cap, random prefix, sanitised name;
@@ -236,7 +256,7 @@ output (production dependencies only).
 | Goal | Where to start |
 | --- | --- |
 | New REST resource | Add a module in `apps/server/src/routes/`, register it in `routes/index.ts`, extend the schema in a new `migrations/NNN_*.sql`, add the route to `test/routes.test.ts`, document it in [API.md](API.md). |
-| New editor node or mark | Add the Tiptap extension to `apps/web/src/lib/editor.ts` and to the server schema in `apps/server/src/lib/schema.ts`, then handle it in Markdown import/export. |
+| New editor node or mark | Add the Tiptap extension to the list in `apps/web/src/lib/editor/index.ts` and to the server schema in `apps/server/src/lib/schema.ts`, then handle it in Markdown import/export. |
 | New template | Extend `apps/server/src/lib/templates.ts`; documents accept `templateId`. |
 | New web screen | Add a file under `apps/web/src/pages/` and render it from `App.tsx`. |
 | New export format | Add it to `ExportTarget`; server-side formats extend `exportResponse` in `lib/markdown/export.ts`, client-side ones follow `lib/export/pdf.ts` (build from the existing `html` export rather than adding a server endpoint). |
