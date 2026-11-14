@@ -2,6 +2,7 @@ import type { WebSocket } from 'ws'
 import type { FastifyRequest } from 'fastify'
 import type * as awarenessProtocol from 'y-protocols/awareness'
 import type * as Y from 'yjs'
+import type { TitleMode } from '../lib/document-title.js'
 
 /** JWT payload: the user, their workspace, and nothing else. */
 export type Claims = { sub: string; email: string; workspaceId: string }
@@ -10,7 +11,7 @@ export type Claims = { sub: string; email: string; workspaceId: string }
 export type AuthRequest = FastifyRequest & { user: Claims }
 
 export type DocumentRow = {
-  id: string; workspace_id: string; parent_id: string | null; title: string; kind: 'document' | 'folder';
+  id: string; workspace_id: string; parent_id: string | null; title: string; title_mode: TitleMode; kind: 'document' | 'folder';
   content: unknown; version: number; acl_restricted: boolean; deleted_at: Date | null;
   created_by: string; updated_by: string; created_at: Date; updated_at: Date; access_role?: string;
 }

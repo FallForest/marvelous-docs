@@ -11,6 +11,7 @@ import SlashMenu, { SLASH_ITEMS } from './SlashMenu'
 import TableMenu from './TableMenu'
 import { Dialog } from '../ui/Dialog'
 import ArtIcon from '../ui/ArtIcon'
+import DocumentCreatedTime from '../ui/DocumentCreatedTime'
 import { API, request } from '../../lib/api'
 import { copyText } from '../../lib/clipboard'
 import { COLLAB_URL } from '../../lib/collab'
@@ -50,6 +51,7 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null)
   const [provider, setProvider] = useState<WebsocketProvider | null>(null)
   const [title, setTitle] = useState(doc.title)
+  const [titleSaving, setTitleSaving] = useState(false)
   const [words, setWords] = useState(0)
   const [imagePrompt, setImagePrompt] = useState(false)
   const [findOpen, setFindOpen] = useState(false)
@@ -62,8 +64,27 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
   const wordTimer = useRef<number | undefined>(undefined)
   /** Version last seen persisted, so a stale read cannot report success. */
   const persistedVersion = useRef<number>(doc.version)
+  const currentDocument = useRef(doc)
+  currentDocument.current = doc
+  const titleEditing = useRef(false)
+  const titleDirty = useRef(false)
+  const titleWritePending = useRef(false)
+  const titleOrigin = useRef<Pick<Doc, 'title' | 'titleMode'>>(doc)
+  const live = useRef(true)
 
-  useEffect(() => { setTitle(doc.title) }, [doc.id, doc.title])
+  useEffect(() => {
+    if (!titleEditing.current && !titleWritePending.current) setTitle(doc.title)
+    persistedVersion.current = Math.max(persistedVersion.current, doc.version)
+  }, [doc.id, doc.title, doc.version])
+
+  useEffect(() => {
+    live.current = true
+    return () => {
+      live.current = false
+      window.clearTimeout(statusTimer.current)
+      window.clearTimeout(wordTimer.current)
+    }
+  }, [])
 
   // The provider owns a live socket, so it must be created inside an effect.
   // Memoising it would reuse a destroyed provider after React StrictMode's
@@ -124,9 +145,11 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
    */
   async function confirmPersisted(local: unknown) {
     try {
-      const latest = await request<{ document: { version: number } }>('/documents/' + doc.id, token)
+      const latest = await request<{ document: Doc }>('/documents/' + doc.id, token)
+      if (!live.current) return
       if (latest.document.version > persistedVersion.current) {
         persistedVersion.current = latest.document.version
+        window.dispatchEvent(new CustomEvent('mdoc-updated', { detail: latest.document }))
         onSaveStatus('saved')
         return
       }
@@ -134,6 +157,7 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
       window.clearTimeout(statusTimer.current)
       statusTimer.current = window.setTimeout(() => { void confirmPersisted(local) }, 1200)
     } catch (error) {
+      if (!live.current) return
       onSaveStatus('error')
       // Keep a local copy so closing the tab cannot destroy the work.
       try { window.localStorage.setItem('mdocs-draft-' + doc.id, JSON.stringify(local)) } catch { /* quota */ }
@@ -144,6 +168,7 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
   const editor = useEditor({
     extensions: buildEditorExtensions({ ydoc: provider ? ydoc : null, placeholder: '从这里开始写作…' }),
     content: doc.content?.doc || emptyContent.doc,
+    autofocus: doc.titleMode === 'auto' && doc.title === '未命名文档' && doc.version === 1 ? 'start' : false,
     onUpdate: ({ editor: instance }) => {
       // Counting the whole document on every keystroke is O(n); the footer only
       // needs to be roughly current.
@@ -280,9 +305,9 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
     const handler = () => {
       if (provider) {
         onSaveStatus('saving')
-        request('/documents/' + doc.id, token)
-          .then(() => onSaveStatus('saved'))
-          .catch(() => onSaveStatus('error'))
+        request<{ document: Doc }>('/documents/' + doc.id, token)
+          .then(({ document }) => { window.dispatchEvent(new CustomEvent('mdoc-updated', { detail: document })); if (live.current) onSaveStatus('saved') })
+          .catch(() => { if (live.current) onSaveStatus('error') })
         return
       }
       if (editor) persist(editor.getJSON(), true)
@@ -362,15 +387,37 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
   }
 
   async function saveTitle(next: string) {
-    const clean = next.trim() || '未命名文档'
+    const clean = next.trim()
+    titleDirty.current = false
+    if (!clean) { setTitle(currentDocument.current.title); return }
+    const origin = titleOrigin.current
+    titleWritePending.current = true
+    setTitleSaving(true)
     setTitle(clean)
     try {
-      const latest = await request<{ document: Doc }>('/documents/' + doc.id, token)
-      const result = await request<{ document: Doc }>('/documents/' + doc.id, token, { method: 'PUT', body: JSON.stringify({ title: clean, expectedVersion: latest.document.version }) })
-      window.dispatchEvent(new CustomEvent('mdoc-updated', { detail: result.document }))
+      // Content autosaves may advance the version, but a different manual
+      // rename must be shown to the user rather than overwritten on a retry.
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const latest = await request<{ document: Doc }>('/documents/' + doc.id, token)
+        if (latest.document.titleMode !== 'auto' && (latest.document.title !== origin.title || origin.titleMode === 'auto')) {
+          window.dispatchEvent(new CustomEvent('mdoc-updated', { detail: latest.document }))
+          throw new Error('标题已在其他地方修改，请确认新名称后重试。')
+        }
+        try {
+          const result = await request<{ document: Doc }>('/documents/' + doc.id, token, { method: 'PUT', body: JSON.stringify({ title: clean, expectedVersion: latest.document.version }) })
+          if (live.current) setTitle(result.document.title)
+          window.dispatchEvent(new CustomEvent('mdoc-updated', { detail: result.document }))
+          return
+        } catch (error) {
+          if ((error as { status?: number }).status !== 409 || attempt > 0) throw error
+        }
+      }
     } catch (error) {
-      setTitle(doc.title)
+      if (live.current) setTitle(currentDocument.current.title)
       window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '标题保存失败：' + (error as Error).message }))
+    } finally {
+      titleWritePending.current = false
+      if (live.current) setTitleSaving(false)
     }
   }
 
@@ -393,13 +440,17 @@ export default function DocumentEditor({ doc, token, persist, user, saveStatus, 
           <span className="theme-decoration document-title-art" aria-hidden="true"><ArtIcon name="notebook" fallback={<FileText size={40} />} /></span>
           <div className="document-title-field"><input
           aria-label="文档标题"
+          disabled={titleSaving}
+          maxLength={500}
+          title={doc.titleMode === 'auto' ? '根据正文自动命名；手动修改后固定名称' : '修改文档标题'}
           value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          onBlur={(event) => { if (event.target.value !== doc.title) void saveTitle(event.target.value) }}
-          onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur() }}
+          onFocus={(event) => { titleEditing.current = true; titleOrigin.current = currentDocument.current; titleDirty.current = false; if (doc.titleMode === 'auto' && title === '未命名文档') event.currentTarget.select() }}
+          onChange={(event) => { titleDirty.current = true; setTitle(event.target.value) }}
+          onBlur={(event) => { titleEditing.current = false; if (titleDirty.current) void saveTitle(event.target.value); else setTitle(currentDocument.current.title) }}
+          onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur(); else if (event.key === 'Escape') { titleDirty.current = false; setTitle(currentDocument.current.title); event.currentTarget.blur() } }}
           /></div>
         </div>
-        <div className="doc-meta"><span>最后编辑于 {formatDate(doc.updatedAt) || '刚刚'}</span></div>
+        <div className="doc-meta"><DocumentCreatedTime doc={doc} /><span>最后编辑于 {formatDate(doc.updatedAt) || '刚刚'}</span>{doc.titleMode === 'auto' && <span className="title-mode-hint">根据正文自动命名，可直接修改</span>}</div>
       </div>
       {/* Code block enhancement: language badge and per-block actions */}
       <EditorContent editor={editor} />

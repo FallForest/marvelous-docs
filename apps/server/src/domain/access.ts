@@ -7,13 +7,14 @@ import type { Claims, DocumentRow } from '../core/types.js'
  * made the first paint scale with total workspace size (5-20 MB for 100 docs).
  */
 export const DOCUMENT_SUMMARY_COLUMNS =
-  'd.id, d.title, d.kind, d.parent_id, d.version, d.created_by, d.updated_by, d.created_at, d.updated_at, d.deleted_at'
+  'd.id, d.title, d.title_mode, d.kind, d.parent_id, d.version, d.created_by, d.updated_by, d.created_at, d.updated_at, d.deleted_at'
 
 /** Document without its body, for list endpoints. */
 export function documentSummaryJson(row: Partial<DocumentRow> & Pick<DocumentRow, 'id' | 'title' | 'kind' | 'version'>) {
   return {
     id: row.id,
     title: row.title,
+    titleMode: row.title_mode ?? 'manual',
     kind: row.kind,
     parentId: row.parent_id ?? null,
     version: row.version,
@@ -30,6 +31,7 @@ export function documentJson(row: DocumentRow) {
   return {
     id: row.id,
     title: row.title,
+    titleMode: row.title_mode,
     kind: row.kind,
     parentId: row.parent_id,
     content: row.content,

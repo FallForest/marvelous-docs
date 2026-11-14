@@ -8,6 +8,13 @@ export function formatDate(value?: string) {
   return date.toLocaleString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
+export function untitledCreatedTime(doc: { title: string; kind?: string; createdAt?: string }) {
+  if (doc.kind === 'folder' || doc.title.trim() !== '未命名文档' || !doc.createdAt) return ''
+  const date = new Date(doc.createdAt)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+
 export function wordCount(text?: string) {
   if (!text) return 0
   const cjk = text.match(CJK_GLOBAL)

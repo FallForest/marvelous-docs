@@ -59,3 +59,9 @@
 [data-theme='handdrawn'] .move-row.active,[data-theme='handdrawn'] .move-row[aria-selected='true']{background:var(--accent-soft)}
 [data-theme='handdrawn'] :is(.modal-panel input,.link-copy input){border-color:var(--border-strong);border-radius:6px 9px 5px 8px}
 [data-theme='handdrawn'] .shortcut-list kbd{border-color:var(--border-strong);background:var(--surface-muted);border-radius:4px 6px 3px 5px;box-shadow:0 1px 0 rgba(var(--shadow-rgb),.1)}
+
+/* Optional template catalogue and split creation control: material only. */
+[data-theme='handdrawn'] .sidebar .creation-split{background:var(--tint-sage-soft);border-radius:5px 8px 6px 7px;box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.055)}
+[data-theme='handdrawn'] .template-library{background:var(--surface) url('/art/handdrawn-v1/textures/paper-ivory.webp') center / 768px;border-radius:10px 15px 9px 13px;box-shadow:3px 5px 0 rgba(var(--shadow-rgb),.1)}
+[data-theme='handdrawn'] .template-library-card{background:var(--tint-sage-softer);border-radius:7px 11px 6px 9px;box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.04)}
+[data-theme='handdrawn'] .template-library-card:hover{background:var(--surface-selected)}

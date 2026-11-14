@@ -8,6 +8,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Create a blank document directly from New. Its adjacent menu offers folders
+  and Markdown import; existing presets live in a separate optional template
+  library. Untitled drafts show creation time so they can be distinguished.
+- Automatically derive new document names from the first H1 or prose line.
+  A manual rename permanently locks the name. REST and collaboration saves
+  share the rule under the database row lock; existing document names remain
+  unchanged. Pending saves also retain their source document when another
+  document is created or selected.
 - Make hand-drawn the default when no valid appearance preference is stored.
   Explicit choices of the plain paper theme are retained. Both appearances now
   use the same component geometry, typography, illustration slots and responsive
@@ -22,9 +30,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   language, move, delete and copy controls.
 - Carry the artwork through page edges, table cells, task checkboxes, quotes
   and the comment composer while retaining native editing and selection.
-- Open New on blank document, folder and Markdown import. Existing office
-  presets live behind an optional catalogue, and only templates advertised by
-  the server are shown.
+- Only templates advertised by the server are shown in the template library.
 
 ## [0.1.70] - 2026-11-14
 

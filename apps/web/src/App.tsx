@@ -26,6 +26,7 @@ import ShellDialogs from './components/dialogs/ShellDialogs'
 import ShareDialog from './components/dialogs/ShareDialog'
 import InviteDialog from './components/dialogs/InviteDialog'
 import MoveDialog from './components/dialogs/MoveDialog'
+import TemplateLibrary from './components/dialogs/TemplateLibrary'
 import DocumentEditor from './components/editor/DocumentEditor'
 import { templateLabel } from './components/layout/TemplateMenu'
 import DocumentPanel from './components/panels/DocumentPanel'
@@ -90,6 +91,7 @@ function App() {
   const [commandIndex, setCommandIndex] = useState(0)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved')
   const [newMenuOpen, setNewMenuOpen] = useState(false)
+  const [templateLibraryOpen, setTemplateLibraryOpen] = useState(false)
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
   const [themeMenuOpen, setThemeMenuOpen] = useState(false)
   const [moveDoc, setMoveDoc] = useState<Doc | null>(null)
@@ -105,6 +107,7 @@ function App() {
   const [helpOpen, setHelpOpen] = useState(false)
   const [workspaceOpen, setWorkspaceOpen] = useState(false)
   const saveTimer = useRef<number | undefined>(undefined)
+  const pendingSave = useRef<{ id: string; run: () => Promise<void> } | null>(null)
   const importInput = useRef<HTMLInputElement | null>(null)
 
 
@@ -117,6 +120,7 @@ function App() {
     setMoveDoc(null)
     setPreviewVersion(null)
     setNewMenuOpen(false)
+    setTemplateLibraryOpen(false)
     setExportMenuOpen(false)
     setThemeMenuOpen(false)
     setWorkspaceOpen(false)
@@ -129,20 +133,29 @@ function App() {
 
   const persist = useCallback((json: Record<string, unknown>, immediate = false) => {
     if (!token || !activeRef.current) return
+    const source = activeRef.current
+    // A new document must not cancel the previous document's pending save or
+    // cause that body/title to be written into the newly active document.
+    if (pendingSave.current && pendingSave.current.id !== source.id) {
+      window.clearTimeout(saveTimer.current)
+      const previous = pendingSave.current
+      pendingSave.current = null
+      void previous.run()
+    }
     const flush = async () => {
-      const doc = activeRef.current
-      if (!doc) return
-      setSaveStatus('saving')
+      if (pendingSave.current?.run === flush) pendingSave.current = null
+      const doc = activeRef.current?.id === source.id ? activeRef.current : source
+      if (activeRef.current?.id === source.id) setSaveStatus('saving')
       try {
         const result = await api.saveContent(token, doc.id, json, doc.version)
-        setActive(result.document)
+        setActive((current) => current?.id === result.document.id ? result.document : current)
         setDocuments((items) => items.map((item) => item.id === result.document.id ? result.document : item))
-        setSaveStatus('saved')
+        if (activeRef.current?.id === source.id) setSaveStatus('saved')
         // The server accepted this edit, so the local safety copy is stale.
         try { window.localStorage.removeItem(draftKey(doc.id)) } catch { /* private mode */ }
       } catch (error) {
         const failure = error as Error & { status?: number }
-        setSaveStatus('error')
+        if (activeRef.current?.id === source.id) setSaveStatus('error')
         // Keep the exact bytes either way: a reload must not be the price of a
         // failed save, and a conflict must not silently discard the local edit.
         try { window.localStorage.setItem(draftKey(doc.id), JSON.stringify(json)) } catch { /* quota */ }
@@ -154,6 +167,7 @@ function App() {
       }
     }
     window.clearTimeout(saveTimer.current)
+    pendingSave.current = { id: source.id, run: flush }
     if (immediate) { void flush(); return }
     setSaveStatus('saving')
     saveTimer.current = window.setTimeout(() => { void flush() }, 700)
@@ -435,7 +449,7 @@ function App() {
       const payload: Record<string, unknown> = { kind, parentId }
       if (kind === 'folder') payload.title = '新建文件夹'
       else if (templateId) { payload.templateId = templateId; payload.title = templateLabel(templateId, templates.find((template) => template.id === templateId)?.name) }
-      else { payload.title = '未命名文档'; payload.content = emptyContent }
+      else { payload.titleMode = 'auto'; payload.content = emptyContent }
       const { document: created } = await api.createDocument(token, payload)
       setDocuments((items) => [created, ...items])
       setShowRight(false)
@@ -674,7 +688,6 @@ function App() {
       expandedFolders={expandedFolders}
       homeView={homeView}
       emptyMessage={treeQuery ? '没有匹配的文档' : '暂无文档或文件夹'}
-      templates={templates}
       query={query === '__favorites__' ? '' : query}
       narrow={narrow}
       floating={narrow}
@@ -695,7 +708,8 @@ function App() {
       onTrash={() => { withViewTransition(() => { setHomeView('trash'); setActive(null); setSelectedFolderId(null); setQuery('') }); if (narrow) setSidebarOpen(false) }}
       onToggleTree={() => setExpanded((value) => !value)}
       onNewMenu={setNewMenuOpen}
-      onCreateDocument={(templateId) => void createDocument('document', templateId)}
+      onCreateDocument={() => void createDocument('document')}
+      onOpenTemplates={() => { setNewMenuOpen(false); setTemplateLibraryOpen(true); if (narrow) setSidebarOpen(false) }}
       onCreateFolder={() => void createDocument('folder')}
       onImport={() => importInput.current?.click()}
       onToggleFolder={(id) => setExpandedFolders((folders) => { const next = new Set(folders); if (next.has(id)) next.delete(id); else next.add(id); return next })}
@@ -910,6 +924,7 @@ function App() {
       onPermissionChange={(member, role) => void sharing.setPermission(active, member, role)}
       onClose={() => setShowShare(false)}
     />}
+    {templateLibraryOpen && <TemplateLibrary templates={templates} onCreateTemplate={(templateId) => void createDocument('document', templateId)} onClose={() => setTemplateLibraryOpen(false)} />}
     {showInvite && <InviteDialog
       email={invite.email}
       setEmail={invite.setEmail}

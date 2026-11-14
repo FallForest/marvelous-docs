@@ -7,7 +7,8 @@ import { pool } from '../core/db.js'
 import { schema } from '../lib/schema.js'
 import { createYDoc, contentFromYDoc, roomField, yState } from './ydoc.js'
 import { encodeAwareness, encodeSyncUpdate } from './protocol.js'
-import type { Room } from '../core/types.js'
+import { savedDocumentTitle } from '../lib/document-title.js'
+import type { DocumentRow, Room } from '../core/types.js'
 
 /**
  * In-memory collaboration rooms.
@@ -122,11 +123,12 @@ async function persistRoom(room: Room) {
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
-    const current = await client.query('SELECT title,content,version,updated_by FROM documents WHERE id=$1 FOR UPDATE', [room.id])
+    const current = await client.query<Pick<DocumentRow, 'title' | 'title_mode' | 'content' | 'version' | 'updated_by'>>('SELECT title,title_mode,content,version,updated_by FROM documents WHERE id=$1 FOR UPDATE', [room.id])
     if (!current.rowCount) { await client.query('ROLLBACK'); return }
     const row = current.rows[0]
+    const naming = savedDocumentTitle(row.title, row.title_mode, content)
     await client.query('INSERT INTO document_versions(document_id,version,title,content,created_by) VALUES ($1,$2,$3,$4,$5)', [room.id, row.version, row.title, row.content, row.updated_by])
-    await client.query('UPDATE documents SET content=$2,yjs_state=$3,version=version+1,updated_by=$4,updated_at=now() WHERE id=$1', [room.id, content, state, room.lastActor || row.updated_by])
+    await client.query('UPDATE documents SET content=$2,yjs_state=$3,title=$5,version=version+1,updated_by=$4,updated_at=now() WHERE id=$1', [room.id, content, state, room.lastActor || row.updated_by, naming.title])
     await client.query('COMMIT')
     if (room.changeSeq === changeSeq) room.dirty = false
   } catch (error) {

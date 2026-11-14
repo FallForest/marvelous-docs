@@ -84,10 +84,12 @@ components/
     ShareDialog.tsx       ACL editor + share links
     InviteDialog.tsx      Create an invite link
     ShellDialogs.tsx      Rename / delete / purge / help / link prompts
+    TemplateLibrary.tsx   Optional template catalogue, separate from blank creation
   ui/                     Generic, domain-agnostic primitives
     Dialog.tsx            Confirm/prompt dialog shells
     Popover.tsx           Portalled, collision-aware popover
     StatsCards.tsx        Metric cards
+    DocumentCreatedTime.tsx Creation-time annotation for untitled drafts
     ErrorBoundary.tsx     Top-level error boundary
 
 lib/                      Pure logic and browser helpers (no JSX, no React state)

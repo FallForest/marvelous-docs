@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react'
-import { CheckSquare, ChevronDown, ChevronRight, Folder, Home, LogOut, PanelLeftClose, Plus, Search, ShieldCheck, Sparkles, Star, Trash2 } from 'lucide-react'
+import { BookOpen, CheckSquare, ChevronDown, ChevronRight, Folder, Home, LogOut, PanelLeftClose, Plus, Search, ShieldCheck, Sparkles, Star, Trash2 } from 'lucide-react'
 import TemplateMenu from '../layout/TemplateMenu'
 import TreeItem from '../tree/TreeItem'
 import Popover from '../ui/Popover'
 import ArtIcon from '../ui/ArtIcon'
-import type { Doc, DocNode, Template, TreeAction, User } from '../../lib/types'
+import type { Doc, DocNode, TreeAction, User } from '../../lib/types'
 
 type SidebarProps = {
   user: User
@@ -15,7 +15,6 @@ type SidebarProps = {
   expandedFolders: Set<string>
   homeView: 'home' | 'search' | 'trash' | 'favorites'
   emptyMessage: string
-  templates: Template[]
   query: string
   narrow: boolean
   floating: boolean
@@ -29,6 +28,7 @@ type SidebarProps = {
   onAdmin: () => void
   onFavorites: () => void
   onTrash: () => void
+  onOpenTemplates: () => void
   /** Multi-select state; null when the sidebar is not in selection mode. */
   checkedIds: Set<string> | null
   onToggleChecked: (doc: Doc) => void
@@ -43,7 +43,7 @@ type SidebarProps = {
   allDocs: Doc[]
   onToggleTree: () => void
   onNewMenu: (open: boolean) => void
-  onCreateDocument: (templateId?: string) => void
+  onCreateDocument: () => void
   onCreateFolder: () => void
   onImport: () => void
   onToggleFolder: (id: string) => void
@@ -67,6 +67,7 @@ export default function Sidebar(props: SidebarProps) {
    */
   const [focusId, setFocusId] = useState<string | null>(null)
   const treeRef = useRef<HTMLDivElement | null>(null)
+  const creationMoreRef = useRef<HTMLButtonElement | null>(null)
 
   /** Moves focus to the next or previous focusable row in DOM order. */
   const moveFocus = (from: string, delta: number) => {
@@ -130,6 +131,7 @@ export default function Sidebar(props: SidebarProps) {
         {user.role === 'admin' && <button type="button" className="nav-row" onClick={props.onAdmin}><ArtIcon name="shield" fallback={<ShieldCheck size={16} />} />管理中心</button>}
         <button type="button" className="nav-row" aria-current={homeView === 'favorites' ? 'page' : undefined} onClick={props.onFavorites}><ArtIcon name="favorite-star" fallback={<Star size={16} />} />收藏 {favoriteSet.size > 0 && <span className="nav-count">{favoriteSet.size}</span>}</button>
         <button type="button" className="nav-row" aria-current={homeView === 'trash' ? 'page' : undefined} onClick={props.onTrash}><ArtIcon name="trash" fallback={<Trash2 size={16} />} />回收站</button>
+        <button type="button" className="nav-row creation-library-entry" onClick={props.onOpenTemplates}><ArtIcon name="notebook" fallback={<BookOpen size={16} />} />模板库</button>
       </nav>
 
       <div className="tree-heading">
@@ -144,16 +146,14 @@ export default function Sidebar(props: SidebarProps) {
           title={props.checkedIds ? '退出多选' : '多选文档'}
           onClick={() => props.checkedIds ? props.onExitSelection() : props.onEnterSelection()}
         ><span className="theme-decoration tree-action-art"><ArtIcon name="selection" fallback={<CheckSquare size={16} />} /></span><span>{props.checkedIds ? '完成' : '多选'}</span></button>
-        <div className="new-menu-anchor">
-          <button type="button" className="new-doc-btn sketch-frame" aria-haspopup="menu" aria-expanded={props.newMenuOpen} title="新建" onClick={() => props.onNewMenu(!props.newMenuOpen)}><ArtIcon name="new-document" fallback={<Plus size={14} />} /><span>新建</span><ChevronDown size={12} className="new-doc-chevron" /></button>
+        <div className="new-menu-anchor creation-split sketch-frame" role="group" aria-label="新建文档及更多方式">
+          <button type="button" className="new-doc-btn creation-primary" aria-label="新建空白文档" title="新建空白文档" onClick={() => { props.onNewMenu(false); props.onCreateDocument() }}><ArtIcon name="new-document" fallback={<Plus size={14} />} /><span>新建</span></button>
+          <button ref={creationMoreRef} type="button" className="creation-more" aria-label="更多新建方式" title="更多新建方式" aria-haspopup="menu" aria-expanded={props.newMenuOpen} onClick={() => props.onNewMenu(!props.newMenuOpen)}><ChevronDown size={13} /></button>
           <TemplateMenu
             open={props.newMenuOpen}
-            templates={props.templates}
-            onCreateBlank={() => props.onCreateDocument()}
-            onCreateTemplate={(templateId) => props.onCreateDocument(templateId)}
             onImport={props.onImport}
             onNewFolder={props.onCreateFolder}
-            onClose={() => props.onNewMenu(false)}
+            onClose={() => { props.onNewMenu(false); creationMoreRef.current?.focus({ preventScroll: true }) }}
           />
         </div>
       </div>

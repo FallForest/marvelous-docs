@@ -5,9 +5,10 @@ import {
 } from 'lucide-react'
 import StatsCards from '../components/ui/StatsCards'
 import ArtIcon from '../components/ui/ArtIcon'
+import DocumentCreatedTime from '../components/ui/DocumentCreatedTime'
 import { staggerItemProps } from '../components/ui/Stagger'
 import { useReducedMotion } from '../hooks/useReducedMotion'
-import { formatDate } from '../lib/format'
+import { formatDate, untitledCreatedTime } from '../lib/format'
 import { isExpired, trashExpiryLabel } from '../lib/trash'
 import type { Doc, WorkspaceStats } from '../lib/types'
 
@@ -108,7 +109,7 @@ export default function HomeDashboard({ documents, favorites, query, trash, favo
       <div className="home-section-head"><h2><Star size={16} />已收藏</h2><span>{favoriteDocs.length + ' 项'}</span></div>
       {favoriteDocs.length ? <div className="home-grid">{favoriteDocs.map((doc, index) => <button {...staggerItemProps(index, 'home-card')} key={doc.id} onClick={() => onOpen(doc)}>
         <span className={'home-card-icon ' + (doc.kind === 'folder' ? 'folder' : '')}>{doc.kind === 'folder' ? <ArtIcon name="folder" fallback={<Folder size={17} />} /> : <ArtIcon name="document" fallback={<FileText size={17} />} />}</span>
-        <span><b>{doc.title || '未命名文档'}</b><small>{doc.kind === 'folder' ? '文件夹' : '更新于 ' + (formatDate(doc.updatedAt) || '刚刚')}</small></span>
+        <span><b>{doc.title || '未命名文档'}</b><small>{untitledCreatedTime(doc) ? <DocumentCreatedTime doc={doc} /> : doc.kind === 'folder' ? '文件夹' : '更新于 ' + (formatDate(doc.updatedAt) || '刚刚')}</small></span>
         <ChevronRight size={15} />
       </button>)}</div> : <div className="home-empty">还没有收藏。打开任意文档，点击右上角的星标即可加入收藏。</div>}
     </section>
@@ -134,7 +135,7 @@ export default function HomeDashboard({ documents, favorites, query, trash, favo
       <div className="home-section-head"><h2><Icon size={16} />{title}</h2><span>{items.length + ' 项'}</span></div>
       {items.length ? <div className="home-grid">{items.map((doc, index) => <button {...staggerItemProps(index, 'home-card')} key={doc.id} onClick={() => onOpen(doc)}>
         <span className={'home-card-icon ' + (doc.kind === 'folder' ? 'folder' : '')}>{doc.kind === 'folder' ? <ArtIcon name="folder" fallback={<Folder size={17} />} /> : <ArtIcon name="document" fallback={<FileText size={17} />} />}</span>
-        <span><b>{doc.title || '未命名文档'}</b><small>{doc.kind === 'folder' ? '文件夹' : '更新于 ' + (formatDate(doc.updatedAt) || '刚刚')}</small></span>
+        <span><b>{doc.title || '未命名文档'}</b><small>{untitledCreatedTime(doc) ? <DocumentCreatedTime doc={doc} /> : doc.kind === 'folder' ? '文件夹' : '更新于 ' + (formatDate(doc.updatedAt) || '刚刚')}</small></span>
         <ChevronRight size={15} />
       </button>)}</div> : <div className="home-empty">{title === '收藏' ? '收藏的文档会显示在这里' : '暂时没有内容'}</div>}
     </section>)}
@@ -154,7 +155,7 @@ export function FolderOverview({ folder, items, onCreate, onImport, onCreateFold
     </div>
     {items.length ? <div className="folder-items">{items.map((child, index) => <button {...staggerItemProps(index, 'folder-item')} key={child.id} onClick={() => onOpen(child)}>
       <span className={'folder-item-icon ' + (child.kind === 'folder' ? 'is-folder' : '')}>{child.kind === 'folder' ? <ArtIcon name="folder" fallback={<Folder size={17} />} /> : <ArtIcon name="document" fallback={<FileText size={17} />} />}</span>
-      <span>{child.title}</span>
+      <span className="folder-item-copy">{child.title}<DocumentCreatedTime doc={child} /></span>
       <ChevronRight size={15} />
     </button>)}</div> : <div className="folder-empty">
       <div className="folder-empty-icon"><ArtIcon name="folder" fallback={<Folder size={22} />} /></div>

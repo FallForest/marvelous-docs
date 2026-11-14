@@ -107,7 +107,7 @@ export function registerSharingRoutes(app: FastifyInstance, deps: RouteDeps) {
     if (!params) return fail(reply, 400, 'INVALID_TOKEN', 'Invalid share token.')
 
     const result = await pool.query(
-      'SELECT d.id,d.title,d.content,d.updated_at AS "updatedAt",sl.permission FROM document_share_links sl JOIN documents d ON d.id=sl.document_id WHERE sl.token=$1 AND (sl.expires_at IS NULL OR sl.expires_at>now()) AND d.deleted_at IS NULL',
+      'SELECT d.id,d.title,d.title_mode AS "titleMode",d.content,d.created_at AS "createdAt",d.updated_at AS "updatedAt",sl.permission FROM document_share_links sl JOIN documents d ON d.id=sl.document_id WHERE sl.token=$1 AND (sl.expires_at IS NULL OR sl.expires_at>now()) AND d.deleted_at IS NULL',
       [params.token])
     if (!result.rowCount) return fail(reply, 404, 'SHARE_NOT_FOUND', 'Share link is invalid or expired.')
     return { document: result.rows[0] }

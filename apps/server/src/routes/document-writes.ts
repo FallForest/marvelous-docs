@@ -10,6 +10,7 @@ import { flushRoom, rooms, syncRoomFromContent } from '../collaboration/rooms.js
 import { requireNode } from '../domain/guards.js'
 import { firstHeadingTitle, markdownToTiptap } from '../lib/markdown/index.js'
 import { getTemplate } from '../lib/templates.js'
+import { automaticDocumentTitle, savedDocumentTitle, UNTITLED_DOCUMENT } from '../lib/document-title.js'
 import { contentSchema, idParams, uuidSchema } from './schemas.js'
 import type { AuthRequest, DocumentRow } from '../core/types.js'
 import type { RouteDeps } from './deps.js'
@@ -27,15 +28,17 @@ export function registerDocumentWriteRoutes(app: FastifyInstance, deps: RouteDep
     const auth = request as AuthRequest
     const input = parse(z.object({
       title: z.string().trim().min(1).max(500).optional(),
+      titleMode: z.enum(['auto', 'manual']).optional(),
       kind: z.enum(['document', 'folder']).default('document'),
       parentId: uuidSchema.optional().nullable(),
       content: contentSchema.optional(),
       templateId: z.string().trim().min(1).max(64).optional(),
     }), request.body)
-    if (!input) return fail(reply, 400, 'INVALID_INPUT', 'Title and either content or templateId are required.')
+    if (!input) return fail(reply, 400, 'INVALID_INPUT', 'Provide valid document fields and either content or templateId.')
 
     const kind = input.kind ?? 'document'
     if (kind === 'folder' && !input.title) return fail(reply, 400, 'INVALID_INPUT', 'Folders require a title.')
+    if (kind === 'folder' && input.titleMode === 'auto') return fail(reply, 400, 'INVALID_INPUT', 'Folders require a manual title.')
     if (kind === 'folder' && (input.content || input.templateId)) return fail(reply, 400, 'INVALID_INPUT', 'Folder content is managed by the server and must not be supplied.')
     if (kind === 'document' && !input.content && !input.templateId) return fail(reply, 400, 'INVALID_INPUT', 'Documents require schemaVersion 1 content or a templateId.')
     if (input.content && input.templateId) return fail(reply, 400, 'INVALID_INPUT', 'Provide either content or templateId, not both.')
@@ -48,7 +51,8 @@ export function registerDocumentWriteRoutes(app: FastifyInstance, deps: RouteDep
       content = template.content
       title = title ?? template.name
     }
-    if (!title) return fail(reply, 400, 'INVALID_INPUT', 'Documents require a title or a templateId.')
+    const titleMode = kind === 'folder' ? 'manual' : input.titleMode ?? (input.title !== undefined || input.templateId ? 'manual' : 'auto')
+    title = titleMode === 'auto' ? automaticDocumentTitle(content) : title ?? UNTITLED_DOCUMENT
     if (kind === 'folder') content = { schemaVersion: 1, doc: { type: 'doc', content: [] } }
 
     let initialDoc: Y.Doc | null = null
@@ -58,7 +62,7 @@ export function registerDocumentWriteRoutes(app: FastifyInstance, deps: RouteDep
     }
     if (!await assertFolderParent(auth, input.parentId ?? null, reply)) { initialDoc?.destroy(); return }
 
-    const row = await insertDocument(auth, title, kind, input.parentId ?? null, content, initialDoc)
+    const row = await insertDocument(auth, title, kind, input.parentId ?? null, content, initialDoc, titleMode)
     initialDoc?.destroy()
     return reply.code(201).send({ document: documentJson(row) })
   })
@@ -148,12 +152,13 @@ export function registerDocumentWriteRoutes(app: FastifyInstance, deps: RouteDep
         await client.query('ROLLBACK')
         return fail(reply, 409, 'VERSION_CONFLICT', `Document is at version ${old.version}; reload and retry.`)
       }
+      const naming = savedDocumentTitle(old.title, old.title_mode, input.content ?? old.content, input.title)
       await client.query(
         'INSERT INTO document_versions(document_id,version,title,content,created_by) VALUES ($1,$2,$3,$4,$5)',
         [old.id, old.version, old.title, old.content, old.updated_by])
       const updated = await client.query<DocumentRow>(`UPDATE documents SET title=COALESCE($2,title), parent_id=CASE WHEN $3 THEN $4 ELSE parent_id END,
-        content=COALESCE($5,content), yjs_state=COALESCE($7,yjs_state), version=version+1, updated_by=$6, updated_at=now() WHERE id=$1 RETURNING *`,
-        [params.id, input.title ?? null, input.parentId !== undefined, input.parentId ?? null, input.content ?? null, auth.user.sub, replacementState])
+        content=COALESCE($5,content), yjs_state=COALESCE($7,yjs_state), title_mode=$8, version=version+1, updated_by=$6, updated_at=now() WHERE id=$1 RETURNING *`,
+        [params.id, naming.title, input.parentId !== undefined, input.parentId ?? null, input.content ?? null, auth.user.sub, replacementState, naming.titleMode])
       await client.query('COMMIT')
 
       const activeRoom = input.content ? rooms.get(params.id) : undefined

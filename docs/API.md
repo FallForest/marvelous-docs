@@ -109,6 +109,7 @@ Returns every document and folder visible to the caller, newest first.
 type Document = {
   id: string
   title: string
+  titleMode: 'auto' | 'manual'
   kind: 'document' | 'folder'
   parentId: string | null
   content: { schemaVersion: 1; doc: Record<string, unknown> }
@@ -132,7 +133,16 @@ type Document = {
 }
 ```
 
-Provide either `content` or `templateId` (never both) for documents. `title` is required unless `templateId` is supplied, in which case it defaults to the template name. `kind` defaults to `document`. Folders must not send `content` or `templateId`; the server stores an empty document so folder exports are deterministic. `201` → `{ "document": Document }`.
+Provide either `content` or `templateId` (never both) for documents. Omitting `title` creates an automatically named document. An explicit title or template defaults to `titleMode: "manual"`; creation may explicitly request `titleMode: "auto"` to derive the name from content. `kind` defaults to `document`. Folders require a title, are always manual, and must not send `content` or `templateId`; the server stores an empty document so folder exports are deterministic. `201` → `{ "document": Document }`.
+
+Automatic names use the first nonempty level-one heading, otherwise the first
+nonempty prose/heading line, normalized and limited to 40 Unicode characters.
+Code blocks, tables and images are ignored. With no usable text the name is
+`未命名文档`. REST content saves and Yjs persistence apply the same rule while
+holding the document row lock. An explicit title edit permanently switches to
+manual naming; later content changes do not replace it. Existing documents,
+Markdown imports and duplicates remain manual by default. All list, search and
+detail responses include `titleMode` and the document's original `createdAt`.
 
 ### `POST /documents/import`
 
@@ -155,6 +165,10 @@ Editors and owners only.
 ```
 
 At least one of `title`, `parentId`, `content` is required. The previous state is appended to version history. Returns `200 { "document": Document }`, or `409 VERSION_CONFLICT`.
+
+Supplying `title` locks `titleMode` to `manual`, including when the supplied
+title equals the current automatic name. A content-only update preserves that
+lock. `titleMode` cannot be changed back through this update endpoint.
 
 Folders accept `title` and `parentId` (rename and move), reject `content` with `400 INVALID_CONTENT`, and cannot be moved into themselves or a descendant (`400 INVALID_PARENT`).
 

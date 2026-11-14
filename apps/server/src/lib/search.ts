@@ -77,7 +77,7 @@ export function buildTsQuery(input: string): string | null {
  * whole Tiptap JSON of every hit to Node (or to the browser).
  */
 export const SEARCH_SQL = `
-  SELECT d.id, d.title, d.kind, d.parent_id AS "parentId", d.updated_at AS "updatedAt", d.version,
+  SELECT d.id, d.title, d.title_mode AS "titleMode", d.kind, d.parent_id AS "parentId", d.created_at AS "createdAt", d.updated_at AS "updatedAt", d.version,
          CASE WHEN d.search_title @@ to_tsquery('simple', $3) THEN 1 ELSE 0 END AS title_match,
          ts_rank(d.search_vector, to_tsquery('simple', $3))
            + 2 * ts_rank(d.search_title, to_tsquery('simple', $3)) AS rank,
@@ -97,6 +97,6 @@ export const SEARCH_SQL = `
 
 /** One row of {@link SEARCH_SQL}, before it is trimmed for the client. */
 export type SearchRow = {
-  id: string; title: string; kind: string; parentId: string | null; updatedAt: Date;
+  id: string; title: string; titleMode: 'auto' | 'manual'; kind: string; parentId: string | null; createdAt: Date; updatedAt: Date;
   version: number; title_match: number; rank: number; body_text: string | null;
 }

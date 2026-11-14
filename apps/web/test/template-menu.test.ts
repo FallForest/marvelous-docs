@@ -1,6 +1,9 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { mergeTemplates, templateLabel } from '../src/components/layout/TemplateMenu'
+import TemplateLibrary from '../src/components/dialogs/TemplateLibrary'
 import type { Template } from '../src/lib/types'
 
 test('an unavailable template catalogue offers no fabricated presets', () => {
@@ -37,4 +40,32 @@ test('template titles remain localized with a server-name fallback', () => {
   assert.equal(templateLabel('weekly-report', 'Weekly report'), '周报')
   assert.equal(templateLabel('reading-notes', '阅读笔记'), '阅读笔记')
   assert.equal(templateLabel('unknown'), '未命名文档')
+})
+
+test('the independent library handles an empty catalogue without advertising presets', () => {
+  const markup = renderToStaticMarkup(createElement(TemplateLibrary, {
+    templates: [], onCreateTemplate: () => {}, onClose: () => {},
+  }))
+  assert.ok(markup.includes('暂无可用模板'))
+  assert.ok(!markup.includes('template-library-card sketch-frame'))
+  assert.ok(!markup.includes('会议纪要'))
+  assert.ok(!markup.includes('周报'))
+})
+
+test('the independent library renders each advertised template once and retains unknown templates', () => {
+  const markup = renderToStaticMarkup(createElement(TemplateLibrary, {
+    templates: [
+      { id: 'blank', name: '空白' },
+      { id: 'weekly-report', name: 'Weekly report' },
+      { id: 'reading-notes', name: '阅读笔记', description: '摘录与思考' },
+      { id: 'reading-notes', name: '重复笔记' },
+    ],
+    onCreateTemplate: () => {}, onClose: () => {},
+  }))
+  assert.equal([...markup.matchAll(/class="template-library-card sketch-frame"/g)].length, 2)
+  assert.ok(markup.includes('周报'))
+  assert.ok(markup.includes('阅读笔记'))
+  assert.ok(markup.includes('摘录与思考'))
+  assert.ok(!markup.includes('重复笔记'))
+  assert.ok(!markup.includes('保存我的模板'))
 })

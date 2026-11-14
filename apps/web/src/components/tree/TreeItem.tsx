@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { ChevronRight, FileText, Folder, MoreHorizontal } from 'lucide-react'
 import Popover from '../ui/Popover'
 import ArtIcon from '../ui/ArtIcon'
+import DocumentCreatedTime from '../ui/DocumentCreatedTime'
+import { untitledCreatedTime } from '../../lib/format'
 import { staggerStyle } from '../../lib/motion'
 import type { Doc, DocNode, TreeAction } from '../../lib/types'
 
@@ -66,6 +68,7 @@ export default function TreeItem(props: TreeItemProps) {
    *  document inside it must not light up two rows at once. */
   const selected = activeId ? activeId === node.doc.id : selectedFolderId === node.doc.id
   const title = node.doc.title || (isFolder ? '未命名文件夹' : '未命名文档')
+  const createdTime = untitledCreatedTime(node.doc)
   const [dragOver, setDragOver] = useState(false)
   const canAcceptDrop = isFolder && Boolean(onDropInto)
 
@@ -167,7 +170,7 @@ export default function TreeItem(props: TreeItemProps) {
       <button
         type="button"
         className={'tree-doc' + (isFolder ? ' tree-folder' : '')}
-        title={title}
+        title={title + (createdTime ? ' · 创建于 ' + createdTime : '')}
         tabIndex={-1}
         onClick={() => {
           if (selecting) { onToggleChecked(node.doc); return }
@@ -176,7 +179,7 @@ export default function TreeItem(props: TreeItemProps) {
         }}
       >
         <ArtIcon name={isFolder ? 'folder' : 'document'} fallback={isFolder ? <Folder size={14} /> : <FileText size={14} />} />
-        <span className="tree-label">{title}</span>
+        <span className={'tree-label' + (createdTime ? ' has-created-time' : '')}>{createdTime ? <><span className="tree-title">{title}</span><DocumentCreatedTime doc={node.doc} /></> : title}</span>
       </button>
       {!selecting && <div className="tree-menu-anchor">
         <button

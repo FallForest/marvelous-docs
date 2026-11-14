@@ -1,12 +1,23 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { excerpt, formatDate, relativeTime, snippetText, wordCount } from '../src/lib/format.ts'
+import { excerpt, formatDate, relativeTime, snippetText, wordCount, untitledCreatedTime } from '../src/lib/format.ts'
 
 test('formatDate renders a short chinese date and tolerates bad input', () => {
   assert.equal(formatDate(undefined), '')
   assert.equal(formatDate(''), '')
   assert.equal(formatDate('not-a-date'), '')
   assert.match(formatDate('2024-03-15T12:00:00.000Z'), /3月/)
+})
+
+test('untitled drafts use their creation time without changing their title', () => {
+  const draft = { title: '未命名文档', createdAt: '2026-11-14T02:24:00.000Z' }
+  assert.ok(untitledCreatedTime(draft))
+  assert.notEqual(untitledCreatedTime(draft), untitledCreatedTime({ ...draft, createdAt: '2026-11-14T02:24:01.000Z' }))
+  assert.equal(draft.title, '未命名文档')
+  assert.equal(untitledCreatedTime({ ...draft, title: 'Chosen title' }), '')
+  assert.equal(untitledCreatedTime({ ...draft, kind: 'folder' }), '')
+  assert.equal(untitledCreatedTime({ ...draft, createdAt: 'invalid' }), '')
+  assert.equal(untitledCreatedTime({ title: '未命名文档' }), '')
 })
 
 test('wordCount counts CJK characters and latin words', () => {

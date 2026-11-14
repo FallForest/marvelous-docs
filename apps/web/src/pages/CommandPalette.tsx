@@ -4,7 +4,7 @@ import type { LucideIcon } from 'lucide-react'
 import ArtIcon from '../components/ui/ArtIcon'
 import { staggerItemProps } from '../components/ui/Stagger'
 import { useReducedMotion } from '../hooks/useReducedMotion'
-import { excerpt, snippetText } from '../lib/format'
+import { excerpt, snippetText, untitledCreatedTime } from '../lib/format'
 import type { Doc, SearchHit, SearchScope } from '../lib/types'
 
 const SCOPES: Array<{ value: SearchScope; label: string }> = [
@@ -43,7 +43,7 @@ export default function CommandPalette({ query, onQuery, scope, onScope, index, 
       label: hit.title || '未命名文档',
       icon: hit.kind === 'folder' ? Folder : FileText,
       doc: hit,
-      snippet: hit.snippet ? excerpt(snippetText(hit.snippet), 90) : '',
+      snippet: untitledCreatedTime(hit) ? '创建于 ' + untitledCreatedTime(hit) : hit.snippet ? excerpt(snippetText(hit.snippet), 90) : '',
     }))
     return base
   }, [results])

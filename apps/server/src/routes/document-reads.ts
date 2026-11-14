@@ -62,7 +62,7 @@ export function registerDocumentReadRoutes(app: FastifyInstance, deps: RouteDeps
 
   app.get('/api/v1/documents/favorites', deps.authenticate, async (request) => {
     const auth = request as AuthRequest
-    const result = await pool.query<DocumentRow>(`SELECT ${DOCUMENT_SUMMARY_COLUMNS}, f.created_at FROM document_favorites f JOIN documents d ON d.id=f.document_id
+    const result = await pool.query<DocumentRow>(`SELECT ${DOCUMENT_SUMMARY_COLUMNS} FROM document_favorites f JOIN documents d ON d.id=f.document_id
       JOIN memberships m ON m.workspace_id=d.workspace_id AND m.user_id=$1
       LEFT JOIN document_acl a ON a.document_id=d.id AND a.user_id=$1
       WHERE f.user_id=$1 AND d.workspace_id=$2 AND d.deleted_at IS NULL
@@ -110,9 +110,11 @@ export function registerDocumentReadRoutes(app: FastifyInstance, deps: RouteDeps
       results: result.rows.map((row) => ({
         id: row.id,
         title: row.title,
+        titleMode: row.titleMode,
         kind: row.kind,
         parentId: row.parentId,
         version: row.version,
+        createdAt: row.createdAt,
         updatedAt: row.updatedAt,
         titleMatch: row.title_match,
         // The snippet is built from the indexed prose the query just read,

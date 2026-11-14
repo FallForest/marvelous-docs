@@ -1,7 +1,8 @@
 import { FileText, Folder, Search } from 'lucide-react'
 import ArtIcon from '../components/ui/ArtIcon'
+import DocumentCreatedTime from '../components/ui/DocumentCreatedTime'
 import { staggerItemProps } from '../components/ui/Stagger'
-import { excerpt, formatDate, snippetText } from '../lib/format'
+import { excerpt, formatDate, snippetText, untitledCreatedTime } from '../lib/format'
 import type { Doc, SearchHit, SearchScope } from '../lib/types'
 
 const SCOPES: Array<{ value: SearchScope; label: string }> = [
@@ -39,7 +40,7 @@ export default function SearchPage({ query, scope, onScope, results, loading, on
         <span className={'home-card-icon ' + (hit.kind === 'folder' ? 'folder' : '')}>{hit.kind === 'folder' ? <ArtIcon name="folder" fallback={<Folder size={17} />} /> : <ArtIcon name="document" fallback={<FileText size={17} />} />}</span>
         <span className="search-hit-copy">
           <b>{hit.title || '未命名文档'}</b>
-          <small>{excerpt(snippetText(hit.snippet), 160) || (hit.kind === 'folder' ? '文件夹' : '更新于 ' + (formatDate(hit.updatedAt) || '刚刚'))}</small>
+          <small>{untitledCreatedTime(hit) ? <DocumentCreatedTime doc={hit} /> : excerpt(snippetText(hit.snippet), 160) || (hit.kind === 'folder' ? '文件夹' : '更新于 ' + (formatDate(hit.updatedAt) || '刚刚'))}</small>
         </span>
       </button>)}</div>}
   </div>

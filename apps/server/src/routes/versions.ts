@@ -9,6 +9,7 @@ import { requireDoc } from '../domain/guards.js'
 import { versionParams } from './schemas.js'
 import type { AuthRequest, DocumentRow } from '../core/types.js'
 import type { RouteDeps } from './deps.js'
+import { automaticDocumentTitle } from '../lib/document-title.js'
 
 /**
  * Version history: list, read one snapshot, and restore.
@@ -91,7 +92,7 @@ export function registerVersionRoutes(app: FastifyInstance, deps: RouteDeps) {
         [old.id, old.version, old.title, old.content, old.updated_by])
       const updated = await client.query<DocumentRow>(
         'UPDATE documents SET title=$2,content=$3,yjs_state=$4,version=version+1,updated_by=$5,updated_at=now() WHERE id=$1 RETURNING *',
-        [params.id, target.rows[0]!.title, target.rows[0]!.content, restoredState, auth.user.sub])
+        [params.id, old.title_mode === 'auto' ? automaticDocumentTitle(target.rows[0]!.content) : target.rows[0]!.title, target.rows[0]!.content, restoredState, auth.user.sub])
       await client.query('COMMIT')
 
       const activeRoom = rooms.get(params.id)

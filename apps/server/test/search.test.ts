@@ -67,6 +67,7 @@ async function fixture() {
   await db.exec(initial)
   await db.exec(await readFile(new URL('002_share_links.sql', dir), 'utf8'))
   await db.exec(await readFile(new URL('003_full_text_search.sql', dir), 'utf8'))
+  await db.exec(await readFile(new URL('004_document_title_mode.sql', dir), 'utf8'))
 
   await db.query('INSERT INTO workspaces(id,name) VALUES ($1,$2)', [WS, 'Workspace'])
   await db.query('INSERT INTO users(id,email,name,password_hash) VALUES ($1,$2,$3,$4)', [ADMIN, 'admin@example.com', 'Admin', 'x'])

@@ -47,12 +47,12 @@ export default function ShellDialogs(props: ShellDialogsProps) {
   return <>
     {renameDoc && <PromptDialog
       title="重命名"
-      description={renameDoc.kind === 'folder' ? '给文件夹换一个更清晰的名字。' : '标题会立即同步给所有协作者。'}
+      description={renameDoc.kind === 'folder' ? '给文件夹换一个更清晰的名字。' : '保存名称后，后续正文修改不会自动改名。'}
       label="名称"
       initialValue={renameDoc.title}
       confirmLabel="保存"
       validate={(value) => value ? (value.length > 120 ? '名称不能超过 120 个字符' : null) : '名称不能为空'}
-      onSubmit={async (value) => { props.onCancelRename(); if (value !== renameDoc.title) props.onRename(renameDoc, value) }}
+      onSubmit={async (value) => { props.onCancelRename(); if (value !== renameDoc.title || renameDoc.titleMode === 'auto') props.onRename(renameDoc, value) }}
       onClose={props.onCancelRename}
     />}
 

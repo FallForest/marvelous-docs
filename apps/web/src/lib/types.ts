@@ -3,6 +3,8 @@ export type DocJson = { schemaVersion: 1; doc: Record<string, unknown> }
 export type Doc = {
   id: string
   title: string
+  /** Auto follows saved content until an explicit title edit locks the name. */
+  titleMode?: 'auto' | 'manual'
   kind?: 'folder' | 'document'
   parentId?: string | null
   /** Absent on list responses: only a single-document load returns the body. */

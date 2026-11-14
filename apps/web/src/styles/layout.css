@@ -948,3 +948,77 @@
 :root .art-icon-fallback>svg{width:100%;height:100%}
 :root .shared-logo .art-icon{width:100%;height:100%}
 :root .stats-grid .stat-icon svg{width:24px;height:24px}
+
+/* Naming annotations occupy the same boxes in either appearance. */
+:root .doc-meta{flex-wrap:wrap;row-gap:3px;column-gap:12px}
+:root .title-mode-hint{font-size:11px}
+:root .tree-label.has-created-time{display:flex;flex-direction:column;gap:1px;line-height:1.3}
+:root .tree-label.has-created-time .tree-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+:root .tree-label .untitled-document-time{font-size:10px;font-weight:400;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+:root .folder-item-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+:root .folder-item-copy .untitled-document-time{font-size:11px}
+
+/* Direct blank creation and its optional catalogue share the same geometry in
+   every appearance. The split group occupies one complete tree action cell. */
+:root .sidebar .creation-split{
+  display:flex;align-items:stretch;min-width:0;width:100%;height:40px;min-height:40px;
+  gap:0;border:1px solid var(--border-strong);border-radius:7px;background:var(--accent-soft);
+}
+:root .sidebar .creation-split .creation-primary{
+  flex:1 1 auto;width:auto;min-width:0;height:100%;min-height:0;margin:0;padding:0 3px;
+  gap:3px;border:0;border-radius:6px 0 0 6px;background:transparent;box-shadow:none;
+}
+:root .sidebar .creation-split .creation-primary .art-icon{width:21px;height:23px;flex-basis:21px}
+:root .sidebar .creation-more{
+  display:flex;align-items:center;justify-content:center;flex:0 0 28px;min-width:28px;
+  height:100%;margin:0;padding:0;border:0;border-left:1px solid var(--border-strong);
+  border-radius:0 6px 6px 0;background:transparent;color:var(--text-secondary);cursor:pointer;
+}
+:root .sidebar .creation-split :is(.creation-primary,.creation-more):hover{background:var(--surface-active)}
+:root .sidebar .creation-split :is(.creation-primary,.creation-more):focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+:root .creation-menu{width:min(240px,calc(100vw - 24px))}
+:root .creation-menu .menu-item{min-height:44px}
+:root .template-library{
+  position:relative;display:flex;flex-direction:column;width:min(640px,100%);
+  max-height:calc(100dvh - 40px);overflow:hidden;padding:24px;gap:20px;
+  border:1px solid var(--border-strong);border-radius:12px;background:var(--surface);
+  color:var(--text);box-shadow:var(--shadow-modal);
+}
+:root .template-library-header{display:flex;align-items:flex-start;gap:12px;flex:0 0 auto}
+:root .template-library-symbol{display:grid;place-items:center;flex:0 0 40px;width:40px;height:44px}
+:root .template-library-symbol .art-icon{width:36px;height:40px}
+:root .template-library-heading{flex:1;min-width:0}
+:root .template-library-heading h2{margin:0;font-size:25px;line-height:1.45}
+:root .template-library-heading p{margin:5px 0 0;font-size:13px;line-height:1.65;color:var(--text-muted)}
+:root .template-library-header>.icon-btn{flex:0 0 36px;width:36px;height:36px}
+:root .template-library-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-height:0;overflow:auto;padding:3px}
+:root .template-library-card{
+  position:relative;display:flex;align-items:flex-start;gap:10px;min-width:0;min-height:108px;
+  padding:15px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-muted);
+  color:var(--text);text-align:left;cursor:pointer;
+}
+:root .template-library-card:hover{background:var(--surface-active);border-color:var(--accent)}
+:root .template-library-card:focus-visible{outline:2px solid var(--focus-ring);outline-offset:1px}
+:root .template-library-card-icon{display:grid;place-items:center;flex:0 0 30px;width:30px;height:34px}
+:root .template-library-card-icon .art-icon{width:30px;height:34px}
+:root .template-library-card-copy{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
+:root .template-library-card-copy b{font-size:14px;font-weight:650;line-height:1.5;overflow-wrap:anywhere}
+:root .template-library-card-copy small{font-size:12px;line-height:1.6;color:var(--text-muted);overflow-wrap:anywhere}
+:root .template-library-card-arrow{flex:0 0 14px;width:14px;height:14px;margin-top:4px;color:var(--text-muted)}
+:root .template-library-empty{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:12px;padding:34px 12px;text-align:center}
+:root .template-library-empty>.art-icon{width:48px;height:52px}
+:root .template-library-empty b{font-size:15px}
+:root .template-library-empty p{margin:0;font-size:13px;line-height:1.65;color:var(--text-muted)}
+:root .template-library-footer{display:flex;align-items:center;justify-content:space-between;gap:14px;flex:0 0 auto;padding-top:16px;border-top:1px solid var(--border)}
+:root .template-library-footer>span{font-size:12px;line-height:1.65;color:var(--text-muted)}
+:root .template-library-footer>button{flex:0 0 auto;min-height:36px}
+@media(max-width:560px){
+  :root .sidebar .creation-split{height:44px;min-height:44px}
+  :root .sidebar .creation-more{flex-basis:44px;min-width:44px}
+  :root .template-library{padding:19px 16px;max-height:calc(100dvh - 24px);gap:16px}
+  :root .template-library-list{grid-template-columns:1fr}
+  :root .template-library-card{min-height:88px}
+  :root .template-library-header>.icon-btn{flex-basis:44px;width:44px;height:44px}
+  :root .template-library-footer{align-items:flex-start;flex-direction:column;gap:12px}
+  :root .template-library-footer>button{width:100%;min-height:44px;justify-content:center}
+}
