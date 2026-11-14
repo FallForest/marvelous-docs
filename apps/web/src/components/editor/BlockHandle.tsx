@@ -5,8 +5,10 @@ import {
   ArrowDown, ArrowUp, CheckSquare, Code2, Copy as CopyIcon, GripVertical, Heading1, Heading2, Heading3,
   List, ListOrdered, Plus, Quote, Trash2, Type, X,
 } from 'lucide-react'
-import { afterBlock, blockSpans, dropTargetBefore, planMove } from '../../lib/editor/blocks'
-import type { BlockSpan } from '../../lib/editor/blocks'
+import {
+  blockSpansOf, canMoveBlock, deleteBlock, dropTargetBefore, duplicateBlock,
+  insertParagraphBelow, moveBlock, moveBlockBefore, topLevelBlockAt,
+} from '../../lib/editor/blocks'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import type { BlockAnchor } from '../../hooks/useBlockAnchor'
 
@@ -29,80 +31,12 @@ type BlockCommand = {
   danger?: boolean
   /** False when the command does not apply to the block under the cursor. */
   applies: (anchor: BlockAnchor) => boolean
+  /** Applicable actions stay visible but disabled at document boundaries. */
+  available?: (editor: Editor, anchor: BlockAnchor) => boolean
   run: (editor: Editor, anchor: BlockAnchor) => void
 }
 
 const TEXT_BLOCKS = new Set(['paragraph', 'heading'])
-
-/** Top-level node sizes, in document order. */
-function spansOf(editor: Editor): BlockSpan[] {
-  const doc = editor.state.doc
-  return blockSpans(Array.from({ length: doc.childCount }, (_, index) => doc.child(index).nodeSize))
-}
-
-/** Position of the top-level block containing `pos`, half-open at its end. */
-function topLevelPos(editor: Editor, pos: number): number | null {
-  let owner: number | null = null
-  const doc = editor.state.doc
-  doc.forEach((node, offset) => {
-    if (owner !== null) return
-    if (pos < offset + node.nodeSize || offset + node.nodeSize >= doc.content.size) owner = offset
-  })
-  return owner
-}
-
-/** Removes a top-level node, leaving one empty paragraph when it was the last. */
-function deleteBlock(editor: Editor, anchor: BlockAnchor) {
-  if (editor.state.doc.childCount <= 1) {
-    editor.chain().focus().clearNodes().run()
-    return
-  }
-  editor.chain().focus().deleteRange({ from: anchor.pos, to: anchor.pos + anchor.size }).run()
-}
-
-function duplicateBlock(editor: Editor, anchor: BlockAnchor) {
-  const node = editor.state.doc.nodeAt(anchor.pos)
-  if (!node) return
-  const at = anchor.pos + anchor.size
-  editor.chain().focus().insertContentAt(at, node.toJSON()).setTextSelection(at + 1).run()
-}
-
-/** Applies a delete-then-insert plan as one transaction, so it is one undo step. */
-function applyMove(editor: Editor, plan: ReturnType<typeof planMove>) {
-  if (!plan) return
-  const node = editor.state.doc.nodeAt(plan.deleteFrom)
-  if (!node) return
-  const { tr } = editor.state
-  tr.delete(plan.deleteFrom, plan.deleteTo)
-  tr.insert(plan.insertAt, node)
-  editor.view.dispatch(tr)
-  editor.commands.setTextSelection(plan.insertAt + 1)
-}
-
-function moveBlock(editor: Editor, anchor: BlockAnchor, direction: -1 | 1) {
-  const spans = spansOf(editor)
-  const index = spans.findIndex((span) => span.pos === anchor.pos)
-  if (index < 0) return
-  if (direction === -1 && index === 0) return
-  if (direction === 1 && index === spans.length - 1) return
-  /*
-   * Both directions are expressed as "insert before this block":
-   *   up   → before the previous one
-   *   down → before the one after the next one (null = append at the end)
-   *
-   * Planning "down" as an append/after-insert instead would need a second
-   * coordinate computation, and getting the two out of step is exactly how the
-   * block ends up one position past where the pointer was.
-   */
-  const before = direction === -1 ? spans[index - 1]!.pos : spans[index + 2]?.pos ?? null
-  applyMove(editor, planMove(spans, anchor.pos, before))
-}
-
-function insertParagraphBelow(editor: Editor, anchor: BlockAnchor) {
-  const at = afterBlock(spansOf(editor), anchor.pos)
-  if (at === null) return
-  editor.chain().focus().insertContentAt(at, { type: 'paragraph' }).setTextSelection(at + 1).run()
-}
 
 const COMMANDS: BlockCommand[] = [
   {
@@ -154,28 +88,30 @@ const COMMANDS: BlockCommand[] = [
   },
   {
     id: 'up', label: '上移', icon: ArrowUp,
-    applies: (anchor) => anchor.pos > 0,
-    run: (editor, anchor) => moveBlock(editor, anchor, -1),
+    applies: () => true,
+    available: (editor, anchor) => canMoveBlock(editor, anchor.pos, -1),
+    run: (editor, anchor) => { moveBlock(editor, anchor.pos, -1) },
   },
   {
     id: 'down', label: '下移', icon: ArrowDown,
     applies: () => true,
-    run: (editor, anchor) => moveBlock(editor, anchor, 1),
+    available: (editor, anchor) => canMoveBlock(editor, anchor.pos, 1),
+    run: (editor, anchor) => { moveBlock(editor, anchor.pos, 1) },
   },
   {
     id: 'duplicate', label: '创建副本', icon: CopyIcon,
     applies: () => true,
-    run: duplicateBlock,
+    run: (editor, anchor) => { duplicateBlock(editor, anchor.pos) },
   },
   {
     id: 'insert-below', label: '在下方插入段落', icon: Plus,
     applies: () => true,
-    run: insertParagraphBelow,
+    run: (editor, anchor) => { insertParagraphBelow(editor, anchor.pos) },
   },
   {
     id: 'delete', label: '删除块', icon: Trash2, danger: true,
     applies: () => true,
-    run: deleteBlock,
+    run: (editor, anchor) => { deleteBlock(editor, anchor.pos) },
   },
 ]
 
@@ -218,15 +154,33 @@ export default function BlockHandle({ editor, anchor, pin, refresh, editable }: 
   }, [menu, closeMenu])
 
   const openMenu = useCallback((pos: number, left: number, top: number) => {
-    const box = refresh(pos)
-    pin(pos)
+    if (!editor || !editable) return
+    const owner = topLevelBlockAt(editor.state.doc, pos)
+    if (!owner) return
+    const box = refresh(owner.pos)
+    if (!box) return
+    pin(owner.pos)
     setMenuAnchor(box)
     setMenu({
-      pos,
+      pos: owner.pos,
       left: Math.max(8, Math.min(left, window.innerWidth - MENU_WIDTH - 8)),
       top: Math.max(8, Math.min(top, window.innerHeight - MENU_MAX_HEIGHT)),
     })
-  }, [pin, refresh])
+  }, [editor, editable, pin, refresh])
+
+  // The code header and other block surfaces open this same menu. The event
+  // carries document position plus viewport coordinates; nested positions are
+  // resolved to their top-level owner rather than extracted from a list/quote.
+  useEffect(() => {
+    if (!editor || !editable) return
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ pos: number; left: number; top: number }>).detail
+      if (!detail || !Number.isFinite(detail.left) || !Number.isFinite(detail.top)) return
+      openMenu(detail.pos, detail.left, detail.top)
+    }
+    window.addEventListener('mdoc-open-block-menu', handler)
+    return () => window.removeEventListener('mdoc-open-block-menu', handler)
+  }, [editor, editable, openMenu])
 
   /* Right-click anywhere in the body opens the same menu for the block under the
      pointer. The listener is attached to the editor element, so the browser menu
@@ -242,22 +196,22 @@ export default function BlockHandle({ editor, anchor, pin, refresh, editable }: 
       if (!coords) return
       // Half-open on purpose: a position at the end of block N is the start of
       // N+1, and an inclusive test put the menu on the block above the click.
-      const owner = topLevelPos(editor, coords.pos)
+      const owner = topLevelBlockAt(editor.state.doc, coords.pos)
       if (owner === null) return
       event.preventDefault()
-      openMenu(owner, event.clientX, event.clientY)
+      openMenu(owner.pos, event.clientX, event.clientY)
     }
     dom.addEventListener('contextmenu', handler)
     return () => dom.removeEventListener('contextmenu', handler)
   }, [editor, editable, openMenu])
 
   const startDrag = (event: React.PointerEvent) => {
-    if (!editor || !anchor) return
+    if (!editor || !anchor || event.button !== 0) return
     event.preventDefault()
     const from = anchor.pos
-    setDrag({ from, over: null })
+    const start = { left: event.clientX, top: event.clientY }
+    let dragging = false
     pin(from)
-    document.body.classList.add('is-dragging-block')
 
     const pointerUp = (upEvent: PointerEvent) => {
       window.removeEventListener('pointermove', onPointerMove)
@@ -265,14 +219,25 @@ export default function BlockHandle({ editor, anchor, pin, refresh, editable }: 
       window.removeEventListener('pointercancel', cancel)
       document.body.classList.remove('is-dragging-block')
       setDrag(null)
-      const spans = spansOf(editor)
+      if (!dragging) {
+        // Keep the grip mounted until movement starts. Hiding it on pointerdown
+        // removed the click target before a normal click could open the menu.
+        openMenu(from, anchor.left, anchor.bottom + 6)
+        return
+      }
+      const spans = blockSpansOf(editor.state.doc)
       const coords = editor.view.posAtCoords({ left: upEvent.clientX, top: upEvent.clientY })
-      if (coords) applyMove(editor, planMove(spans, from, dropTargetBefore(spans, coords.pos)))
+      if (coords) moveBlockBefore(editor, from, dropTargetBefore(spans, coords.pos))
       pin(null)
     }
     const onPointerMove = (moveEvent: PointerEvent) => {
+      if (!dragging) {
+        if (Math.hypot(moveEvent.clientX - start.left, moveEvent.clientY - start.top) < 4) return
+        dragging = true
+        document.body.classList.add('is-dragging-block')
+      }
       const coords = editor.view.posAtCoords({ left: moveEvent.clientX, top: moveEvent.clientY })
-      const spans = spansOf(editor)
+      const spans = blockSpansOf(editor.state.doc)
       setDrag({ from, over: coords ? dropTargetBefore(spans, coords.pos) : null })
     }
     const cancel = () => {
@@ -331,7 +296,7 @@ export default function BlockHandle({ editor, anchor, pin, refresh, editable }: 
         className="block-add"
         aria-label="在下方插入段落"
         title="插入段落"
-        onClick={() => insertParagraphBelow(editor, anchor)}
+        onClick={() => insertParagraphBelow(editor, anchor.pos)}
       ><Plus size={14} /></button>
     </div>}
 
@@ -363,6 +328,7 @@ export default function BlockHandle({ editor, anchor, pin, refresh, editable }: 
               type="button"
               role="menuitem"
               className={'block-menu-item' + (command.danger ? ' danger' : '')}
+              disabled={command.available ? !command.available(editor, menuAnchor) : false}
               onClick={() => { command.run(editor, menuAnchor); closeMenu() }}
             ><Icon size={14} /><span>{command.label}</span></button>
           })}

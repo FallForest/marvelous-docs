@@ -1,4 +1,5 @@
 import type { Doc as YDoc } from 'yjs'
+import type { NodeViewRenderer } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Collaboration from '@tiptap/extension-collaboration'
@@ -22,16 +23,17 @@ import { CommentMarks } from './comment-marks'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { lowlight } from './highlight'
 
-export type EditorExtensionOptions = { ydoc?: YDoc | null; placeholder?: string }
+export type EditorExtensionOptions = { ydoc?: YDoc | null; placeholder?: string; codeBlockNodeView?: NodeViewRenderer }
 
 export function buildEditorExtensions(options: EditorExtensionOptions = {}) {
-  const { ydoc, placeholder } = options
+  const { ydoc, placeholder, codeBlockNodeView } = options
+  const CodeBlock = codeBlockNodeView ? CodeBlockLowlight.extend({ addNodeView() { return codeBlockNodeView } }) : CodeBlockLowlight
   return [
     // The code block comes from CodeBlockLowlight instead of StarterKit, so the
     // node carries syntax tokens; the node type and `language` attribute are
     // identical, which is what keeps the server schema in step.
     StarterKit.configure({ ...(ydoc ? { history: false } : {}), codeBlock: false }),
-    CodeBlockLowlight.configure({
+    CodeBlock.configure({
       lowlight,
       // The node stores our own language id (`csharp`), while the grammar is
       // looked up through grammarFor. Passing the id straight through would leave

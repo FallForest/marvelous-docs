@@ -65,9 +65,9 @@
   background-blend-mode:multiply;
 }
 
-/* Code is one paper card, with the fixed geometry toolbar measured from its
- * actual <pre>. The header is 40px high and the text reserves 56px above it. */
-[data-theme='handdrawn'] .tiptap-content pre{
+/* The code toolbar and editable text share one clipped paper card. */
+[data-theme='handdrawn'] .tiptap-content pre,
+[data-theme='handdrawn'] .code-block-card{
   border-image-source:url('/art/handdrawn-v1/decor/pencil-frame.webp');
   border-image-slice:64;
   border-image-width:9px;
@@ -147,5 +147,5 @@
   [data-theme='handdrawn'] .tiptap-content ul[data-type='taskList'] li[data-checked]>label input[type='checkbox']{
     appearance:auto;-webkit-appearance:auto;background:none;accent-color:auto;
   }
-  [data-theme='handdrawn'] :is(.paper,.tiptap-content pre,.tiptap-content th,.tiptap-content td,.comment-compose textarea){border-image:none}
+  [data-theme='handdrawn'] :is(.paper,.code-block-card,.tiptap-content pre,.tiptap-content th,.tiptap-content td,.comment-compose textarea){border-image:none}
 }

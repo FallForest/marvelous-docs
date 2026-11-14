@@ -44,12 +44,23 @@ export function useBlockGeometry(editor: Editor | null, enabled = true): BlockGe
     if (!dom) return
 
     let frame = 0
-    // Re-measuring on every keystroke drops a block out of the list the
-    // instant it scrolls past the viewport edge, which makes an anchored
-    // toolbar pop out of existence mid-edit. Keep the previous measurement
-    // when the new pass finds nothing, so the toolbar fades instead.
     const measure = () => {
       frame = 0
+      if (editor.isDestroyed) return
+      let clipTop = 0, clipBottom = window.innerHeight
+      let clipLeft = 0, clipRight = window.innerWidth
+      for (let parent = dom.parentElement; parent; parent = parent.parentElement) {
+        const style = getComputedStyle(parent)
+        const rect = parent.getBoundingClientRect()
+        if (/(auto|scroll|hidden|clip)/.test(style.overflowY)) {
+          clipTop = Math.max(clipTop, rect.top)
+          clipBottom = Math.min(clipBottom, rect.bottom)
+        }
+        if (/(auto|scroll|hidden|clip)/.test(style.overflowX)) {
+          clipLeft = Math.max(clipLeft, rect.left)
+          clipRight = Math.min(clipRight, rect.right)
+        }
+      }
       const found: BlockGeometry[] = []
       editor.state.doc.descendants((node, pos) => {
         const kind = node.type.name as BlockKind
@@ -59,7 +70,7 @@ export function useBlockGeometry(editor: Editor | null, enabled = true): BlockGe
         const rect = nodeDom.getBoundingClientRect()
         // Skip blocks scrolled out of the viewport: a fixed-position toolbar
         // would otherwise float over unrelated chrome.
-        if (rect.bottom < 0 || rect.top > window.innerHeight) return
+        if (rect.bottom <= clipTop || rect.top >= clipBottom || rect.right <= clipLeft || rect.left >= clipRight) return
         found.push({
           pos,
           kind,
@@ -73,7 +84,7 @@ export function useBlockGeometry(editor: Editor | null, enabled = true): BlockGe
           text: kind === 'codeBlock' ? node.textContent : '',
         })
       })
-      setBlocks((previous) => (found.length || !previous.length ? found : previous))
+      setBlocks(found)
     }
     const schedule = () => {
       if (frame) return
@@ -84,11 +95,10 @@ export function useBlockGeometry(editor: Editor | null, enabled = true): BlockGe
     // Motion tokens animate layout changes, so a single measurement can capture
     // a mid-transition width. Re-measure once the longest duration has elapsed.
     const settleTimers = [120, 260, 460].map((delay) => window.setTimeout(schedule, delay))
-    /* Deliberately not subscribed to 'update': that fires on every keystroke, and
-       measuring costs one getBoundingClientRect per block (forced layout). What
-       this hook needs is a change of *which* block is under the cursor, plus
-       layout changes, both of which are observed below. */
+    // Remote changes can move/delete a block without changing the local
+    // selection. Coalesce updates into one measurement per animation frame.
     editor.on('create', schedule)
+    editor.on('update', schedule)
     editor.on('selectionUpdate', schedule)
     window.addEventListener('scroll', schedule, true)
     window.addEventListener('resize', schedule)
@@ -102,6 +112,7 @@ export function useBlockGeometry(editor: Editor | null, enabled = true): BlockGe
       settleTimers.forEach((id) => window.clearTimeout(id))
       if (frame) cancelAnimationFrame(frame)
       editor.off('create', schedule)
+      editor.off('update', schedule)
       editor.off('selectionUpdate', schedule)
       window.removeEventListener('scroll', schedule, true)
       window.removeEventListener('resize', schedule)

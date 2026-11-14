@@ -27,9 +27,11 @@ const WORK = await mkdtemp(join(tmpdir(), 'mdocs-blocks-'))
 
 const HARNESS = `
 import { createRoot } from 'react-dom/client'
-import { useEditor, EditorContent } from '@tiptap/react'
+import { useEditor, EditorContent, ReactNodeViewRenderer } from '@tiptap/react'
 import { buildEditorExtensions } from './src/lib/editor'
+import { Doc as YDoc } from 'yjs'
 import BlockHandle from './src/components/editor/BlockHandle'
+import CodeBlockView from './src/components/editor/CodeBlockView'
 import { useBlockAnchor } from './src/hooks/useBlockAnchor'
 import './src/styles/index.css'
 
@@ -42,10 +44,11 @@ const CONTENT = {
     { type: 'paragraph', content: [{ type: 'text', text: '第四段 delta' }] },
   ],
 }
+const ydoc = new URLSearchParams(location.search).has('collab') ? new YDoc() : null
 
 function Harness() {
   const editor = useEditor({
-    extensions: buildEditorExtensions({ placeholder: '' }),
+    extensions: buildEditorExtensions({ placeholder: '', ydoc, codeBlockNodeView: ReactNodeViewRenderer(CodeBlockView) }),
     content: CONTENT,
     editorProps: { attributes: { class: 'tiptap-content' } },
   })
@@ -224,6 +227,21 @@ const moved = await gutterBox()
 if (!moved) failures.push('gutter disappeared when moving between blocks')
 else if (Math.abs(moved.top - third.top) > 8) failures.push('gutter stayed on the previous block: ' + Math.round(moved.top) + ' vs ' + Math.round(third.top))
 
+/* ---- 2b. clicking the grip opens a menu without starting a drag ---- */
+const clickGrip = await evaluate(`(() => {
+  const rect=document.querySelector('.block-grip')?.getBoundingClientRect()
+  return rect?{x:rect.left+rect.width/2,y:rect.top+rect.height/2}:null
+})()`)
+if (clickGrip) {
+  await mouse('mousePressed', clickGrip.x, clickGrip.y, 'left', 1, 1)
+  await mouse('mouseReleased', clickGrip.x, clickGrip.y, 'left', 0, 1)
+  await sleep(150)
+  if (!(await evaluate(`Boolean(document.querySelector('.block-menu'))`))) failures.push('ordinary grip click did not open the menu')
+  if (await evaluate(`document.body.classList.contains('is-dragging-block')`)) failures.push('ordinary grip click incorrectly started a drag')
+  await evaluate(`document.querySelector('.block-menu-close')?.click()`)
+  await sleep(100)
+}
+
 /* ---- 3. right-click suppresses the browser menu and opens ours ---- */
 // The synthetic probe runs first: dispatching `contextmenu` on a paragraph also
 // *opens* the menu, so doing it after the real right-click would leave the menu
@@ -349,6 +367,112 @@ await sleep(250)
 const textAfter = await evaluate(`window.__editor.getText()`)
 if (textBefore === textAfter) failures.push('the editor stopped accepting input after the gestures')
 log('document after the gestures: ' + JSON.stringify(textAfter.slice(0, 40)))
+
+/* ---- 8. code-header event reuses the menu, including boundary states ---- */
+await evaluate(`(() => {
+  window.__editor.commands.setContent({type:'doc',content:[
+    {type:'codeBlock',attrs:{language:'bash'},content:[{type:'text',text:'docker compose pull && docker compose up -d\\n'.repeat(8)}]},
+    {type:'paragraph',content:[{type:'text',text:'x'}]},
+  ]})
+  window.__editor.commands.setTextSelection(5)
+  window.__beforeCodeMove=window.__editor.getJSON()
+})()`)
+await sleep(180)
+await evaluate(`document.querySelector('[aria-label="代码块操作"]')?.click()`)
+await sleep(100)
+const codeMenu = await evaluate(`(() => {
+  const menu=document.querySelector('.block-menu')
+  const button=label=>Array.from(menu?.querySelectorAll('.block-menu-item')||[]).find(item=>item.textContent===label)
+  return {heading:menu?.querySelector('.block-menu-head span')?.textContent,up:button('上移')?.disabled,down:button('下移')?.disabled}
+})()`)
+if (codeMenu.heading !== '代码块' || codeMenu.up !== true || codeMenu.down !== false) failures.push('code event did not open the shared menu with first-block Up disabled: '+JSON.stringify(codeMenu))
+await evaluate(`Array.from(document.querySelectorAll('.block-menu-item')).find(item=>item.textContent==='下移')?.click()`)
+await sleep(180)
+const movedCode = await evaluate(`({types:window.__editor.getJSON().content.map(node=>node.type),selection:window.__editor.state.selection.from,parent:window.__editor.state.selection.$from.parent.type.name,focused:window.__editor.view.hasFocus()})`)
+if (movedCode.types.join('|') !== 'paragraph|codeBlock' || movedCode.selection !== 8 || movedCode.parent !== 'codeBlock' || !movedCode.focused) failures.push('code Down failed or lost its cursor/focus: '+JSON.stringify(movedCode))
+await evaluate(`window.dispatchEvent(new CustomEvent('mdoc-open-block-menu',{detail:{pos:3,left:220,top:130}}))`)
+await sleep(150)
+const lastCode = await evaluate(`(() => {
+  const button=Array.from(document.querySelectorAll('.block-menu-item')).find(item=>item.textContent==='下移')
+  const before=JSON.stringify(window.__editor.getJSON());button?.click()
+  return {disabled:button?.disabled,unchanged:before===JSON.stringify(window.__editor.getJSON()),menuOpen:!!document.querySelector('.block-menu')}
+})()`)
+if (!lastCode.disabled || !lastCode.unchanged || !lastCode.menuOpen) failures.push('last-block Down must remain visibly disabled and inert: '+JSON.stringify(lastCode))
+await evaluate(`document.querySelector('.block-menu-close')?.click()`)
+await evaluate(`window.__editor.commands.undo()`)
+const codeUndo = await evaluate(`JSON.stringify(window.__editor.getJSON())===JSON.stringify(window.__beforeCodeMove)`)
+if (!codeUndo) failures.push('one Undo did not restore the entire code move')
+
+/* ---- 9. a nested code header operates on its owning list ---- */
+await evaluate(`(() => {
+  window.__editor.commands.setContent({type:'doc',content:[
+    {type:'bulletList',content:[{type:'listItem',content:[
+      {type:'paragraph',content:[{type:'text',text:'list item'}]},
+      {type:'codeBlock',content:[{type:'text',text:'nested code'}]},
+    ]}]},
+    {type:'paragraph',content:[{type:'text',text:'after'}]},
+  ]})
+  let pos;window.__editor.state.doc.descendants((node,offset)=>{if(node.type.name==='codeBlock')pos=offset})
+  window.__editor.commands.setTextSelection(pos+3)
+  window.dispatchEvent(new CustomEvent('mdoc-open-block-menu',{detail:{pos,left:220,top:130}}))
+})()`)
+await sleep(150)
+await evaluate(`Array.from(document.querySelectorAll('.block-menu-item')).find(item=>item.textContent==='下移')?.click()`)
+await sleep(180)
+const nestedCode = await evaluate(`({types:window.__editor.getJSON().content.map(node=>node.type),parent:window.__editor.state.selection.$from.parent.type.name,nested:window.__editor.getJSON().content[1]?.content?.[0]?.content?.[1]?.type})`)
+if (nestedCode.types.join('|') !== 'paragraph|bulletList' || nestedCode.parent !== 'codeBlock' || nestedCode.nested !== 'codeBlock') failures.push('nested code was extracted from its owner: '+JSON.stringify(nestedCode))
+log('shared code menu, disabled edges, cursor/focus, undo and nested-owner moves checked')
+
+/* ---- 10. Yjs history gives the same one-operation/one-undo behavior ---- */
+await send('Page.navigate', { url: `http://127.0.0.1:${port}/?collab=1` }, sessionId)
+await sleep(1200)
+await evaluate(`(() => {
+  window.__editor.commands.setContent({type:'doc',content:[
+    {type:'codeBlock',content:[{type:'text',text:'collaborative source'}]},
+    {type:'paragraph',content:[{type:'text',text:'x'}]},
+  ]})
+  window.__editor.commands.setTextSelection(2)
+  window.__editor.commands.insertContent('before ')
+  window.__beforeCollabMove=window.__editor.getJSON()
+})()`)
+await sleep(100)
+await evaluate(`document.querySelector('[aria-label="代码块操作"]')?.click()`)
+await sleep(100)
+await evaluate(`Array.from(document.querySelectorAll('.block-menu-item')).find(item=>item.textContent==='下移')?.click()`)
+await sleep(100)
+await evaluate(`window.__movedCollab=window.__editor.getJSON();window.__editor.commands.insertContent('after ')`)
+const collabUndo = await evaluate(`(() => {
+  const editor=window.__editor
+  editor.commands.undo()
+  const typingOnly=JSON.stringify(editor.getJSON())===JSON.stringify(window.__movedCollab)
+  editor.commands.undo()
+  const moveOnly=JSON.stringify(editor.getJSON())===JSON.stringify(window.__beforeCollabMove)
+  return {typingOnly,moveOnly}
+})()`)
+if (!collabUndo.typingOnly || !collabUndo.moveOnly) failures.push('Yjs undo merged block move with adjacent typing: '+JSON.stringify(collabUndo))
+log('Yjs collaborative move is isolated from adjacent typing in undo history')
+
+/* ---- 11. the real inline code view keeps view controls out of saved content ---- */
+await evaluate(`(() => {
+  window.__longCode='print("hello")\\n'+'long_name + '.repeat(120)
+  window.__editor.commands.setContent({type:'doc',content:[{type:'codeBlock',attrs:{language:'python'},content:[{type:'text',text:window.__longCode}]},{type:'paragraph'}]})
+  Object.defineProperty(navigator,'clipboard',{value:{writeText:async text=>{window.__copiedCode=text}},configurable:true})
+  window.__codeBeforeWrap=JSON.stringify(window.__editor.getJSON())
+})()`)
+await sleep(160)
+const inlineCode = await evaluate(`(() => {
+  const card=document.querySelector('.code-block-card'),header=card?.querySelector('.code-overlay'),code=card?.querySelector('code')
+  return {inside:!!header?.closest('.paper'),position:header?getComputedStyle(header).position:null,longLine:code?.scrollWidth>code?.clientWidth,pageFits:document.documentElement.scrollWidth<=innerWidth}
+})()`)
+if (!inlineCode.inside || inlineCode.position !== 'relative' || !inlineCode.longLine || !inlineCode.pageFits) failures.push('inline code view allows toolbar/content to escape: '+JSON.stringify(inlineCode))
+await evaluate(`document.querySelector('[aria-label="代码自动换行"]')?.click()`)
+await sleep(100)
+const wrapCode = await evaluate(`(() => {const code=document.querySelector('.code-block-card code');return {fits:code.scrollWidth<=code.clientWidth+1,unchanged:window.__codeBeforeWrap===JSON.stringify(window.__editor.getJSON()),pressed:document.querySelector('[aria-label="代码自动换行"]').getAttribute('aria-pressed')}})()`)
+if (!wrapCode.fits || !wrapCode.unchanged || wrapCode.pressed !== 'true') failures.push('code wrap changed content or retained horizontal overflow: '+JSON.stringify(wrapCode))
+await evaluate(`document.querySelector('[aria-label="复制代码"]')?.click()`)
+await sleep(100)
+if (!(await evaluate(`window.__copiedCode===window.__longCode`))) failures.push('Copy did not preserve raw code exactly')
+log('inline code view, internal long-line scrolling, display-only wrap and exact Copy checked')
 
 ws.close()
 chrome.kill()

@@ -6,39 +6,50 @@ wrong for a writer, not for a programmer.
 
 ## Code blocks
 
-A code block is a ProseMirror `code: true` node: its content is raw text and
-every keystroke is literal. That is right for writing code and wrong for
-getting out again, so `lib/editor/code-block.ts` owns the boundaries:
+Code blocks retain the standard ProseMirror schema: raw text, the existing
+language attribute, and the same HTML/Markdown serialization. The editing view
+is a React NodeView (`components/editor/CodeBlockView.tsx`), so its toolbar is
+inside the code card and clips with the paper's scroll area. It is never a
+fixed overlay in `document.body`.
+
+The header exposes language, display-only wrapping, exact-text Copy, and a
+more-actions button. Wrap adds no newlines to saved or copied code. Moving,
+duplicating, inserting prose below, and deleting use the **same block menu** as
+the gutter and context menu. The first/last block disables unavailable moves.
+Nested code belongs to its top-level list/quote for these structural actions;
+it is never extracted accidentally. Structural changes isolate undo capture in
+both ProseMirror history and Yjs, preserving the moved block's cursor/range.
+
+`lib/editor/code-block.ts` owns the keyboard contract:
 
 | Press | Where | Result |
 | --- | --- | --- |
-| `Enter` | middle of the block | newline, as expected |
-| `Enter` | at the end of the last line | a paragraph is created below and the caret moves to it |
-| `Shift+Enter` | anywhere in the block | newline (never leaves the block) |
-| `Backspace` | at the start, block has text | the text is cleared, the block stays |
-| `Backspace` | at the start, block is empty | the block node is removed, caret goes before it |
+| `Enter` | anywhere in code | insert a literal newline, replacing selected text normally |
+| `Shift+Enter` | anywhere in code | insert a literal newline, never exit |
+| three `Enter` presses | at the end | remove the two escape newlines and continue in prose |
+| `Ctrl/⌘+Enter` | anywhere in code | continue in the next empty paragraph, or insert one below |
+| `Tab` | collapsed caret | insert two spaces |
+| `Tab` / `Shift+Tab` | selected lines | indent / remove one indent, preserving code and selection |
+| `Shift+Tab` | collapsed caret | remove one indent from the current line |
+| `Backspace` | start of nonempty code | preserve the code and block type |
+| `Backspace` | empty code | remove the block, retaining a valid paragraph if it was the only block |
 
-Why these and not the stock behaviour:
+Enter must support writing multiline snippets at the end as well as in the
+middle. Backspace must never clear an entire nonempty snippet or demote it to
+prose. The explicit exit shortcut is shown in the desktop code header and Help;
+the triple-Enter shortcut remains available. Non-code selections and ordinary
+character deletion keep their existing keyboard handlers.
 
-- **Enter leaving at the end.** The stock escapes are triple Enter and
-  ArrowDown on the last line. Neither is discoverable, and "press Enter where
-  you want to start writing" needs no documentation. Everywhere else stays a
-  newline, so the block remains usable for code.
-- **Shift+Enter inserting a newline.** The stock handler maps it to
-  `exitCode()`, so the one shortcut that means "line break" everywhere else
-  was the only way out.
-- **Two-step Backspace.** The stock handler calls `clearNodes()`, which
-  *demotes* the node to a paragraph and keeps the code as body text, so
-  deleting a code block looked like deleting the wrong thing. Clearing first
-  makes every intermediate state ordinary undoable editing.
+The UI separation follows the code-specific controls documented by
+[Notion](https://www.notion.com/help/code-blocks), while the editing boundary
+behavior builds on [Tiptap's code-block extension](https://tiptap.dev/docs/editor/extensions/nodes/code-block).
+This repository uses Tiptap 2; its installed keymap and code-block implementation
+were checked rather than copying newer Tiptap 3 options.
 
-The node schema is untouched: no attribute, no mark, no new node type. That
-keeps `apps/server/src/lib/schema.ts`, the Markdown round-trip and existing
-documents all valid.
-
-To change any of this, edit `lib/editor/code-block.ts`. The handlers are covered by
-`test/code-block.test.ts`, which runs them against a real ProseMirror state
-with no DOM.
+Tests in `test/code-block.test.ts` use real ProseMirror states, keymap fallthrough,
+and history. `test/block-commands.test.ts` verifies structural transactions.
+`scripts/verify/verify-blocks.mjs` mounts the real React code view, gutter, shared
+menus and styles in Chrome, including Yjs undo isolation, wrap and Copy.
 
 ## Comment markers
 

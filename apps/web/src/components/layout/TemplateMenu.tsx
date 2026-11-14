@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react'
 import type { KeyboardEvent } from 'react'
 import { FolderPlus, Upload } from 'lucide-react'
 import Popover from '../ui/Popover'
@@ -42,15 +41,6 @@ type TemplateMenuProps = {
 
 /** Additional creation actions. The main New button creates a blank page. */
 export default function TemplateMenu({ open, onImport, onNewFolder, onClose }: TemplateMenuProps) {
-  const body = useRef<HTMLDivElement | null>(null)
-  useEffect(() => {
-    if (!open) return
-    // Popover first measures an invisible portal; focus after its position is
-    // applied so the first item is visible and can actually receive focus.
-    const frame = requestAnimationFrame(() => body.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus({ preventScroll: true }))
-    return () => cancelAnimationFrame(frame)
-  }, [open])
-
   const moveFocus = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return
     const rows = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'))
@@ -63,7 +53,7 @@ export default function TemplateMenu({ open, onImport, onNewFolder, onClose }: T
   }
 
   return <Popover open={open} onClose={onClose} label="更多新建方式" align="right" className="template-menu creation-menu sketch-frame">
-    <div ref={body} className="template-menu-body" onKeyDown={moveFocus}>
+    <div className="template-menu-body" onKeyDown={moveFocus}>
       <button type="button" role="menuitem" className="menu-item" onClick={() => { onClose(); onNewFolder() }}><ArtIcon name="folder" fallback={<FolderPlus size={15} />} /><span>新建文件夹</span></button>
       <button type="button" role="menuitem" className="menu-item" onClick={() => { onClose(); onImport() }}><Upload size={15} /><span>导入 Markdown</span></button>
     </div>

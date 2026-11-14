@@ -68,7 +68,8 @@ components/
   tree/                   Document tree row
     TreeItem.tsx
   editor/                 Everything that touches the Tiptap instance
-    DocumentEditor.tsx    Editor surface, collaboration provider, code overlays
+    DocumentEditor.tsx    Editor surface and collaboration provider
+    CodeBlockView.tsx     Inline code toolbar, editable code, wrap/copy and shared block-menu entry
     EditorToolbar.tsx     Grouped formatting toolbar
     BubbleToolbar.tsx     Selection bubble menu
     SlashMenu.tsx         "/" insertion menu

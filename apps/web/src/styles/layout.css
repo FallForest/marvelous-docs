@@ -731,14 +731,37 @@
   border:1px solid transparent;
 }
 :root .tiptap-content pre code{
-  padding:56px 18px 18px;
+  padding:16px 18px 18px;
   font-family:ui-monospace,SFMono-Regular,'JetBrains Mono',Menlo,Consolas,monospace;
   font-size:14px;
   line-height:1.8;
   border:0;
 }
+:root .code-block-card{
+  position:relative;
+  min-width:0;
+  max-width:100%;
+  margin:16px 0;
+  border:1px solid var(--border);
+  border-radius:8px;
+  overflow:hidden;
+  background:var(--surface-muted);
+}
+:root .tiptap-content .code-block-card pre{
+  margin:0;
+  border:0;
+  border-image:none;
+  border-radius:0;
+  background:none;
+  box-shadow:none;
+}
+:root .code-block-card pre code{min-height:56px;overflow-wrap:normal}
+:root .code-block-card.is-wrapped pre code{overflow-wrap:anywhere;word-break:normal}
 :root .code-overlay{
+  position:relative;
+  width:100%;
   height:40px;
+  pointer-events:auto;
   padding:3px 10px;
   gap:7px;
   border:1px solid transparent;
@@ -750,8 +773,6 @@
   height:3px;
   pointer-events:none;
 }
-:root .code-language-art{display:inline-flex;flex:0 0 25px;align-items:center;pointer-events:none}
-:root .code-language-art .art-icon{width:25px;height:25px}
 :root .code-overlay .lang-picker-button{
   min-height:29px;
   height:29px;
@@ -761,13 +782,20 @@
   font-family:var(--font-handwritten);
   font-size:15px;
 }
-:root .code-overlay-actions{gap:3px;margin-right:4px}
+:root .code-overlay .lang-picker{min-width:0;flex-shrink:1}
+:root .code-overlay .lang-picker-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+:root .code-key-hint{margin-left:auto;color:var(--text-muted);font-family:inherit;font-size:11px;line-height:1.4;white-space:nowrap}
+:root .code-overlay-actions{gap:3px;margin:0 0 0 auto;flex-shrink:0}
+:root .code-overlay button[aria-pressed='true']{background:var(--surface-selected);color:var(--accent)}
+@media(max-width:1100px){:root .code-key-hint{display:none}}
 :root .code-overlay-icon{
-  width:28px;height:28px;padding:5px;
+  width:29px;height:29px;padding:5px;
 }
 :root .code-overlay-icon>svg{width:16px;height:16px}
 :root .code-overlay-icon .art-icon{width:21px;height:21px}
 :root .code-overlay-copy{
+  min-width:76px;
+  justify-content:center;
   height:29px;
   padding:3px 8px;
   gap:6px;
@@ -790,9 +818,8 @@
 }
 :root .comment-compose>div:last-child{padding-top:6px}
 @media(max-width:640px){
-  :root .tiptap-content pre code{padding:60px 14px 16px;font-size:13px}
+  :root .tiptap-content pre code{padding:14px 14px 16px;font-size:13px}
   :root .code-overlay{height:44px;padding:3px 6px;gap:4px}
-  :root .code-language-art{display:none}
   :root .code-overlay .lang-picker-button{height:34px;min-height:34px;padding:3px 7px;font-size:14px}
   :root .code-overlay .lang-picker-label{max-width:70px}
   :root .code-overlay-actions{gap:1px;margin-right:0}
@@ -976,8 +1003,13 @@
 }
 :root .sidebar .creation-split :is(.creation-primary,.creation-more):hover{background:var(--surface-active)}
 :root .sidebar .creation-split :is(.creation-primary,.creation-more):focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
-:root .creation-menu{width:min(240px,calc(100vw - 24px))}
-:root .creation-menu .menu-item{min-height:44px}
+:root .creation-menu{width:min(240px,calc(100vw - 24px));overflow-x:hidden;overflow-y:auto}
+/* The decorative frame belongs inside the scrollport. A negative inset adds
+   one pixel to both scroll extents even when these two rows fit completely. */
+:root .creation-menu.sketch-frame::after{inset:0}
+:root .creation-menu .template-menu-body{flex:0 0 auto;width:100%;min-width:0}
+:root .creation-menu .menu-item{min-width:0;min-height:44px}
+:root .creation-menu .menu-item>span:last-child{min-width:0;overflow-wrap:anywhere}
 :root .template-library{
   position:relative;display:flex;flex-direction:column;width:min(640px,100%);
   max-height:calc(100dvh - 40px);overflow:hidden;padding:24px;gap:20px;

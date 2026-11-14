@@ -1,20 +1,5 @@
-/*
- * Content layer: code blocks, share-link section and the public share page.
- *
- * Code-block chrome moves in two places only:
- *   - the overlay toolbar arrives with the shared rise animation, because its
- *     top/left are re-measured on every scroll frame (a transition would fire
- *     per frame; an animation fires once);
- *   - the copy button acknowledges a press with .is-acknowledged and lets its
- *     colour settle through --transition-colors instead of jumping to green.
- */
+/* Code block and public share page styles. Geometry is shared in layout.css. */
 
-/* ===== 26. Code block: language badge + copy button =====
- * The block's border, radius and background used to be declared twice (here
- * and again in section 29, which wins). They are declared once now, with the
- * winning values from section 29: margin 16px, padding 0, mono font on the
- * <pre>, tighter line spacing, and the 40px top strip reserved for the overlay.
- */
 .tiptap-content pre{
   position:relative;
   margin:16px 0;
@@ -27,7 +12,7 @@
 }
 .tiptap-content pre code{
   display:block;
-  padding:40px 16px 14px;
+  padding:16px 16px 14px;
   color:var(--text);
   font-size:13px;
   line-height:1.7;
@@ -110,7 +95,7 @@
 /* One surface owns the block: border, radius and background live in section 26. */
 /* Overlay toolbar sits inside the block's top strip, never above it. */
 .code-overlay{
-  position:fixed;
+  position:relative;
   display:flex;
   align-items:center;
   justify-content:space-between;

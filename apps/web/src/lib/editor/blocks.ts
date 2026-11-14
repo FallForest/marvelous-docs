@@ -1,16 +1,21 @@
 /**
  * Block arithmetic for the drag handle and the block context menu.
  *
- * Everything here works on a flat list of the document's top-level blocks
- * (`{ pos, size }`, document coordinates) instead of on a ProseMirror document,
- * so the parts that are easy to get subtly wrong — where a block lands after it
- * is lifted out, whether a drop is a no-op, which neighbour "move down" means —
- * are unit-testable without an editor.
+ * The planning helpers work on flat top-level spans. The commands below apply
+ * those plans to a ProseMirror document, resolving nested positions to their
+ * owning block and keeping selection and history in the same operation.
  *
  * A move is a delete followed by an insert, and the insert index shifts when the
  * dragged block sat before the target. Returning the two coordinates in document
  * space keeps that adjustment in one place instead of at every call site.
  */
+
+import type { Node as PMNode } from '@tiptap/pm/model'
+import { NodeSelection, Selection, TextSelection } from '@tiptap/pm/state'
+import type { EditorState, Transaction } from '@tiptap/pm/state'
+import type { EditorView } from '@tiptap/pm/view'
+import { closeHistory } from '@tiptap/pm/history'
+import { yUndoPluginKey } from 'y-prosemirror'
 
 export type BlockSpan = { pos: number; size: number }
 
@@ -96,4 +101,135 @@ export function afterBlock(spans: BlockSpan[], pos: number): number | null {
   if (index < 0) return null
   const span = spans[index]!
   return span.pos + span.size
+}
+
+/** The shared editor contract does not depend on a UI component or a hook. */
+type BlockEditor = {
+  readonly state: EditorState
+  readonly isEditable: boolean
+  readonly view: Pick<EditorView, 'dispatch' | 'focus'>
+}
+
+export type TopLevelBlock = BlockSpan & { node: PMNode }
+
+/** A nested code/list/quote position always belongs to its whole top-level block. */
+export function topLevelBlockAt(doc: PMNode, pos: number): TopLevelBlock | null {
+  if (!Number.isInteger(pos) || pos < 0 || pos > doc.content.size) return null
+  let found: TopLevelBlock | null = null
+  doc.forEach((node, offset) => {
+    if (!found && (pos < offset + node.nodeSize || offset + node.nodeSize === doc.content.size)) {
+      found = { pos: offset, size: node.nodeSize, node }
+    }
+  })
+  return found
+}
+
+export function blockSpansOf(doc: PMNode): BlockSpan[] {
+  return blockSpans(Array.from({ length: doc.childCount }, (_, index) => doc.child(index).nodeSize))
+}
+
+/** Keep an existing cursor/range inside the block, including a nested code block. */
+function selectionInBlock(selection: Selection, block: TopLevelBlock, tr: Transaction, at: number): Selection {
+  const inside = selection.from >= block.pos && selection.to <= block.pos + block.size
+  if (inside && selection instanceof NodeSelection) {
+    const mapped = at + selection.from - block.pos
+    const node = tr.doc.nodeAt(mapped)
+    if (node && NodeSelection.isSelectable(node)) return NodeSelection.create(tr.doc, mapped)
+  }
+  if (inside && selection instanceof TextSelection) {
+    return TextSelection.between(
+      tr.doc.resolve(at + selection.anchor - block.pos),
+      tr.doc.resolve(at + selection.head - block.pos),
+    )
+  }
+  if (block.node.isAtom && NodeSelection.isSelectable(block.node)) return NodeSelection.create(tr.doc, at)
+  return Selection.near(tr.doc.resolve(at + 1), 1)
+}
+
+/** Isolate structural actions from adjacent typing and from each other in history. */
+function dispatchBlockChange(editor: BlockEditor, tr: Transaction): boolean {
+  if (!tr.docChanged) return false
+  // Live collaboration replaces ProseMirror history with a Yjs UndoManager.
+  // Its capture window must also be closed on both sides of the operation.
+  const undoManager = yUndoPluginKey.getState(editor.state)?.undoManager
+  undoManager?.stopCapturing()
+  editor.view.dispatch(closeHistory(tr).scrollIntoView())
+  // A history boundary after the action prevents the next keystroke from being
+  // absorbed into it. This transaction changes neither content nor selection.
+  editor.view.dispatch(closeHistory(editor.state.tr).setMeta('addToHistory', false))
+  undoManager?.stopCapturing()
+  editor.view.focus()
+  return true
+}
+
+function movePlan(editor: BlockEditor, pos: number, direction: -1 | 1): MovePlan | null {
+  if (!editor.isEditable) return null
+  const block = topLevelBlockAt(editor.state.doc, pos)
+  if (!block) return null
+  const spans = blockSpansOf(editor.state.doc)
+  const index = spans.findIndex(span => span.pos === block.pos)
+  if ((direction === -1 && index === 0) || (direction === 1 && index === spans.length - 1)) return null
+  const before = direction === -1 ? spans[index - 1]!.pos : spans[index + 2]?.pos ?? null
+  return planMove(spans, block.pos, before)
+}
+
+export function canMoveBlock(editor: BlockEditor, pos: number, direction: -1 | 1): boolean {
+  return movePlan(editor, pos, direction) !== null
+}
+
+function applyMove(editor: BlockEditor, plan: MovePlan | null): boolean {
+  if (!plan || !editor.isEditable) return false
+  const block = topLevelBlockAt(editor.state.doc, plan.deleteFrom)
+  if (!block) return false
+  const selection = editor.state.selection
+  const tr = editor.state.tr.delete(plan.deleteFrom, plan.deleteTo).insert(plan.insertAt, block.node)
+  tr.setSelection(selectionInBlock(selection, block, tr, plan.insertAt))
+  return dispatchBlockChange(editor, tr)
+}
+
+export function moveBlock(editor: BlockEditor, pos: number, direction: -1 | 1): boolean {
+  return applyMove(editor, movePlan(editor, pos, direction))
+}
+
+/** Drag/drop and menu moves use the same post-deletion coordinate calculation. */
+export function moveBlockBefore(editor: BlockEditor, pos: number, before: number | null): boolean {
+  const block = topLevelBlockAt(editor.state.doc, pos)
+  const target = before === null ? null : topLevelBlockAt(editor.state.doc, before)
+  if (!block || (before !== null && !target)) return false
+  return applyMove(editor, planMove(blockSpansOf(editor.state.doc), block.pos, target?.pos ?? null))
+}
+
+export function deleteBlock(editor: BlockEditor, pos: number): boolean {
+  if (!editor.isEditable) return false
+  const block = topLevelBlockAt(editor.state.doc, pos)
+  if (!block) return false
+  const tr = editor.state.tr
+  if (editor.state.doc.childCount === 1) {
+    const paragraph = editor.state.schema.nodes.paragraph?.createAndFill()
+    if (!paragraph) return false
+    tr.replaceWith(0, editor.state.doc.content.size, paragraph)
+  } else tr.delete(block.pos, block.pos + block.size)
+  tr.setSelection(Selection.near(tr.doc.resolve(Math.min(block.pos, tr.doc.content.size)), 1))
+  return dispatchBlockChange(editor, tr)
+}
+
+export function duplicateBlock(editor: BlockEditor, pos: number): boolean {
+  if (!editor.isEditable) return false
+  const block = topLevelBlockAt(editor.state.doc, pos)
+  if (!block) return false
+  const at = block.pos + block.size
+  const tr = editor.state.tr.insert(at, block.node)
+  tr.setSelection(selectionInBlock(editor.state.selection, block, tr, at))
+  return dispatchBlockChange(editor, tr)
+}
+
+export function insertParagraphBelow(editor: BlockEditor, pos: number): boolean {
+  if (!editor.isEditable) return false
+  const block = topLevelBlockAt(editor.state.doc, pos)
+  const paragraph = editor.state.schema.nodes.paragraph?.createAndFill()
+  if (!block || !paragraph) return false
+  const at = block.pos + block.size
+  const tr = editor.state.tr.insert(at, paragraph)
+  tr.setSelection(TextSelection.create(tr.doc, at + 1))
+  return dispatchBlockChange(editor, tr)
 }

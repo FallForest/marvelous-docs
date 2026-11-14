@@ -49,11 +49,13 @@ export default function LanguagePicker({ value, onChange }: Props) {
     const measure = () => {
       const rect = buttonRef.current?.getBoundingClientRect()
       if (!rect) return
+      const paper = rootRef.current?.closest('.paper')?.getBoundingClientRect()
+      if (paper && (rect.bottom <= paper.top || rect.top >= paper.bottom)) { setOpen(false); return }
       const below = window.innerHeight - rect.bottom - 12
       const above = rect.top - 12
       const flip = below < 200 && above > below
       const maxHeight = Math.max(120, Math.min(264, flip ? above : below))
-      setPanelPos({ top: flip ? Math.max(8, rect.top - Math.min(264, maxHeight) - 4) : rect.bottom + 4, left: rect.left, maxHeight })
+      setPanelPos({ top: flip ? Math.max(8, rect.top - Math.min(264, maxHeight) - 4) : rect.bottom + 4, left: Math.max(8, Math.min(rect.left, window.innerWidth - 192)), maxHeight })
     }
     measure()
     window.addEventListener('scroll', measure, true)
@@ -114,7 +116,7 @@ export default function LanguagePicker({ value, onChange }: Props) {
       setOpen(false)
     }
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { event.stopPropagation(); setOpen(false); return }
+      if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); setOpen(false); buttonRef.current?.focus(); return }
       if (event.key === 'ArrowDown') { event.preventDefault(); setActive((i) => Math.min(i + 1, LANGUAGES.length - 1)) }
       if (event.key === 'ArrowUp') { event.preventDefault(); setActive((i) => Math.max(i - 1, 0)) }
       if (event.key === 'Enter') {

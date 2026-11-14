@@ -189,6 +189,10 @@
 .sidebar .nav-row.nav-active svg{color:var(--accent-strong)}
 .sidebar .nav-count{
   margin-left:auto;
+  display:inline-flex;
+  flex:0 0 auto;
+  align-items:center;
+  justify-content:center;
   min-width:18px;height:18px;
   padding:0 5px;
   border-radius:9px;
@@ -196,6 +200,9 @@
   color:var(--text-muted);
   font-size:10.5px;
   font-weight:600;
+  line-height:1;
+  text-align:center;
+  white-space:nowrap;
   font-variant-numeric:tabular-nums;
 }
 .sidebar .nav-row[aria-current="page"] .nav-count{color:var(--accent-strong)}

@@ -33,6 +33,9 @@ const SHORTCUTS: Array<[string, string[]]> = [
   ['导出 Markdown', ['Ctrl', 'Shift', 'E']],
   ['关闭弹层 / 面板', ['Esc']],
   ['发送评论', ['Ctrl', 'Enter']],
+  ['代码内换行', ['Enter']],
+  ['代码缩进 / 反缩进', ['Tab / Shift+Tab']],
+  ['离开代码块，继续正文', ['Ctrl/⌘', 'Enter']],
 ]
 
 /**
@@ -111,6 +114,7 @@ export default function ShellDialogs(props: ShellDialogsProps) {
           <dd>{keys.map((key) => <kbd key={key}>{key}</kbd>)}</dd>
         </div>)}
       </dl>
+      <p className="help-note">代码块中也可在末尾连续按三次 Enter 继续正文；移动、创建副本和删除位于代码块右上角的“⋯”菜单，也可从左侧拖动柄操作。</p>
       <p className="help-note">协作连接断开时，编辑会保留在本地，恢复后自动同步。遇到界面异常可刷新页面，历史版本里能找回未同步内容。</p>
     </Dialog>}
 
