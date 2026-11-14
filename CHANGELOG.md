@@ -4,6 +4,122 @@ All notable changes to Marvelous Docs are documented in this file. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.72] - 2026-11-15
+
+One history timeline, and the audit's correctness pass: permissions that reach
+live sockets, a migration runner that records what it ran, and a release that
+cannot ship a suite the branch never ran.
+
+### Added
+
+- **A document timeline that is one list, not two panels.** `GET
+  /documents/:id/history` merges snapshots and events into a single
+  cursor-paged feed (day groups, snapshot summaries, change counts), and
+  `HistoryPanel` replaces the old activity tab plus version dropdown. Snapshots
+  are taken on their own clocks (idle 2 min, interval 10 min, `HISTORY_IDLE_MS`
+  / `HISTORY_INTERVAL_MS`) and deduplicated by a content fingerprint, so an
+  unchanged save records no row. Every snapshot carries a `reason`
+  (`baseline` / `idle` / `interval` / `before_restore`) and a bounded
+  `summary`; a restore writes a `before_restore` row first, which is what makes
+  the timeline reversible step by step.
+- **`GET /documents/:id/version`** — the version number alone, so a client
+  confirming its own write does not pull the full body or flush the room.
+- **`GET /system/metrics`** (workspace administrator) — documents, versions,
+  trash and members, collaboration rooms and clients, dirty rooms, queued
+  document operations, pool counts, and the applied migration list. JSON, because
+  the documented deployment is one compose stack read with `curl`.
+- **`?doc=` gives a document an address.** Reload reopens what you were reading,
+  the address can be sent to a colleague, and the breadcrumb renders the whole
+  ancestor trail (folded from the left past three levels) instead of only the
+  parent.
+- **The slash menu answers `/h1`, `/biaoti`, `/code`.** Twelve commands now
+  carry Latin and pinyin search terms; the displayed label stays Chinese.
+- **Sidebar views are grouped** into 工作区 (home, recent, favourites) and 团队
+  (templates, admin, trash). Five peer rows made "read something" and "clean up"
+  look equally distant, and a seventh view had nowhere to go.
+- **`scripts/release/bump-version.mjs`** — the eight places that state the
+  release version are generated from the root manifest instead of hand-edited.
+  `--check` is what CI runs.
+- `docs/ROADMAP.md` (the audit that drove this release, with file-and-line
+  evidence) and `docs/PERFORMANCE.md` (what a keystroke costs, measured).
+
+### Changed
+
+- **CI is one file called from two places.** The steps moved to
+  `ci-checks.yml`; `ci.yml` only adds the trigger and the cancel group, and
+  `release.yml` `needs:` the same workflow — so a tag cannot publish images
+  whose suite the branch never ran.
+- **Release can build either architecture.** A `workflow_dispatch` input
+  selects `arm64` (default, the deploy host) or `amd64`; an
+  `images-exist` input publishes only the manifest for images already in GHCR.
+  Deliberately still one architecture per run: co-locating `linux/amd64` with
+  `linux/arm64` would QEMU-emulate the amd64 half on the arm runner.
+- **Migrations record what they ran.** `schema_migrations` plus
+  `pg_advisory_lock` and one transaction per file: two replicas booting together
+  take turns instead of replaying concurrently, a file that fails half way rolls
+  back instead of leaving a schema no file describes, and a checksum change warns
+  rather than refusing to boot.
+- The TypeScript app compiles with the `dvh` shell, `content-visibility` on
+  top-level blocks, preconnected font origins, and no PNG artwork in the web
+  image (WebP only; the PNGs remain in the repository as the artwork's
+  provenance).
+
+### Fixed
+
+- **A grant inherited from an ancestor folder was unreachable.** Sharing a folder
+  was something you could do and nobody could receive. A restricted folder now
+  covers its subtree, and `getDocumentAccess` and `visibleDocumentsCte` answer
+  from one rule.
+- **Search leaked text out of a restricted folder.** List queries tested the
+  row's own `acl_restricted`, so a document inside a restricted folder stayed
+  searchable and search shipped its `body_text` as a snippet.
+- **A demoted editor kept writing until they reconnected.** An ACL change now
+  closes that document's writable sockets, a soft delete evicts the room, and a
+  socket re-reads its role after a minute of staleness — which also covers a
+  restriction added three folders up.
+- **Login throttling keyed on the proxy.** Every request arrived from the nginx
+  container, so one bucket served the whole workspace and ten failures locked
+  everybody out. `TRUST_PROXY` (default on, documented in both env templates
+  and compose) reads the client address; a deployment that publishes `:3000`
+  must set it to `false`.
+- **Trash recursions hard-deleted live documents.** Both sweeps now filter on
+  `deleted_at`, and a live child survives its deleted folder.
+- **`GET /workspace/stats` counted an ever-growing table.** See retention below.
+- **The activity feed exposed restricted folder paths.** Move events resolve
+  folder names against the reader's own access, and report 受限文件夹 rather than
+  a title they cannot open.
+- **A long-press gutter, overlays under the software keyboard, and a document
+  that reopened as whatever loaded first** were the mobile and address half of
+  the same audit; the gutter is finger-sized under `pointer:coarse`, both
+  overlays clamp to `visualViewport`, and the shell uses `dvh`.
+
+### Security
+
+- **Share-link tokens are stored as SHA-256 digests.** The plaintext is returned
+  once, in the creation response. Reading the table yields nothing replayable —
+  the same rule `invites` already followed.
+- **Rate limits name their budgets**: search 120/min, document writes 120/min
+  (the one endpoint a script can drive in a loop), export 60/5 min, uploads
+  30/10 min, Markdown conversion 60/5 min, shared reads 120/min.
+- **Version history is pruned daily** by `marvelous_prune_document_versions()`:
+  seven recent days untouched, four snapshots per older day, never fewer than
+  fifty per document. An eight-hour session used to leave roughly 48 full copies
+  of the same document.
+
+### Performance
+
+- **`content-visibility: auto` on top-level blocks** takes a 2000-block
+  keystroke from 113 ms of layout to 20 ms — measured, not assumed
+  ([PERFORMANCE.md](docs/PERFORMANCE.md)). The block handle, comment decorations
+  and `posAtCoords` still see real nodes; the skip is layout only, and
+  `contain-intrinsic-size` keeps the scrollbar from jumping.
+- **The Tiptap projection moved off the durability clock.** `yjs_state` is
+  still written 500 ms after edits go idle, but `documents.content` — which
+  rebuilds two GIN indexes — is written on a 10 s clock, and any REST read forces
+  it first, so the lag is never observable.
+- **`app-shell` uses `100dvh`** so the footer is not cut off while the phone's
+  address bar is showing.
+
 ## [0.1.71] - 2026-11-14
 
 Blank pages that name themselves, and a hand-drawn shell that is the default.
