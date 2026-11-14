@@ -4,7 +4,9 @@ All notable changes to Marvelous Docs are documented in this file. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.71] - 2026-11-14
+
+Blank pages that name themselves, and a hand-drawn shell that is the default.
 
 ### Changed
 

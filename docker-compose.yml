@@ -24,7 +24,7 @@ services:
       NODE_ENV: production
       PORT: 3000
       HOST: 0.0.0.0
-      APP_VERSION: ${APP_VERSION:-0.1.67}
+      APP_VERSION: ${APP_VERSION:-0.1.71}
       TRASH_RETENTION_DAYS: ${TRASH_RETENTION_DAYS:-30}
       CORS_ORIGIN: ${CORS_ORIGIN:-}
       COLLAB_PORT: 1234
