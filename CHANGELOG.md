@@ -4,6 +4,97 @@ All notable changes to Marvelous Docs are documented in this file. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.73] - 2026-11-15
+
+The product pass: controls that do what they show, comments you can own and
+delete, and a local copy that survives the network.
+
+The rule this release is measured against is in
+[PRODUCT-CONTRACTS.md](docs/PRODUCT-CONTRACTS.md) - a working icon is only the
+start: the command has to target the right content, represent its availability,
+survive saving and reload, and have an observable failure path.
+
+### Added
+
+- **Author-owned comment editing and deletion.** `PATCH` accepts a body from its
+  author (and nobody else: a workspace admin may resolve a discussion but may not
+  rewrite someone else's words), and the new `DELETE /documents/:id/comments/:commentId`
+  blanks the body and sets `deleted_at` (migration 008) instead of removing the
+  row, so the replies under it keep their thread, their authors and their order.
+  Deleted words stay deleted: an edit against a tombstone fails.
+- **A reply belongs to its root thread.** `parentId` is resolved up the chain
+  before insert, so a reply to a reply attaches to the discussion start rather
+  than nesting indefinitely; replying into a resolved discussion is refused with
+  `409`, and a reply never carries the anchor - the quote belongs to the thread.
+- **Deleted quotes are reported, not guessed at.** An anchor that no longer
+  exists is shown as unavailable rather than jumped to at the stale offsets, and a
+  legacy absolute anchor is only accepted when the text at those offsets still
+  matches; an ambiguous or missing prefix is declared unavailable instead of
+  being reattached by a fuzzy match. Collaborative anchors are Yjs relative
+  positions, so they survive saving, reload and other people's edits.
+- **Local draft recovery.** `lib/local-drafts.ts` keeps a safety copy of the body
+  before the save debounce fires, cleared only when the exact body has been
+  acknowledged; on reopening, a local copy that differs from the server is offered
+  through `DraftRecovery`, which can restore it into a new document or download it
+  as JSON. A failed recovery keeps the copy.
+- **Link insertion and editing.** `LinkDialog` prepopulates the current URL,
+  operates on the live range, validates the scheme, unlinks without losing text
+  and offers a safe open action.
+- **Share links carry a lifetime.** The dialog defaults to seven days and offers
+  one day through one year or no expiry; the raw URL stays copyable in the dialog
+  when the clipboard is refused.
+- **Three new browser verifiers**: `verify-editor-tools` (toolbar, table menu,
+  indentation, find/replace), `verify-draft-recovery` (draft, dialog focus trap,
+  Enter/Tab/Escape, failed-request retry) and `verify-sharing` (expiry, manual
+  copy, load-failure retry, public page).
+
+### Changed
+
+- **Save confirmation describes this editor's content, not a version number.**
+  A version bump no longer counts as an acknowledgement of a body: the client
+  compares what it sent against what came back, so another person's write cannot
+  make an unsaved change look saved, and an older acknowledgement cannot clear a
+  newer edit.
+- **Find and replace works on real document positions.** Matches are found through
+  lists, tables and split text marks, are recomputed after edits, and insert the
+  replacement literally; replace-all is one undoable operation instead of a
+  silently truncated pass.
+- **Indentation is one command, shared by toolbar and keyboard.** Paragraphs,
+  headings, ordinary and task lists indent and outdent the same way, and Tab no
+  longer steals navigation inside a table cell.
+- **The table menu disables what does not apply** (merge/split, header toggles)
+  and shares the common popover, so an unavailable action is visibly unavailable
+  rather than failing on click.
+- **Toolbars keep the selection when formatting**, report active and disabled
+  states, and hide writing actions while the editor is locked.
+- **`Dialog` is one shell for both dialogs**: focus stays inside, focus is
+  restored on close, Escape closes idle dialogs while pending requests keep the modal open, a
+  duplicate or overlapping submit is blocked, and a failed request keeps its error
+  visible with the dialog open so it can be retried.
+- **The sharing dialog discards responses from a previously opened document.**
+  `useSharing` tracks a generation counter, so a slow ACL or link list for the
+  document you just left cannot overwrite the one you are looking at; a failed load
+  reports and offers retry instead of leaving stale permissions on screen.
+- **The public share page tells the truth.** It renders the title and a read-only
+  body, resets on a token change, cancels superseded requests, and no longer
+  advertises a comment box that never existed. Responses are `Cache-Control:
+  no-store`.
+- Share-link list responses no longer include the stored token digest: only a
+  newly minted link has a recoverable plaintext, for as long as the dialog holds
+  it.
+
+### Fixed
+
+- **A comment could be attached to whichever text now occupies the old offsets.**
+  See the anchor rules above; opening a thread whose quote is gone no longer jumps
+  into unrelated prose.
+- **Switching documents kept the old composer target and selection**, so a reply
+  could be posted into the wrong discussion.
+- Resolving a discussion counted its replies as independent discussions; only the
+  root is a discussion.
+- The share dialog offered no way to set a link's expiry, and the public page
+  claimed a capability ("可以评论") that no endpoint backed.
+
 ## [0.1.72] - 2026-11-15
 
 One history timeline, and the audit's correctness pass: permissions that reach
