@@ -117,6 +117,14 @@ try {
   }
   await send('Page.enable', {}, sessionId)
   await until('Boolean(window.__sharing && !window.__sharing.busy && document.querySelector("[role=dialog]"))')
+  /*
+   * Wait for the link list itself, not just the dialog. The dialog and a settled
+   * hook are true before the list requests resolve, so a direct assertion here
+   * raced the fixture: locally the ACL/share-link responses landed in time and CI
+   * read the DOM a beat earlier and found no row. The rows are what the next two
+   * assertions are about, so wait for a row.
+   */
+  await until('Boolean(document.querySelector(".share-link-item"))')
   assert.equal(await evaluate('Boolean(document.querySelector("option[value=commenter]"))'), false)
   assert.ok(await evaluate('document.body.textContent.includes("旧评论链接")'))
   await evaluate('window.__showShare("doc-b")')
