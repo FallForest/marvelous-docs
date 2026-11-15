@@ -30,6 +30,7 @@ import { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { useEditor, EditorContent } from '@tiptap/react'
 import { buildEditorExtensions } from './src/lib/editor'
+import { commentLocation, commentLocations } from './src/lib/editor/comment-marks'
 import DocumentPanel from './src/components/panels/DocumentPanel'
 import './src/styles/index.css'
 
@@ -50,8 +51,10 @@ const THREADS = [
 ]
 
 function Harness() {
+  const [rows, setRows] = useState(THREADS)
   const [active, setActive] = useState(null)
   const [draft, setDraft] = useState(null)
+  const [locations, setLocations] = useState({})
   const editor = useEditor({
     extensions: buildEditorExtensions({ placeholder: '' }),
     content: CONTENT,
@@ -62,9 +65,22 @@ function Harness() {
   // open thread, and the range the composer is quoting.
   useEffect(() => {
     if (!editor) return
-    editor.commands.setCommentMarks(THREADS, active)
+    editor.commands.setCommentMarks(rows, active)
     editor.commands.setCommentDraft(draft)
-  }, [editor, active, draft])
+  }, [editor, active, draft, rows])
+
+  useEffect(() => {
+    if (!editor) return
+    const publish = () => setLocations(commentLocations(editor.state))
+    const reveal = (event) => {
+      const range = commentLocation(editor.state, event.detail.id)
+      if (range?.status === 'attached') editor.chain().focus().setTextSelection(range).run()
+    }
+    publish()
+    editor.on('transaction', publish)
+    window.addEventListener('mdoc-focus-anchor', reveal)
+    return () => { editor.off('transaction', publish); window.removeEventListener('mdoc-focus-anchor', reveal) }
+  }, [editor])
 
   useEffect(() => {
     const focus = (event) => setActive(event.detail.id)
@@ -95,10 +111,14 @@ function Harness() {
       token=""
       open={true}
       tab="comments"
-      comments={THREADS}
+      comments={rows}
       versions={[]}
       commentText=""
       commentAnchor={null}
+      commentLocations={locations}
+      currentUserId="u1"
+      onEditComment={async (comment, body) => setRows((items) => items.map((item) => item.id === comment.id ? { ...item, body } : item))}
+      onDeleteComment={async (comment) => setRows((items) => items.map((item) => item.id === comment.id ? { ...item, body: '', deletedAt: new Date().toISOString() } : item))}
       activeCommentId={active}
       onActiveComment={setActive}
       onTab={() => {}}
@@ -385,7 +405,10 @@ boxes = await markerBoxes()
 log('after typing: ' + boxes.map((box) => box.text).join(' | '))
 if (boxes.length !== 2) failures.push('typing before the markers changed how many exist: ' + boxes.length)
 if (boxes.find((box) => box.id === 't-open')?.text !== '文档连接') failures.push('the open marker drifted off its words after an edit')
-if (boxes.find((box) => box.id === 't-open')?.text !== '文档连接') failures.push('the open marker drifted off its words after an edit')
+await evaluate("document.querySelector('.comment-anchor').click()")
+await sleep(100)
+const selectedQuote = await evaluate("window.__editor.state.doc.textBetween(window.__editor.state.selection.from, window.__editor.state.selection.to)")
+if (selectedQuote !== '文档连接') failures.push('quote button navigated to stale coordinates: ' + selectedQuote)
 
 /* ---- 8. deleting the marked text removes the marker ---- */
 // The descendant offset is where the text node starts, so the quoted words are
@@ -403,6 +426,52 @@ await evaluate(`(() => {
 await sleep(300)
 boxes = await markerBoxes()
 if (boxes.some((box) => box.id === 't-open')) failures.push('the marker survived deletion of the text it quoted')
+const deletedCard = await evaluate(`(() => {
+  const card = document.querySelector('.comment')
+  return { count: document.querySelectorAll('.comment').length, state: card.querySelector('.comment-anchor-state')?.textContent, disabled: card.querySelector('.comment-anchor').disabled, body: card.textContent }
+})()`)
+if (deletedCard.count !== 2 || !deletedCard.body.includes('这里可以补充一下本周的目标。')) failures.push('deleting the quote destroyed its discussion')
+if (!deletedCard.disabled || !deletedCard.state.includes('原文已删除')) failures.push('deleted quote did not disable navigation with a clear label')
+const deletedShot = await send('Page.captureScreenshot', { format: 'png' }, sessionId)
+await (await import('node:fs/promises')).writeFile(join(shotDir, 'verify-comment-deleted.png'), Buffer.from(deletedShot.data, 'base64'))
+await evaluate('window.__editor.commands.undo()')
+await sleep(200)
+const restored = await evaluate("({ quote: document.querySelector('.comment-anchor').disabled, marked: !!document.querySelector('[data-comment-id=\"t-open\"]') })")
+if (restored.quote || !restored.marked) failures.push('Undo did not restore the quote and its navigation')
+
+/* ---- 9. author filters, author edits, confirmed deletion and placeholders ---- */
+await evaluate(`(() => {
+  const select = document.querySelector('[aria-label="按作者筛选评论"]')
+  select.value = 'u2'
+  select.dispatchEvent(new Event('change', { bubbles: true }))
+})()`)
+await sleep(100)
+if (await evaluate("document.querySelectorAll('.comment').length") !== 1) failures.push('author filter did not narrow discussions')
+if (await evaluate("Array.from(document.querySelectorAll('.comment button')).some((button) => button.textContent === '编辑')")) failures.push('another author comment exposed edit controls')
+await evaluate(`(() => {
+  const select = document.querySelector('[aria-label="按作者筛选评论"]')
+  select.value = 'all'
+  select.dispatchEvent(new Event('change', { bubbles: true }))
+})()`)
+await sleep(100)
+await evaluate("Array.from(document.querySelectorAll('.comment button')).find((button) => button.textContent === '编辑').click()")
+await sleep(100)
+await evaluate(`(() => {
+  const input = document.querySelector('[aria-label="编辑评论内容"]')
+  Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(input, '作者修改后的讨论内容')
+  input.dispatchEvent(new Event('input', { bubbles: true }))
+})()`)
+await sleep(100)
+await evaluate("Array.from(document.querySelectorAll('.comment button')).find((button) => button.textContent === '保存修改').click()")
+await sleep(150)
+if (!await evaluate("document.querySelector('.comment').textContent.includes('作者修改后的讨论内容')")) failures.push('author edit was not displayed')
+await evaluate("Array.from(document.querySelectorAll('.comment button')).find((button) => button.textContent === '删除').click()")
+await sleep(100)
+if (!await evaluate("!!document.querySelector('[role=dialog]')")) failures.push('comment deletion did not ask for confirmation')
+await evaluate("Array.from(document.querySelectorAll('.modal-actions button')).find((button) => button.textContent === '删除评论').click()")
+await sleep(150)
+const deletion = await evaluate("({ placeholder: !!document.querySelector('.comment-deleted'), bodyRemoved: !document.querySelector('.comment').textContent.includes('作者修改后的讨论内容'), editable: Array.from(document.querySelectorAll('.comment button')).some((button) => button.textContent === '编辑') })")
+if (!deletion.placeholder || !deletion.bodyRemoved || deletion.editable) failures.push('deleted comment was not replaced by a non-editable placeholder')
 
 ws.close()
 chrome.kill()

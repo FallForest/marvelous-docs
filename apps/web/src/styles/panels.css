@@ -152,6 +152,17 @@
 .comment.stagger,.version-item.stagger,.activity-item.stagger{animation-fill-mode:backwards}
 
 .comment-resolved{opacity:.65}
+.comment-filter{display:flex;align-items:center;gap:8px;padding:0 15px 12px;font-size:12px;color:var(--text-muted)}
+.comment-filter select{min-width:0;flex:1;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xs);padding:5px}
+.comment-anchor:disabled{cursor:default;opacity:.75}
+.comment-anchor-state{display:block;margin:6px 0 0 33px;color:var(--text-muted);font-size:11px}
+.comment-replies{margin:12px 0 0 33px;padding-left:10px;border-left:2px solid var(--border-subtle)}
+.comment-reply{padding:8px 0}
+.comment-reply p{margin-left:0}
+.comment-edit{margin:9px 0 0 33px}
+.comment-edit textarea{width:100%;min-height:80px;resize:vertical;border:1px solid var(--border);border-radius:var(--radius-xs);background:var(--surface);color:var(--text);padding:8px}
+.comment-edit .comment-actions,.comment-reply .comment-actions,.comment-reply .comment-edit{margin-left:0}
+.comment-deleted{font-style:italic;color:var(--text-muted)}
 
 /*
  * The card whose text is lit up in the document.

@@ -1,4 +1,7 @@
 import { Extension } from '@tiptap/core'
+import type { CommandProps } from '@tiptap/core'
+import type { Command, EditorState, Transaction } from '@tiptap/pm/state'
+import { sinkListItem, liftListItem } from '@tiptap/pm/schema-list'
 
 /**
  * Paragraph and heading indentation, in steps of one.
@@ -35,13 +38,47 @@ export const Indent = Extension.create({
   addCommands() {
     return {
       /** One step in or out, clamped at 0 and 6. */
-      setIndent: (level: number) => ({ commands }: { commands: { updateAttributes: (type: string, attrs: Record<string, unknown>) => boolean } }) =>
-        this.options.types.every((type: string) => commands.updateAttributes(type, { indent: Math.max(0, Math.min(6, level)) })),
+      setIndent: (level: number) => ({ tr, dispatch }: CommandProps) => {
+        if (!Number.isFinite(level)) return false
+        return updateProseIndent(tr, () => Math.max(0, Math.min(6, Math.trunc(level))), dispatch)
+      },
     } as never
   },
 })
 
-import { sinkListItem, liftListItem } from '@tiptap/pm/schema-list'
+/** Update each selected prose block independently, preserving relative levels. */
+function updateProseIndent(tr: Transaction, level: (current: number) => number, dispatch?: unknown): boolean {
+  let changed = false
+  const { from, to } = tr.selection
+  tr.doc.nodesBetween(from, to, (node, pos) => {
+    if (node.type.name !== 'paragraph' && node.type.name !== 'heading') return
+    const current = Number(node.attrs.indent) || 0
+    const next = level(current)
+    if (next === current) return
+    changed = true
+    if (dispatch) tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent: next })
+  })
+  return changed
+}
+
+function listItemType(state: EditorState) {
+  const { $from } = state.selection
+  for (let depth = $from.depth; depth > 0; depth--) {
+    const type = $from.node(depth).type
+    if (type.name === 'listItem' || type.name === 'taskItem') return type
+  }
+  return null
+}
+
+/** The same command powers buttons and keyboard bindings, including can(). */
+export const changeBlockIndent = (direction: 1 | -1): Command => (state, dispatch) => {
+  const type = listItemType(state)
+  if (type) return (direction === 1 ? sinkListItem(type) : liftListItem(type))(state, dispatch)
+  const tr = state.tr
+  const changed = updateProseIndent(tr, (current) => Math.max(0, Math.min(6, current + direction)), dispatch)
+  if (changed && dispatch) dispatch(tr)
+  return changed
+}
 
 /**
  * Tab inside prose.
@@ -52,52 +89,36 @@ import { sinkListItem, liftListItem } from '@tiptap/pm/schema-list'
  *
  * Inside a list, Tab/Shift-Tab indent and outdent the item, which is what every
  * outliner does and the only place where tab-indent has an unambiguous meaning.
- * In a paragraph `sinkListItem` does nothing, so the key is consumed and nothing
- * moves: a no-op is a better answer than a focus jump, and it keeps the door open
- * for a real paragraph indent once `documents.content` can express one.
+ * Paragraphs and headings use the persisted indent attribute. Table Tab is left
+ * to the table extension, which moves between cells; code owns literal spaces.
  *
  * Priority 1000 puts this above StarterKit's list keymap but below the code block
  * (1100), which owns Tab for literal indentation.
  */
-/** The current block's indent step, or 0 when it is not an indented type. */
-function indentOf(editor: { state: { selection: { $from: { parent: { attrs: Record<string, unknown> } } } } }): number {
-  const value = editor.state.selection.$from.parent.attrs.indent
-  return typeof value === 'number' ? value : 0
-}
-
 export const TabInProse = Extension.create({
   name: 'tabInProse',
   priority: 1000,
 
   addKeyboardShortcuts() {
-    const listItem = () => this.editor.schema.nodes.listItem
-    const taskItem = () => this.editor.schema.nodes.taskItem
-
-    /** The list node the caret sits inside, if any. */
-    const listNode = () => {
+    const inTable = () => {
       const { $from } = this.editor.state.selection
       for (let depth = $from.depth; depth > 0; depth--) {
-        const node = $from.node(depth)
-        if (node.type === listItem()) return listItem()
-        if (node.type === taskItem()) return taskItem()
+        if ($from.node(depth).type.name === 'table') return true
       }
-      return null
+      return false
     }
 
     return {
       Tab: () => {
-        if (!this.editor.isEditable) return false
-        const type = listNode()
-        if (type) return sinkListItem(type)(this.editor.state, this.editor.view.dispatch)
-        // A paragraph or heading moves one step: the key used to be consumed with
-        // nothing to show for it, which read as "the editor stopped listening".
-        return this.editor.commands.setIndent(indentOf(this.editor) + 1)
+        if (!this.editor.isEditable || inTable()) return false
+        // Consume prose Tab at a limit too, keeping the caret in the document.
+        changeBlockIndent(1)(this.editor.state, this.editor.view.dispatch)
+        return true
       },
       'Shift-Tab': () => {
-        if (!this.editor.isEditable) return false
-        const type = listNode()
-        if (type) return liftListItem(type)(this.editor.state, this.editor.view.dispatch)
-        return this.editor.commands.setIndent(indentOf(this.editor) - 1)
+        if (!this.editor.isEditable || inTable()) return false
+        changeBlockIndent(-1)(this.editor.state, this.editor.view.dispatch)
+        return true
       },
     }
   },

@@ -24,7 +24,7 @@ const SIZES: Array<{ label: string; width: string }> = [
  * and table tools.
  */
 export default function ImageToolbar({ editor, image }: Props) {
-  if (!editor || !image) return null
+  if (!editor || !editor.isEditable || !image) return null
 
   const node = editor.state.doc.nodeAt(image.pos)
   if (!node || node.type.name !== 'image') return null

@@ -13,11 +13,13 @@ import { useDocumentExport } from './hooks/useDocumentExport'
 import { useTheme } from './hooks/useTheme'
 import { emptyContent } from './lib/types'
 import { DocumentSaveQueue } from './lib/document-saves'
+import { clearSavedDraft, readDraft, writeDraft } from './lib/local-drafts'
 import { syncDocumentUrl } from './lib/url'
+import type { LinkPrompt } from './lib/editor/link-editing'
 import type { CollabStatus, HomeView, RightTab } from './lib/app-types'
 import { FAVORITES_SCOPE } from './lib/app-types'
 import type {
-  Comment, Doc, DocJson, SaveStatus, SearchScope, TreeAction, Version,
+  Comment, CommentAnchorLocation, Doc, DocJson, SaveStatus, SearchScope, TreeAction, User, Version,
 } from './lib/types'
 import AdminWorkspace from './pages/AdminPage'
 import CommandPalette from './pages/CommandPalette'
@@ -31,6 +33,7 @@ import ShareDialog from './components/dialogs/ShareDialog'
 import InviteDialog from './components/dialogs/InviteDialog'
 import MoveDialog from './components/dialogs/MoveDialog'
 import TemplateLibrary from './components/dialogs/TemplateLibrary'
+import DraftRecovery from './components/dialogs/DraftRecovery'
 import DocumentEditor, { type DocumentEditorHandle } from './components/editor/DocumentEditor'
 import { templateLabel } from './components/layout/TemplateMenu'
 import DocumentPanel from './components/panels/DocumentPanel'
@@ -84,6 +87,9 @@ function App() {
   const [commentText, setCommentText] = useState('')
   const [commentAnchor, setCommentAnchor] = useState<Comment['anchor']>(null)
   const [commentParentId, setCommentParentId] = useState<string | null>(null)
+  const [commentLocations, setCommentLocations] = useState<Record<string, CommentAnchorLocation>>({})
+  const [commentSending, setCommentSending] = useState(false)
+  const commentRequest = useRef(false)
   /** The thread whose card and text marker are lit up, if any. */
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null)
   const [collaborators, setCollaborators] = useState<Array<{ clientId: number; name: string; color: string }>>([])
@@ -105,18 +111,22 @@ function App() {
   const editorHandle = useRef<DocumentEditorHandle | null>(null)
   const restoreTarget = useRef<string | null>(null)
   const saveQueue = useRef(new DocumentSaveQueue())
+  const userRef = useRef<User | null>(null)
   const [renameDoc, setRenameDoc] = useState<Doc | null>(null)
   const [deleteDoc, setDeleteDoc] = useState<Doc | null>(null)
   const [purgeDoc, setPurgeDoc] = useState<Doc | null>(null)
   /** Confirmation for emptying the whole bin; null when the dialog is closed. */
   const [emptyTrashOpen, setEmptyTrashOpen] = useState(false)
   const [emptyTrashBusy, setEmptyTrashBusy] = useState(false)
-  const [linkPrompt, setLinkPrompt] = useState<{ from: number; to: number } | null>(null)
+  const [linkPrompt, setLinkPrompt] = useState<LinkPrompt | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
   const [workspaceOpen, setWorkspaceOpen] = useState(false)
   const saveTimer = useRef<number | undefined>(undefined)
   const pendingSave = useRef<{ id: string; run: () => Promise<void> } | null>(null)
   const importInput = useRef<HTMLInputElement | null>(null)
+  const commentDraft = useMemo(() => showRight && rightTab === 'comments' && !commentParentId
+    && commentAnchor && typeof commentAnchor.from === 'number' && typeof commentAnchor.to === 'number'
+    ? { from: commentAnchor.from, to: commentAnchor.to } : null, [showRight, rightTab, commentParentId, commentAnchor])
 
 
   const closeOverlays = useCallback(() => {
@@ -136,12 +146,13 @@ function App() {
 
 
 
-  /** Draft key so an unsaved edit survives a reload, a crash or a conflict. */
-  const draftKey = (id: string) => 'mdocs-draft-' + id
-
+  /** Preserve a draft before an unsaved edit can be interrupted. */
   const persist = useCallback((json: Record<string, unknown>, immediate = false) => {
     if (!token || !activeRef.current || restoreTarget.current === activeRef.current.id) return
     const source = activeRef.current
+    const authorId = userRef.current?.id
+    // Keep a copy before the debounce or network request can be interrupted.
+    const backedUp = authorId ? writeDraft(localStorage, source.id, authorId, json) : false
     // A new document must not cancel the previous document's pending save or
     // cause that body/title to be written into the newly active document.
     if (pendingSave.current && pendingSave.current.id !== source.id) {
@@ -166,17 +177,16 @@ function App() {
         setDocuments((items) => items.map((item) => item.id === saved.id ? saved : item))
         if (activeRef.current?.id === source.id) setSaveStatus('saved')
         // The server accepted this edit, so the local safety copy is stale.
-        try { window.localStorage.removeItem(draftKey(doc.id)) } catch { /* private mode */ }
+        if (authorId) clearSavedDraft(localStorage, doc.id, authorId, json)
       } catch (error) {
         const failure = error as Error & { status?: number }
         if (activeRef.current?.id === source.id) setSaveStatus('error')
         // Keep the exact bytes either way: a reload must not be the price of a
         // failed save, and a conflict must not silently discard the local edit.
-        try { window.localStorage.setItem(draftKey(doc.id), JSON.stringify(json)) } catch { /* quota */ }
         if (failure.status === 409) {
           setConflictDoc(doc)
         } else {
-          setNotice('保存失败，已保留本地副本：' + failure.message)
+          setNotice('保存失败，' + (backedUp ? '已保留本地副本：' : '浏览器无法保留草稿，请保持页面打开：') + failure.message)
         }
       }
     }
@@ -198,23 +208,25 @@ function App() {
   const resolveConflict = useCallback(async (choice: 'mine' | 'theirs') => {
     const doc = conflictDoc
     if (!doc || !token) return
+    const authorId = userRef.current?.id
+    const draft = authorId ? readDraft(localStorage, doc.id, authorId)?.body : undefined
     setConflictDoc(null)
     try {
       const latest = await api.document(token, doc.id)
       if (choice === 'theirs') {
         setActive(latest.document)
+        setEditorEpoch((epoch) => epoch + 1)
         setDocuments((items) => items.map((item) => item.id === latest.document.id ? latest.document : item))
-        try { window.localStorage.removeItem(draftKey(doc.id)) } catch { /* ignore */ }
+        if (authorId && draft) clearSavedDraft(localStorage, doc.id, authorId, draft)
         setSaveStatus('saved')
         return
       }
-      let draft: Record<string, unknown> | null = null
-      try { const raw = window.localStorage.getItem(draftKey(doc.id)); draft = raw ? JSON.parse(raw) as Record<string, unknown> : null } catch { /* ignore */ }
-      if (!draft) { setNotice('本地草稿已丢失，已载入服务器版本'); setActive(latest.document); return }
+      if (!draft) { setNotice('本地草稿已丢失，已载入服务器版本'); setActive(latest.document); setEditorEpoch((epoch) => epoch + 1); return }
       const saved = await api.saveContent(token, doc.id, draft, latest.document.version)
       setActive(saved.document)
+      setEditorEpoch((epoch) => epoch + 1)
       setDocuments((items) => items.map((item) => item.id === saved.document.id ? saved.document : item))
-      try { window.localStorage.removeItem(draftKey(doc.id)) } catch { /* ignore */ }
+      if (authorId) clearSavedDraft(localStorage, doc.id, authorId, draft)
       setSaveStatus('saved')
       setNotice('已用你的版本覆盖服务器内容')
     } catch (error) {
@@ -247,6 +259,7 @@ function App() {
     adminMembers, adminMembersBusy,
     updateInfo, setUpdateInfo,
   } = workspaceData
+  userRef.current = user
 
   // Everything the share dialog shows is loaded on open, so the shell keeps
   // only the boolean that decides whether it renders.
@@ -349,7 +362,8 @@ function App() {
       const inEditor = Boolean(document.activeElement?.closest('.tiptap-content'))
       if (modifier && event.key.toLowerCase() === 'k') {
         event.preventDefault()
-        if (inEditor && selection.trim()) { window.dispatchEvent(new CustomEvent('mdoc-link-selection')); return }
+        const caretLink = window.getSelection()?.anchorNode?.parentElement?.closest('a[href]')
+        if (inEditor && (selection.trim() || caretLink)) { window.dispatchEvent(new CustomEvent('mdoc-link-selection')); return }
         setCommandOpen(true)
         setCommandIndex(0)
       }
@@ -362,7 +376,7 @@ function App() {
   }, [exportActive, closeOverlays])
 
   useEffect(() => {
-    if (saveStatus !== 'saving') return
+    if (saveStatus === 'saved') return
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = '' }
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
@@ -421,9 +435,7 @@ function App() {
       setRightTab('comments')
       setShowRight(true)
       setActiveCommentId(id)
-      if (comment.anchor && typeof comment.anchor.from === 'number' && typeof comment.anchor.to === 'number') {
-        window.dispatchEvent(new CustomEvent('mdoc-focus-anchor', { detail: comment.anchor }))
-      }
+      window.dispatchEvent(new CustomEvent('mdoc-focus-anchor', { detail: { id } }))
     }
     window.addEventListener('mdoc-focus-comment', focusThread)
     return () => window.removeEventListener('mdoc-focus-comment', focusThread)
@@ -450,11 +462,13 @@ function App() {
   // while the panel was closed show up without a page reload.
   useEffect(() => {
     if (!token || !active) return
+    let live = true
     if (rightTab === 'comments') {
       api.comments(token, active.id)
-        .then(({ comments: rows }) => setComments(rows || []))
+        .then(({ comments: rows }) => { if (live) setComments(rows || []) })
         .catch(() => undefined)
     }
+    return () => { live = false }
   }, [token, active?.id, rightTab])
 
   useEffect(() => {
@@ -463,6 +477,11 @@ function App() {
     // A thread id belongs to one document; carrying the tint across a switch
     // would highlight whatever range happens to share that id in the next file.
     setActiveCommentId(null)
+    setCommentAnchor(null)
+    setCommentParentId(null)
+    setCommentText('')
+    setCommentLocations({})
+    setComments([])
   }, [active?.id])
 
   async function login(email: string, password: string) {
@@ -634,27 +653,38 @@ function App() {
   }
 
   async function addComment() {
-    if (!commentText.trim() || !active) return
+    if (!commentText.trim() || !active || commentRequest.current) return
+    const documentId = active.id
+    const body = commentText.trim()
+    const anchor = commentAnchor && !commentParentId ? editorHandle.current?.commentDraftAnchor() : null
+    if (commentAnchor && !commentParentId && !anchor) { setNotice('引用的内容已删除，请移除引用后再发送。'); return }
+    commentRequest.current = true
+    setCommentSending(true)
     try {
-      const payload: Record<string, unknown> = { body: commentText.trim() }
-      if (commentAnchor) payload.anchor = commentAnchor
+      const payload: Record<string, unknown> = { body }
+      if (anchor) payload.anchor = anchor
       if (commentParentId) payload.parentId = commentParentId
-      await api.addComment(token, active.id, payload)
-      const result = await api.comments(token, active.id)
-      setComments(result.comments || [])
+      const result = await api.addComment(token, documentId, payload)
+      if (activeRef.current?.id !== documentId) return
+      setComments((rows) => [...rows, { ...result.comment, userName: user?.name || user?.email || '成员' }])
       setCommentText('')
       setCommentAnchor(null)
       setCommentParentId(null)
       setActiveCommentId(null)
     } catch (error) {
       setNotice('评论失败：' + (error as Error).message)
+    } finally {
+      commentRequest.current = false
+      setCommentSending(false)
     }
   }
 
   async function updateCommentStatus(comment: Comment, status: 'open' | 'resolved') {
     if (!active) return
+    const documentId = active.id
     try {
-      await api.setCommentStatus(token, active.id, comment.id, status)
+      await api.setCommentStatus(token, documentId, comment.id, status)
+      if (activeRef.current?.id !== documentId) return
       setComments((rows) => rows.map((row) => row.id === comment.id ? { ...row, status } : row))
       setNotice(status === 'resolved' ? '评论已解决' : '评论已重新打开')
     } catch (error) {
@@ -706,7 +736,7 @@ function App() {
         try {
           latest = await saveQueue.current.enqueue(source.id, async () => (await api.saveContent(token, source.id, snapshot.content.doc, latest.version)).document)
         } catch (error) {
-          try { localStorage.setItem(draftKey(source.id), JSON.stringify(snapshot.content.doc)) } catch { /* quota */ }
+          if (userRef.current) writeDraft(localStorage, source.id, userRef.current.id, snapshot.content.doc)
           throw error
         }
       }
@@ -723,7 +753,7 @@ function App() {
         setActiveCommentId(null)
       }
       setDocuments((rows) => rows.map((row) => row.id === restored.id ? restored : row))
-      try { localStorage.removeItem(draftKey(source.id)) } catch { /* private mode */ }
+      if (userRef.current) clearSavedDraft(localStorage, source.id, userRef.current.id, snapshot.content.doc)
       window.dispatchEvent(new CustomEvent('mdoc-updated', { detail: restored }))
       setNotice('已恢复此版本，恢复前的内容已保留在历史中')
       return true
@@ -884,6 +914,7 @@ function App() {
             onAwareness={setCollaborators}
             onCollabStatus={setCollabStatus}
             onSelection={(anchor) => { setCommentAnchor(anchor) }}
+            onCommentLocations={setCommentLocations}
             onExport={(format) => void exportActive(format)}
             onLink={(range) => setLinkPrompt(range)}
             comments={comments}
@@ -895,10 +926,7 @@ function App() {
              * actually visible: selecting a word to bold must not paint a quote
              * outline that belongs to a panel nobody has opened.
              */
-            commentDraft={showRight && rightTab === 'comments'
-              && commentAnchor && typeof commentAnchor.from === 'number' && typeof commentAnchor.to === 'number'
-              ? { from: commentAnchor.from, to: commentAnchor.to }
-              : null}
+            commentDraft={commentDraft}
           />
         </section>
         {active && <DocumentPanel
@@ -909,6 +937,21 @@ function App() {
           comments={comments}
           commentText={commentText}
           commentAnchor={commentAnchor}
+          commentLocations={commentLocations}
+          commentSending={commentSending}
+          currentUserId={user.id}
+          onEditComment={async (comment, body) => {
+            const documentId = active.id
+            const result = await api.editComment(token, documentId, comment.id, body)
+            if (activeRef.current?.id === documentId) setComments((rows) => rows.map((row) => row.id === comment.id ? { ...row, ...result.comment } : row))
+          }}
+          onDeleteComment={async (comment) => {
+            const documentId = active.id
+            const result = await api.removeComment(token, documentId, comment.id)
+            if (activeRef.current?.id === documentId) setComments((rows) => rows.map((row) => row.id === comment.id ? { ...row, ...result.comment } : row))
+          }}
+          replyTo={comments.find((comment) => comment.id === commentParentId) ?? null}
+          onCancelReply={() => { setCommentParentId(null); setCommentAnchor(null) }}
           activeCommentId={activeCommentId}
           onActiveComment={setActiveCommentId}
           onTab={setRightTab}
@@ -920,8 +963,7 @@ function App() {
             // Replying points at the parent's words, so the parent's range is
             // quoted and the marker lights up while the reply is written.
             setCommentParentId(comment.id)
-            setCommentText('@' + (comment.userName || '成员') + ' ')
-            if (comment.anchor) setCommentAnchor(comment.anchor)
+            setCommentAnchor(null)
             setActiveCommentId(comment.id)
           }}
           onCommentStatus={(comment, status) => void updateCommentStatus(comment, status)}
@@ -1027,9 +1069,12 @@ function App() {
       permissions={sharing.permissions}
       restricted={sharing.restricted}
       busy={sharing.busy}
+      loadError={sharing.loadError}
       shareLinks={sharing.shareLinks}
       shareLinkCopied={sharing.linkCopied}
-      onCreateShareLink={(permission) => void sharing.createLink(active, permission)}
+      onCreateShareLink={(permission, expiresInDays) => void sharing.createLink(active, permission, expiresInDays)}
+      onCopyShareLink={(link) => void sharing.copyLink(link)}
+      onRetry={() => void sharing.load(active)}
       onRevokeShareLink={(linkId: string) => void sharing.revokeLink(active, linkId)}
       onRestrictedChange={(value) => void sharing.setRestriction(active, value)}
       onPermissionChange={(member, role) => void sharing.setPermission(active, member, role)}
@@ -1052,6 +1097,13 @@ function App() {
     {moveDoc && <MoveDialog doc={moveDoc} documents={documents} busy={busy} onMove={(parentId) => void moveDocument(moveDoc, parentId)} onClose={() => setMoveDoc(null)} />}
     {previewVersion && active && <VersionPreview token={token} documentId={active.id} version={previewVersion} currentContent={previewCurrent.content} currentTitle={previewCurrent.title} onRestore={restoreVersion} onClose={() => setPreviewVersion(null)} />}
     <input ref={importInput} className="visually-hidden" type="file" accept=".md,.markdown,.txt" aria-label="导入 Markdown 文件" onChange={(event) => void handleImport(event)} />
+    {active?.content && user && <DraftRecovery key={active.id} doc={active} token={token} userId={user.id} notify={setNotice} onRecovered={(recovered) => {
+      setDocuments((items) => [recovered, ...items])
+      setActive(recovered)
+      setHomeView('home')
+      setSelectedFolderId(null)
+      void refreshStats()
+    }} />}
     <ShellDialogs
       renameDoc={renameDoc}
       deleteDoc={deleteDoc}
@@ -1096,8 +1148,8 @@ function App() {
       }}
       onCancelEmptyTrash={() => setEmptyTrashOpen(false)}
       onCloseHelp={() => setHelpOpen(false)}
-      onInsertLink={(range, href) => window.dispatchEvent(new CustomEvent('mdoc-insert-link', { detail: { from: range.from, to: range.to, href } }))}
-      onCancelLink={() => setLinkPrompt(null)}
+      onInsertLink={(range, nextHref) => window.dispatchEvent(new CustomEvent('mdoc-insert-link', { detail: { ...range, nextHref } }))}
+      onCancelLink={() => { window.dispatchEvent(new CustomEvent('mdoc-cancel-link', { detail: linkPrompt })); setLinkPrompt(null) }}
     />
   </div>
 }

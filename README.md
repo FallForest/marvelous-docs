@@ -20,6 +20,9 @@ Self-hosted collaborative cloud documents for small teams. One pnpm monorepo hol
 
 ## Architecture
 
+Component acceptance criteria and current product gaps are tracked in
+[docs/PRODUCT-CONTRACTS.md](docs/PRODUCT-CONTRACTS.md).
+
 ```
                         Internet
                            |

@@ -8,12 +8,12 @@
  */
 
 /* ── 1. share ───────────────────────────────────────────────────── */
-.share-modal{width:min(100%,500px);max-height:min(720px,calc(100vh - 36px));background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-modal);padding:22px;display:flex;flex-direction:column}
+.share-modal{width:min(100%,500px);max-height:min(720px,calc(100vh - 36px));overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-modal);padding:22px;display:flex;flex-direction:column}
 
 .share-modal>header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px}
-.share-modal>header>div{position:relative;padding-left:43px}
+.share-modal>header>div{position:relative;padding-left:43px;min-width:0;flex:1}
 .share-modal h2{font-size:15px;margin:1px 0 4px}
-.share-modal header p{font-size:11px;color:var(--text-muted);margin:0;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.share-modal header p{font-size:11px;color:var(--text-muted);margin:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .share-restriction{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-muted);cursor:pointer;transition:var(--transition-colors)}
 .share-restriction:hover{border-color:var(--border-strong)}

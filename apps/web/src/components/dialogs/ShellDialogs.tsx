@@ -1,4 +1,6 @@
 import { Dialog, PromptDialog } from '../ui/Dialog'
+import LinkDialog from './LinkDialog'
+import type { LinkPrompt } from '../../lib/editor/link-editing'
 import type { Doc } from '../../lib/types'
 
 type ShellDialogsProps = {
@@ -9,7 +11,7 @@ type ShellDialogsProps = {
   emptyTrashCount: number
   emptyTrashBusy: boolean
   helpOpen: boolean
-  linkPrompt: { from: number; to: number } | null
+  linkPrompt: LinkPrompt | null
   onRename: (doc: Doc, title: string) => void
   onCancelRename: () => void
   onConfirmDelete: (doc: Doc) => void
@@ -19,7 +21,7 @@ type ShellDialogsProps = {
   onConfirmEmptyTrash: () => void
   onCancelEmptyTrash: () => void
   onCloseHelp: () => void
-  onInsertLink: (range: { from: number; to: number }, href: string) => void
+  onInsertLink: (range: LinkPrompt, href: string | null) => void
   onCancelLink: () => void
 }
 
@@ -104,22 +106,13 @@ export default function ShellDialogs(props: ShellDialogsProps) {
         </div>)}
       </dl>
       <p className="help-note">代码块中也可在末尾连续按三次 Enter 继续正文；移动、创建副本和删除位于代码块右上角的“⋯”菜单，也可从左侧拖动柄操作。</p>
-      <p className="help-note">协作连接断开时，编辑会保留在本地，恢复后自动同步。遇到界面异常可刷新页面，历史版本里能找回未同步内容。</p>
+      <p className="help-note">协作连接断开时请保持页面打开，连接恢复后会继续同步。浏览器可用时会保留本地草稿，重新打开文档可恢复为新文档或下载备份；历史版本仅包含已同步到服务器的内容。</p>
     </Dialog>}
 
-    {linkPrompt && <PromptDialog
-      title="添加链接"
-      description="输入链接地址，选中文本会变成可点击链接。"
-      label="链接地址"
-      initialValue="https://"
-      confirmLabel="添加链接"
-      validate={(value) => {
-        try {
-          const url = new URL(value)
-          return url.protocol === 'http:' || url.protocol === 'https:' ? null : '只支持 http 或 https 链接'
-        } catch { return '请输入完整的网址' }
-      }}
-      onSubmit={async (value) => { const range = linkPrompt; props.onCancelLink(); props.onInsertLink(range, value) }}
+    {linkPrompt && <LinkDialog
+      key={linkPrompt.requestId}
+      prompt={linkPrompt}
+      onSave={(href) => { props.onInsertLink(linkPrompt, href); props.onCancelLink() }}
       onClose={props.onCancelLink}
     />}
   </>

@@ -90,7 +90,7 @@ jobs:
       # Launches normally need no --no-sandbox as the non-root runner user, but a
       # runner that blocks unprivileged user namespaces dies with "Failed to move
       # to new namespace". A shim keeps the verifiers runnable without teaching
-      # six scripts a CI-only flag.
+      # verifier scripts a CI-only flag.
       - name: Locate Chrome
         run: |
           chrome="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"

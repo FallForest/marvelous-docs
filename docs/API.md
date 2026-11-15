@@ -303,17 +303,40 @@ Owners only. GET → `{ "restricted": true, "permissions": [{ "userId", "email",
 
 ## Comments
 
-- `GET /documents/:id/comments` → `{ "comments": [Comment] }`.
-- `POST /documents/:id/comments` with `{ "body", "anchor"?: unknown, "parentId"?: uuid }` → `201 { "comment": Comment }`.
-- `PATCH /documents/:id/comments/:commentId` with `{ "body"?: string, "status"?: "open"|"resolved" }` → `{ "comment": Comment }`. Authors and workspace admins can update.
+- `GET /documents/:id/comments` → `{ "comments": [Comment] }`, oldest first; a deleted comment keeps its row with an empty `body` and a `deletedAt`.
+- `POST /documents/:id/comments` with `{ "body", "anchor"?: Anchor | null, "parentId"?: uuid }` → `201 { "comment": Comment }`.
+- `PATCH /documents/:id/comments/:commentId` with `{ "body"?: string, "status"?: "open"|"resolved" }` → `{ "comment": Comment }`. An author may edit their own body; only a root comment can be resolved, and any document editor may do that. A workspace administrator may not rewrite another author's words, and an edit against a deleted comment returns `404 COMMENT_NOT_FOUND`.
+- `DELETE /documents/:id/comments/:commentId` → `{ "comment": Comment }`. Author only. The row is kept with `body: ""` and `deletedAt` set, so replies keep their thread, authors and order.
+
+A reply's `parentId` names its **root** thread: a reply to a reply is attached to the discussion start, carries no anchor (the quote belongs to the thread), and is refused with `409 COMMENT_RESOLVED` when that discussion is resolved.
 
 ```ts
 type Comment = {
-  id: string; parentId: string | null; body: string; anchor: unknown
-  status: 'open' | 'resolved'; resolvedAt: string | null; resolvedBy: string | null
+  id: string; parentId: string | null; body: string; anchor: CommentAnchor | null
+  status: 'open' | 'resolved'; deletedAt: string | null
+  resolvedAt: string | null; resolvedBy: string | null
   createdAt: string; updatedAt: string; userId: string; userName: string
 }
+
+/** `relative` is a Yjs relative position pair, present once the editor is synced. */
+type CommentAnchor = {
+  from: number; to: number; text?: string; blockId?: string
+  relative?: { from: RelativePosition; to: RelativePosition }
+}
 ```
+
+An anchor is a snapshot of the quoted range. A range that no longer exists is
+reported as unavailable by the client rather than resolved to whatever text now
+occupies those offsets; a legacy absolute anchor is accepted only when the text
+at those offsets still matches.
+
+## Share links
+
+`POST /documents/:id/share-link` (owner) with `{ "permission": "viewer"|"commenter", "expiresInDays"?: integer 1–365 }` → `201 { "shareLink": { "id", "token", "permission", "expiresAt" } }`. `expiresInDays` omitted or `null` means no expiry; a value outside 1–365 is rejected with `INVALID_INPUT`, not clamped.
+
+- `GET /documents/:id/share-link` (owner) → `{ "shareLinks": [{ "id", "permission", "expiresAt", "createdAt" }] }`. **No token**: links are stored as a SHA-256 digest, so the plaintext exists only in the creation response. To recover a lost copy, revoke and mint a new link.
+- `DELETE /documents/:id/share-link/:linkId` (owner) → `{ "ok": true }`.
+- `GET /shared/:token` — public, no session, `Cache-Control: no-store`, throttled to 120/min → `{ "document": { "id", "title", "titleMode", "content", "createdAt", "updatedAt", "permission" } }`; `404 SHARE_NOT_FOUND` when the token is unknown, expired, or the document is in the trash. `permission` is metadata for a client that might gate a future capability — the endpoint is read-only and there is no anonymous comment route.
 
 ## Versions
 

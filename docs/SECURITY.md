@@ -82,6 +82,16 @@ whole credential, and `/shared/:token` reads the document without a session.
   Reading the table therefore yields nothing that can be replayed, which matches
   how `invites` already stores its tokens.
 - Expiry is optional and bounded to 365 days.
+- The sharing dialog creates read-only links, defaults to seven days, and lets
+  the owner choose one day through one year or no expiry. `commenter` is retained
+  in the API for compatibility, but is reserved metadata: the anonymous page has
+  no comment-writing route and all existing links render as read-only.
+- Link lists return metadata only, never the stored hash. Newly created plaintext
+  links remain available in the dialog for copying manually when clipboard access
+  fails. Once the browser loses that plaintext, revoke and recreate the link;
+  a token cannot be recovered from its digest.
+- Public reads use `Cache-Control: no-store`, and the browser cancels an old
+  token's request when switching links so its document cannot replace the new one.
 - Reading is throttled (120/min) because one link is otherwise an unlimited
   scrape.
 - A share link is not a bypass around deletion: a trashed document stops
@@ -91,6 +101,7 @@ whole credential, and `/shared/:token` reads the document without a session.
   /documents/:id/share-link/:linkId`) when that matters.
 
 ## Uploads
+
 
 - `PUT /api/v1/uploads` accepts a raw body with an allow-listed `Content-Type`:
   `image/png`, `image/jpeg`, `image/gif`, `image/webp`, `application/pdf`,

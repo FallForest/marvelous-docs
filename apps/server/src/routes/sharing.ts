@@ -139,7 +139,7 @@ export function registerSharingRoutes(app: FastifyInstance, deps: RouteDeps) {
     if (!await requireDoc(auth, reply, params.id, 'owner')) return
 
     const result = await pool.query(
-      'SELECT id,token,permission,expires_at AS "expiresAt",created_at AS "createdAt" FROM document_share_links WHERE document_id=$1 ORDER BY created_at DESC',
+      'SELECT id,permission,expires_at AS "expiresAt",created_at AS "createdAt" FROM document_share_links WHERE document_id=$1 ORDER BY created_at DESC',
       [params.id])
     return { shareLinks: result.rows }
   })
@@ -167,6 +167,7 @@ export function registerSharingRoutes(app: FastifyInstance, deps: RouteDeps) {
    * person who was sent the link.
    */
   app.get('/api/v1/shared/:token', { preHandler: [deps.rateLimit(120, 60 * 1000)] }, async (request, reply) => {
+    reply.header('Cache-Control', 'no-store')
     const params = parse(z.object({ token: z.string().min(10).max(200) }), request.params)
     if (!params) return fail(reply, 400, 'INVALID_TOKEN', 'Invalid share token.')
 

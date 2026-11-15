@@ -2,9 +2,12 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { getSchema } from '@tiptap/core'
 import { EditorState } from '@tiptap/pm/state'
+import { history, undo } from '@tiptap/pm/history'
+import { Doc as YDoc, UndoManager, applyUpdate, encodeStateAsUpdate } from 'yjs'
+import { initProseMirrorDoc, prosemirrorToYDoc, ySyncPlugin, ySyncPluginKey } from 'y-prosemirror'
 import { buildEditorExtensions } from '../src/lib/editor/index.ts'
 import {
-  anchorStillMatches, commentAnchorMarks, commentMarksKey, commentMarksPlugin,
+  anchorStillMatches, captureCommentAnchor, commentAnchorMarks, commentLocation, commentMarksKey, commentMarksPlugin,
 } from '../src/lib/editor/comment-marks.ts'
 import type { Comment } from '../src/lib/types.ts'
 
@@ -126,9 +129,11 @@ test('a thread without an anchor leaves no marker', () => {
   assert.equal(markers(placed).length, 0)
 })
 
-test('anchorStillMatches compares folded prefixes', () => {
+test('legacy anchors require the complete quote unless it was capped at 500 characters', () => {
   const doc = { content: { size: 20 }, textBetween: () => '用文档连接想法、讨论与行动。' }
-  assert.ok(anchorStillMatches(thread('a', 1, 12, '用文档连接\n想法'), doc, 1, 12))
+  assert.ok(!anchorStillMatches(thread('a', 1, 12, '用文档连接\n想法'), doc, 1, 12))
+  assert.ok(anchorStillMatches(thread('a', 1, 12, '用文档连接想法、讨论与行动。'), doc, 1, 12))
+  assert.ok(anchorStillMatches(thread('long', 1, 501, 'A'.repeat(500)), { content: { size: 600 }, textBetween: () => 'A'.repeat(550) }, 1, 551))
   assert.ok(!anchorStillMatches(thread('b', 1, 12, '完全不同的句子'), doc, 1, 12))
   assert.ok(anchorStillMatches({ id: 'c', body: '', userId: 'u', userName: 'n', anchor: { from: 1, to: 2 } }, doc, 1, 2))
 })
@@ -143,6 +148,7 @@ test('a marker follows its text when content is inserted before it', () => {
   const [marker] = markers(state)
   assert.deepEqual([marker!.from, marker!.to], [5, 8])
   assert.equal(state.doc.textBetween(marker!.from, marker!.to), 'CDE')
+  assert.deepEqual(commentLocation(state, 'c1'), { status: 'attached', from: 5, to: 8 }, 'navigation uses mapped coordinates')
 })
 
 test('a marker shrinks with a deletion inside it and never leaves the document', () => {
@@ -156,12 +162,93 @@ test('deleting the marked text removes the marker and it does not come back', ()
   let state = stateFor('ABCDEFGHIJ', [thread('c1', 3, 6, 'CDE')])
   state = state.apply(state.tr.delete(3, 6))
   assert.equal(markers(state).length, 0, 'nothing left to underline')
+  assert.equal(commentLocation(state, 'c1')?.status, 'deleted')
 
   // The panel still lists the thread; pushing it again must not re-mark the
   // words that moved into the old range.
   state = push(state, [thread('c1', 3, 6, 'CDE')])
   assert.equal(markers(state).length, 0)
   assert.equal(state.doc.textBetween(3, 6), 'FGH')
+})
+
+test('replacing a whole quote never attaches the discussion to its replacement', () => {
+  let state = stateFor('ABCDEFGHIJ', [thread('c1', 3, 6, 'CDE')])
+  state = state.apply(state.tr.insertText('Other text', 3, 6))
+  assert.equal(markers(state).length, 0)
+  assert.equal(commentLocation(state, 'c1')?.status, 'deleted')
+})
+
+test('undo restores a deleted quote and its navigation target', () => {
+  let state = stateFor('ABCDEFGHIJ', [thread('c1', 3, 6, 'CDE')])
+  state = state.reconfigure({ plugins: [history(), commentMarksPlugin()] })
+  state = push(state, [thread('c1', 3, 6, 'CDE')])
+  state = state.apply(state.tr.delete(3, 6))
+  assert.equal(markers(state).length, 0)
+  assert.ok(undo(state, (tr) => { state = state.apply(tr) }))
+  assert.equal(markers(state).length, 1)
+  assert.deepEqual(commentLocation(state, 'c1'), { from: 3, to: 6, status: 'attached' })
+})
+
+test('replies share their root discussion and create no duplicate text markers', () => {
+  const root = thread('c1', 3, 6, 'CDE')
+  const state = stateFor('ABCDEFGHIJ', [root, { ...root, id: 'reply', parentId: root.id }])
+  assert.deepEqual(markers(state).flatMap((mark) => mark.ids), ['c1'])
+})
+
+test('Yjs relative anchors survive reload, edits, deletion and undo without snapshot offsets', () => {
+  const seed = stateFor().doc
+  const source = prosemirrorToYDoc(seed)
+  function bound(document: YDoc) {
+    const fragment = document.getXmlFragment('prosemirror')
+    const { doc, mapping } = initProseMirrorDoc(fragment, schema)
+    return EditorState.create({ schema, doc, plugins: [ySyncPlugin(fragment, { mapping }), commentMarksPlugin()] })
+  }
+  const initial = bound(source)
+  const anchor = captureCommentAnchor(initial, { from: 3, to: 6 })
+  assert.ok(anchor.relative)
+  const comment = { ...thread('y1', 3, 6, 'CDE'), anchor }
+  const text = source.getXmlFragment('prosemirror').get(0) as import('yjs').XmlElement
+  const ytext = text.get(0) as import('yjs').XmlText
+  ytext.insert(0, 'prefix ')
+  let loaded = push(bound(source), [comment])
+  assert.deepEqual(commentLocation(loaded, 'y1'), { from: 10, to: 13, status: 'attached' })
+  const copy = new YDoc()
+  applyUpdate(copy, encodeStateAsUpdate(source))
+  assert.deepEqual(commentLocation(push(bound(copy), [comment]), 'y1'), { from: 10, to: 13, status: 'attached' })
+  const undoManager = new UndoManager(source.getXmlFragment('prosemirror'))
+  ytext.delete(9, 3)
+  loaded = push(bound(source), [comment])
+  assert.equal(commentLocation(loaded, 'y1')?.status, 'deleted')
+  assert.equal(markers(loaded).length, 0)
+  undoManager.undo()
+  assert.deepEqual(commentLocation(push(bound(source), [comment]), 'y1'), { from: 10, to: 13, status: 'attached' })
+  undoManager.destroy()
+  source.destroy()
+  copy.destroy()
+})
+
+test('legacy markers survive the whole-document replace emitted for remote edits', () => {
+  let state = stateFor('ABCDEFGHIJ', [thread('c1', 3, 6, 'CDE')])
+  const next = stateFor('XXABCDEFGHIJ').doc
+  state = state.apply(state.tr.replaceWith(0, state.doc.content.size, next.content).setMeta(ySyncPluginKey, { isChangeOrigin: true }))
+  assert.deepEqual(commentLocation(state, 'c1'), { from: 5, to: 8, status: 'attached' })
+  assert.equal(state.doc.textBetween(5, 8), 'CDE')
+})
+
+test('live Yjs remote transactions resolve item identities instead of deleting every marker', () => {
+  const source = prosemirrorToYDoc(stateFor().doc)
+  const fragment = source.getXmlFragment('prosemirror')
+  const initial = initProseMirrorDoc(fragment, schema)
+  let state = EditorState.create({ schema, doc: initial.doc, plugins: [ySyncPlugin(fragment, { mapping: initial.mapping }), commentMarksPlugin()] })
+  const comment = { ...thread('remote', 3, 6, 'CDE'), anchor: captureCommentAnchor(state, { from: 3, to: 6 }) }
+  state = push(state, [comment])
+  const element = fragment.get(0) as import('yjs').XmlElement
+  ;(element.get(0) as import('yjs').XmlText).insert(0, 'XX')
+  const next = initProseMirrorDoc(fragment, schema)
+  ySyncPluginKey.getState(state).binding.mapping = next.mapping
+  state = state.apply(state.tr.replaceWith(0, state.doc.content.size, next.doc.content).setMeta(ySyncPluginKey, { isChangeOrigin: true }))
+  assert.deepEqual(commentLocation(state, 'remote'), { from: 5, to: 8, status: 'attached' })
+  source.destroy()
 })
 
 test('a thread removed from the list loses its marker', () => {

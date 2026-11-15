@@ -36,13 +36,17 @@
 }
 .share-link-section b{font-size:13px;font-weight:600;color:var(--text);display:block;margin-bottom:4px}
 .share-link-hint{font-size:12px;color:var(--text-muted);margin:0 0 10px}
-.share-link-actions{display:flex;gap:8px}
-.share-link-list{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.share-link-actions{display:flex;gap:8px;flex-wrap:wrap}
+.share-link-list{margin-top:12px;display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:auto}
 .share-link-item{
-  display:flex;align-items:center;justify-content:space-between;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface-muted);
 }
-.share-link-info{display:flex;align-items:center;gap:10px}
+.share-link-info{display:flex;flex:1;min-width:0;align-items:flex-start;flex-direction:column;gap:6px}
+.share-link-copy{display:flex;flex-direction:column;gap:4px;width:100%;font-size:11px;color:var(--text-muted)}
+.share-link-copy input{width:100%;min-width:0;padding:7px;border:1px solid var(--border-strong);border-radius:var(--radius-xs);background:var(--surface);color:var(--text);font-size:12px}
+.share-link-buttons{display:flex;flex-wrap:wrap;gap:6px;flex-shrink:0}
+.share-load-error{padding:12px;background:var(--danger-soft);border-radius:var(--radius-sm);font-size:12px;color:var(--danger)}
 .share-link-info b{margin:0;font-size:12px;color:var(--text-secondary)}
 .share-link-info small{font-size:11px;color:var(--text-muted)}
 .danger-btn{
@@ -64,7 +68,7 @@
   width:36px;height:36px;border-radius:8px;display:grid;place-items:center;
   background:var(--accent);color:var(--text-on-accent);font-size:16px;font-weight:700;
 }
-.shared-page .shared-header h1{font-size:18px;font-weight:600;margin:0}
+.shared-page .shared-header h1,.shared-page .shared-header .shared-brand{font-size:18px;font-weight:600;margin:0}
 .shared-page .shared-header .shared-badge{
   margin-left:auto;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:500;
   background:var(--accent-soft);color:var(--accent-strong);
@@ -76,6 +80,7 @@
 .shared-page .shared-content h1,
 .shared-page .shared-content h2,
 .shared-page .shared-content h3{margin-top:1.2em}
+.shared-page .shared-content .shared-document-title{margin:0 0 24px;overflow-wrap:anywhere}
 .shared-page .shared-content img{max-width:100%;border-radius:8px}
 /* The public page has no language badge or copy button, so its code block keeps
    the flat 16px frame instead of inheriting the editor's 40px overlay strip. */

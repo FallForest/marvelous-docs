@@ -288,7 +288,7 @@ const dialog = await evaluate(`(() => {
   if (!panel) return null
   const buttons = Array.from(panel.querySelectorAll('.modal-actions button')).map((button) => button.textContent.trim())
   const rect = panel.getBoundingClientRect()
-  return { title: panel.querySelector('h2')?.textContent, description: panel.querySelector('#dialog-description')?.textContent, buttons, width: rect.width, height: rect.height }
+  return { title: panel.querySelector('h2')?.textContent, description: document.getElementById(panel.getAttribute('aria-describedby'))?.textContent, buttons, width: rect.width, height: rect.height }
 })()`)
 if (!dialog) failures.push('the empty-trash confirmation did not open')
 else {

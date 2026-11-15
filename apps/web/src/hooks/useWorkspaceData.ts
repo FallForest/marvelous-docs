@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../lib/endpoints'
-import { emptyContent } from '../lib/types'
 import { FAVORITES_SCOPE } from '../lib/app-types'
 import { readDocumentId } from '../lib/url'
 import type { HomeView, UpdateInfo } from '../lib/app-types'
@@ -221,13 +220,13 @@ export function useWorkspaceData(options: WorkspaceDataOptions) {
     const timer = window.setTimeout(() => {
       api.search(token, trimmed, query.searchScope)
         .then(({ results }) => {
-          if (live) setSearchResults((results || []).map((hit) => ({ ...hit, content: emptyContent })))
+          if (live) setSearchResults(results || [])
         })
-        .catch(() => { if (live) setSearchResults([]) })
+        .catch((error) => { if (live) { setSearchResults([]); notify('搜索失败，请重试：' + (error as Error).message) } })
         .finally(() => { if (live) setSearchLoading(false) })
     }, 180)
     return () => { live = false; window.clearTimeout(timer) }
-  }, [token, query.commandOpen, query.homeView, query.query, query.searchScope])
+  }, [token, query.commandOpen, query.homeView, query.query, query.searchScope, notify])
 
   useEffect(() => {
     if (!token || user?.role !== 'admin') { setUpdateInfo(null); return }

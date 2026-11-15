@@ -132,6 +132,49 @@ test('ACL and public-link changes record concrete summaries without link credent
   assert.ok(!JSON.stringify((await request('GET', '/documents/' + id + '/history')).json()).includes('FORBIDDEN_TOKEN'))
 })
 
+test('public share capabilities expose no reusable tokens in lists and stop resolving after expiry, revocation or trash', async () => {
+  const id = await document('Public document title')
+  const path = '/documents/' + id + '/share-link'
+  for (const expiresInDays of [0, -1, 366, 1.5, '7']) {
+    const invalid = await request('POST', path, { expiresInDays })
+    assert.equal(invalid.statusCode, 400, invalid.body)
+  }
+  const created = await request('POST', path, { permission: 'viewer', expiresInDays: 7 })
+  assert.equal(created.statusCode, 201, created.body)
+  const link = created.json().shareLink
+  const remaining = new Date(link.expiresAt).getTime() - Date.now()
+  assert.ok(remaining > 6.99 * 86400000 && remaining <= 7 * 86400000)
+  assert.ok(typeof link.token === 'string' && link.token.length >= 24)
+  const list = await request('GET', path)
+  assert.equal(list.statusCode, 200, list.body)
+  assert.deepEqual(Object.keys(list.json().shareLinks[0]).sort(), ['createdAt', 'expiresAt', 'id', 'permission'])
+  const stored = (await pool.query('SELECT token FROM document_share_links WHERE id=$1', [link.id])).rows[0]!.token
+  assert.match(stored, /^[a-f0-9]{64}$/)
+  assert.notEqual(stored, link.token)
+  assert.ok(!list.body.includes(stored) && !list.body.includes(link.token))
+  const shared = await request('GET', '/shared/' + link.token)
+  assert.equal(shared.statusCode, 200, shared.body)
+  assert.equal(shared.headers['cache-control'], 'no-store')
+  assert.equal(shared.json().document.title, 'Public document title')
+  assert.equal((await request('GET', '/shared/' + stored)).statusCode, 404, 'a stored hash is not a capability')
+
+  // Member ACL changes intentionally do not revoke an independent public link.
+  assert.equal((await request('PUT', '/documents/' + id + '/acl', { userId: MEMBER, role: null, restricted: true })).statusCode, 200)
+  assert.equal((await request('GET', '/shared/' + link.token)).statusCode, 200)
+  await pool.query("UPDATE document_share_links SET expires_at=now()-interval '1 second' WHERE id=$1", [link.id])
+  const expired = await request('GET', '/shared/' + link.token)
+  assert.equal(expired.statusCode, 404)
+  assert.equal(expired.headers['cache-control'], 'no-store')
+
+  const permanent = (await request('POST', path, { expiresInDays: null })).json().shareLink
+  assert.equal(permanent.expiresAt, null)
+  assert.equal((await request('DELETE', path + '/' + permanent.id)).statusCode, 200)
+  assert.equal((await request('GET', '/shared/' + permanent.token)).statusCode, 404)
+  const trashed = (await request('POST', path, {})).json().shareLink
+  assert.equal((await request('DELETE', '/documents/' + id)).statusCode, 200)
+  assert.equal((await request('GET', '/shared/' + trashed.token)).statusCode, 404)
+})
+
 test('trash restoration and legacy history restoration are distinct events and legacy noise is retained but hidden', async () => {
   const id = await document()
   await pool.query("INSERT INTO document_activity(document_id,user_id,action) VALUES ($1,$2,'view'),($1,$2,'edit'),($1,$2,'restore')", [id, ADMIN])

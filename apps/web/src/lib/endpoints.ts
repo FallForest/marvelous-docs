@@ -73,6 +73,10 @@ export const api = {
     request<{ comment: Comment }>(doc(id) + '/comments', token, { method: 'POST', body: JSON.stringify(payload) }),
   setCommentStatus: (token: Token, id: string, commentId: string, status: 'open' | 'resolved') =>
     request<{ comment: Comment }>(doc(id) + '/comments/' + commentId, token, { method: 'PATCH', body: JSON.stringify({ status }) }),
+  editComment: (token: Token, id: string, commentId: string, body: string) =>
+    request<{ comment: Comment }>(doc(id) + '/comments/' + encodeURIComponent(commentId), token, { method: 'PATCH', body: JSON.stringify({ body }) }),
+  removeComment: (token: Token, id: string, commentId: string) =>
+    request<{ comment: Comment }>(doc(id) + '/comments/' + encodeURIComponent(commentId), token, { method: 'DELETE' }),
 
   /* ---- versions ---- */
   versions: (token: Token, id: string) => request<{ versions: Version[] }>(doc(id) + '/versions', token),
@@ -88,8 +92,8 @@ export const api = {
     request<{ ok: true }>(doc(id) + '/acl', token, { method: 'PUT', body: JSON.stringify(payload) }),
   shareLinks: (token: Token, id: string) =>
     request<{ shareLinks: ShareLink[] }>(doc(id) + '/share-link', token),
-  createShareLink: (token: Token, id: string, permission: ShareLinkPermission) =>
-    request<{ shareLink: ShareLink }>(doc(id) + '/share-link', token, { method: 'POST', body: JSON.stringify({ permission }) }),
+  createShareLink: (token: Token, id: string, permission: ShareLinkPermission, expiresInDays: number | null = null) =>
+    request<{ shareLink: ShareLink & { token: string } }>(doc(id) + '/share-link', token, { method: 'POST', body: JSON.stringify({ permission, expiresInDays }) }),
   revokeShareLink: (token: Token, id: string, linkId: string) =>
     request<{ ok: true }>(doc(id) + '/share-link/' + linkId, token, { method: 'DELETE' }),
 
@@ -101,4 +105,5 @@ export const api = {
     request<{ update: { status: 'running' | 'completed' | 'failed'; error?: string } }>('/system/update-status', token),
 }
 
-export type ShareLink = { id: string; token: string; permission: string; expiresAt: string | null }
+/** Only a newly minted link has a recoverable token; list responses contain metadata. */
+export type ShareLink = { id: string; token?: string; permission: string; expiresAt: string | null }

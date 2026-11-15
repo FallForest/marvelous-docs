@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { AlertTriangle, Info, X } from 'lucide-react'
 import { usePresence } from '../../hooks/usePresence'
@@ -20,6 +20,15 @@ export function Dialog({ title, description, children, confirmLabel = '确定', 
   const panel = useRef<HTMLDivElement | null>(null)
   const { closing, requestClose, onAnimationEnd } = usePresence(onClose)
   const [pending, setPending] = useState(false)
+  const [error, setError] = useState('')
+  const submitting = useRef(false)
+  const busyRef = useRef(busy)
+  busyRef.current = busy
+  const titleId = useId()
+  const descriptionId = useId()
+  const close = useCallback(() => {
+    if (!submitting.current && !busyRef.current) requestClose()
+  }, [requestClose])
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null
@@ -35,7 +44,8 @@ export function Dialog({ title, description, children, confirmLabel = '确定', 
       /* capture-and-stop: the shell also listens for Escape to close overlays,
          and without this the dialog would close twice (the second call hit an
          already-unmounting panel). */
-      if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); requestClose(); return }
+      if (event.defaultPrevented) return
+      if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); return }
       if (event.key !== 'Tab') return
       const items = focusables()
       if (!items.length) { event.preventDefault(); return }
@@ -48,39 +58,46 @@ export function Dialog({ title, description, children, confirmLabel = '确定', 
       if (event.shiftKey && active === first) { event.preventDefault(); last.focus() }
       else if (!event.shiftKey && active === last) { event.preventDefault(); first.focus() }
     }
-    document.addEventListener('keydown', onKeyDown)
+    document.addEventListener('keydown', onKeyDown, true)
     return () => {
-      document.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('keydown', onKeyDown, true)
       previous?.focus?.({ preventScroll: true })
     }
-  }, [requestClose])
+  }, [close])
 
   async function submit() {
+    if (submitting.current || busyRef.current || closing) return
+    submitting.current = true
     setPending(true)
-    try { await onConfirm() } finally { setPending(false) }
+    setError('')
+    try { await onConfirm() }
+    catch (failure) { setError((failure as Error).message || '操作失败，请重试。') }
+    finally { submitting.current = false; setPending(false) }
   }
 
-  return <div className={'modal-backdrop' + (closing ? ' is-closing' : '')} onMouseDown={(event) => { if (event.target === event.currentTarget) requestClose() }}>
+  return <div className={'modal-backdrop' + (closing ? ' is-closing' : '')} onMouseDown={(event) => { if (event.target === event.currentTarget) close() }}>
     <div
       ref={panel}
       className={'confirm-modal modal-panel' + (closing ? ' is-closing' : '')}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="dialog-title"
-      aria-describedby={description ? 'dialog-description' : undefined}
+      aria-labelledby={titleId}
+      aria-describedby={description ? descriptionId : undefined}
+      aria-busy={pending || busy}
       onAnimationEnd={onAnimationEnd}
     >
       <header>
         <div className={'modal-icon' + (danger ? ' modal-icon-danger' : '')}>{danger ? <AlertTriangle size={18} /> : <Info size={18} />}</div>
         <div className="modal-copy">
-          <h2 id="dialog-title">{title}</h2>
-          {description && <p id="dialog-description">{description}</p>}
+          <h2 id={titleId}>{title}</h2>
+          {description && <p id={descriptionId}>{description}</p>}
         </div>
-        <button type="button" className="icon-btn" aria-label="关闭对话框" onClick={requestClose}><X size={17} /></button>
+        <button type="button" className="icon-btn" aria-label="关闭对话框" disabled={pending || busy} onClick={close}><X size={17} /></button>
       </header>
       {children}
+      {error && <p className="dialog-error" role="alert">{error}</p>}
       <footer className="modal-actions">
-        <button type="button" className="secondary-btn" onClick={requestClose} disabled={pending || busy}>{cancelLabel}</button>
+        <button type="button" className="secondary-btn" onClick={close} disabled={pending || busy}>{cancelLabel}</button>
         <button type="button" className={'primary-btn' + (danger ? ' btn-danger' : '')} onClick={() => void submit()} disabled={pending || busy}>{pending || busy ? '处理中…' : confirmLabel}</button>
       </footer>
     </div>
@@ -104,7 +121,7 @@ export function PromptDialog({ title, description, label, initialValue = '', con
   const [value, setValue] = useState(initialValue)
   const [error, setError] = useState('')
   const input = useRef<HTMLInputElement | null>(null)
-  const { closing, requestClose, onAnimationEnd } = usePresence(onClose)
+  const errorId = useId()
 
   useEffect(() => {
     const timer = window.setTimeout(() => { input.current?.focus(); input.current?.select() }, 30)
@@ -119,34 +136,23 @@ export function PromptDialog({ title, description, label, initialValue = '', con
     await onSubmit(clean)
   }
 
-  return <div className={'modal-backdrop' + (closing ? ' is-closing' : '')} onMouseDown={(event) => { if (event.target === event.currentTarget) requestClose() }}>
-    <div
-      className={'confirm-modal prompt-modal modal-panel' + (closing ? ' is-closing' : '')}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="prompt-title"
-      onAnimationEnd={onAnimationEnd}
-    >
-      <header>
-        <div className="modal-copy"><h2 id="prompt-title">{title}</h2>{description && <p>{description}</p>}</div>
-        <button type="button" className="icon-btn" aria-label="关闭对话框" onClick={requestClose}><X size={17} /></button>
-      </header>
+  return <Dialog title={title} description={description} confirmLabel={confirmLabel} busy={busy} onConfirm={submit} onClose={onClose}>
       <label className="dialog-field">
         <span>{label}</span>
         <input
           ref={input}
           value={value}
           onChange={(event) => { setValue(event.target.value); if (error) setError('') }}
-          onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); void submit() } }}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
+              event.preventDefault()
+              event.currentTarget.closest('[role="dialog"]')?.querySelector<HTMLButtonElement>('.primary-btn')?.click()
+            }
+          }}
           aria-invalid={Boolean(error)}
-          aria-describedby={error ? 'prompt-error' : undefined}
+          aria-describedby={error ? errorId : undefined}
         />
       </label>
-      {error && <p className="dialog-error" id="prompt-error" role="alert">{error}</p>}
-      <footer className="modal-actions">
-        <button type="button" className="secondary-btn" onClick={requestClose} disabled={busy}>取消</button>
-        <button type="button" className="primary-btn" onClick={() => void submit()} disabled={busy}>{busy ? '保存中…' : confirmLabel}</button>
-      </footer>
-    </div>
-  </div>
+      {error && <p className="dialog-error" id={errorId} role="alert">{error}</p>}
+  </Dialog>
 }

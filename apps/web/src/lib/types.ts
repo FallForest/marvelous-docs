@@ -30,13 +30,26 @@ export type DocumentPermission = { userId: string; email: string; name: string; 
 /** What a public share link grants. Mirrors the enum in routes/sharing.ts. */
 export type ShareLinkPermission = 'viewer' | 'commenter'
 
+export type CommentAnchor = {
+  from?: number
+  to?: number
+  text?: string
+  blockId?: string
+  /** Yjs item identities survive edits and reloads without changing the body. */
+  relative?: { from: Record<string, unknown>; to: Record<string, unknown> }
+}
+
+export type CommentAnchorLocation = { status: 'attached' | 'deleted' | 'unavailable'; from?: number; to?: number }
+
 export type Comment = {
   id: string
   body: string
   userId: string
   userName: string
   createdAt?: string
-  anchor?: { from?: number; to?: number; text?: string; blockId?: string } | null
+  updatedAt?: string
+  deletedAt?: string | null
+  anchor?: CommentAnchor | null
   parentId?: string | null
   status?: 'open' | 'resolved'
   resolvedAt?: string

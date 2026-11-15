@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import type { Editor } from '@tiptap/react'
 import Popover from '../ui/Popover'
+import { changeBlockIndent } from '../../lib/editor/tab-in-prose'
 
 export type ToolbarActions = {
   onLink: () => void
@@ -56,30 +57,32 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
   const [alignOpen, setAlignOpen] = useState(false)
   const [insertOpen, setInsertOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
-  const disabled = !editor
+  const disabled = !editor?.isEditable
+  const canIndent = (direction: 1 | -1) => !!editor?.isEditable && changeBlockIndent(direction)(editor.state)
+  const indent = (direction: 1 | -1) => editor?.chain().focus().command(({ state, dispatch }) => changeBlockIndent(direction)(state, dispatch)).run()
 
-  const item = (label: string, active: boolean, run: () => void, icon: React.ReactNode, extra?: string) => <button
+  const item = (label: string, active: boolean, run: () => void, icon: React.ReactNode, unavailable = false) => <button
     type="button"
-    className={'tb-btn' + (active ? ' is-active' : '') + (extra ? ' ' + extra : '')}
+    className={'tb-btn' + (active ? ' is-active' : '')}
     title={label}
     aria-label={label}
     aria-pressed={active}
-    disabled={disabled}
+    disabled={disabled || unavailable}
     onMouseDown={(event) => { event.preventDefault(); onInteract?.() }}
     onClick={run}
   >{icon}</button>
 
-  return <div className="editor-toolbar" role="toolbar" aria-label="格式工具" onKeyDown={(event) => { if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { const current = event.target as HTMLButtonElement; const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button')).filter((node) => !node.disabled); const position = buttons.indexOf(current); if (position >= 0) { event.preventDefault(); const next = buttons[(position + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length]; next?.focus() } } }}>
+  return <div className="editor-toolbar" role="toolbar" aria-label="格式工具" onClickCapture={(event) => { if (disabled) { event.preventDefault(); event.stopPropagation() } }} onKeyDown={(event) => { if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { const current = event.target as HTMLButtonElement; const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button')).filter((node) => !node.disabled && node.offsetParent !== null); const position = buttons.indexOf(current); if (position >= 0) { event.preventDefault(); const next = buttons[(position + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length]; next?.focus() } } }}>
     <div className="tb-group tb-group-history">
-      {item('撤销', false, () => editor?.chain().focus().undo().run(), <Undo2 size={16} />)}
-      {item('重做', false, () => editor?.chain().focus().redo().run(), <Redo2 size={16} />)}
+      {item('撤销', false, () => editor?.chain().focus().undo().run(), <Undo2 size={16} />, !editor?.can().undo())}
+      {item('重做', false, () => editor?.chain().focus().redo().run(), <Redo2 size={16} />, !editor?.can().redo())}
     </div>
 
     <span className="tb-separator" />
 
     <div className="tb-group tb-group-block">
       <div className="tb-anchor">
-        <button type="button" className="tb-select sketch-frame" aria-haspopup="menu" aria-expanded={blockOpen} onMouseDown={(event) => { event.preventDefault(); onInteract?.() }}
+        <button type="button" className="tb-select sketch-frame" disabled={disabled} aria-haspopup="menu" aria-expanded={blockOpen} onMouseDown={(event) => { event.preventDefault(); onInteract?.() }}
           onClick={() => setBlockOpen((value) => !value)}>
           <span>{editor ? currentBlockLabel(editor) : '正文'}</span><ChevronDown size={13} />
         </button>
@@ -94,7 +97,7 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
       </div>
 
       <div className="tb-anchor">
-        <button type="button" className="tb-select tb-size sketch-frame" aria-haspopup="menu" aria-expanded={sizeOpen} onClick={() => setSizeOpen((value) => !value)}>
+        <button type="button" className="tb-select tb-size sketch-frame" disabled={disabled} aria-haspopup="menu" aria-expanded={sizeOpen} onClick={() => setSizeOpen((value) => !value)}>
           <span>{editor?.getAttributes('textStyle').fontSize?.replace('px', '') || '16'}</span><ChevronDown size={12} />
         </button>
         <Popover open={sizeOpen} onClose={() => setSizeOpen(false)} label="字号" align="left" className="tb-menu tb-size-menu">
@@ -183,8 +186,8 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
     <div className="tb-spacer" />
     <div className="tb-group tb-group-extra">
       {item('评论', false, actions.onComment, <MessageCircle size={16} />)}
-      {item('减少缩进', false, () => editor?.chain().focus().liftListItem('listItem').run(), <IndentDecrease size={16} />)}
-      {item('增加缩进', false, () => editor?.chain().focus().sinkListItem('listItem').run(), <IndentIncrease size={16} />)}
+      {item('减少缩进', false, () => indent(-1), <IndentDecrease size={16} />, !canIndent(-1))}
+      {item('增加缩进', false, () => indent(1), <IndentIncrease size={16} />, !canIndent(1))}
     </div>
 
     {/*
@@ -220,6 +223,7 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
         {([
           ['项目符号列表', List, () => editor?.chain().focus().toggleBulletList().run()],
           ['编号列表', ListOrdered, () => editor?.chain().focus().toggleOrderedList().run()],
+          ['任务列表', ListTodo, () => editor?.chain().focus().toggleTaskList().run()],
           ['引用', Quote, () => editor?.chain().focus().toggleBlockquote().run()],
           ['代码块', Code2, () => editor?.chain().focus().toggleCodeBlock().run()],
         ] as const).map(([label, Icon, run]) => (
@@ -227,6 +231,8 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
             <Icon size={15} /><span>{label}</span>
           </button>
         ))}
+        <button type="button" role="menuitem" className="tb-menu-item" disabled={!canIndent(-1)} onClick={() => { indent(-1); setMoreOpen(false) }}><IndentDecrease size={15} /><span>减少缩进</span></button>
+        <button type="button" role="menuitem" className="tb-menu-item" disabled={!canIndent(1)} onClick={() => { indent(1); setMoreOpen(false) }}><IndentIncrease size={15} /><span>增加缩进</span></button>
         <div className="tb-more-section">插入</div>
         {([
           ['表格', Table2, () => editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()],

@@ -1,8 +1,11 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import type { Editor } from '@tiptap/react'
 import { EditorContent, ReactNodeViewRenderer, useEditor } from '@tiptap/react'
 import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
+import { ySyncPluginKey, yUndoPluginKey } from 'y-prosemirror'
+import { closeHistory } from '@tiptap/pm/history'
+import type { Transaction } from '@tiptap/pm/state'
 import { Check, FileText } from 'lucide-react'
 import EditorToolbar from './EditorToolbar'
 import BubbleToolbar from './BubbleToolbar'
@@ -17,6 +20,7 @@ import { api } from '../../lib/endpoints'
 import { COLLAB_URL } from '../../lib/collab'
 import { visualViewportRect } from '../../lib/viewport'
 import { buildEditorExtensions } from '../../lib/editor'
+import { captureCommentAnchor, commentLocation, commentLocations, commentMarksKey } from '../../lib/editor/comment-marks'
 import { useBlockGeometry } from '../../hooks/useBlockGeometry'
 import { wordCount, formatDate } from '../../lib/format'
 import CodeBlockView from './CodeBlockView'
@@ -24,13 +28,17 @@ import ImageToolbar from './ImageToolbar'
 import BlockHandle from './BlockHandle'
 import { useBlockAnchor } from '../../hooks/useBlockAnchor'
 import { emptyContent } from '../../lib/types'
+import { clearSavedDraft, sameDraftBody, writeDraft } from '../../lib/local-drafts'
+import { startLinkEdit, mapLinkEdit, linkEditTransaction } from '../../lib/editor/link-editing'
+import type { LinkEditSession, LinkPrompt } from '../../lib/editor/link-editing'
 import type { CollabStatus } from '../../lib/app-types'
-import type { Comment, Doc, DocJson, SaveStatus, User } from '../../lib/types'
+import type { Comment, CommentAnchor, CommentAnchorLocation, Doc, DocJson, SaveStatus, User } from '../../lib/types'
 
 export type DocumentEditorHandle = {
   snapshot: () => { documentId: string; content: DocJson; title: string; stateVector?: string }
   flushTitle: () => Promise<void>
   setLocked: (locked: boolean) => void
+  commentDraftAnchor: () => CommentAnchor | null
 }
 
 type DocumentEditorProps = {
@@ -42,9 +50,10 @@ type DocumentEditorProps = {
   onSaveStatus: (status: SaveStatus) => void
   onAwareness: (users: Array<{ clientId: number; name: string; color: string }>) => void
   onCollabStatus: (status: CollabStatus) => void
-  onSelection: (anchor: { from: number; to: number; text: string }) => void
+  onSelection: (anchor: CommentAnchor) => void
+  onCommentLocations?: (locations: Record<string, CommentAnchorLocation>) => void
   onExport: (format: 'markdown' | 'html' | 'json') => void
-  onLink: (range: { from: number; to: number }) => void
+  onLink: (range: LinkPrompt) => void
   /** Threads on this document, so the text they are about is marked in place. */
   comments: Comment[]
   /** The thread open in the side panel, tinted in the text while it is open. */
@@ -67,7 +76,7 @@ function countWords(editor: Editor): number {
   if (stored && typeof stored.words === 'function') return stored.words()
   return wordCount(editor.getText())
 }
-const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, onAwareness, onCollabStatus, onSelection, onExport, onLink, comments, activeCommentId, commentDraft }: DocumentEditorProps, ref) {
+const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, onAwareness, onCollabStatus, onSelection, onCommentLocations, onExport, onLink, comments, activeCommentId, commentDraft }: DocumentEditorProps, ref) {
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null)
   const [provider, setProvider] = useState<WebsocketProvider | null>(null)
   const [title, setTitle] = useState(doc.title)
@@ -81,8 +90,6 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
   const [slash, setSlash] = useState<{ left: number; top: number; query: string; range: { from: number; to: number } } | null>(null)
   const statusTimer = useRef<number | undefined>(undefined)
   const wordTimer = useRef<number | undefined>(undefined)
-  /** Version last seen persisted, so a stale read cannot report success. */
-  const persistedVersion = useRef<number>(doc.version)
   const currentDocument = useRef(doc)
   currentDocument.current = doc
   const titleEditing = useRef(false)
@@ -91,12 +98,16 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
   const titleOrigin = useRef<Pick<Doc, 'title' | 'titleMode'>>(doc)
   const live = useRef(true)
   const restoreLock = useRef(false)
+  const localDirty = useRef(false)
   const [locked, setLocked] = useState(false)
   const titleRequest = useRef<Promise<Doc | null> | null>(null)
+  const linkSession = useRef<LinkEditSession | null>(null)
+  const linkSequence = useRef(0)
+  const confirmation = useRef(0)
+  const confirmSave = useRef<() => Promise<void>>(async () => {})
 
   useEffect(() => {
     if (!titleEditing.current && !titleWritePending.current) setTitle(doc.title)
-    persistedVersion.current = Math.max(persistedVersion.current, doc.version)
   }, [doc.id, doc.title, doc.version])
 
   useEffect(() => {
@@ -161,45 +172,44 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
   /**
    * Confirms the edit actually reached the database.
    *
-   * The collaboration room writes asynchronously, so the only honest signal is
-   * the document's own version moving forward. On failure the status becomes
-   * 'error' and stays there until the next successful confirmation.
+   * A version can advance because somebody else saved. Confirm the current
+   * body after the room flushes, and keep the safety copy until it matches.
    */
-  async function confirmPersisted(local: unknown) {
+  async function confirmPersisted() {
+    const attempt = ++confirmation.current
     try {
-      // Version only. The old poll pulled the whole document body - and, on a
-      // collaborative document, made the server flush the room to answer - once a
-      // second for as long as the write took. The confirmation only needed the
-      // number.
-      //
-      // The `mdoc-updated` event still carries a document, because two listeners
-      // (the shell and the history panel) refresh from its payload; sending only a
-      // version would leave them stale. They are triggered by the writes that have
-      // a document in hand, not by this poll.
-      const latest = await api.documentVersion(token, doc.id)
-      if (!live.current || restoreLock.current) return
-      if (latest.version > persistedVersion.current) {
-        persistedVersion.current = latest.version
+      if (!live.current || restoreLock.current || !localDirty.current) return
+      if (!provider?.wsconnected || !provider.synced) {
+        window.clearTimeout(statusTimer.current)
+        statusTimer.current = window.setTimeout(() => { void confirmPersisted() }, 1200)
+        return
+      }
+      const { document: latest } = await api.document(token, doc.id)
+      if (!live.current || restoreLock.current || attempt !== confirmation.current) return
+      if (provider.wsconnected && provider.synced && editor && sameDraftBody(latest.content?.doc, editor.getJSON(), editor.schema)) {
+        clearSavedDraft(localStorage, doc.id, user.id, editor.getJSON())
+        localDirty.current = false
         onSaveStatus('saved')
         return
       }
       // The room has not flushed yet; keep waiting rather than lying.
       window.clearTimeout(statusTimer.current)
-      statusTimer.current = window.setTimeout(() => { void confirmPersisted(local) }, 1200)
+      statusTimer.current = window.setTimeout(() => { void confirmPersisted() }, 1200)
     } catch (error) {
-      if (!live.current) return
+      if (!live.current || !localDirty.current || attempt !== confirmation.current) return
       onSaveStatus('error')
-      // Keep a local copy so closing the tab cannot destroy the work.
-      try { window.localStorage.setItem('mdocs-draft-' + doc.id, JSON.stringify(local)) } catch { /* quota */ }
-      window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '保存遇到问题，已在本地保留草稿：' + (error as Error).message }))
+      window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '保存遇到问题，请保留此页面并重试：' + (error as Error).message }))
+      window.clearTimeout(statusTimer.current)
+      statusTimer.current = window.setTimeout(() => { void confirmPersisted() }, 5000)
     }
   }
+  confirmSave.current = confirmPersisted
 
   const editor = useEditor({
     extensions: buildEditorExtensions({ ydoc: provider ? ydoc : null, placeholder: '从这里开始写作…', codeBlockNodeView: ReactNodeViewRenderer(CodeBlockView) }),
     content: doc.content?.doc || emptyContent.doc,
     autofocus: doc.titleMode === 'auto' && doc.title === '未命名文档' && doc.version === 1 ? 'start' : false,
-    onUpdate: ({ editor: instance }) => {
+    onUpdate: ({ editor: instance, transaction }) => {
       if (restoreLock.current) return
       /*
        * The footer needs a word count that is roughly current, not exact. Counting
@@ -211,13 +221,17 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
       window.clearTimeout(wordTimer.current)
       wordTimer.current = window.setTimeout(() => setWords(countWords(instance)), 300)
       if (provider) {
-        /* Collaborative edits reach the server through the Yjs room, which
-           debounces and writes asynchronously. Reporting "saved" on a timer would
-           claim success without any confirmation, so the status stays "saving"
-           until a HEAD on the document shows the persisted version moved. */
+        // Initial sync and other people's changes are not our unsaved draft.
+        // A merge while our own edit is pending does belong in its safety copy.
+        const remote = transaction.getMeta(ySyncPluginKey) as { isChangeOrigin?: boolean; isUndoRedoOperation?: boolean } | undefined
+        if (remote?.isChangeOrigin && !remote.isUndoRedoOperation && !localDirty.current) return
+        localDirty.current = true
+        if (!writeDraft(localStorage, doc.id, user.id, instance.getJSON())) {
+          window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '浏览器无法保存本地草稿，请保持页面打开直到云端保存完成。' }))
+        }
         onSaveStatus('saving')
         window.clearTimeout(statusTimer.current)
-        statusTimer.current = window.setTimeout(() => { void confirmPersisted(instance.getJSON()) }, 1000)
+        statusTimer.current = window.setTimeout(() => { void confirmPersisted() }, 1000)
       } else {
         persist(instance.getJSON())
       }
@@ -229,7 +243,7 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
       const { $from, $to } = instance.state.selection
       const isNodeSelection = instance.state.selection.constructor.name === 'NodeSelection'
       if (to > from && !isNodeSelection && $from.parent === $to.parent) {
-        onSelection({ from, to, text: instance.state.doc.textBetween(from, to, ' ').slice(0, 500) })
+        onSelection(captureCommentAnchor(instance.state, { from, to }))
         const start = instance.view.coordsAtPos(from)
         const end = instance.view.coordsAtPos(to)
         /*
@@ -302,12 +316,27 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
     editor.commands.setCommentDraft(commentDraft)
   }, [editor, commentDraft])
 
+  useEffect(() => {
+    if (!editor || !onCommentLocations) return
+    let previous = ''
+    const publish = () => {
+      const locations = commentLocations(editor.state)
+      const encoded = JSON.stringify(locations)
+      if (encoded !== previous) { previous = encoded; onCommentLocations(locations) }
+    }
+    publish()
+    editor.on('transaction', publish)
+    return () => { editor.off('transaction', publish) }
+  }, [editor, onCommentLocations])
+
   // Reveal the quoted text when a comment anchor is clicked in the side panel.
   useEffect(() => {
     const reveal = (event: Event) => {
-      const anchor = (event as CustomEvent<{ from?: number; to?: number }>).detail
-      if (!anchor || !editor || typeof anchor.from !== 'number' || typeof anchor.to !== 'number') return
-      editor.chain().focus().setTextSelection({ from: anchor.from, to: anchor.to }).scrollIntoView().run()
+      const id = (event as CustomEvent<{ id?: string }>).detail?.id
+      if (!id || !editor) return
+      const location = commentLocation(editor.state, id)
+      if (location?.status !== 'attached' || location.from === undefined || location.to === undefined) return
+      editor.chain().focus().setTextSelection({ from: location.from, to: location.to }).scrollIntoView().run()
     }
     window.addEventListener('mdoc-focus-anchor', reveal)
     return () => window.removeEventListener('mdoc-focus-anchor', reveal)
@@ -361,15 +390,50 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
     return () => { editor.off('update', update); editor.off('selectionUpdate', update) }
   }, [editor])
 
+  const rangeSelection = useCallback(() => {
+    if (!editor || !editor.isEditable || restoreLock.current) return
+    const session = startLinkEdit(editor.state, doc.id, doc.id + ':' + (++linkSequence.current))
+    linkSession.current = session
+    onLink(session.prompt)
+  }, [editor, doc.id, onLink])
+
   useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ from: number; to: number; href: string }>).detail
-      if (!detail || !editor) return
-      editor.chain().focus().setTextSelection({ from: detail.from, to: detail.to }).extendMarkRange('link').setLink({ href: detail.href }).run()
+    if (!editor) return
+    const map = ({ transaction }: { transaction: Transaction }) => {
+      if (linkSession.current) linkSession.current = mapLinkEdit(linkSession.current, transaction)
     }
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<LinkPrompt & { nextHref: string | null }>).detail
+      if (!detail || detail.documentId !== doc.id) return
+      const session = linkSession.current
+      if (!session || session.prompt.requestId !== detail.requestId || restoreLock.current || !editor.isEditable) return
+      const tr = linkEditTransaction(editor.state, session, detail.nextHref)
+      linkSession.current = null
+      if (!tr) {
+        window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '原来的文字已被删除或替换，请重新选择后再设置链接。' }))
+        return
+      }
+      const undoManager = yUndoPluginKey.getState(editor.state)?.undoManager
+      undoManager?.stopCapturing()
+      editor.view.dispatch(closeHistory(tr))
+      editor.view.dispatch(closeHistory(editor.state.tr).setMeta('addToHistory', false))
+      undoManager?.stopCapturing()
+      editor.view.focus()
+    }
+    const cancel = (event: Event) => {
+      const prompt = (event as CustomEvent<LinkPrompt | null>).detail
+      if (!prompt || prompt.requestId === linkSession.current?.prompt.requestId) linkSession.current = null
+    }
+    editor.on('transaction', map)
     window.addEventListener('mdoc-insert-link', handler)
-    return () => window.removeEventListener('mdoc-insert-link', handler)
-  }, [editor])
+    window.addEventListener('mdoc-cancel-link', cancel)
+    return () => {
+      linkSession.current = null
+      editor.off('transaction', map)
+      window.removeEventListener('mdoc-insert-link', handler)
+      window.removeEventListener('mdoc-cancel-link', cancel)
+    }
+  }, [editor, doc.id])
 
   /*
    * `Ctrl+K` with text selected asks for a link, by way of the shell.
@@ -382,22 +446,19 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
   useEffect(() => {
     if (!editor) return
     const openLink = () => {
-      const { from, to } = editor.state.selection
-      if (from === to) return
-      onLink({ from, to })
+      rangeSelection()
     }
     window.addEventListener('mdoc-link-selection', openLink)
     return () => window.removeEventListener('mdoc-link-selection', openLink)
-  }, [editor, onLink])
+  }, [editor, rangeSelection])
 
   useEffect(() => {
     const handler = () => {
       if (restoreLock.current) return
       if (provider) {
         onSaveStatus('saving')
-        request<{ document: Doc }>('/documents/' + doc.id, token)
-          .then(({ document }) => { window.dispatchEvent(new CustomEvent('mdoc-updated', { detail: document })); if (live.current) onSaveStatus('saved') })
-          .catch(() => { if (live.current) onSaveStatus('error') })
+        if (localDirty.current) void confirmSave.current()
+        else onSaveStatus('saved')
         return
       }
       if (editor) persist(editor.getJSON(), true)
@@ -406,14 +467,9 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
     return () => window.removeEventListener('mdoc-force-save', handler)
   }, [provider, editor, doc.id, token, persist, onSaveStatus])
 
-  function rangeSelection() {
-    const selection = editor?.state.selection
-    onLink({ from: selection?.from ?? 0, to: selection?.to ?? 0 })
-  }
-
   function commentSelection() {
     const selection = editor?.state.selection
-    if (selection && selection.to > selection.from) onSelection({ from: selection.from, to: selection.to, text: editor.state.doc.textBetween(selection.from, selection.to, ' ').slice(0, 500) })
+    if (selection && selection.to > selection.from) onSelection(captureCommentAnchor(editor!.state, selection))
   }
 
   /** 20 MiB, matching MAX_UPLOAD_BYTES on the server and nginx's proxy limit. */
@@ -520,6 +576,11 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
   }
 
   useImperativeHandle(ref, () => ({
+    commentDraftAnchor: () => {
+      if (!editor) return null
+      const draft = commentMarksKey.getState(editor.state)?.draft
+      return draft ? captureCommentAnchor(editor.state, draft) : null
+    },
     snapshot: () => {
       if (!editor) throw new Error('编辑器正在加载，请稍后重试。')
       const vector = provider && ydoc ? Y.encodeStateVector(ydoc) : undefined
@@ -548,7 +609,7 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
       editor={editor}
       onInteract={() => setBubbleAnchor(null)}
       actions={{
-        onLink: () => { const selection = editor?.state.selection; onLink({ from: selection?.from ?? 0, to: selection?.to ?? 0 }) },
+        onLink: rangeSelection,
         onImage: () => setImagePrompt(true),
         onFind: () => setFindOpen(true),
         onOutline: () => setOutlineOpen(true),

@@ -53,15 +53,15 @@ menus and styles in Chrome, including Yjs undo isolation, wrap and Copy.
 
 ## Comment markers
 
-A thread stores an `anchor: {from, to, text}` range. The text in the document is
+A thread stores an `anchor: {from, to, text, relative?}` range. The text in the document is
 marked from that anchor by `lib/editor/comment-marks.ts`, which is a ProseMirror
 **plugin with decorations**, not a mark:
 
 | Concern | Why a decoration |
 | --- | --- |
 | Export, versions, Markdown round-trip | A mark would be part of the document body and would leak into all of them. A decoration is view state only. |
-| Placement | The anchor is a snapshot. A range is placed from it only while the text at that range still says what the anchor says, then it is mapped through every transaction. |
-| Editing | Typing before a marker carries it along; deleting its text removes it for good rather than underlining whatever moved in. |
+| Placement | New collaborative anchors include Yjs relative positions, so edits and reloads preserve item identity. Legacy absolute offsets are accepted only while the complete quoted text still matches (500-character snapshots are explicitly capped). |
+| Editing | Typing before a marker carries it along; deleting or replacing its entire quote leaves a deleted-range tombstone. Undo restores the quote and its marker. Replacements never acquire the discussion accidentally. |
 | Overlap | Two threads on the same words share one span, whose tooltip names both. |
 
 The open thread is tinted through `is-commented-active`, resolved threads fall
@@ -73,7 +73,8 @@ Two interactions cross the boundary and are worth knowing about:
 
 - pressing marked text dispatches `mdoc-focus-comment`; the shell opens the
   comments tab, tints the card and scrolls it into view, then sends
-  `mdoc-focus-anchor` to select the range. The click is not swallowed, so the
+  `mdoc-focus-anchor` with the thread ID to select its live range. Raw saved
+  offsets are never navigation targets. The click is not swallowed, so the
   caret still lands in the text.
 - pressing a card calls `onActiveComment`, which reaches the same plugin through
   `setCommentMarks` and lights the sentence. The card's own quoted-snippet
@@ -85,3 +86,76 @@ click direction), which mounts the real editor and the real panel in Chrome.
 
 To change any of this, edit `lib/editor/comment-marks.ts`; the extension is
 registered in `lib/editor/index.ts` next to `CodeBlockBoundary`.
+
+### Discussion lifecycle
+
+Deleting source text keeps the discussion, its original quoted snapshot, replies,
+and resolution state. The card labels a mapped deletion as "原文已删除" and disables
+navigation. An older snapshot that no longer matches, or a relative anchor from a
+replaced Yjs document, says "原文已删除或已更改" instead of claiming to know which
+operation occurred. It never searches for another identical sentence to reattach.
+Remote Yjs edits replace the ProseMirror document in one transaction: relative
+anchors resolve item identities; legacy anchors map the minimal changed slice.
+
+Replies are grouped under one root, including legacy nested replies. Open,
+resolved, detached-source and author filters preserve the whole matching thread.
+A resolved discussion must be reopened before replying. Sending captures the
+composer's currently mapped quote, rejects a deleted quote, and prevents duplicate
+submissions. Replies show an explicit cancellable target, without pretending an
+`@name` string is a real mention or notification.
+
+Authors may edit or delete their own comment or reply. Administrators cannot
+rewrite another author's words; document editors may resolve and reopen root
+discussions. Deletion is confirmed and clears the stored body with `deleted_at`
+(migration 008), leaving a non-editable placeholder and preserving other people's
+replies and the thread's quoted context. Whole-document permanent deletion still
+removes its comments. Workspace open-comment counts represent unresolved root
+discussions, excluding empty deleted threads.
+
+These are this product's retention and deletion choices. Notion's
+[official comments guide](https://www.notion.com/help/comments-mentions-and-reminders)
+documents thread replies, editing/deleting, status filters and reopening; it does
+not specify every deleted-source edge case. The persistent anchor mechanism follows
+[Yjs relative positions](https://docs.yjs.dev/api/relative-positions), verified
+against the installed y-prosemirror version. API integration tests cover content
+deletion without discussion loss, reply normalization, validation, author/admin
+boundaries and deletion placeholders. The Chrome verifier also exercises moved
+quote navigation, deleted-source labels, undo, author filters, edit and confirmed
+delete interactions.
+
+## Find, replace, and links
+
+Find works in ProseMirror document positions, including nested list items,
+quotes, tables, and words split by formatting. It does not match across inline
+atoms or block boundaries. Results subscribe to edits and undo; navigation keeps
+focus in the search input. Replace inserts literal text, including `<b>` and
+other HTML-looking strings. Replace All has no hidden 500-result cutoff and is
+one undo step, isolated from adjacent typing in ProseMirror and Yjs history.
+
+Link editing captures a request scoped to its document and maps the target
+through transactions while the dialog is open. Deleted or replaced targets are
+rejected; applying an old absolute range is never allowed. A caret inside a link
+expands to the whole link and pre-fills its URL. Removing a link retains its
+words; a bare caret inserts a visible linked URL. Saving and opening accept only
+complete HTTP(S) URLs, and outgoing tabs use `noopener noreferrer`.
+
+`test/find-replace.test.ts`, `test/link-editing.test.ts`, and
+`scripts/verify/verify-editor-tools.mjs` cover those contracts. The browser
+verifier mounts the real `DocumentEditor` and link dialog to exercise concurrent
+prefix insertion and target deletion, not only the pure mapping helper.
+
+## Indentation and tables
+
+`changeBlockIndent` is shared by toolbar buttons and prose Tab. It adjusts
+selected paragraphs/headings independently, clamps their persisted `indent`
+attribute to 0-6, and uses structural list commands for ordinary and task lists.
+Unavailable operations disable their buttons. Code owns literal indentation;
+table Tab/Shift-Tab fall through to cell navigation. The mobile overflow menu
+includes task lists and indentation too.
+
+The table menu preserves the cell selection, disables merge/split when they
+cannot run, exposes row/column/cell header toggles, and uses the shared popover
+for dismissal and viewport clamping. These are the installed Tiptap 2 table
+commands documented in [Tiptap's table reference](https://tiptap.dev/docs/editor/extensions/nodes/table),
+without introducing database-table behavior. Read-only editors hide floating
+image/bubble/table editing tools and prevent toolbar mutations.

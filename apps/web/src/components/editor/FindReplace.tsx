@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp, Search, X } from 'lucide-react'
 import type { Editor } from '@tiptap/react'
 import { DURATION } from '../../lib/motion'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
+import { applyTextReplacement, findTextMatches } from '../../lib/editor/find-replace'
 
 type Props = { editor: Editor | null; initial: string; onClose: () => void }
 
@@ -15,23 +16,29 @@ export function FindReplace({ editor, initial, onClose }: Props) {
   const [shaking, setShaking] = useState(false)
   const shakeTimer = useRef<number | undefined>(undefined)
   const replayFrame = useRef<number | undefined>(undefined)
+  const [docRevision, setDocRevision] = useState(0)
+
+  useEffect(() => {
+    if (!editor) return
+    const update = () => setDocRevision((current) => current + 1)
+    editor.on('update', update)
+    return () => { editor.off('update', update) }
+  }, [editor])
 
   const matches = useMemo(() => {
-    if (!editor || !query) return [] as Array<{ from: number; to: number }>
-    const text = editor.state.doc.textBetween(0, editor.state.doc.content.size, '\n', '\n')
-    const haystack = caseSensitive ? text : text.toLowerCase()
-    const needle = caseSensitive ? query : query.toLowerCase()
-    const found: Array<{ from: number; to: number }> = []
-    let at = haystack.indexOf(needle)
-    while (at >= 0 && found.length < 500) {
-      const from = editor.state.doc.resolve(at + 1).pos
-      found.push({ from, to: from + query.length })
-      at = haystack.indexOf(needle, at + Math.max(1, needle.length))
-    }
-    return found
-  }, [editor, query, caseSensitive])
+    void docRevision
+    return editor ? findTextMatches(editor.state.doc, query, caseSensitive) : []
+  }, [editor, query, caseSensitive, docRevision])
+  const currentIndex = matches.length ? Math.min(index, matches.length - 1) : 0
 
   useEffect(() => { setIndex(0) }, [query, caseSensitive])
+
+  // Keep the input focused while selecting the first/current result in the
+  // editor. Enter then advances from the result the counter actually displays.
+  useEffect(() => {
+    const match = matches[currentIndex]
+    if (editor && match) editor.chain().setTextSelection(match).scrollIntoView().run()
+  }, [editor, matches, currentIndex])
 
   /*
    * Two one-shot reactions to the hit count, both driven by the count itself:
@@ -67,30 +74,34 @@ export function FindReplace({ editor, initial, onClose }: Props) {
 
   function jump(direction: 1 | -1) {
     if (!editor || !matches.length) return
-    const next = (index + direction + matches.length) % matches.length
+    const next = (currentIndex + direction + matches.length) % matches.length
     setIndex(next)
     const match = matches[next]!
-    editor.chain().focus().setTextSelection({ from: match.from, to: match.to }).scrollIntoView().run()
+    editor.chain().setTextSelection(match).scrollIntoView().run()
   }
 
   function replaceCurrent() {
-    if (!editor || !matches.length || !query) return
-    const match = matches[index] ?? matches[0]!
-    editor.chain().focus().setTextSelection({ from: match.from, to: match.to }).insertContent(replace).run()
+    if (!editor || !matches.length || !query || !editor.isEditable) return
+    const match = matches[currentIndex]!
+    if (applyTextReplacement(editor, [match], replace)) {
+      // Replacing with the query itself must still advance, while a changed
+      // replacement moves to the next occurrence after the inserted text.
+      const updated = findTextMatches(editor.state.doc, query, caseSensitive)
+      const next = updated.findIndex((item) => item.from >= match.from + replace.length)
+      setIndex(next < 0 ? 0 : next)
+    }
   }
 
   function replaceAll() {
-    if (!editor || !query) return
-    let count = 0
-    matches.slice().reverse().forEach((match) => {
-      editor.chain().setTextSelection({ from: match.from, to: match.to }).insertContent(replace).run()
-      count += 1
-    })
-    window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '已替换 ' + count + ' 处' }))
+    if (!editor || !query || !editor.isEditable) return
+    if (applyTextReplacement(editor, matches, replace)) {
+      setIndex(0)
+      window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '已替换 ' + matches.length + ' 处' }))
+    }
   }
 
   const miss = Boolean(query) && matches.length === 0
-  const countText = query ? (matches.length ? index + 1 : 0) + '/' + matches.length : ''
+  const countText = query ? (matches.length ? currentIndex + 1 : 0) + '/' + matches.length : ''
   // The counter is keyed by what produced it. Remounting is the only reliable
   // way to replay an animation whose class name does not change between hits;
   // a finished animation on an unchanged element is simply reused.
@@ -103,18 +114,18 @@ export function FindReplace({ editor, initial, onClose }: Props) {
     <div className="find-head"><b>查找替换</b><button type="button" className="icon-btn" aria-label="关闭查找" onClick={onClose}><X size={15} /></button></div>
     <label className={'find-field' + (miss ? ' is-empty' : '') + (shaking ? ' is-shaking' : '')}>
       <Search size={14} />
-      <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="查找内容" onKeyDown={(event) => { if (event.key === 'Enter') jump(event.shiftKey ? -1 : 1) }} />
+      <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="查找内容" onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); jump(event.shiftKey ? -1 : 1) } }} />
       <span key={countKey} className={'find-count' + bumpClass} aria-live="polite">{countText}</span>
     </label>
     <div className="find-actions">
-      <button type="button" className="icon-btn" aria-label="上一个" onClick={() => jump(-1)}><ChevronUp size={15} /></button>
-      <button type="button" className="icon-btn" aria-label="下一个" onClick={() => jump(1)}><ChevronDown size={15} /></button>
+      <button type="button" className="icon-btn" aria-label="上一个" disabled={!matches.length} onClick={() => jump(-1)}><ChevronUp size={15} /></button>
+      <button type="button" className="icon-btn" aria-label="下一个" disabled={!matches.length} onClick={() => jump(1)}><ChevronDown size={15} /></button>
       <label className="find-case"><input type="checkbox" checked={caseSensitive} onChange={(event) => setCaseSensitive(event.target.checked)} />区分大小写</label>
     </div>
-    <label className="find-field"><input value={replace} onChange={(event) => setReplace(event.target.value)} placeholder="替换为" /></label>
+    <label className="find-field"><input value={replace} onChange={(event) => setReplace(event.target.value)} placeholder="替换为" disabled={!editor?.isEditable} /></label>
     <div className="find-actions">
-      <button type="button" className="secondary-btn" onClick={replaceCurrent} disabled={!matches.length}>替换</button>
-      <button type="button" className="secondary-btn" onClick={replaceAll} disabled={!matches.length}>全部替换</button>
+      <button type="button" className="secondary-btn" onClick={replaceCurrent} disabled={!matches.length || !editor?.isEditable}>替换</button>
+      <button type="button" className="secondary-btn" onClick={replaceAll} disabled={!matches.length || !editor?.isEditable}>全部替换</button>
     </div>
   </div>
 }

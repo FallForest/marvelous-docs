@@ -22,7 +22,8 @@ export function registerWorkspaceRoutes(app: FastifyInstance, deps: RouteDeps) {
          (SELECT count(*) FROM documents WHERE workspace_id=$1 AND kind='document' AND deleted_at IS NULL) AS documents,
          (SELECT count(*) FROM documents WHERE workspace_id=$1 AND kind='folder' AND deleted_at IS NULL) AS folders,
          (SELECT count(*) FROM memberships WHERE workspace_id=$1) AS members,
-         (SELECT count(*) FROM comments c JOIN documents d ON d.id=c.document_id WHERE d.workspace_id=$1 AND c.status='open' AND d.deleted_at IS NULL) AS "openComments",
+         (SELECT count(*) FROM comments c JOIN documents d ON d.id=c.document_id WHERE d.workspace_id=$1 AND c.status='open' AND c.parent_id IS NULL AND d.deleted_at IS NULL
+           AND (c.deleted_at IS NULL OR EXISTS (SELECT 1 FROM comments r WHERE r.parent_id=c.id AND r.deleted_at IS NULL))) AS "openComments",
          (SELECT count(*) FROM documents WHERE workspace_id=$1 AND deleted_at IS NOT NULL) AS trashed,
          (SELECT count(*) FROM document_versions v JOIN documents d ON d.id=v.document_id WHERE d.workspace_id=$1) AS versions`,
       [auth.user.workspaceId])
