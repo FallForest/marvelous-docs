@@ -4,6 +4,32 @@ All notable changes to Marvelous Docs are documented in this file. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.78] - 2026-11-17
+
+A document that opened empty now opens with its text, and a socket that never
+syncs says so instead of spinning.
+
+### Fixed
+
+- **A document could open empty, then refuse to save.** The server's read-only
+  collaboration path handed the raw frame to `readSyncMessage` without consuming
+  the message-type varint first, so a joining client's very first request - the
+  state vector that asks for the document - was parsed as a different message,
+  threw, and was answered with silence. The page therefore started blank while the
+  room held the text, the first keystroke was merged *next to* the real body
+  instead of into it, and 正在保存… could stay on screen for ever because the two
+  sides never converged. The message type is now consumed; an unparsable frame
+  falls back to sending the whole document rather than nothing; and a socket that
+  never syncs reports the truth after fifteen seconds instead of spinning.
+  `apps/server/test/collaboration-sync.test.ts` asserts the frames, which is the
+  layer where the bug lived - the stored rows were always correct.
+- **A room whose durable state was empty now heals from the stored body.** A
+  client that never received its initial sync merged its keystrokes into an empty
+  fragment, and the next projecting save could write that empty fragment over a
+  page `content` still held. `loadRoom` now compares the two columns and rebuilds
+  the room from the stored body when only one of them has words, persisting the
+  repair instead of serving a blank document.
+
 ## [0.1.77] - 2026-11-16
 
 The local-draft prompt stops firing on ordinary writing, and recovery finally
