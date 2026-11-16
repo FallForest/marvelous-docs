@@ -118,13 +118,37 @@ export function attachCollaborationSocket(ws: WebSocket, room: Room, user: Claim
       try {
         const bytes = messageBytes(data as RawData)
         const decoder = decoding.createDecoder(bytes)
-        // `readSyncMessage` needs a writable encoder even for a step-1 it will not
-        // answer into; the reply is built explicitly so this path cannot mutate the
-        // document.
+        /*
+         * Consume the message type before handing the decoder over.
+         *
+         * `readSyncMessage` expects to be positioned at the *subtype*; giving it
+         * the raw frame made it read the message type (0) as "sync step 1" and
+         * then parse the rest of the frame as a state vector. It threw, this
+         * catch swallowed it, and the client's very first read - the one that
+         * asks for the document - was answered with silence. That is why a
+         * freshly opened page looked empty while the room held the text, why the
+         * first keystroke was merged *next to* the real body instead of into it,
+         * and why the footer stayed on 正在保存… for ever: the two sides never
+         * converged on the same document.
+         */
+        decoding.readVarUint(decoder)
         const encoder = encoding.createEncoder()
+        encoding.writeVarUint(encoder, SYNC_MESSAGE)
         syncProtocol.readSyncMessage(decoder, encoder, room.doc, ws)
-        ws.send(encodeSyncStep2(room.doc))
-      } catch { /* a malformed frame is dropped like any other */ }
+        // The reply is built explicitly so this path can never mutate the document.
+        ws.send(encoding.length(encoder) > 1 ? encoding.toUint8Array(encoder) : encodeSyncStep2(room.doc))
+      } catch {
+        /*
+         * A frame we cannot parse must not be answered with silence.
+         *
+         * This catch is what turned a one-varint framing mistake into an empty
+         * page that looked like data loss. Falling back to the whole document is
+         * always a legal answer to "send me what I am missing": at worst it
+         * repeats content the client already has, which Yjs merges away, and at
+         * best it opens the document.
+         */
+        try { if (ws.readyState === WebSocket.OPEN) ws.send(encodeSyncStep2(room.doc)) } catch { /* socket already gone */ }
+      }
       return
     }
     void queueDocumentOperation(room.id, async () => {

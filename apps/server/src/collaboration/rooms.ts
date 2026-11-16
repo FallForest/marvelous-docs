@@ -116,6 +116,28 @@ async function loadRoom(documentId: string): Promise<Room> {
   if (result.rows[0].yjs_state) {
     doc = new Y.Doc()
     Y.applyUpdate(doc, new Uint8Array(result.rows[0].yjs_state))
+    /*
+     * Repair a room whose durable state holds nothing while the stored body does.
+     *
+     * The two columns are written together, so an empty fragment beside a
+     * non-empty `content` can only mean one of them is damaged - and it is never
+     * the projection, which is rebuilt from the fragment on every projecting save.
+     * Documents edited by a client that never received its initial sync had their
+     * keystrokes merged into an empty fragment, and a later save could persist that
+     * empty fragment over a body that still had the text. Opening such a document
+     * must show what the database kept instead of a blank page that invites the
+     * writer to type over it.
+     */
+    if (doc.getXmlFragment(roomField).length === 0) {
+      const stored = result.rows[0].content as { doc?: { content?: unknown[] } } | null
+      const nodes = stored?.doc?.content
+      if (Array.isArray(nodes) && nodes.length) {
+        log.warn({ documentId }, 'Collaboration state was empty while the stored body was not; rebuilding the room from the stored body')
+        doc.destroy()
+        doc = createYDoc(stored!.doc)
+        await pool.query('UPDATE documents SET yjs_state=$2 WHERE id=$1', [documentId, yState(doc)])
+      }
+    }
   } else {
     doc = createYDoc((result.rows[0].content as { doc: unknown }).doc)
     await pool.query('UPDATE documents SET yjs_state=$2 WHERE id=$1 AND yjs_state IS NULL', [documentId, yState(doc)])

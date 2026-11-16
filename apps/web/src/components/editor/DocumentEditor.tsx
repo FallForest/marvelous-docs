@@ -108,6 +108,10 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
   const linkSession = useRef<LinkEditSession | null>(null)
   const linkSequence = useRef(0)
   const confirmation = useRef(0)
+  /** When the current wait for a sync began; 0 while there is nothing to wait for. */
+  const waitingSince = useRef(0)
+  /** True once this wait has been reported, so the notice appears once. */
+  const reportedWait = useRef(false)
   const confirmSave = useRef<() => Promise<void>>(async () => {})
   /** One tracker for the title field, so its Enter/Escape share the guard. */
   const titleIme = useRef(compositionGuard())
@@ -186,10 +190,30 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
     try {
       if (!live.current || restoreLock.current || !localDirty.current) return
       if (!provider?.wsconnected || !provider.synced) {
+        /*
+         * A socket that never syncs must not spin the footer for ever.
+         *
+         * The check used to retry every 1.2 s with no deadline, so a collaboration
+         * connection that could not be established left 正在保存… on screen
+         * indefinitely - the one status that tells a writer nothing about whether
+         * their words are safe. After roughly fifteen seconds the status says the
+         * truth instead: not confirmed yet, and the copy is on disk. The retry
+         * continues, so a connection that comes back still clears it.
+         */
+        waitingSince.current ||= Date.now()
+        if (!reportedWait.current && Date.now() - waitingSince.current > 15000) {
+          // Said once per episode. Repeating it every fifteen seconds turned a
+          // status the reader had already understood into a recurring alarm.
+          reportedWait.current = true
+          onSaveStatus('error')
+          window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '实时协作连接尚未建立，内容已保留在本地副本中。连接恢复后会自动保存。' }))
+        }
         window.clearTimeout(statusTimer.current)
         statusTimer.current = window.setTimeout(() => { void confirmPersisted() }, 1200)
         return
       }
+      waitingSince.current = 0
+      reportedWait.current = false
       const { document: latest } = await api.document(token, doc.id)
       if (!live.current || restoreLock.current || attempt !== confirmation.current) return
       /*
