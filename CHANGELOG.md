@@ -4,6 +4,39 @@ All notable changes to Marvelous Docs are documented in this file. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.74] - 2026-11-16
+
+Draft recovery stops creating blank pages, and stops renaming the page it
+restores.
+
+### Fixed
+
+- **Recovering a local draft no longer adds a blank page.** The editor wrote a
+  safety copy before the collaboration room had handed it the document, so the
+  copy it kept was the empty body it mounted with. Offering that copy for
+  recovery created a second, blank document beside the real one or blanked the
+  real one, and the restored body could rename the page after its own first line.
+  Three changes, because there were three ways in:
+  - no copy is captured before the room has synced, and a pre-sync empty body is
+    not treated as unsaved work (after the sync, an empty body is a genuine one —
+    somebody selected all and deleted it — so only that window is filtered);
+  - a copy with no text and no nodes is discarded and deleted rather than offered,
+    while a body that is wordless but real (a pasted screenshot, a rule, an empty
+    table) is still offered;
+  - recovery now writes the copy back into the document that was open, keeping
+    its title, place in the tree and history. Saving it beside the document or
+    downloading JSON remain explicit secondary actions.
+- **A restored body renamed the page it was restored into.** The title is only
+  pinned when it was already chosen by hand; a page that still derives its name
+  from its first line keeps deriving it, so a recovered body names the page as
+  usual instead of inheriting a stale name.
+- **The recovery dialog now shows what it is about to write.** A quoted preview
+  of the copy's own text, and a warning when the copy is older than the cloud
+  document, so the choice is informed rather than guessed. Restoring a copy that
+  already equals the server body is still a silent no-op.
+- A recovery that lands in the currently open document no longer lists it twice
+  in the tree, and the editor is remounted so the restored body is what is shown.
+
 ## [0.1.73] - 2026-11-15
 
 The product pass: controls that do what they show, comments you can own and
