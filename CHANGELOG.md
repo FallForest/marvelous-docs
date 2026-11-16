@@ -4,6 +4,95 @@ All notable changes to Marvelous Docs are documented in this file. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.76] - 2026-11-16
+
+The UI audit batch: tools that act on the thing you selected, a Chinese IME that
+can confirm a candidate, and a top bar that only offers what it can act on.
+
+The audit itself, with its evidence grades, lives in
+[`docs/design/ui-audit-2026-11/`](docs/design/ui-audit-2026-11/). Every row there
+is marked 测试 / 源码 / 未验证 — a claim this release makes is not a claim that
+every scenario was reproduced on real hardware. Real IME sessions, the software
+keyboard and 360px devices were **not** exercised, and the batch record says so.
+
+### Added
+
+- **`lib/editor/ime.ts`: one composition guard for every keyboard handler.**
+  A Chinese writer typing `/biaoti`, seeing the candidate window and pressing
+  Enter to accept it had the block inserted and the candidate thrown away — the
+  slash menu could not tell a confirm key from "run this command". The guard
+  treats `isComposing` and the legacy WebKit `keyCode 229` as IME, and keeps a
+  **60 ms grace window** after `compositionend` for the IMEs that dispatch the
+  final `keydown` after ending the composition. Only ambiguous keys
+  (Enter/Escape/arrows/Tab) consult the grace window; ordinary characters are
+  never blocked.
+- **Image and table tools follow the selection, not the first match on screen.**
+  The image toolbar appears only for a `NodeSelection` that is actually on an
+  image; the table menu walks up from `$from` to the `table` ancestor and
+  unmounts when that node stops being a table — so a teammate deleting the table
+  leaves no floating bar behind.
+- **Uploads get an in-place placeholder.** A pasted image used to be inserted at
+  whatever the caret was when the upload finished. The drop position is now
+  reserved when the gesture happens, carried as a widget decoration that remaps
+  through transactions, shows failure in place with a retry, and does not steal
+  focus on completion.
+- **`lib/focus.ts`** — returning focus to the control that opened a menu, used by
+  the toolbar's popovers and the new document menu.
+- **`DocumentMenu`**: export/print, history, favourite, move and document info
+  behind one 文档更多 button, so the top bar no longer has to shrink five icons to
+  fit a phone.
+- **`verify-ui-audit.mjs`**: four checks in Chrome — two tables (the bar follows
+  the caret), two images (only the selected one), an IME candidate confirmation
+  that must not run a slash command, and a title Enter that must land in the
+  body. `pnpm verify:browser` now runs eleven.
+
+### Changed
+
+- **Word count is right for Chinese.** `CharacterCount`'s default splits on
+  spaces, so a Chinese paragraph counted as one word. It now takes
+  `lib/format.wordCount` (CJK per character, Latin per word) through the
+  extension's own incremental storage — accurate without becoming O(n) per
+  keystroke.
+- **The bubble toolbar appears for any non-empty text selection**, including one
+  that spans paragraphs; it used to require both ends to share a parent node.
+- **The top bar renders only what can act on the mounted screen.** On the home
+  dashboard, a folder, search results and the trash there is no document, so save
+  state, presence, history, comments, share, favourite and export are absent
+  rather than disabled — a row of greyed icons claims the actions exist. What
+  stays is what works everywhere: the sidebar toggle, the path and the title.
+  评论 and 共享 remain one press away at every width.
+- **外观 moved from the top bar to the sidebar footer**, next to the account. It
+  is a browser-wide preference; sitting on a document bar implied it was a
+  document setting. `ThemeMenu` is unchanged, and the verifier that pins it
+  follows the control to its new home.
+- Search in the sidebar keeps the document mounted: typing narrows the tree,
+  Enter is the deliberate second step, Escape clears the field and returns focus
+  without closing what you were reading.
+- Motion tokens gained nothing new: the batch reuses the existing scale, and the
+  audit's motion contract records which transitions are excluded (caret, line
+  height, anything a writer types through).
+
+### Fixed
+
+- Confirming a pinyin candidate no longer inserts a slash-menu block.
+- Pressing Enter in the title moves the caret into the body's first block
+  instead of dropping focus to `document.body`.
+- A pasted image no longer lands wherever the caret happens to be when the upload
+  resolves.
+- The image toolbar no longer edits the first visible image when a different one
+  is selected; the table menu no longer edits the first visible table.
+
+### Verified / not verified
+
+- **Verified in Chrome by `verify-ui-audit.mjs`**: tool targeting for two tables
+  and two images, the IME-safe slash menu, title-to-body focus.
+- **Verified by unit tests** (278 total): anchor survival, placeholder remapping,
+  word counting, selection resolution, open-target safety, focus return.
+- **Not verified, and recorded as such**: real Microsoft Pinyin / Sogou / macOS
+  IME event ordering, the software keyboard, 360px devices at 200% zoom, and
+  input-to-visible-feedback latency. [PERFORMANCE.md](docs/PERFORMANCE.md) has a
+  separately dated table for this tree and states what the harness cannot answer.
+
 ## [0.1.75] - 2026-11-16
 
 Every label now leads where it says it leads: the tree root opens the document

@@ -1,7 +1,7 @@
 {
-  "version": "0.1.75",
-  "releaseUrl": "https://github.com/FallForest/marvelous-docs/releases/tag/v0.1.75",
+  "version": "0.1.76",
+  "releaseUrl": "https://github.com/FallForest/marvelous-docs/releases/tag/v0.1.76",
   "notesUrl": "https://github.com/FallForest/marvelous-docs/releases",
-  "apiImage": "ghcr.io/fallforest/marvelous-docs-api:0.1.75",
-  "webImage": "ghcr.io/fallforest/marvelous-docs-web:0.1.75"
+  "apiImage": "ghcr.io/fallforest/marvelous-docs-api:0.1.76",
+  "webImage": "ghcr.io/fallforest/marvelous-docs-web:0.1.76"
 }
