@@ -13,7 +13,7 @@ import { useDocumentExport } from './hooks/useDocumentExport'
 import { useTheme } from './hooks/useTheme'
 import { emptyContent } from './lib/types'
 import { DocumentSaveQueue } from './lib/document-saves'
-import { clearSavedDraft, readDraft, writeDraft } from './lib/local-drafts'
+import { clearSavedDraft, isBlankDraft, readDraft, writeDraft } from './lib/local-drafts'
 import { syncDocumentUrl } from './lib/url'
 import type { LinkPrompt } from './lib/editor/link-editing'
 import type { CollabStatus, HomeView, RightTab } from './lib/app-types'
@@ -152,7 +152,9 @@ function App() {
     const source = activeRef.current
     const authorId = userRef.current?.id
     // Keep a copy before the debounce or network request can be interrupted.
-    const backedUp = authorId ? writeDraft(localStorage, source.id, authorId, json) : false
+    // A body with no words and no nodes is the placeholder the editor mounts
+    // with, not an edit; copying it would offer a blank page as "unsaved work".
+    const backedUp = authorId && !isBlankDraft(json) ? writeDraft(localStorage, source.id, authorId, json) : false
     // A new document must not cancel the previous document's pending save or
     // cause that body/title to be written into the newly active document.
     if (pendingSave.current && pendingSave.current.id !== source.id) {
@@ -1098,10 +1100,20 @@ function App() {
     {previewVersion && active && <VersionPreview token={token} documentId={active.id} version={previewVersion} currentContent={previewCurrent.content} currentTitle={previewCurrent.title} onRestore={restoreVersion} onClose={() => setPreviewVersion(null)} />}
     <input ref={importInput} className="visually-hidden" type="file" accept=".md,.markdown,.txt" aria-label="导入 Markdown 文件" onChange={(event) => void handleImport(event)} />
     {active?.content && user && <DraftRecovery key={active.id} doc={active} token={token} userId={user.id} notify={setNotice} onRecovered={(recovered) => {
-      setDocuments((items) => [recovered, ...items])
+      /*
+       * Two outcomes share this callback: the copy went back into the document
+       * that was open, or it became a second document. Replacing the row when it
+       * already exists is what keeps the first case from listing the same
+       * document twice; the second case still has to be added to the tree.
+       */
+      const known = documents.some((row) => row.id === recovered.id)
+      setDocuments((items) => known ? items.map((row) => row.id === recovered.id ? recovered : row) : [recovered, ...items])
       setActive(recovered)
       setHomeView('home')
-      setSelectedFolderId(null)
+      setSelectedFolderId(recovered.parentId || null)
+      // The restored body replaces what the editor was showing; remounting is
+      // the only path that reloads it for a REST-only session.
+      setEditorEpoch((epoch) => epoch + 1)
       void refreshStats()
     }} />}
     <ShellDialogs

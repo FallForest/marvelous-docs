@@ -28,7 +28,7 @@ import ImageToolbar from './ImageToolbar'
 import BlockHandle from './BlockHandle'
 import { useBlockAnchor } from '../../hooks/useBlockAnchor'
 import { emptyContent } from '../../lib/types'
-import { clearSavedDraft, sameDraftBody, writeDraft } from '../../lib/local-drafts'
+import { clearSavedDraft, isBlankDraft, sameDraftBody, writeDraft } from '../../lib/local-drafts'
 import { startLinkEdit, mapLinkEdit, linkEditTransaction } from '../../lib/editor/link-editing'
 import type { LinkEditSession, LinkPrompt } from '../../lib/editor/link-editing'
 import type { CollabStatus } from '../../lib/app-types'
@@ -225,8 +225,20 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
         // A merge while our own edit is pending does belong in its safety copy.
         const remote = transaction.getMeta(ySyncPluginKey) as { isChangeOrigin?: boolean; isUndoRedoOperation?: boolean } | undefined
         if (remote?.isChangeOrigin && !remote.isUndoRedoOperation && !localDirty.current) return
+        /*
+         * An empty body before the first sync is not unsaved work.
+         *
+         * The editor mounts with a blank document and the room fills it in a
+         * moment later; a transaction in that window writes "nothing" into the
+         * safety copy, and offering it back later replaced a real page with a
+         * blank one. Once the room has synced, an empty body is a genuine one -
+         * somebody selected all and deleted it - so only the pre-sync window is
+         * filtered. Typing offline is never blank, so it is still kept.
+         */
+        const body = instance.getJSON()
+        if (!provider.synced && isBlankDraft(body)) return
         localDirty.current = true
-        if (!writeDraft(localStorage, doc.id, user.id, instance.getJSON())) {
+        if (!writeDraft(localStorage, doc.id, user.id, body)) {
           window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '浏览器无法保存本地草稿，请保持页面打开直到云端保存完成。' }))
         }
         onSaveStatus('saving')

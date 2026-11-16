@@ -69,6 +69,15 @@
 .link-copy input{min-width:0;flex:1;height:34px;padding:0 8px;border:1px solid var(--border-strong);border-radius:var(--radius-xs);background:var(--surface);font-size:11px;color:var(--text-muted)}
 .link-copy .primary-btn{font-size:11px;min-height:34px;white-space:nowrap;padding:0 9px}
 
+/* ── 2b. local draft recovery ───────────────────────────────────────
+   The dialog shows what is about to be written before it is written: a quote of
+   the copy's own text, then the two secondary routes (download, save beside).
+   Without the quote the reader had to accept or dismiss a body they could not
+   see, which is how a blank copy got restored over a real page. */
+.draft-preview{max-height:168px;overflow:auto;margin:10px 0 0;padding:10px 12px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-soft);font-size:12px;line-height:1.65;color:var(--text-secondary);white-space:pre-wrap;overflow-wrap:anywhere}
+.draft-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.draft-actions .secondary-btn{min-height:32px;font-size:11px}
+
 /* ── 3. version preview ─────────────────────────────────────────── */
 .version-modal{width:min(100%,720px);max-height:calc(100vh - 48px);display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-modal);overflow:hidden}
 

@@ -17,7 +17,7 @@ const { WebSocketServer } = createRequire(resolve(WEB, '../server/package.json')
 const work = await mkdtemp(join(tmpdir(), 'mdocs-drafts-'))
 const chromePath = process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms))
-let chrome, socket, server, createdBody, collaboration
+let chrome, socket, server, createdBody, restoredBody, collaboration
 let online = false
 let allowPersistence = false
 let persistenceReads = 0
@@ -40,6 +40,8 @@ try {
         const [recovered, setRecovered] = useState(null)
         if (location.search === '?prompt=1') return <><button id="outside">外部按钮</button><PromptDialog title="异步输入验证" label="名称" initialValue="测试" onClose={() => window.__closed++} onSubmit={() => { window.__submits++; return new Promise((resolve, reject) => { window.__finish = (fail) => fail ? reject(new Error('测试请求失败')) : resolve() }) }}/></>
         if (location.search === '?recover=1') return <><DraftRecovery doc={doc} token="fixture" userId={user.id} onRecovered={setRecovered} notify={noop}/><p id="recovered">{recovered?.title}</p></>
+        // A document whose only local copy is blank: the dialog must stay shut.
+        if (location.search === '?blank=1') return <><DraftRecovery doc={{ ...doc, id: 'blank-doc', title: '空白草稿验证' }} token="fixture" userId={user.id} onRecovered={setRecovered} notify={noop}/><p id="recovered">{recovered?.title}</p></>
         return <><p id="save-status">{status}</p><DocumentEditor doc={doc} token="fixture" user={user} persist={noop} saveStatus={status} onSaveStatus={setStatus} onAwareness={noop} onCollabStatus={noop} onSelection={noop} onExport={noop} onLink={noop} comments={[]} activeCommentId={null} commentDraft={null}/></>
       }
       createRoot(document.getElementById('root')).render(<Harness/>)
@@ -54,6 +56,14 @@ try {
     if (servePublicArt(request, response)) return
     if (request.url === '/app.js') { response.setHeader('Content-Type', 'text/javascript'); response.end(js); return }
     if (request.url === '/app.css') { response.setHeader('Content-Type', 'text/css'); response.end(css); return }
+    if (request.url === '/api/v1/documents/draft-doc' && request.method === 'PUT') {
+      let raw = ''
+      for await (const part of request) raw += part
+      restoredBody = JSON.parse(raw)
+      response.setHeader('Content-Type', 'application/json')
+      response.end(JSON.stringify({ document: { id: 'draft-doc', title: '草稿恢复验证', version: 1000, content: restoredBody.content } }))
+      return
+    }
     if (request.url === '/api/v1/documents' && request.method === 'POST') {
       let raw = ''
       for await (const part of request) raw += part
@@ -97,13 +107,13 @@ try {
     if (!entry) return
     pending.delete(message.id)
     clearTimeout(entry.timer)
-    if (message.error) entry.reject(new Error(JSON.stringify(message.error)))
+    if (message.error) entry.reject(new Error(entry.method + ': ' + JSON.stringify(message.error)))
     else entry.done(message.result)
   }
   const send = (method, params = {}, sessionId) => new Promise((done, reject) => {
     const id = ++sequence
     const timer = setTimeout(() => { pending.delete(id); reject(new Error(method + ' timed out')) }, 10000)
-    pending.set(id, { done, reject, timer })
+    pending.set(id, { done, reject, timer, method })
     socket.send(JSON.stringify({ id, method, params, sessionId }))
   })
   const { targetId } = await send('Target.createTarget', { url })
@@ -112,6 +122,17 @@ try {
     const result = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }, sessionId)
     if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || 'Browser exception')
     return result.result.value
+  }
+  /*
+   * Reload through the page rather than `Page.navigate`: the app owns
+   * `location`, and a target that re-created its own context mid-navigation
+   * made the protocol call fail on this Chrome build before the assertion it was
+   * setting up. Setting `href` and waiting for the DOM is the same reload with
+   * one less moving part.
+   */
+  const open = async (target) => {
+    await evaluate('location.href = ' + JSON.stringify(target))
+    await sleep(400)
   }
   await send('Page.enable', {}, sessionId)
   for (let i = 0; i < 60 && !await evaluate('Boolean(document.querySelector(".tiptap-content"))'); i++) await sleep(100)
@@ -125,18 +146,32 @@ try {
   await evaluate('window.dispatchEvent(new Event("mdoc-force-save"))')
   await sleep(250)
   assert.equal(await evaluate('document.getElementById("save-status").textContent'), 'saving', 'force-save cannot confirm somebody else\'s version while offline')
-  await send('Page.navigate', { url: url + '/?recover=1' }, sessionId)
+  await open(url + '/?recover=1')
   for (let i = 0; i < 60 && !await evaluate('Boolean(document.querySelector("[role=dialog]"))'); i++) await sleep(100)
   assert.ok(await evaluate('document.body.textContent.includes("发现未保存的本地草稿")'), 'reload must offer recovery')
-  await evaluate('Array.from(document.querySelectorAll("button")).find(button => button.textContent === "恢复为新文档").click()')
-  for (let i = 0; i < 60 && !createdBody; i++) await sleep(100)
-  assert.ok(createdBody)
-  assert.ok(JSON.stringify(createdBody.content.doc).includes('断网时写下的内容'))
-  assert.equal(createdBody.kind, 'document')
+  assert.ok(await evaluate('document.querySelector(".draft-preview").textContent.includes("断网时写下的内容")'), 'the dialog quotes the copy before writing it')
+  // The default route writes the copy back into the document that was open.
+  await evaluate('Array.from(document.querySelectorAll("button")).find(button => button.textContent === "写回这篇文档").click()')
+  for (let i = 0; i < 60 && !restoredBody; i++) await sleep(100)
+  assert.ok(restoredBody, 'writing back must update the existing document')
+  assert.ok(JSON.stringify(restoredBody.content.doc).includes('断网时写下的内容'))
+  assert.equal(restoredBody.content.schemaVersion, 1)
   await sleep(200)
   assert.equal(await evaluate('localStorage.getItem("mdocs-draft-draft-doc")'), null, 'only successful recovery clears the old copy')
+  // The escape hatch still exists: saving the copy beside the document.
+  await evaluate('localStorage.setItem("mdocs-draft-draft-doc", JSON.stringify({ format: 1, documentId: "draft-doc", userId: "draft-author", body: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "另存分支的正文" }] }] }, savedAt: new Date().toISOString() }))')
+  await open(url + '/?recover=1')
+  for (let i = 0; i < 60 && !await evaluate('Boolean(document.querySelector("[role=dialog]"))'); i++) await sleep(100)
+  await evaluate('Array.from(document.querySelectorAll("button")).find(button => button.textContent === "另存为新文档").click()')
+  for (let i = 0; i < 60 && !createdBody; i++) await sleep(100)
+  assert.ok(createdBody, 'the explicit copy route still creates a second document')
+  assert.ok(JSON.stringify(createdBody.content.doc).includes('另存分支的正文'))
+  assert.equal(createdBody.kind, 'document')
+  assert.ok(createdBody.title.endsWith('（恢复的草稿）'))
+  await sleep(200)
+  assert.equal(await evaluate('localStorage.getItem("mdocs-draft-draft-doc")'), null, 'the copy route also clears the safety copy')
   online = true
-  await send('Page.navigate', { url: url + '/?online=1' }, sessionId)
+  await open(url + '/?online=1')
   for (let i = 0; i < 60 && !await evaluate('Boolean(document.querySelector(".tiptap-content"))'); i++) await sleep(100)
   await sleep(500)
   await evaluate('document.querySelector(".tiptap-content").focus()')
@@ -150,7 +185,13 @@ try {
   for (let i = 0; i < 60 && await evaluate('document.getElementById("save-status").textContent') !== 'saved'; i++) await sleep(100)
   assert.equal(await evaluate('document.getElementById("save-status").textContent'), 'saved')
   assert.equal(await evaluate('localStorage.getItem("mdocs-draft-draft-doc")'), null, 'exact persisted content clears the safety copy')
-  await send('Page.navigate', { url: url + '/?prompt=1' }, sessionId)
+  // A blank editor mount must never become an offer to restore nothing.
+  await evaluate('localStorage.setItem("mdocs-draft-blank-doc", JSON.stringify({ format: 1, documentId: "blank-doc", userId: "draft-author", body: { type: "doc", content: [{ type: "paragraph" }] }, savedAt: new Date().toISOString() }))')
+  await open(url + '/?blank=1')
+  await sleep(1200)
+  assert.equal(await evaluate('document.body.textContent.includes("发现未保存的本地草稿")'), false, 'an empty copy is not unsaved work')
+  assert.equal(await evaluate('localStorage.getItem("mdocs-draft-blank-doc")'), null, 'an empty copy is discarded rather than offered')
+  await open(url + '/?prompt=1')
   for (let i = 0; i < 60 && !await evaluate('Boolean(document.querySelector("[role=dialog] input"))'); i++) await sleep(100)
   await sleep(100)
   await evaluate('document.querySelector(".primary-btn").focus()')
@@ -166,7 +207,7 @@ try {
   await evaluate('document.querySelector(".primary-btn").click()')
   assert.equal(await evaluate('window.__submits'), 2)
   await evaluate('window.__finish(false)')
-  console.log('offline drafts, reload recovery, new-copy creation, modal focus and async submission verified in Chrome')
+  console.log('offline drafts, write-back recovery, explicit copy creation, blank-copy filtering, modal focus and async submission verified in Chrome')
 } finally {
   socket?.close()
   for (const client of collaboration?.clients ?? []) client.terminate()

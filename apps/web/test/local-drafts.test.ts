@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { getSchema } from '@tiptap/core'
 import { buildEditorExtensions } from '../src/lib/editor'
-import { clearSavedDraft, draftKey, readDraft, sameDraftBody, writeDraft } from '../src/lib/local-drafts'
+import { clearSavedDraft, draftKey, isBlankDraft, readDraft, sameDraftBody, writeDraft } from '../src/lib/local-drafts'
 
 function storage() {
   const rows = new Map<string, string>()
@@ -41,6 +41,18 @@ test('Yjs omitted default attributes equal the editor body, without hiding actua
   const different = { type: 'doc', content: [{ type: 'paragraph' }] }
   assert.equal(sameDraftBody(client, different, schema), false)
   assert.equal(sameDraftBody(client, { type: 'not-a-valid-node' }, schema), false)
+})
+
+test('a copy with nothing in it is not offered as unsaved work', () => {
+  const blank = { type: 'doc', content: [{ type: 'paragraph' }] }
+  assert.equal(isBlankDraft(blank), true)
+  assert.equal(isBlankDraft({ type: 'doc', content: [] }), true)
+  assert.equal(isBlankDraft({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '   ' }] }] }), true)
+  // An empty table, an image or a rule is a real edit with no words in it.
+  assert.equal(isBlankDraft({ type: 'doc', content: [{ type: 'horizontalRule' }] }), false)
+  assert.equal(isBlankDraft({ type: 'doc', content: [{ type: 'image', attrs: { src: '/uploads/a.png' } }] }), false)
+  assert.equal(isBlankDraft({ type: 'doc', content: [{ type: 'table', content: [] }] }), false)
+  assert.equal(isBlankDraft({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '写下的字' }] }] }), false)
 })
 
 test('legacy draft recovery, malformed data and unavailable storage are handled', () => {
