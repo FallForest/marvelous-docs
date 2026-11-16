@@ -4,6 +4,64 @@ All notable changes to Marvelous Docs are documented in this file. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.75] - 2026-11-16
+
+Every label now leads where it says it leads: the tree root opens the document
+list it names, the top bar names the screen that is mounted, and each sidebar
+destination has one entry point instead of two.
+
+### Added
+
+- **`所有文档` is a screen.** The tree's root row carried that label but called
+  the same handler as `首页`, so the sidebar had two buttons for the dashboard
+  200px apart and nothing opened the flat list the label promised.
+  `pages/DocumentListPage.tsx` is that destination: every document, newest
+  first, each row naming its folder so a document can be placed without walking
+  the tree, with the sidebar's filter box narrowing it. Deliberately not a second
+  dashboard — no stat cards, no recent slices; those stay on 首页.
+- **`Select` is a real combobox.** The native `<select>` in the share dialog
+  and the invite dialog could not be themed — a native popup is drawn by the OS,
+  so the paper and pencil skin stopped at the closed control. `components/ui/Select.tsx`
+  is an APG select-only combobox on top of `Popover`: focus stays on the
+  trigger with `aria-activedescendant`, arrow/Home/End/Enter/Escape and
+  type-ahead (including repeated-letter cycling) work as a native select does,
+  the popup is real HTML and therefore themed, and a containing dialog's focus
+  trap survives the portal. Dismissing the list now stops at the list — Escape
+  used to reach the dialog underneath and close both.
+- **`verify-handdrawn-controls.mjs`**: 27 theme-comparison measurements plus a
+  short-screen resize check, driven through the real controls in an isolated
+  fixture. Wired into `pnpm verify:browser`, which now runs ten verifiers.
+- `styles/select.css`, `handdrawn-menus.css` and `handdrawn-collaboration.css`
+  carry the new control geometry and its paper paint, in that cascade order.
+
+### Changed
+
+- **The workspace block is context, not a menu.** It opened a popover repeating
+  three entries already in the same column (管理中心 was also a nav row, 快捷键与帮助
+  was also a footer row, 退出登录 was also the profile icon) 90px from the
+  originals. It is now a static card showing the workspace name and the member
+  count; every action keeps exactly one home.
+- **The top bar names the screen that is mounted.** The title fell through to
+  `所有文档` whenever no document or folder was open, so 首页, 收藏, 最近访问 and
+  回收站 all announced themselves as a document list. One `VIEW_TITLES` table
+  replaces the nested ternary, and a new view can now name itself.
+- **Menus scroll on one axis, and a menu that fits paints no scrollbar.** The
+  decorative `::after` frame sat at `inset:-1px`, which is correct for a button
+  but adds a pixel to both scroll extents inside a scrollport: measured at
+  1280×900, a menu whose content fit had `client 228×298, scroll 229×299` and
+  drew both scrollbars. `.popover` and `.creation-menu` now inset that frame by
+  0 and set `overflow-x:hidden` (`overflow-y:auto` alone computes to `auto` on
+  both axes).
+- The editor's own export handler is gone: the shell already owns export, and
+  two handlers meant two paths to the same menu.
+
+### Fixed
+
+- Pressing `所有文档` no longer lands on the dashboard, and the sidebar no longer
+  offers two routes to 管理中心 / 帮助 / 退出登录.
+- A tall menu no longer shows a horizontal scrollbar under its own content.
+- Escape inside an option list closes the list, not the dialog it sits in.
+
 ## [0.1.74] - 2026-11-16
 
 Draft recovery stops creating blank pages, and stops renaming the page it
