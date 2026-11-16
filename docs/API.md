@@ -371,7 +371,7 @@ Every REST content update, version restore, and persisted collaboration edit app
 ## System
 
 - `GET /healthz` — `{ "status": "ok" } ` or `503 DATABASE_UNAVAILABLE`.
-- `GET /system/version` — `{ "version": "0.1.76" }`.
+- `GET /system/version` — `{ "version": "0.1.77" }`.
 - `GET /system/metrics` (workspace administrator) — operational counters: `{ "version", "uptimeSeconds", "workspace": { documents, versions, trashed, members }, "collaboration": { rooms, clients, dirtyRooms, roomsAwaitingProjection, queuedDocumentOperations, scheduledHistoryCheckpoints }, "database": { total, idle, waiting }, "migrations": [{ filename, applied_at }] }`. JSON rather than a Prometheus exposition, because the documented deployment is one compose stack and the operator reads this with `curl`.
 - `GET /system/update-check` (authenticated) — `{ "currentVersion", "latestVersion", "updateAvailable", "manifest" }`.
 - `POST /system/update` (workspace administrator) — starts the update agent; `202`.

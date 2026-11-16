@@ -4,6 +4,57 @@ All notable changes to Marvelous Docs are documented in this file. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.77] - 2026-11-16
+
+The local-draft prompt stops firing on ordinary writing, and recovery finally
+writes into the page you are looking at.
+
+### Fixed
+
+- **The draft prompt fired on ordinary writing.** Three faults added up, and each
+  one alone was enough to make the dialog appear over work that was never at
+  risk:
+  - a safety copy was captured before the collaboration room had delivered the
+    body, so the copy it kept was the empty body the editor mounted with;
+  - a copy counted as "already saved" only when two bodies were byte-identical,
+    and attribute defaults plus key order after one round trip through
+    PostgreSQL's jsonb made that almost never true - so the copy was never
+    cleared and every later visit offered it again;
+  - the comparison ran once, before the body had arrived, and then never again.
+
+  Copies are no longer captured pre-sync, a blank copy is discarded, and the
+  "already saved" test is now `sameDraftContent` - same words and same node/mark
+  shape, ignoring what serialization adds. The check re-runs whenever the
+  document's version changes, which is exactly when a copy stops being needed,
+  and a dismissal holds for the rest of the page session.
+- **The save footer could sit on 正在保存… after the text had landed.** It used
+  the same byte-identical comparison to decide the cloud had caught up; with that
+  comparison effectively never true, the confirmation loop kept re-checking.
+- **Recovery now writes into the page you are looking at.** The primary action
+  created a second document, leaving the open one unchanged and a stray copy
+  beside it. It replaces the body **through the editor** - the same transaction
+  path as typing - so the text appears at once, the room broadcasts it, autosave
+  persists it and undo can take it back. A connected room that has not synced yet
+  is waited for (bounded at 8 s), because anything dispatched earlier would merge
+  with the incoming cloud body instead of replacing it; offline there is no socket
+  and therefore nothing to wait for.
+
+### Changed
+
+- **The recovery dialog asks one question.** The copy is shown with a short
+  preview and a timestamp; 下载备份 and 另存为新文档 became text links, so the
+  primary action is the only button. A copy older than the cloud document still
+  says so, in one line.
+- **Popover rows use staggered `motion-fade-in`, not `motion-enter`.** The 8px
+  vertical travel of `motion-enter` pushed the last row past the menu's padding
+  and briefly created a scrollbar on a menu that fitted. `docs/MOTION.md` records
+  the rule.
+- Three hand-drawn icons the new menus needed — `info`, `move`, `print` — with
+  their `.webp` runtime copies.
+- `verify-handdrawn-controls.mjs` gained a `--motion` mode (open/close timing,
+  scroll extents, short-screen placement across six menus), and `verify:browser`
+  runs it as its own step.
+
 ## [0.1.76] - 2026-11-16
 
 The UI audit batch: tools that act on the thing you selected, a Chinese IME that

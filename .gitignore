@@ -37,6 +37,11 @@ coverage/
 # docs/PERFORMANCE.md; the raw table is scratch and must not be committed.
 /measure-run*.txt
 
+# Raw per-frame motion trace from verify-handdrawn-controls.mjs --motion. Every
+# run samples requestAnimationFrame, so the file differs each time and is 2.5 MB;
+# it is scratch, and the readable record is the screenshot set plus MOTION.md.
+docs/design/handdrawn-v1/implementation-v*/motion-verification.json
+
 # Vite debug output
 apps/web/vite-out.txt
 
