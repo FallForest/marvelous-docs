@@ -15,22 +15,23 @@ anything that only changes state, and nothing that makes the user wait.
 | `styles/motion.css` | Keyframes, motion utilities, reduced-motion rules | Component-specific rules |
 | `lib/motion.ts` | The same numbers for JS, plus `prefersReducedMotion()` | CSS, React |
 
-Every other layer — `base.css`, `surfaces.css`, `dialogs.css`,
+Every other layer — `base.css`, `surfaces.css`, `select.css`, `dialogs.css`,
 `navigation.css`, `panels.css`, `editor.css`, `content.css`, `shell.css`,
 `pages.css`, `layout.css`, `history.css`, `handdrawn.css`,
 `handdrawn-navigation.css`, `handdrawn-content.css`, `handdrawn-controls.css`,
 `handdrawn-materials.css`, `handdrawn-writing.css`,
-`handdrawn-editor-chrome.css` — only *uses* these names. The hand-drawn skin
+`handdrawn-editor-chrome.css`, `handdrawn-menus.css`,
+`handdrawn-collaboration.css` — only *uses* these names. The hand-drawn skin
 replaces material, radius and shadow treatment under its root theme selector;
 durations, easing and interaction timing continue to use the shared motion
 tokens. A rule that hard-codes `220ms` or `ease-in-out` is a bug: it will not
 be retuned when the rest of the app is, and `structure.test.ts` fails on it.
 
-`history.css` loads last because the history panel is the newest surface and
-paints over both appearances: it carries geometry for the day groups, the
-timeline, and the version-diff preview, and its hand-drawn block only adds
-texture. Its one movement is the day chevron, a `transform` rotate at
-`--duration-fast` that is dropped under `prefers-reduced-motion`.
+`history.css` carries geometry for the day groups, timeline and version-diff
+preview. `handdrawn-menus.css` and `handdrawn-collaboration.css` follow it to
+paint the newer controls without changing their geometry. The history layer's
+one movement is the day chevron, a `transform` rotate at `--duration-fast`
+that is dropped under `prefers-reduced-motion`.
 
 ## Choosing a motion
 

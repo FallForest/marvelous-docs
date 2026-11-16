@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "generator": "built-in image_gen",
   "assets": [
     {
@@ -1032,6 +1032,34 @@
       "partialAlphaFraction": 0.4289,
       "pngBytes": 83801,
       "webpBytes": 15530
+    },
+    {
+      "id": "menu-paper",
+      "name": "浮层纸张",
+      "category": "decor",
+      "usage": "下拉菜单九宫格纸张表面，文字仍为HTML",
+      "png": "decor/menu-paper.png",
+      "webp": "decor/menu-paper.webp",
+      "width": 960,
+      "height": 626,
+      "sourceWidth": 1536,
+      "sourceHeight": 1024,
+      "alphaBounds": {
+        "left": 17,
+        "top": 20,
+        "width": 1503,
+        "height": 988
+      },
+      "crop": {
+        "left": 22,
+        "top": 24,
+        "width": 1490,
+        "height": 971
+      },
+      "transparentFraction": 0.0095,
+      "partialAlphaFraction": 0.9905,
+      "pngBytes": 756587,
+      "webpBytes": 65848
     }
   ]
 }

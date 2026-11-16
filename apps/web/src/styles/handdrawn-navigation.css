@@ -31,8 +31,6 @@
   background:rgba(var(--surface-rgb),.52);
   box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.035);
 }
-[data-theme='handdrawn'] .sidebar .workspace:hover,
-[data-theme='handdrawn'] .sidebar .workspace[aria-expanded='true']{background:var(--surface);border-color:var(--text-soft)}
 [data-theme='handdrawn'] .sidebar .workspace-avatar{
   background:var(--tint-sage-soft) url('/art/handdrawn-v1/decor/marker-sage.webp') center / 100% 100% no-repeat;
   border-radius:6px 10px 8px 5px;
@@ -40,7 +38,6 @@
 }
 [data-theme='handdrawn'] .sidebar .workspace-copy b{color:var(--text)}
 [data-theme='handdrawn'] .sidebar .workspace-copy small{color:var(--text-muted)}
-[data-theme='handdrawn'] .sidebar .workspace>svg{color:var(--text-secondary)}
 [data-theme='handdrawn'] .sidebar .action-row{
   border-radius:6px 8px 5px 7px;
   background:rgba(var(--surface-rgb),.42);
@@ -82,16 +79,14 @@
 [data-theme='handdrawn'] .sidebar .new-doc-chevron{color:var(--text-secondary)}
 [data-theme='handdrawn'] .sidebar .new-doc-btn:hover,
 [data-theme='handdrawn'] .sidebar .new-doc-btn[aria-expanded='true']{background:var(--surface-selected);border-color:var(--text-secondary)}
-[data-theme='handdrawn'] :is(.workspace-menu,.template-menu){background:var(--surface);border-color:var(--border-strong);border-radius:7px 10px 6px 9px}
-[data-theme='handdrawn'] :is(.workspace-menu,.template-menu) .menu-item{border-radius:5px 8px 6px 7px}
+[data-theme='handdrawn'] .template-menu{background:var(--surface);border-color:var(--border-strong);border-radius:7px 10px 6px 9px}
+[data-theme='handdrawn'] .template-menu .menu-item{border-radius:5px 8px 6px 7px}
 /* Creation choices exist in both appearances; office templates are an explicit
    secondary view instead of filling the main New menu. */
 .template-menu .menu-item.template-primary{background:var(--surface-muted);border-radius:6px}
 .template-menu .template-note{color:var(--text-muted)}
 .template-menu .template-back{color:var(--text-secondary)}
 [data-theme='handdrawn'] .template-menu .menu-item.template-primary{background:var(--tint-sage-softer);border-color:var(--tint-sage-line);border-radius:6px 9px 5px 8px}
-[data-theme='handdrawn'] .workspace-menu .workspace-menu-head>span{color:var(--text-muted)}
-[data-theme='handdrawn'] .workspace-menu .workspace-menu-user .avatar{border-radius:8px 10px 6px 9px}
 [data-theme='handdrawn'] .sidebar .root-folder{
   color:var(--text-muted);
 }

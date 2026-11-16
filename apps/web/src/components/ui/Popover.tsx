@@ -10,6 +10,10 @@ type PopoverProps = {
   align?: 'left' | 'right'
   className?: string
   label: string
+  role?: 'menu' | 'listbox'
+  id?: string
+  /** Select-only comboboxes keep DOM focus on their trigger. */
+  focusOnOpen?: boolean
 }
 
 type Position = { top: number; left: number; width: number; minWidth: number; maxWidth: number; maxHeight: number; placement: 'below' | 'above' }
@@ -56,7 +60,7 @@ export function getPopoverPosition({ anchor, panel, viewport, align, scale = 1 }
  * scroll container (sidebar, document tree); an absolutely positioned menu
  * there gets clipped by that container's overflow.
  */
-export default function Popover({ open, onClose, children, align = 'right', className = '', label }: PopoverProps) {
+export default function Popover({ open, onClose, children, align = 'right', className = '', label, role = 'menu', id, focusOnOpen = true }: PopoverProps) {
   const marker = useRef<HTMLSpanElement | null>(null)
   const panel = useRef<HTMLDivElement | null>(null)
   const closeRef = useRef(onClose)
@@ -144,10 +148,10 @@ export default function Popover({ open, onClose, children, align = 'right', clas
   }, [open])
 
   useEffect(() => {
-    if (!open || !positioned || !panel.current) return
+    if (!open || !positioned || !panel.current || !focusOnOpen) return
     const first = panel.current.querySelector<HTMLElement>('[role="menuitem"], button, [tabindex="0"]')
     first?.focus({ preventScroll: true })
-  }, [open, positioned])
+  }, [open, positioned, focusOnOpen])
 
   // Stagger lives on the rows, not on a wrapper: the menu itself slides in as
   // one surface while its rows settle 20ms apart, like a UIKit contextual menu.
@@ -173,7 +177,8 @@ export default function Popover({ open, onClose, children, align = 'right', clas
     {open && createPortal(<div
       ref={panel}
       className={'popover popover-' + align + ' popover-' + (position?.placement ?? 'below') + (className ? ' ' + className : '')}
-      role="menu"
+      role={role}
+      id={id}
       aria-label={label}
       style={position ? { top: position.top, left: position.left, width: position.width, minWidth: position.minWidth, maxWidth: position.maxWidth, maxHeight: position.maxHeight } : { visibility: 'hidden', top: 0, left: 0 }}
     >{children}</div>, document.body)}

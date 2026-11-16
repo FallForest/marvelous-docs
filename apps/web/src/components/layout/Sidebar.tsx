@@ -2,7 +2,6 @@ import { useRef, useState } from 'react'
 import { BookOpen, CheckSquare, ChevronDown, ChevronRight, Clock3, Folder, Home, LogOut, PanelLeftClose, Plus, Search, ShieldCheck, Sparkles, Star, Trash2 } from 'lucide-react'
 import TemplateMenu from '../layout/TemplateMenu'
 import TreeItem from '../tree/TreeItem'
-import Popover from '../ui/Popover'
 import ArtIcon from '../ui/ArtIcon'
 import type { Doc, DocNode, TreeAction, User } from '../../lib/types'
 import type { HomeView } from '../../lib/app-types'
@@ -19,13 +18,15 @@ type SidebarProps = {
   query: string
   narrow: boolean
   floating: boolean
-  workspaceOpen: boolean
   newMenuOpen: boolean
   treeExpanded: boolean
+  /** Everybody in the workspace, shown in the context card. */
+  memberCount?: number | null
   onClose: () => void
-  onWorkspaceMenu: (open: boolean) => void
   onSearch: (value: string) => void
   onHome: () => void
+  /** Opens the flat "all documents" list — the tree root row's own destination. */
+  onAllDocuments: () => void
   onAdmin: () => void
   onRecent: () => void
   onFavorites: () => void
@@ -97,20 +98,25 @@ export default function Sidebar(props: SidebarProps) {
         shrinking it, so it needs its own readable surface rather than the
         translucent one it has as a static column. */}
     <div className="sidebar-scroll">
+      {/*
+       * Workspace context, not a menu.
+       *
+       * This block used to open a popover that repeated three entries already
+       * present elsewhere in the same column: 管理中心 (also a nav row),
+       * 快捷键与帮助 (also the footer row) and 退出登录 (also the profile row's
+       * icon). Nothing in the menu was unique, and the trigger sat 90px from
+       * those nav rows, so the only thing it added was a second path to them.
+       *
+       * It is now a static card. The workspace name and the reader's own
+       * identity are context — they belong on screen, not behind a click — and
+       * every action has exactly one home: 管理中心 in the 团队 group, help and
+       * sign-out in the footer strip.
+       */}
       <div className="workspace-anchor">
-        <button type="button" className="workspace sketch-frame" aria-haspopup="menu" aria-expanded={props.workspaceOpen} onClick={() => props.onWorkspaceMenu(!props.workspaceOpen)}>
+        <div className="workspace">
           <div className="workspace-avatar">M</div>
-          <span className="workspace-copy"><b>Marvelous 团队</b><small>工作区</small></span>
-          <ChevronDown size={16} />
-        </button>
-        <Popover open={props.workspaceOpen} onClose={() => props.onWorkspaceMenu(false)} label="工作区菜单" align="left" className="workspace-menu sketch-frame">
-          <div className="workspace-menu-head"><b>Marvelous 团队</b><span>私有部署 · 单工作区</span></div>
-          <div className="workspace-menu-user"><span className="avatar">{initial}</span><div><b>{user.name || user.email.split('@')[0]}</b><small>{user.email}</small></div></div>
-          <div className="menu-divider" />
-          {user.role === 'admin' && <button type="button" role="menuitem" className="menu-item" onClick={props.onAdmin}><ArtIcon name="shield" fallback={<ShieldCheck size={15} />} /><span>管理中心</span></button>}
-          <button type="button" role="menuitem" className="menu-item" onClick={props.onHelp}><ArtIcon name="help" fallback={<span className="menu-key">?</span>} /><span>快捷键与帮助</span></button>
-          <button type="button" role="menuitem" className="menu-item menu-item-danger" onClick={props.onLogout}><ArtIcon name="logout" fallback={<LogOut size={15} />} /><span>退出登录</span></button>
-        </Popover>
+          <span className="workspace-copy"><b>Marvelous 团队</b><small>{props.memberCount ? props.memberCount + ' 位成员 · 私有部署' : '私有部署 · 单工作区'}</small></span>
+        </div>
       </div>
 
       <div className="sidebar-actions">
@@ -141,6 +147,16 @@ export default function Sidebar(props: SidebarProps) {
         <button type="button" className="nav-row" aria-current={homeView === 'favorites' ? 'page' : undefined} onClick={props.onFavorites}><ArtIcon name="favorite-star" fallback={<Star size={16} />} />收藏 {favoriteSet.size > 0 && <span className="nav-count">{favoriteSet.size}</span>}</button>
       </nav>
 
+      {/*
+       * Three destinations with three different jobs, so each row keeps its own
+       * label and its own handler:
+       *   模板库  starts something new from a shared structure
+       *   管理中心  administers the workspace (members, updates)
+       *   回收站  recovers or purges what was deleted
+       * 管理中心 is the only admin entry point: it used to also appear in the
+       * workspace popover, which is why opening that popover to reach it was
+       * possible at all.
+       */}
       <div className="nav-label">团队</div>
       <nav className="nav-list" aria-label="团队">
         <button type="button" className="nav-row creation-library-entry" onClick={props.onOpenTemplates}><ArtIcon name="notebook" fallback={<BookOpen size={16} />} />模板库</button>
@@ -173,13 +189,20 @@ export default function Sidebar(props: SidebarProps) {
       </div>
 
       {props.treeExpanded && <div className="doc-tree-shell">
-        {/* The "所有文档" shortcut is a sibling action, not a node of the tree,
+        {/* The "所有文档" root row is a sibling action, not a node of the tree,
             so it lives outside role="tree" — a tree may only contain treeitems
-            and groups. */}
+            and groups.
+
+            It opens the flat list of every document, which is what its label
+            promises. It used to call the same handler as the 首页 nav row, so
+            the sidebar carried two buttons for one destination: the dashboard.
+            A reader who pressed "所有文档" and landed on a dashboard of three
+            cards had been told the tree root was somewhere it was not. */}
         <button
           type="button"
-          className="root-folder"
-          onClick={props.onHome}
+          className={'root-folder' + (homeView === 'all' && !activeId ? ' is-selected' : '')}
+          aria-current={homeView === 'all' && !activeId ? 'page' : undefined}
+          onClick={props.onAllDocuments}
           // Dropping here moves the document out of any folder.
           onDragOver={(event) => {
             if (!event.dataTransfer.types.includes('application/x-mdocs-doc')) return
@@ -192,7 +215,7 @@ export default function Sidebar(props: SidebarProps) {
             const dragged = props.allDocs.find((doc) => doc.id === id)
             if (dragged) props.onMoveInto(dragged, null)
           }}
-        ><ArtIcon name="folder" fallback={<Folder size={15} />} /><span>所有文档</span></button>
+        ><ArtIcon name="folder" fallback={<Folder size={15} />} /><span>所有文档</span><span className="root-folder-count">{props.allDocs.filter((doc) => doc.kind !== 'folder').length || ''}</span></button>
         <div
         className="doc-tree"
         ref={treeRef}

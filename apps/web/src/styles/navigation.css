@@ -58,7 +58,6 @@
 .popover.tb-align-menu{width:150px;max-width:160px}
 .popover.template-menu{width:min(236px,calc(100vw - 24px));max-width:236px}
 .popover.tree-menu{width:184px;max-width:184px}
-.popover.workspace-menu{width:min(242px,calc(100vw - 24px));max-width:242px}
 .popover.export-menu{width:190px;max-width:190px}
 .popover.theme-menu{width:min(248px,calc(100vw - 24px));max-width:248px}
 

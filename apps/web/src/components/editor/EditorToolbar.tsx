@@ -14,7 +14,6 @@ export type ToolbarActions = {
   onImage: () => void
   onFind: () => void
   onOutline: () => void
-  onExport: () => void
   onComment: () => void
 }
 
@@ -82,7 +81,7 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
 
     <div className="tb-group tb-group-block">
       <div className="tb-anchor">
-        <button type="button" className="tb-select sketch-frame" disabled={disabled} aria-haspopup="menu" aria-expanded={blockOpen} onMouseDown={(event) => { event.preventDefault(); onInteract?.() }}
+        <button type="button" className="tb-select sketch-frame" disabled={disabled} aria-label="段落样式" aria-haspopup="menu" aria-expanded={blockOpen} onMouseDown={(event) => { event.preventDefault(); onInteract?.() }}
           onClick={() => setBlockOpen((value) => !value)}>
           <span>{editor ? currentBlockLabel(editor) : '正文'}</span><ChevronDown size={13} />
         </button>
@@ -97,11 +96,11 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
       </div>
 
       <div className="tb-anchor">
-        <button type="button" className="tb-select tb-size sketch-frame" disabled={disabled} aria-haspopup="menu" aria-expanded={sizeOpen} onClick={() => setSizeOpen((value) => !value)}>
+        <button type="button" className="tb-select tb-size sketch-frame" disabled={disabled} aria-label="字号" aria-haspopup="menu" aria-expanded={sizeOpen} onClick={() => setSizeOpen((value) => !value)}>
           <span>{editor?.getAttributes('textStyle').fontSize?.replace('px', '') || '16'}</span><ChevronDown size={12} />
         </button>
         <Popover open={sizeOpen} onClose={() => setSizeOpen(false)} label="字号" align="left" className="tb-menu tb-size-menu">
-          {FONT_SIZES.map((size) => <button key={size.value} type="button" role="menuitem" className="tb-menu-item" onClick={() => { editor?.chain().focus().setFontSize(size.value).run(); setSizeOpen(false) }}>
+          {FONT_SIZES.map((size) => <button key={size.value} type="button" role="menuitem" className={'tb-menu-item' + ((editor?.getAttributes('textStyle').fontSize || '16px') === size.value ? ' is-active' : '')} onClick={() => { editor?.chain().focus().setFontSize(size.value).run(); setSizeOpen(false) }}>
             <span style={{ fontSize: size.value }}>{size.label}</span>
           </button>)}
         </Popover>
@@ -126,7 +125,7 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
           <span className="tb-color"><Palette size={15} /><i style={{ background: (editor?.getAttributes('textStyle').color as string) || '#1f2937' }} /></span>
         </button>
         <Popover open={colorOpen} onClose={() => setColorOpen(false)} label="文字颜色" align="left" className="tb-menu tb-color-menu">
-          <div className="tb-swatches">{COLORS.map((color) => <button key={color} type="button" aria-label={'颜色 ' + color} className="tb-swatch" style={{ background: color }} onClick={() => { editor?.chain().focus().setColor(color).run(); setColorOpen(false) }} />)}</div>
+          <div className="tb-swatches">{COLORS.map((color) => <button key={color} type="button" aria-label={'颜色 ' + color} aria-pressed={(editor?.getAttributes('textStyle').color || '#1f2937') === color} className="tb-swatch" style={{ background: color }} onClick={() => { editor?.chain().focus().setColor(color).run(); setColorOpen(false) }} />)}</div>
           <button type="button" className="tb-menu-item" onClick={() => { editor?.chain().focus().unsetColor().run(); setColorOpen(false) }}>默认颜色</button>
         </Popover>
       </div>
@@ -136,7 +135,7 @@ export default function EditorToolbar({ editor, actions, onInteract }: { editor:
           <span className="tb-color tb-highlight"><Highlighter size={15} /><i /></span>
         </button>
         <Popover open={highlightOpen} onClose={() => setHighlightOpen(false)} label="高亮颜色" align="left" className="tb-menu tb-color-menu">
-          <div className="tb-swatches">{HIGHLIGHTS.map((color) => <button key={color} type="button" aria-label={'高亮 ' + color} className="tb-swatch" style={{ background: color }} onClick={() => { editor?.chain().focus().toggleHighlight({ color }).run(); setHighlightOpen(false) }} />)}</div>
+          <div className="tb-swatches">{HIGHLIGHTS.map((color) => <button key={color} type="button" aria-label={'高亮 ' + color} aria-pressed={editor?.getAttributes('highlight').color === color} className="tb-swatch" style={{ background: color }} onClick={() => { editor?.chain().focus().toggleHighlight({ color }).run(); setHighlightOpen(false) }} />)}</div>
           <button type="button" className="tb-menu-item" onClick={() => { editor?.chain().focus().unsetHighlight().run(); setHighlightOpen(false) }}>清除高亮</button>
         </Popover>
       </div>

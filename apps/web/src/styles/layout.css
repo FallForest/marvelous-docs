@@ -84,7 +84,6 @@
 :root .sidebar .workspace-copy{gap:3px;flex:1;min-width:0}
 :root .sidebar .workspace-copy b{font-size:13px;font-weight:600;line-height:1.5}
 :root .sidebar .workspace-copy small{font-size:11px;line-height:1.4}
-:root .sidebar .workspace>svg{width:15px;height:15px;flex:0 0 15px}
 :root .sidebar .sidebar-actions{margin:13px 0 17px}
 :root .sidebar .action-row{
   height:44px;
@@ -145,10 +144,10 @@
 :root .sidebar .new-menu-anchor{display:flex;min-width:0;position:relative;align-self:stretch}
 :root .sidebar .new-doc-chevron{width:12px;height:12px;flex:0 0 12px;margin-left:1px}
 :root .sidebar .new-doc-btn:active{transform:none}
-:root :is(.workspace-menu,.template-menu){padding:9px;width:min(276px,calc(100vw - 24px))}
-:root :is(.workspace-menu,.template-menu) .menu-heading{padding:7px 10px 8px;font-size:12px;letter-spacing:.05em}
-:root :is(.workspace-menu,.template-menu) .menu-item{min-height:40px;gap:10px;padding:7px 10px;font-size:13px}
-:root :is(.workspace-menu,.template-menu) .menu-item .art-icon{width:25px;height:25px;flex-basis:25px}
+:root .template-menu{padding:9px;width:min(276px,calc(100vw - 24px))}
+:root .template-menu .menu-heading{padding:7px 10px 8px;font-size:12px;letter-spacing:.05em}
+:root .template-menu .menu-item{min-height:40px;gap:10px;padding:7px 10px;font-size:13px}
+:root .template-menu .menu-item .art-icon{width:25px;height:25px;flex-basis:25px}
 :root .template-menu .template-art{display:inline-flex;align-items:center;justify-content:center;flex:0 0 25px;line-height:0}
 :root .template-menu .menu-item>svg{width:20px;height:20px;flex:0 0 25px}
 :root .template-menu .menu-item-copy{min-width:0}
@@ -165,13 +164,6 @@
 :root .template-menu .template-primary .art-icon{width:29px;height:31px;flex-basis:29px}
 :root .template-menu .template-note{padding-inline:10px;font-size:12px;line-height:1.7}
 :root .template-menu .menu-item.template-office-entry{min-height:56px}
-:root .workspace-menu .workspace-menu-head{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:9px 10px 12px;margin-bottom:5px;border-bottom:1px solid var(--border)}
-:root .workspace-menu .workspace-menu-head b{font-family:var(--font-handwritten);font-size:19px;line-height:1.4}
-:root .workspace-menu .workspace-menu-head>span{font-size:11px}
-:root .workspace-menu .workspace-menu-user{padding:8px 10px 12px;margin-bottom:4px;gap:10px}
-:root .workspace-menu .workspace-menu-user b{font-size:13px}
-:root .workspace-menu .workspace-menu-user small{font-size:11px;line-height:1.6}
-:root .workspace-menu .workspace-menu-user .avatar{border:1px solid var(--border-strong);font-family:var(--font-handwritten);font-size:16px}
 :root .sidebar .root-folder{
   height:39px;
   font-size:12px;
@@ -286,7 +278,7 @@
   :root .sidebar .root-folder{height:44px}
   :root .sidebar .help-row{height:44px}
   :root .sidebar .profile-row .icon-btn{width:44px;height:44px}
-  :root :is(.workspace-menu,.template-menu) .menu-item{min-height:44px}
+  :root .template-menu .menu-item{min-height:44px}
   :root .sidebar .batch-action{min-height:40px}
 }/* content component layout */
 :root .paper{
@@ -1004,9 +996,33 @@
 :root .sidebar .creation-split :is(.creation-primary,.creation-more):hover{background:var(--surface-active)}
 :root .sidebar .creation-split :is(.creation-primary,.creation-more):focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
 :root .creation-menu{width:min(240px,calc(100vw - 24px));overflow-x:hidden;overflow-y:auto}
-/* The decorative frame belongs inside the scrollport. A negative inset adds
-   one pixel to both scroll extents even when these two rows fit completely. */
-:root .creation-menu.sketch-frame::after{inset:0}
+/*
+ * The decorative frame belongs inside the scrollport.
+ *
+ * .sketch-frame::after is positioned at inset:-1px, which is right for a button
+ * (a button is not a scroll container, so the overlay just paints a pixel past
+ * its edge). A popover IS a scroll container - `.popover` sets overflow:auto so a
+ * long menu can scroll - and there the same -1px adds one pixel to both scroll
+ * extents. The result is a menu that fits its content completely yet still shows
+ * a vertical scrollbar and a horizontal one, which is what made the workspace
+ * menu look like an overflowing panel. Measured at 1280x900: client 228x298,
+ * scroll 229x299.
+ *
+ * Zeroing the inset keeps the artwork inside the border box, so the frame is
+ * still painted (where a skin wants it) without creating scrollable overflow.
+ */
+:root :is(.popover,.creation-menu).sketch-frame::after{inset:0}
+
+/* Checkbox faces switch between native and illustrated artwork in the same
+ * fixed slot, including the newer sharing and history controls. */
+:root :is(.share-restriction,.history-diff-summary,.find-case) input[type='checkbox']{
+  width:17px;
+  min-width:17px;
+  height:17px;
+  flex:0 0 17px;
+  padding:0;
+  vertical-align:middle;
+}
 :root .creation-menu .template-menu-body{flex:0 0 auto;width:100%;min-width:0}
 :root .creation-menu .menu-item{min-width:0;min-height:44px}
 :root .creation-menu .menu-item>span:last-child{min-width:0;overflow-wrap:anywhere}

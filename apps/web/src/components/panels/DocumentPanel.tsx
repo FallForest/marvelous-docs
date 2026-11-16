@@ -3,6 +3,7 @@ import { History, MessageCircle, Send, X } from 'lucide-react'
 import HistoryPanel from './HistoryPanel'
 import ArtIcon from '../ui/ArtIcon'
 import { Dialog } from '../ui/Dialog'
+import Select from '../ui/Select'
 import { formatDate } from '../../lib/format'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { commentThreads, filterCommentThreads } from '../../lib/comments'
@@ -129,12 +130,12 @@ export default function DocumentPanel(props: DocumentPanelProps) {
 
     {tab === 'comments' ? <div className="panel-body motion-enter" key="comments" role="tabpanel" id="panel-comments" aria-labelledby="tab-comments">
       <div className="panel-intro"><b>讨论</b><span>{threads.length + ' 个讨论 · ' + comments.length + ' 条评论'}</span></div>
-      {comments.length > 0 && <label className="comment-filter">显示<select aria-label="筛选评论" value={filter} onChange={(event) => setFilter(event.target.value)}>
-        <option value="all">全部讨论</option><option value="open">未解决</option><option value="resolved">已解决</option><option value="detached">原文失效</option>
-      </select></label>}
-      {comments.length > 0 && <label className="comment-filter">作者<select aria-label="按作者筛选评论" value={author} onChange={(event) => setAuthor(event.target.value)}>
-        <option value="all">所有人</option>{authors.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-      </select></label>}
+      {comments.length > 0 && <label className="comment-filter">显示<Select label="筛选评论" value={filter} onValueChange={setFilter} options={[
+        { value: 'all', label: '全部讨论' }, { value: 'open', label: '未解决' }, { value: 'resolved', label: '已解决' }, { value: 'detached', label: '原文失效' },
+      ]} /></label>}
+      {comments.length > 0 && <label className="comment-filter">作者<Select label="按作者筛选评论" value={author} onValueChange={setAuthor} options={[
+        { value: 'all', label: '所有人' }, ...authors.map(([id, name]) => ({ value: id, label: name })),
+      ]} /></label>}
       {comments.length === 0
         ? <div className="panel-empty"><ArtIcon name="comment" fallback={<MessageCircle size={21} />} /><b>还没有评论</b><span>选中文本后点击评论开始讨论</span></div>
         : <div className="comment-list">{visible.length === 0 && <div className="panel-empty"><b>没有符合条件的讨论</b><span>试试其他筛选条件</span></div>}{visible.map(({ root: comment, replies }) => <div

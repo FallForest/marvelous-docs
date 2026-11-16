@@ -17,13 +17,13 @@
 :root{color:var(--text);background:var(--surface-muted)}
 body{color:var(--text);-webkit-font-smoothing:antialiased}
 ::selection{background:var(--accent-soft);color:var(--accent-strong)}
-button,[role="menuitem"],[role="button"],[role="tab"],a,.home-card,.search-hit,.folder-item,.tree-doc,.nav-row,.action-row,.workspace,.share-btn{cursor:pointer}
+button,[role="menuitem"],[role="button"],[role="tab"],a,.home-card,.search-hit,.folder-item,.tree-doc,.nav-row,.action-row,.share-btn{cursor:pointer}
 
 /* paragraphs keep a readable rhythm */
 .tiptap-content{line-height:1.7}
 .tiptap-content p{line-height:1.6}
 .tiptap-content blockquote{line-height:1.6;color:var(--text-secondary)}
-.modal-copy p,.menu-item-copy small,.workspace-menu-user,.login-card>p{line-height:1.5}
+.modal-copy p,.menu-item-copy small,.login-card>p{line-height:1.5}
 
 /* ── 2. focus ring (global, token driven) ────────────────────────
  *
@@ -68,6 +68,11 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
   min-width:0;
   max-width:min(320px,calc(100vw - 24px));
   max-height:min(70vh,440px);
+  /* A menu scrolls in one direction only. `overflow-y:auto` next to a visible
+     `overflow-x` computes to `auto` on both axes, so any one-pixel overhang
+     (a wrapped label, a decorative ::after) turned into a horizontal scrollbar
+     underneath a menu that was already tall enough to need a vertical one. */
+  overflow-x:hidden;
   overflow-y:auto;
   overscroll-behavior:contain;
   display:flex;
@@ -141,35 +146,11 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
 .tree-menu .menu-danger{color:var(--danger)}
 .tree-menu .menu-danger:hover{background:var(--danger-soft);color:var(--danger-strong)}
 
-/* ── 5. workspace switcher menu (must fit the 254px sidebar) ───── */
-.workspace-menu{
-  left:0;
-  right:auto;
-  top:calc(100% + 6px);
-  width:100%;
-  min-width:0;
-  max-width:calc(100vw - 22px);
-  padding:6px;
-  gap:2px;
-}
-.workspace-menu-head{display:flex;align-items:center;gap:9px;padding:6px 8px 8px;border-bottom:1px solid var(--border);margin-bottom:4px}
-.workspace-menu-head .workspace-avatar{width:30px;height:30px;border-radius:7px;flex:0 0 30px}
-.workspace-menu-head>div:last-child{display:flex;flex-direction:column;gap:1px;min-width:0}
-.workspace-menu-head b{font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.workspace-menu-head small,.workspace-menu-head span{font-size:11px;color:var(--text-muted);line-height:1.35}
-.workspace-menu-user{display:flex;align-items:center;gap:9px;padding:6px 8px 8px;font-size:12px;color:var(--text-secondary);border-bottom:1px solid var(--border);margin-bottom:4px;min-width:0}
-.workspace-menu-user .avatar{width:26px;height:26px;flex:0 0 26px;border-radius:50%;display:grid;place-items:center;background:var(--tint-sage-soft);color:var(--tint-sage-ink);font-size:11px;font-weight:700}
-.workspace-menu-user>div{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
-.workspace-menu-user b{font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.workspace-menu-user small{font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:100%}
-.workspace-menu-actions{display:flex;flex-direction:column;gap:2px}
-.workspace-menu-actions button{justify-content:flex-start;width:100%}
-
-/* workspace trigger button gets a real affordance */
-.workspace{border-color:var(--border);transition:var(--transition-surface)}
-.workspace:hover{border-color:var(--border-strong);background:var(--surface-soft);box-shadow:0 1px 2px rgba(var(--shadow-rgb),0.04)}
-.workspace:active{transform:scale(.99)}
-.workspace[aria-expanded="true"]{border-color:var(--border-strong);background:var(--surface)}
+/* ── 5. workspace context card ─────────────────────────────────────
+ * The card that names the workspace is static now: it used to be a menu
+ * trigger whose every row also existed elsewhere in the sidebar. Only the
+ * paint of the surface is styled here; its geometry lives in shell.css.
+ */
 .workspace-copy b{color:var(--text)}
 .workspace-copy small{color:var(--text-muted)}
 
@@ -457,7 +438,6 @@ html,body{max-width:100%}
   .menu-item{min-height:44px;font-size:13px}
   .menu-item svg{width:17px;height:17px}
   .popover{min-width:min(240px,calc(100vw - 20px));max-width:calc(100vw - 20px);border-radius:12px}
-  .workspace-menu{width:min(240px, calc(100vw - 22px))}
   .modal-backdrop{padding:12px}
   .modal-actions,.dialog-actions{flex-direction:column;align-items:stretch}
   .modal-actions button,.dialog-actions button,.modal-danger,.btn-danger,.btn-ghost{width:100%;justify-content:center;min-height:44px}

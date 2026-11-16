@@ -23,6 +23,7 @@ import type {
 } from './lib/types'
 import AdminWorkspace from './pages/AdminPage'
 import CommandPalette from './pages/CommandPalette'
+import DocumentList from './pages/DocumentListPage'
 import HomeDashboard, { FolderOverview } from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import BootScreen from './pages/BootScreen'
@@ -40,6 +41,22 @@ import DocumentPanel from './components/panels/DocumentPanel'
 import Sidebar from './components/layout/Sidebar'
 import TopBar from './components/layout/TopBar'
 import VersionPreview from './components/panels/VersionPreview'
+
+/**
+ * The name each dashboard-family view carries in the top bar.
+ *
+ * One table rather than a nested ternary at the call site: the label used to be
+ * derived from "is a search showing", which made every other view claim to be
+ * "所有文档" and left a new view with no way to name itself.
+ */
+const VIEW_TITLES: Record<HomeView, string> = {
+  home: '首页',
+  search: '搜索',
+  all: '所有文档',
+  recent: '最近访问',
+  favorites: '收藏',
+  trash: '回收站',
+}
 
 /**
  * Workspace shell: owns session, the document list, and which overlay is open.
@@ -120,7 +137,6 @@ function App() {
   const [emptyTrashBusy, setEmptyTrashBusy] = useState(false)
   const [linkPrompt, setLinkPrompt] = useState<LinkPrompt | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
-  const [workspaceOpen, setWorkspaceOpen] = useState(false)
   const saveTimer = useRef<number | undefined>(undefined)
   const pendingSave = useRef<{ id: string; run: () => Promise<void> } | null>(null)
   const importInput = useRef<HTMLInputElement | null>(null)
@@ -141,7 +157,6 @@ function App() {
     setTemplateLibraryOpen(false)
     setExportMenuOpen(false)
     setThemeMenuOpen(false)
-    setWorkspaceOpen(false)
   }, [])
 
 
@@ -827,11 +842,10 @@ function App() {
       query={query === FAVORITES_SCOPE ? '' : query}
       narrow={narrow}
       floating={narrow}
-      workspaceOpen={workspaceOpen}
       newMenuOpen={newMenuOpen}
       treeExpanded={expanded}
+      memberCount={stats?.members ?? null}
       onClose={() => setSidebarOpen(false)}
-      onWorkspaceMenu={setWorkspaceOpen}
       onSearch={(value) => {
         setQuery(value)
         setCommandIndex(0)
@@ -839,6 +853,7 @@ function App() {
         else if (homeView === 'search') setHomeView('home')
       }}
       onHome={() => { withViewTransition(() => { setHomeView('home'); setActive(null); setSelectedFolderId(null); setQuery(''); setShowRight(false) }); if (narrow) setSidebarOpen(false) }}
+      onAllDocuments={() => { withViewTransition(() => { setHomeView('all'); setActive(null); setSelectedFolderId(null); setShowRight(false) }); if (narrow) setSidebarOpen(false) }}
       onAdmin={() => { withViewTransition(() => setWorkspaceView('admin')); if (narrow) setSidebarOpen(false) }}
       onRecent={() => { withViewTransition(() => { setHomeView('recent'); setActive(null); setSelectedFolderId(null); setQuery('') }); if (narrow) setSidebarOpen(false) }}
       onFavorites={() => { withViewTransition(() => { setHomeView('favorites'); setActive(null); setSelectedFolderId(null); setQuery('') }); if (narrow) setSidebarOpen(false) }}
@@ -862,14 +877,21 @@ function App() {
       batchBusy={batchBusy}
       allDocs={documents}
       onMoveInto={(dragged, target) => void moveDocument(dragged, target ? target.id : null)}
-      onHelp={() => { setWorkspaceOpen(false); setHelpOpen(true) }}
-      onLogout={() => { setWorkspaceOpen(false); clearToken() }}
+      onHelp={() => setHelpOpen(true)}
+      onLogout={clearToken}
     />}
     {narrow && sidebarOpen && <div className="sidebar-scrim" onClick={() => setSidebarOpen(false)} />}
     <main className="main-area" id="main-content" tabIndex={-1} onPointerDown={() => { if (narrow && sidebarOpen) setSidebarOpen(false) }}>
       <TopBar
         userInitial={(user.name || user.email)[0].toUpperCase()}
-        title={active?.title || selectedFolder?.title || (showingSearch ? '搜索' : '所有文档')}
+        /*
+         * The title names the screen that is actually mounted. It used to fall
+         * through to "所有文档" whenever no document or folder was open, so the
+         * dashboard, favourites, recent and trash all announced themselves as a
+         * document list — the same wrong label the sidebar root row carried, in
+         * the other direction.
+         */
+        title={active?.title || selectedFolder?.title || VIEW_TITLES[homeView] || '所有文档'}
         showRoot={!narrow}
         trail={breadcrumbTrail}
         onOpenTrail={(id) => {
@@ -917,7 +939,6 @@ function App() {
             onCollabStatus={setCollabStatus}
             onSelection={(anchor) => { setCommentAnchor(anchor) }}
             onCommentLocations={setCommentLocations}
-            onExport={(format) => void exportActive(format)}
             onLink={(range) => setLinkPrompt(range)}
             comments={comments}
             activeCommentId={activeCommentId}
@@ -988,6 +1009,15 @@ function App() {
         results={searchResults}
         loading={searchLoading}
         onOpen={(doc) => { if (doc.kind === 'folder') setSelectedFolderId(doc.id); else setActive(doc); setSelectedFolderId(doc.parentId || null) }}
+      /> : homeView === 'all' ? <DocumentList
+        key="all-documents"
+        documents={documents}
+        // The sidebar's filter box is the same field the search view reads, so
+        // typing in it must narrow this list rather than be silently ignored.
+        query={query === FAVORITES_SCOPE ? '' : query}
+        favorites={favoriteSet}
+        onCreate={() => void createDocument('document')}
+        onOpen={(doc) => { setActive(doc); setSelectedFolderId(doc.parentId || null); setHomeView('home') }}
       /> : <HomeDashboard
         // One component serves home, favorites and trash; the key makes each
         // view a fresh mount so its cards stagger in on arrival.

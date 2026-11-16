@@ -440,19 +440,15 @@ const restored = await evaluate("({ quote: document.querySelector('.comment-anch
 if (restored.quote || !restored.marked) failures.push('Undo did not restore the quote and its navigation')
 
 /* ---- 9. author filters, author edits, confirmed deletion and placeholders ---- */
-await evaluate(`(() => {
-  const select = document.querySelector('[aria-label="按作者筛选评论"]')
-  select.value = 'u2'
-  select.dispatchEvent(new Event('change', { bubbles: true }))
-})()`)
+await evaluate(`document.querySelector('[role="combobox"][aria-label="按作者筛选评论"]').click()`)
+await sleep(100)
+await evaluate(`document.querySelector('.select-panel [role="option"][data-value="u2"]').click()`)
 await sleep(100)
 if (await evaluate("document.querySelectorAll('.comment').length") !== 1) failures.push('author filter did not narrow discussions')
 if (await evaluate("Array.from(document.querySelectorAll('.comment button')).some((button) => button.textContent === '编辑')")) failures.push('another author comment exposed edit controls')
-await evaluate(`(() => {
-  const select = document.querySelector('[aria-label="按作者筛选评论"]')
-  select.value = 'all'
-  select.dispatchEvent(new Event('change', { bubbles: true }))
-})()`)
+await evaluate(`document.querySelector('[role="combobox"][aria-label="按作者筛选评论"]').click()`)
+await sleep(100)
+await evaluate(`document.querySelector('.select-panel [role="option"][data-value="all"]').click()`)
 await sleep(100)
 await evaluate("Array.from(document.querySelectorAll('.comment button')).find((button) => button.textContent === '编辑').click()")
 await sleep(100)

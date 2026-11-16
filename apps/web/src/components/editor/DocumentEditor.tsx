@@ -52,7 +52,6 @@ type DocumentEditorProps = {
   onCollabStatus: (status: CollabStatus) => void
   onSelection: (anchor: CommentAnchor) => void
   onCommentLocations?: (locations: Record<string, CommentAnchorLocation>) => void
-  onExport: (format: 'markdown' | 'html' | 'json') => void
   onLink: (range: LinkPrompt) => void
   /** Threads on this document, so the text they are about is marked in place. */
   comments: Comment[]
@@ -76,7 +75,7 @@ function countWords(editor: Editor): number {
   if (stored && typeof stored.words === 'function') return stored.words()
   return wordCount(editor.getText())
 }
-const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, onAwareness, onCollabStatus, onSelection, onCommentLocations, onExport, onLink, comments, activeCommentId, commentDraft }: DocumentEditorProps, ref) {
+const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, onAwareness, onCollabStatus, onSelection, onCommentLocations, onLink, comments, activeCommentId, commentDraft }: DocumentEditorProps, ref) {
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null)
   const [provider, setProvider] = useState<WebsocketProvider | null>(null)
   const [title, setTitle] = useState(doc.title)
@@ -625,7 +624,6 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
         onImage: () => setImagePrompt(true),
         onFind: () => setFindOpen(true),
         onOutline: () => setOutlineOpen(true),
-        onExport: () => onExport('json'),
         onComment: () => { commentSelection(); window.dispatchEvent(new Event('mdoc-open-comments')) },
       }}
     />

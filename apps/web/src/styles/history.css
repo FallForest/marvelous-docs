@@ -61,7 +61,7 @@
 [data-theme='handdrawn'] .history-snapshot{background-image:url('/art/handdrawn-v1/textures/paper-ivory.webp');background-size:768px;box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.06)}
 [data-theme='handdrawn'] .history-diff-label{background-image:url('/art/handdrawn-v1/decor/marker-sage.webp');background-size:100% 100%;background-repeat:no-repeat}
 @media(max-width:600px){
-  .history-preview.version-modal{width:calc(100vw - 16px);height:calc(100dvh - 24px);max-height:calc(100dvh - 24px)}
+  .history-preview.version-modal{width:min(100%,calc(100vw - 24px));height:calc(100dvh - 24px);max-height:calc(100dvh - 24px)}
   .history-preview-tabs{padding:0 16px;gap:15px}
   .history-preview .history-preview-body{padding:16px 14px}
   .history-preview>footer>div{width:100%;justify-content:flex-end}

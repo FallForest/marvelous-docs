@@ -53,6 +53,7 @@ hooks/                    State, data ownership, and lifecycle that outlives one
 pages/                    One file per route-level screen
   LoginPage.tsx           Sign-in and invite redemption
   HomePage.tsx            Home dashboard, favorites, trash, folder overview
+  DocumentListPage.tsx    Flat "all documents" list (the tree's root destination)
   BootScreen.tsx          Shown while a stored token is being restored
   SearchPage.tsx          Search results
   CommandPalette.tsx      Cmd/Ctrl+K palette
@@ -61,7 +62,7 @@ pages/                    One file per route-level screen
 
 components/
   layout/                 Chrome pieces owned by the shell
-    Sidebar.tsx           Workspace switcher, search, nav, document tree
+    Sidebar.tsx           Workspace context card, search, nav, document tree
     TopBar.tsx            Breadcrumb, save state, presence, document actions
     ExportMenu.tsx        Export format menu
     ThemeMenu.tsx         Theme picker (radiogroup over the registry)
@@ -135,6 +136,7 @@ styles/                   CSS layers, imported in cascade order by index.css
   motion.css              Keyframes and motion utilities (.motion-rise,
                           .motion-sheet, .stagger, ...) + reduced-motion rules
   surfaces.css            Shared primitives: buttons, backdrop, toast, stacking
+  select.css              Shared combobox/listbox geometry and theme paint
   dialogs.css             Modal surfaces (confirm, share, move, version, invite)
   navigation.css          Sidebar/topbar rows, breadcrumbs, presence stack
   panels.css              Right-hand panel, code overlay, block toolbars
@@ -151,6 +153,8 @@ styles/                   CSS layers, imported in cascade order by index.css
   handdrawn-materials.css  Graphite frame, search/admin and dialog internals
   handdrawn-writing.css    Paper, tables, tasks, comment composition and code blocks
   handdrawn-editor-chrome.css Toolbar, breadcrumbs, presence and editor status strip
+  handdrawn-menus.css      AI paper surfaces and menu selection/control states
+  handdrawn-collaboration.css Sharing, comment, draft and history materials
 ```
 
 Each layer answers one question. `tokens.css` owns *what a value is*,

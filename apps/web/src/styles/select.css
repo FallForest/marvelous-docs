@@ -1,0 +1,58 @@
+/* Shared select geometry: the same DOM and hit targets in both appearances. */
+.select-control{display:inline-flex;position:relative;vertical-align:middle;min-width:0;max-width:100%}
+.select-trigger{
+  position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  min-width:0;width:100%;min-height:36px;padding:6px 9px;
+  border:1px solid var(--border-strong);border-radius:var(--radius-xs);
+  background:var(--surface);color:var(--text-secondary);font:inherit;font-size:13px;
+  line-height:1.5;text-align:left;cursor:pointer;transition:var(--transition-colors);
+}
+.select-trigger:hover:not(:disabled){border-color:var(--accent);color:var(--text)}
+.select-trigger[aria-expanded='true']{background:var(--surface-selected);color:var(--text);border-color:var(--accent)}
+.select-trigger:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+.select-trigger:disabled{cursor:not-allowed;opacity:.6}
+.select-value{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.select-chevron{flex:0 0 14px}
+.select-panel.popover{
+  /* Portalled choices must sit above a containing modal's backdrop. */
+  z-index:calc(var(--z-modal) + 1);width:max-content;max-width:min(320px,calc(100vw - 16px));
+  overflow:hidden;padding:5px;gap:0;pointer-events:auto;
+}
+.select-panel.sketch-frame::after{inset:0}
+.select-options{display:flex;flex-direction:column;gap:2px;min-height:0;max-height:288px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.select-option{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex:0 0 auto;
+  min-height:36px;padding:7px 9px;border:1px solid transparent;border-radius:5px;
+  font-size:13px;line-height:1.5;cursor:pointer;color:var(--text-secondary);
+}
+.select-option>span{min-width:0;overflow-wrap:anywhere}
+.select-option[data-active='true']{background:var(--surface-active);color:var(--text);border-color:var(--border)}
+.select-option[aria-selected='true']{color:var(--accent-strong);font-weight:600}
+.select-check{flex:0 0 14px;visibility:hidden}
+.select-option[aria-selected='true'] .select-check{visibility:visible}
+.select-option[aria-disabled='true']{opacity:.5;cursor:not-allowed}
+.share-link-actions>.select-control{flex:0 1 auto}
+.share-link-actions .select-trigger{font-size:12px;min-height:32px;height:auto;padding:6px 9px}
+.share-member>.select-control{flex:0 1 auto;max-width:58%}
+.invite-modal .select-control{width:100%}
+.invite-modal .select-trigger{min-height:38px}
+.comment-filter>.select-control{flex:1}
+.comment-filter .select-trigger{min-height:32px;padding:5px 8px;font-size:12px}
+
+/* Paint only: the closed control and every option use the same stationery. */
+[data-theme='handdrawn'] .select-trigger{border-radius:6px 9px 5px 8px;background-color:var(--surface-soft);box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.07)}
+[data-theme='handdrawn'] .select-trigger[aria-expanded='true']{background-color:var(--tint-sage-soft);color:var(--accent-strong)}
+[data-theme='handdrawn'] .select-panel.popover{background:var(--surface) url('/art/handdrawn-v1/textures/paper-ivory.webp') center / 768px;border-radius:9px 12px 8px 10px;box-shadow:var(--shadow-popover)}
+[data-theme='handdrawn'] .select-option{border-radius:6px 9px 5px 8px}
+[data-theme='handdrawn'] .select-option[data-active='true']{background-color:var(--tint-sage-softer);border-color:var(--border-strong)}
+[data-theme='handdrawn'] .select-option[aria-selected='true']{background-image:url('/art/handdrawn-v1/decor/marker-sage.webp');background-size:100% 100%;background-repeat:no-repeat}
+
+@media(max-width:560px){
+  .select-trigger,.invite-modal .select-trigger,.share-link-actions .select-trigger,.comment-filter .select-trigger{min-height:44px}
+  .select-option{min-height:44px}
+  .share-member>.select-control{max-width:54%}
+}
+@media(forced-colors:active){
+  .select-trigger{border-color:ButtonText}
+  .select-option[data-active='true']{outline:1px solid Highlight;outline-offset:-1px}
+}

@@ -13,8 +13,14 @@ export type RightTab = 'comments' | 'history'
  * Named here because three files (the shell, the data hook, the sidebar) each
  * declare their own copy of this union today; adding a view meant finding all
  * three or silently filtering it out of the sidebar's active state.
+ *
+ * `all` exists because the tree root row used to call the same handler as the
+ * "首页" nav row. Two labels, one destination, 200px apart in the same column:
+ * "所有文档" was not a place, it was a second button for the dashboard. The root
+ * row now opens the flat document list it names, and the dashboard keeps the
+ * roll-up it is actually for.
  */
-export type HomeView = 'home' | 'search' | 'trash' | 'favorites' | 'recent'
+export type HomeView = 'home' | 'search' | 'trash' | 'favorites' | 'recent' | 'all'
 
 /**
  * Placeholder the shell writes into the shared query field when it opens the

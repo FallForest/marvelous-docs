@@ -48,9 +48,10 @@ const definitions = [
   ['copy', '手绘复制', 'icons', '代码复制按钮'],
   ['pencil-rule', '铅笔分隔线', 'decor', '顶部 / 底部 / 表格 / 代码块分隔'],
   ['avatar-badge', '协作头像纸底', 'decor', '实时头像背景，字母仍为HTML'],
+  ['menu-paper', '浮层纸张', 'decor', '下拉菜单九宫格纸张表面，文字仍为HTML'],
 ]
 
-const manifest = { version: 3, generator: 'built-in image_gen', assets: [] }
+const manifest = { version: 4, generator: 'built-in image_gen', assets: [] }
 for (const [id, name, category, usage] of definitions) {
   const sourcePath = path.join(sourceDir, id + '.png')
   const source = await sharp(sourcePath).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
@@ -68,17 +69,18 @@ for (const [id, name, category, usage] of definitions) {
     }
   }
   if (!visible) throw new Error(id + ': empty artwork')
-  if (category !== 'textures' && transparent < width * height * .1) {
+  if (category !== 'textures' && id !== 'menu-paper' && transparent < width * height * .1) {
     throw new Error(id + ': expected a genuine transparent background')
   }
   const alphaBounds = { left: minX, top: minY, width: maxX - minX + 1, height: maxY - minY + 1 }
   const padding = id === 'pencil-rule' ? 2 : category === 'icons' ? 22 : 12
   const left = Math.max(0, minX - padding), top = Math.max(0, minY - padding)
-  const crop = { left, top, width: Math.min(width, maxX + padding + 1) - left, height: Math.min(height, maxY + padding + 1) - top }
+  const crop = id === 'menu-paper' ? { left: 22, top: 24, width: 1490, height: 971 }
+    : { left, top, width: Math.min(width, maxX + padding + 1) - left, height: Math.min(height, maxY + padding + 1) - top }
   let pipeline = sharp(sourcePath)
   if (category !== 'textures') pipeline = pipeline.extract(crop)
   if (category === 'icons' || id === 'avatar-badge') pipeline = pipeline.resize(256, 256, { fit: 'contain', background: '#00000000' })
-  else pipeline = pipeline.resize({ width: category === 'textures' ? 768 : 1024, withoutEnlargement: true })
+  else pipeline = pipeline.resize({ width: category === 'textures' ? 768 : id === 'menu-paper' ? 960 : 1024, withoutEnlargement: true })
   const folder = path.join(outputDir, category)
   await fs.mkdir(folder, { recursive: true })
   const pngPath = path.join(folder, id + '.png')

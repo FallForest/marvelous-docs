@@ -1,0 +1,46 @@
+/* Floating controls share one AI paper sheet. Nine-slicing preserves its pencil
+ * corners at every menu size, including tall, internally scrolling lists.
+ * border-image paints inside the existing border box; hit targets stay native. */
+[data-theme='handdrawn'] :is(.popover,.lang-picker-panel,.block-tool-panel,.block-menu,.slash-menu,.find-panel,.outline-panel,.bubble-toolbar){
+  border-color:transparent;
+  border-image-source:url('/art/handdrawn-v1/decor/menu-paper.webp');
+  border-image-slice:64 fill;
+  border-image-width:10px;
+  border-image-repeat:stretch;
+  background-color:var(--surface);
+  background-image:none;
+  box-shadow:var(--shadow-popover);
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+}
+/* Existing framed creation/workspace menus use the same perimeter once. */
+[data-theme='handdrawn'] .popover.sketch-frame::after{opacity:0}
+
+[data-theme='handdrawn'] :is(.tb-menu-item,.select-option){border-radius:6px 9px 5px 8px}
+[data-theme='handdrawn'] .tb-menu-item:hover:not(:disabled){background-color:var(--tint-sage-softer);color:var(--text)}
+[data-theme='handdrawn'] .select-option:hover:not([aria-disabled='true']){background-color:var(--tint-sage-softer);color:var(--text)}
+[data-theme='handdrawn'] :is(.tb-menu-item.is-active,.select-option[aria-selected='true'],.lang-picker-item.selected){
+  background-color:transparent;
+  background-image:url('/art/handdrawn-v1/decor/marker-sage.webp');
+  background-size:100% 80%;
+  background-position:center;
+  background-repeat:no-repeat;
+  color:var(--accent-strong);
+}
+[data-theme='handdrawn'] :is(.select-option[data-active='true'],.lang-picker-item.active){background-color:var(--tint-sage-softer);color:var(--text)}
+[data-theme='handdrawn'] :is(.tb-menu-item,.block-menu-item,.block-tool-panel button).danger{color:var(--danger)}
+[data-theme='handdrawn'] :is(.tb-menu-item,.block-menu-item,.block-tool-panel button).danger:hover:not(:disabled){background:var(--danger-soft);color:var(--danger-strong)}
+[data-theme='handdrawn'] .popover .menu-item-danger{color:var(--danger)}
+[data-theme='handdrawn'] .popover .menu-item-danger:hover:not(:disabled){background:var(--danger-soft);color:var(--danger-strong)}
+[data-theme='handdrawn'] :is(.tb-menu-item,.block-menu-item,.block-tool-panel button):disabled{background:transparent;color:var(--text-disabled);opacity:.6}
+
+[data-theme='handdrawn'] :is(.tb-more-section,.menu-divider){border-color:transparent;background-image:url('/art/handdrawn-v1/decor/pencil-rule.webp');background-position:top;background-size:100% 1px;background-repeat:no-repeat}
+[data-theme='handdrawn'] .tb-more-section:first-child{background-image:none}
+[data-theme='handdrawn'] .tb-swatch[aria-pressed='true']{outline:2px solid var(--accent-strong);outline-offset:2px;box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.14)}
+[data-theme='handdrawn'] .find-field.is-empty{border-color:var(--danger);background:var(--danger-soft)}
+
+@media(forced-colors:active){
+  [data-theme='handdrawn'] :is(.popover,.lang-picker-panel,.block-tool-panel,.block-menu,.slash-menu,.find-panel,.outline-panel,.bubble-toolbar){border-image:none;border-color:CanvasText;box-shadow:none}
+  [data-theme='handdrawn'] :is(.popover,.select-trigger).sketch-frame{border-color:CanvasText}
+  [data-theme='handdrawn'] .select-trigger.sketch-frame::after{border-image:none}
+}
