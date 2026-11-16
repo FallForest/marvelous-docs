@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Columns3, Grid2X2, Rows3, Table2, Trash2 } from 'lucide-react'
 import type { Editor } from '@tiptap/react'
 import type { BlockGeometry } from '../../hooks/useBlockGeometry'
+import { visualViewportRect } from '../../lib/viewport'
 import Popover from '../ui/Popover'
 
 /**
@@ -21,6 +22,19 @@ import Popover from '../ui/Popover'
 export default function TableMenu({ editor, table }: { editor: Editor | null; table: BlockGeometry | null }) {
   const [open, setOpen] = useState(false)
   if (!editor || !editor.isEditable || !table || !editor.isActive('table')) return null
+  /*
+   * Placement must only refer to *this* table.
+   *
+   * `table` is resolved by DocumentEditor from the selection (activeTable), not
+   * from the first table in the viewport, so the anchor and the command now
+   * share one object. This guard is the second half: if the measured rect is for
+   * a node that no longer exists at that position — a collaborator deleted the
+   * table, or a sync replaced the body — the bar would hover over unrelated text
+   * and its buttons would still call table commands on the current selection.
+   * Disappearing is the correct behaviour.
+   */
+  const measured = editor.state.doc.nodeAt(table.pos)
+  if (!measured || measured.type.name !== 'table') return null
 
   type TableCommand = 'addRowBefore' | 'addRowAfter' | 'addColumnBefore' | 'addColumnAfter' | 'deleteRow' | 'deleteColumn' | 'mergeCells' | 'splitCell' | 'toggleHeaderRow' | 'toggleHeaderColumn' | 'toggleHeaderCell' | 'deleteTable'
   const actions: Array<{ label: string; icon: React.ReactNode; command: TableCommand; danger?: boolean }> = [
@@ -38,9 +52,16 @@ export default function TableMenu({ editor, table }: { editor: Editor | null; ta
     { label: '删除表格', icon: <Trash2 size={15} />, command: 'deleteTable', danger: true },
   ]
 
-  // Sits just above the table's top-right corner, clamped into the viewport.
-  const top = Math.max(8, table.top - 34)
-  const left = Math.max(8, Math.min(table.right - 96, window.innerWidth - 104))
+  /*
+   * Sits just above the table's top-right corner, clamped into the *visual*
+   * viewport. `innerHeight` does not shrink when a phone keyboard opens, so a
+   * bar clamped against the window can land under the keyboard where it cannot
+   * be tapped. The trigger is 30px tall, hence the 38px margin below the top of
+   * the table when there is no room above.
+   */
+  const view = visualViewportRect()
+  const top = Math.max(view.top + 8, Math.min(table.top - 34, view.top + view.height - 38))
+  const left = Math.max(view.left + 8, Math.min(table.right - 96, view.left + view.width - 104))
 
   return <div className="block-tool" style={{ top, left }} contentEditable={false}>
       <button

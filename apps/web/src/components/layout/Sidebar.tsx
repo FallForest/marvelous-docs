@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react'
-import { BookOpen, CheckSquare, ChevronDown, ChevronRight, Clock3, Folder, Home, LogOut, PanelLeftClose, Plus, Search, ShieldCheck, Sparkles, Star, Trash2 } from 'lucide-react'
+import { BookOpen, CheckSquare, ChevronDown, ChevronRight, Clock3, Folder, Home, LogOut, PanelLeftClose, Palette, Plus, Search, ShieldCheck, Sparkles, Star, Trash2 } from 'lucide-react'
 import TemplateMenu from '../layout/TemplateMenu'
+import ThemeMenu from '../layout/ThemeMenu'
 import TreeItem from '../tree/TreeItem'
 import ArtIcon from '../ui/ArtIcon'
+import { compositionGuard } from '../../lib/editor/ime'
 import type { Doc, DocNode, TreeAction, User } from '../../lib/types'
 import type { HomeView } from '../../lib/app-types'
 
@@ -23,7 +25,23 @@ type SidebarProps = {
   /** Everybody in the workspace, shown in the context card. */
   memberCount?: number | null
   onClose: () => void
+  /**
+   * Narrows the tree (and the list behind it). Typing here must not change what
+   * is open: the editor stays mounted, so the caret and the scroll survive a
+   * writer who types a few letters, changes their mind and clears the field.
+   */
   onSearch: (value: string) => void
+  /** The deliberate second step: Enter in the field, or 查看全部结果. */
+  onSearchSubmit: () => void
+  /** Escape: clear the field and return focus to it, leaving the document open. */
+  onSearchCancel: () => void
+  /** True while the results page is the mounted screen, so the row can say so. */
+  searchPageOpen: boolean
+  /** Appearance lives with the account now: it is a preference, not a document action. */
+  themeId: string
+  themeOpen: boolean
+  onThemeMenu: (open: boolean) => void
+  onTheme: (id: string) => void
   onHome: () => void
   /** Opens the flat "all documents" list — the tree root row's own destination. */
   onAllDocuments: () => void
@@ -71,6 +89,9 @@ export default function Sidebar(props: SidebarProps) {
   const [focusId, setFocusId] = useState<string | null>(null)
   const treeRef = useRef<HTMLDivElement | null>(null)
   const creationMoreRef = useRef<HTMLButtonElement | null>(null)
+  const searchRef = useRef<HTMLInputElement | null>(null)
+  /** One composition tracker for the search field, shared by Enter and Escape. */
+  const searchIme = useRef(compositionGuard())
 
   /** Moves focus to the next or previous focusable row in DOM order. */
   const moveFocus = (from: string, delta: number) => {
@@ -86,6 +107,8 @@ export default function Sidebar(props: SidebarProps) {
   const { user, tree, favoriteSet, activeId, selectedFolderId, expandedFolders, homeView, floating } = props
   const initial = (user.name || user.email)[0]!.toUpperCase()
   const modifierKey = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl'
+  /** Something to search for: the only state in which a results-page row is honest. */
+  const showPageEntry = props.query.trim().length > 0
 
   return <aside className={'sidebar' + (floating ? ' sidebar-floating' : '')} aria-label="文档导航">
     <div className="brand-row">
@@ -123,14 +146,51 @@ export default function Sidebar(props: SidebarProps) {
         <div className="action-row sketch-frame">
           <ArtIcon name="search" fallback={<Search size={16} />} />
           <input
+            ref={searchRef}
             aria-label="搜索文档"
             placeholder="搜索文档"
             value={props.query}
             onChange={(event) => props.onSearch(event.target.value)}
-            onKeyDown={(event) => { if (event.key === 'Escape') props.onSearch('') }}
+            onKeyDown={(event) => {
+              /*
+               * Enter is the only key here that navigates. Everything else belongs
+               * to the field, and the tree below narrows as the writer types — a
+               * live search that also swapped the main column out was what used to
+               * unmount the editor on the first character.
+               *
+               * The IME guard comes first: a Chinese writer confirming a candidate
+               * with Enter must not be sent to the results page. Escape is treated
+               * the same way, because it cancels the candidate window.
+               */
+              if (searchIme.current.blocked(event.nativeEvent)) return
+              if (event.key === 'Enter') { event.preventDefault(); props.onSearchSubmit(); return }
+              if (event.key === 'Escape') {
+                event.preventDefault()
+                props.onSearchCancel()
+                searchRef.current?.focus({ preventScroll: true })
+              }
+            }}
           />
           <kbd>{modifierKey} K</kbd>
         </div>
+        {/*
+         * The second step, made explicit.
+         *
+         * Typing narrows the tree in place; it does not navigate. The results page
+         * — which searches the body text too and is a screen of its own — needs an
+         * affordance of its own, and its label has to say that it goes somewhere.
+         * It appears only while there is something to search for.
+         */}
+        {showPageEntry && <button
+          type="button"
+          className={'search-page-entry' + (props.searchPageOpen ? ' is-current' : '')}
+          aria-label={'在结果页查看“' + props.query.trim() + '”的全部匹配'}
+          onClick={props.onSearchSubmit}
+        >
+          <ArtIcon name="search" fallback={<Search size={14} />} />
+          <span>{props.searchPageOpen ? '正在结果页查看' : '查看全部结果'}</span>
+          <small>Enter</small>
+        </button>}
       </div>
 
       {/*
@@ -266,6 +326,24 @@ export default function Sidebar(props: SidebarProps) {
       <div className="profile-row">
         <div className="avatar">{initial}</div>
         <div className="profile-copy"><b>{user.name || user.email.split('@')[0]}</b><small>{user.email}</small></div>
+        {/*
+         * 外观 belongs here, not on the document top bar: it is one preference for
+         * the whole application and it is stored per browser, so it sits with the
+         * other account-level control. On the top bar it was a document action that
+         * kept working on a page that was not a document.
+         */}
+        <div className="menu-anchor profile-appearance">
+          <button
+            type="button"
+            className="icon-btn theme-btn"
+            aria-label="外观"
+            title="外观"
+            aria-haspopup="menu"
+            aria-expanded={props.themeOpen}
+            onClick={() => props.onThemeMenu(!props.themeOpen)}
+          ><ArtIcon name="palette" fallback={<Palette size={16} />} /></button>
+          <ThemeMenu open={props.themeOpen} currentId={props.themeId} onPick={props.onTheme} onClose={() => props.onThemeMenu(false)} />
+        </div>
         <button type="button" className="icon-btn" aria-label="退出登录" title="退出登录" onClick={props.onLogout}><ArtIcon name="logout" fallback={<LogOut size={16} />} /></button>
       </div>
     </div>

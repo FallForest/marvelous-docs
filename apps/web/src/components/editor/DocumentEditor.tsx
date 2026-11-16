@@ -31,6 +31,9 @@ import { emptyContent } from '../../lib/types'
 import { clearSavedDraft, isBlankDraft, sameDraftBody, writeDraft } from '../../lib/local-drafts'
 import { startLinkEdit, mapLinkEdit, linkEditTransaction } from '../../lib/editor/link-editing'
 import type { LinkEditSession, LinkPrompt } from '../../lib/editor/link-editing'
+import { compositionGuard } from '../../lib/editor/ime'
+import { activeTable, selectedImage } from '../../lib/editor/selection-target'
+import { addUpload, failUpload, uploadPlaceholderKey, uploadPosition } from '../../lib/editor/upload-placeholder'
 import type { CollabStatus } from '../../lib/app-types'
 import type { Comment, CommentAnchor, CommentAnchorLocation, Doc, DocJson, SaveStatus, User } from '../../lib/types'
 
@@ -104,6 +107,8 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
   const linkSequence = useRef(0)
   const confirmation = useRef(0)
   const confirmSave = useRef<() => Promise<void>>(async () => {})
+  /** One tracker for the title field, so its Enter/Escape share the guard. */
+  const titleIme = useRef(compositionGuard())
 
   useEffect(() => {
     if (!titleEditing.current && !titleWritePending.current) setTitle(doc.title)
@@ -205,7 +210,7 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
   confirmSave.current = confirmPersisted
 
   const editor = useEditor({
-    extensions: buildEditorExtensions({ ydoc: provider ? ydoc : null, placeholder: '从这里开始写作…', codeBlockNodeView: ReactNodeViewRenderer(CodeBlockView) }),
+    extensions: buildEditorExtensions({ ydoc: provider ? ydoc : null, placeholder: '从这里开始写作…', codeBlockNodeView: ReactNodeViewRenderer(CodeBlockView), onRetryUpload: (id) => retryUploadRef.current(id) }),
     content: doc.content?.doc || emptyContent.doc,
     autofocus: doc.titleMode === 'auto' && doc.title === '未命名文档' && doc.version === 1 ? 'start' : false,
     onUpdate: ({ editor: instance, transaction }) => {
@@ -251,17 +256,27 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
     onBlur: () => setBubbleAnchor(null),
     onSelectionUpdate: ({ editor: instance }) => {
       const { from, to } = instance.state.selection
-      const { $from, $to } = instance.state.selection
       const isNodeSelection = instance.state.selection.constructor.name === 'NodeSelection'
-      if (to > from && !isNodeSelection && $from.parent === $to.parent) {
+      /*
+       * Any non-empty text range gets the bubble, including a range that spans
+       * paragraphs.
+       *
+       * The old test also compared the two ends' parent nodes, so a sentence
+       * selected across a line break — the most common way to quote something in
+       * prose — hid the only pointer-accessible way to bold it, link it or
+       * comment on it. The single-block restriction was a leftover from
+       * positioning the bar off one line's coordinates; the geometry below works
+       * from the selection's two ends, which is correct for both cases.
+       */
+      if (to > from && !isNodeSelection) {
         onSelection(captureCommentAnchor(instance.state, { from, to }))
         const start = instance.view.coordsAtPos(from)
         const end = instance.view.coordsAtPos(to)
         /*
-         * Clamped to the visual viewport, not the window: on a phone the software
-         * keyboard shrinks `visualViewport` without touching `innerHeight`, so a
-         * toolbar positioned against the window sits under the keyboard where
-         * nobody can reach it.
+         * A multi-line range reports the first line's top and the last line's
+         * bottom. Anchoring to the top of the *first* line keeps the bar out of
+         * the selected text; anchoring to the last line would cover the words the
+         * writer just selected.
          */
         const view = visualViewportRect()
         const top = Math.min(start.top, end.top) - 52
@@ -303,6 +318,34 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
   // Geometry for floating table/image controls. Code chrome is an inline
   // node view and scrolls inside the paper without viewport overlays.
   const blocks = useBlockGeometry(editor)
+  /*
+   * Which table/image the floating bars belong to.
+   *
+   * These used to be `blocks.find(...)` — the first table or first image in the
+   * viewport. With two on screen the bar sat beside one and its buttons acted on
+   * the other, which is the worst class of bug in an editor: the wrong content
+   * changes. The target now comes from the selection (lib/editor/selection-target)
+   * and is only matched to measured geometry for placement, so the bar is absent
+   * rather than guessing when the object is not selected.
+   */
+  const [objectTargets, setObjectTargets] = useState<{ table: number | null; image: number | null }>({ table: null, image: null })
+  useEffect(() => {
+    if (!editor) { setObjectTargets({ table: null, image: null }); return }
+    const sync = () => {
+      const image = selectedImage(editor.state)
+      const table = activeTable(editor.state)
+      setObjectTargets((current) => current.table === (table?.pos ?? null) && current.image === (image?.pos ?? null)
+        ? current
+        : { table: table?.pos ?? null, image: image?.pos ?? null })
+    }
+    sync()
+    editor.on('selectionUpdate', sync)
+    // A collaborator can delete the object under the bar; the tool must go with it.
+    editor.on('transaction', sync)
+    return () => { editor.off('selectionUpdate', sync); editor.off('transaction', sync) }
+  }, [editor])
+  const tableGeometry = objectTargets.table === null ? null : blocks.find((block) => block.kind === 'table' && block.pos === objectTargets.table) ?? null
+  const imageGeometry = objectTargets.image === null ? null : blocks.find((block) => block.kind === 'image' && block.pos === objectTargets.image) ?? null
   // The gutter handle follows the pointer; it is pinned while its menu or a
   // drag is open so the target cannot change under the user mid-gesture.
   const blockAnchor = useBlockAnchor(editor)
@@ -529,19 +572,93 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
       window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '图片不能超过 20 MB' }))
       return true
     }
+    /*
+     * Reserve the spot now, at the position the gesture happened.
+     *
+     * The image used to be inserted where the caret was *when the upload
+     * finished*: typing during a slow upload, or clicking into another paragraph
+     * to keep working, moved the picture somewhere the writer never dropped it.
+     * The reservation is a decoration (lib/editor/upload-placeholder), so it is
+     * remapped through every later edit and never reaches the saved body.
+     */
+    const instance = editor
+    const id = 'upload-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8)
+    const at = instance ? instance.state.selection.from : null
+    if (instance && at !== null) {
+      instance.view.dispatch(addUpload(instance.state, {
+        id,
+        pos: at,
+        status: 'uploading',
+        name: file.name && file.name !== 'image.png' ? file.name.slice(0, 40) : '',
+      }))
+    }
+    uploads.current.set(id, file)
+    await runUpload(id, file)
+    return true
+  }
+
+  /** Files waiting on a retry, keyed by placeholder id. */
+  const uploads = useRef(new Map<string, File>())
+
+  /**
+   * Uploads one reserved image and settles its placeholder.
+   *
+   * Focus is deliberately left alone: the writer may be typing two paragraphs
+   * away, and `focus()` here would move the caret mid-word. The image is dropped
+   * at the mapped position instead, and the transaction does not arrive through
+   * `setImage` on the current selection.
+   */
+  async function runUpload(id: string, file: File) {
     try {
-      // The clipboard gives a screenshot no filename, so the name the server
-      // stores would be a bare extension. Name it after the kind of thing it is.
       const named = file.name && file.name !== 'image.png'
         ? file
         : new File([file], 'pasted-' + Date.now() + '.' + (file.type.split('/')[1] || 'png'), { type: file.type })
       const url = await putImage(named)
-      editor?.chain().focus().setImage({ src: url }).run()
+      const instance = editor
+      if (!instance || instance.isDestroyed) return
+      const pos = uploadPosition(instance.state, id)
+      const tr = instance.state.tr
+      if (pos === null) {
+        // The document was switched or the reservation was removed: the upload
+        // still succeeded, so do not lose the file silently.
+        window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '图片已上传，但文档已切换，请重新插入。链接：' + url }))
+        return
+      }
+      tr.setMeta(uploadPlaceholderKey, { type: 'remove', id })
+      tr.insert(pos, instance.schema.nodes.image.create({ src: url }))
+      instance.view.dispatch(tr.scrollIntoView())
+      uploads.current.delete(id)
     } catch (error) {
-      window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '图片上传失败：' + (error as Error).message }))
+      const instance = editor
+      if (instance && !instance.isDestroyed && uploadPosition(instance.state, id) !== null) {
+        instance.view.dispatch(failUpload(instance.state, id, '上传失败：' + (error as Error).message))
+      } else {
+        window.dispatchEvent(new CustomEvent('mdoc-notice', { detail: '图片上传失败：' + (error as Error).message }))
+      }
     }
-    return true
   }
+
+  /** Retry handler handed to the decoration plugin. */
+  const retryUpload = useCallback((id: string) => {
+    const file = uploads.current.get(id)
+    if (!file || !editor) return
+    editor.view.dispatch(addUpload(editor.state, { id, pos: editor.state.selection.from, status: 'uploading', name: file.name || '' }))
+    // Via the ref: `runUpload` closes over the editor created by `useEditor`,
+    // which is declared before it. Listing it as a dependency would make the
+    // callback unstable on every render for no benefit, and the ref always
+    // points at the current definition.
+    void runUploadRef.current(id, file)
+  }, [editor])
+  const runUploadRef = useRef<(id: string, file: File) => Promise<void>>(async () => undefined)
+  runUploadRef.current = runUpload
+  /*
+   * The plugin is created inside `useEditor`, which must not depend on this
+   * callback (it would rebuild the editor and drop the document). A ref carries
+   * the live handler to the widget instead, so a retry button always calls the
+   * current one.
+   */
+  const retryUploadRef = useRef(retryUpload)
+  retryUploadRef.current = retryUpload
 
   function saveTitle(next: string) {
     const pending = writeTitle(next)
@@ -627,7 +744,32 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
         onComment: () => { commentSelection(); window.dispatchEvent(new Event('mdoc-open-comments')) },
       }}
     />
-    <div className="paper">
+    <div
+      className="paper"
+      /*
+       * Clicking the blank paper below the last paragraph continues writing.
+       *
+       * The canvas has `min-height:45vh` but the paper keeps ~100px of padding
+       * under it, and that band looked like part of the page while doing
+       * nothing — the click landed on a div and no caret appeared, so a writer
+       * who wanted to add a line at the end had to aim at the last line of text.
+       * Now the blank area below the text is a place to write.
+       *
+       * Only a click that is not on the text, the title or a control qualifies:
+       * the editor handles its own clicks (including a click under the last
+       * block, which ProseMirror already resolves), and a link, checkbox or
+       * button inside the body keeps its own behaviour.
+       */
+      onMouseDown={(event) => {
+        if (!editor || !editor.isEditable) return
+        const target = event.target as HTMLElement | null
+        if (!target || target.closest('.tiptap-content, .document-heading, input, textarea, button, a, label')) return
+        // Right and middle click belong to the context menu, not to the caret.
+        if (event.button !== 0) return
+        event.preventDefault()
+        editor.chain().focus('end').run()
+      }}
+    >
       <div className="document-heading">
         <div className="document-title-row">
           <span className="theme-decoration document-title-art" aria-hidden="true"><ArtIcon name="notebook" fallback={<FileText size={40} />} /></span>
@@ -639,8 +781,40 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
           value={title}
           onFocus={(event) => { titleEditing.current = true; titleOrigin.current = currentDocument.current; titleDirty.current = false; if (doc.titleMode === 'auto' && title === '未命名文档') event.currentTarget.select() }}
           onChange={(event) => { titleDirty.current = true; setTitle(event.target.value) }}
+          onCompositionStart={() => titleIme.current.start()}
+          onCompositionEnd={() => titleIme.current.end()}
           onBlur={(event) => { titleEditing.current = false; if (titleDirty.current) void saveTitle(event.target.value); else setTitle(currentDocument.current.title) }}
-          onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur(); else if (event.key === 'Escape') { titleDirty.current = false; setTitle(currentDocument.current.title); event.currentTarget.blur() } }}
+          onKeyDown={(event) => {
+            /*
+             * Enter means "I have finished the title" — but only after the input
+             * method has finished it. The first Enter a Chinese writer presses
+             * confirms a candidate; this handler used to blur the field on it,
+             * so a title being composed was committed half-written and the caret
+             * left before the last character arrived.
+             */
+            if (event.nativeEvent.isComposing || titleIme.current.blocked(event.nativeEvent)) return
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              titleEditing.current = false
+              if (titleDirty.current) void saveTitle(event.currentTarget.value)
+              /*
+               * Land in the body instead of nowhere.
+               *
+               * Blurring alone left focus on <body>: the next keystroke went to
+               * no one, and the writer had to click into the text before
+               * continuing. Enter on the title is the documented way to start
+               * writing the document, so it now places the caret at the start of
+               * the first block.
+               */
+              editor?.chain().focus('start').run()
+              return
+            }
+            if (event.key === 'Escape') {
+              titleDirty.current = false
+              setTitle(currentDocument.current.title)
+              event.currentTarget.blur()
+            }
+          }}
           /></div>
         </div>
         <div className="doc-meta"><DocumentCreatedTime doc={doc} /><span>最后编辑于 {formatDate(doc.updatedAt) || '刚刚'}</span>{doc.titleMode === 'auto' && <span className="title-mode-hint">根据正文自动命名，可直接修改</span>}</div>
@@ -655,8 +829,8 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
       refresh={blockAnchor.refresh}
       editable={editor.isEditable}
     />}
-    <TableMenu editor={editor} table={blocks.find((block) => block.kind === 'table') ?? null} />
-    <ImageToolbar editor={editor} image={blocks.find((block) => block.kind === 'image') ?? null} />
+    <TableMenu editor={editor} table={tableGeometry} />
+    <ImageToolbar editor={editor} image={imageGeometry} />
     <BubbleToolbar editor={editor} anchor={bubbleAnchor} onLink={() => rangeSelection()} onComment={() => { commentSelection(); window.dispatchEvent(new Event('mdoc-open-comments')) }} />
     {imagePrompt && <Dialog
       title="插入图片"

@@ -35,7 +35,10 @@
 [data-theme='handdrawn'] :is(.tb-menu-item,.block-menu-item,.block-tool-panel button):disabled{background:transparent;color:var(--text-disabled);opacity:.6}
 
 [data-theme='handdrawn'] :is(.tb-more-section,.menu-divider){border-color:transparent;background-image:url('/art/handdrawn-v1/decor/pencil-rule.webp');background-position:top;background-size:100% 1px;background-repeat:no-repeat}
-[data-theme='handdrawn'] .tb-more-section:first-child{background-image:none}
+/* Each section is now the first child of its own group wrapper, so a bare
+ * `.tb-more-section:first-child` would strip the pencil rule from *every* section
+ * instead of the first one. The suppressible case is the menu's first group. */
+[data-theme='handdrawn'] .tb-more-menu>.tb-more-group:first-child>.tb-more-section{background-image:none}
 [data-theme='handdrawn'] .tb-swatch[aria-pressed='true']{outline:2px solid var(--accent-strong);outline-offset:2px;box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.14)}
 [data-theme='handdrawn'] .find-field.is-empty{border-color:var(--danger);background:var(--danger-soft)}
 

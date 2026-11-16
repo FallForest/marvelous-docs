@@ -58,12 +58,17 @@ test('lib is split by concern, and each sub-folder keeps one job', () => {
   // Tiptap instance lives in editor/, anything on the way out of the editor lives
   // in export/, and a helper used by more than one screen stays at the top level
   // so a page never has to guess which sub-folder to reach into.
-  const EDITOR = ['block-shortcuts.ts', 'blocks.ts', 'code-block.ts', 'comment-marks.ts', 'find-replace.ts', 'font-size.ts', 'highlight.ts', 'image.ts', 'index.ts', 'languages.ts', 'link-editing.ts', 'tab-in-prose.ts']
+  // `ime.ts`, `selection-target.ts` and `upload-placeholder.ts` were added by the
+  // 2026-11 UI audit batch. Each is editor-only: composition state, "which
+  // object is selected", and the uploading-image reservation. They belong here
+  // rather than at the top level for the reason above — no screen outside the
+  // Tiptap instance has any use for them.
+  const EDITOR = ['block-shortcuts.ts', 'blocks.ts', 'code-block.ts', 'comment-marks.ts', 'find-replace.ts', 'font-size.ts', 'highlight.ts', 'image.ts', 'ime.ts', 'index.ts', 'languages.ts', 'link-editing.ts', 'selection-target.ts', 'tab-in-prose.ts', 'upload-placeholder.ts']
   const EXPORT = ['download.ts', 'export-css.ts', 'pdf-pages.ts', 'pdf.ts', 'render-html.ts']
   assert.deepEqual(readdirSync(join(SRC, 'lib/editor')).sort(), EDITOR, 'lib/editor holds the editor-only modules')
   assert.deepEqual(readdirSync(join(SRC, 'lib/export')).sort(), EXPORT, 'lib/export holds the outbound modules')
   const flat = readdirSync(join(SRC, 'lib')).filter((name) => name.endsWith('.ts')).sort()
-  assert.deepEqual(flat, ['api.ts', 'app-types.ts', 'clipboard.ts', 'collab.ts', 'comments.ts', 'document-saves.ts', 'endpoints.ts', 'format.ts', 'history.ts', 'local-drafts.ts', 'motion.ts', 'shared-document.ts', 'theme.ts', 'trash.ts', 'tree.ts', 'types.ts', 'url.ts', 'viewport.ts'], 'shared helpers stay flat')
+  assert.deepEqual(flat, ['api.ts', 'app-types.ts', 'clipboard.ts', 'collab.ts', 'comments.ts', 'document-saves.ts', 'endpoints.ts', 'focus.ts', 'format.ts', 'history.ts', 'local-drafts.ts', 'motion.ts', 'open-target.ts', 'shared-document.ts', 'theme.ts', 'trash.ts', 'tree.ts', 'types.ts', 'url.ts', 'viewport.ts'], 'shared helpers stay flat')
 })
 test('lib never imports UI code', () => {
   const offenders: string[] = []

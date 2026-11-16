@@ -90,3 +90,63 @@ Two things keep this honest:
 The roadmap's "do not virtualise the editor" entry still stands: ProseMirror's
 geometry, the block handle and the comment decorations all assume the DOM is the
 document. This takes the layout win without touching that assumption.
+
+## 2026-11-16 — UI audit batch, re-measured
+
+A separate run, deliberately not merged into the tables above: that data was taken
+against a previous tree, and the batch that produced this entry changed the
+extension list (`CharacterCount` now takes `lib/format.wordCount` as its
+`wordCounter`; a `uploadPlaceholder` decoration plugin was added). Comparing across
+those two states would attribute a difference in the harness to a change in the
+product.
+
+Command, unchanged:
+
+```
+CHROME_PATH=<chrome> node scripts/verify/measure-editor.mjs      # 200 / 1000 / 2000
+```
+
+Environment: Windows 10 (10.0.19045), Google Chrome 157.0.8103.51, headless as the
+script launches it. Fixture: the script's own mixed document — prose plus tables,
+code blocks and dividers in two of every five positions — so `tracked` blocks carry
+their own toolbars. `script` is one `insertContent` through the whole plugin chain;
+`style`/`layout` come from the Performance timeline.
+
+| blocks | hooks | tracked | script med | p95 | style ms | layout ms |
+| --- | --- | --- | --- | --- | --- | --- |
+| 200 | geometry + anchor | 5 | 0.30 | 1.20 | 8.6 | 25.5 |
+| 200 | anchor only | 0 | 0.30 | 1.10 | 9.1 | 7.2 |
+| 200 | none | 0 | 0.20 | 1.20 | 8.1 | 7.1 |
+| 1000 | geometry + anchor | 5 | 0.70 | 1.20 | 15.6 | 14.2 |
+| 1000 | anchor only | 0 | 0.60 | 1.20 | 15.6 | 14.1 |
+| 1000 | none | 0 | 0.60 | 1.40 | 14.5 | 13.7 |
+| 2000 | geometry + anchor | 5 | 1.60 | 2.50 | 24.4 | 22.1 |
+| 2000 | anchor only | 0 | 1.80 | 3.10 | 22.5 | 22.0 |
+| 2000 | none | 0 | 1.60 | 3.00 | 24.3 | 24.9 |
+
+### What this says
+
+- The earlier conclusion still holds on this tree: script time is 1–2.5 ms, and the
+  hooks are not what makes a long document feel slow. At 2000 blocks the three
+  configurations are within the run-to-run noise of each other (the
+  `geometry + anchor` median is *lower* than `none`, which cannot be a real
+  difference at this sample size).
+- `content-visibility: auto` is still doing the work it was added for: layout at
+  2000 blocks is 22 ms here, in the same range as the 20.5 ms recorded after it
+  landed and far below the 113 ms before.
+- The 200-block `layout` figure for `geometry + anchor` (25.5 ms) is a single run
+  and the largest number in the table; treat it as noise until it reproduces. It
+  is called out rather than smoothed because a table with one rule for
+  inconvenient rows is a table nobody should trust.
+
+### What it does not say
+
+- It does not measure the input-to-visible-feedback latency a writer feels, only
+  the synchronous unit of work and the browser's own layout afterwards. The audit
+  proposed "p95 < 50 ms for input to visible feedback" as a **target to
+  calibrate**; this harness cannot confirm or refute it, and no such target is
+  claimed here.
+- It does not cover a real Chinese IME, a soft keyboard, or a collaborative
+  session with remote transactions arriving mid-keystroke.
+- The raw run is scratch and is not committed (`.gitignore` now ignores
+  `/measure-run*.txt`); the numbers above are the record.

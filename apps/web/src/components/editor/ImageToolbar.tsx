@@ -1,6 +1,7 @@
 import { AlignCenter, AlignLeft, AlignRight, Maximize2, Trash2 } from 'lucide-react'
 import type { Editor } from '@tiptap/react'
 import type { BlockGeometry } from '../../hooks/useBlockGeometry'
+import { visualViewportRect } from '../../lib/viewport'
 
 type Props = {
   editor: Editor | null
@@ -35,8 +36,9 @@ export default function ImageToolbar({ editor, image }: Props) {
     editor.chain().focus().setNodeSelection(image.pos).updateAttributes('image', attrs).run()
   }
 
-  const top = Math.max(8, image.top - 34)
-  const left = Math.max(8, Math.min(image.right - 232, window.innerWidth - 240))
+  const view = visualViewportRect()
+  const top = Math.max(view.top + 8, image.top - 34)
+  const left = Math.max(view.left + 8, Math.min(image.right - 232, view.left + view.width - 240))
 
   return <div className="block-tool" style={{ top, left }} contentEditable={false}>
     <div className="block-tool-iconbar" role="toolbar" aria-label="图片操作">

@@ -4,6 +4,7 @@ import type { Editor } from '@tiptap/react'
 import type { LucideIcon } from 'lucide-react'
 import { staggerStyle } from '../../lib/motion'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
+import { compositionGuard } from '../../lib/editor/ime'
 
 type Range = { from: number; to: number }
 type SlashItem = {
@@ -74,7 +75,22 @@ export default function SlashMenu({ editor, anchor, query, range, onClose, onIma
 
   useEffect(() => {
     if (!anchor) return
+    /*
+     * Candidate confirmation is not a command.
+     *
+     * Typing `/biaoti` in a Chinese IME raises Enter twice: once to confirm the
+     * candidate (which the IME owns) and once, deliberately, to run the row. This
+     * handler is on `document` in the capture phase, so it saw the first one and
+     * inserted a block before the writer had chosen anything — and the same fate
+     * awaited Escape and the arrows, which is how a menu can end a composition.
+     * The guard also covers the composed-navigation keys for one beat after
+     * `compositionend`, because some IMEs emit the final keydown after it.
+     */
+    const ime = compositionGuard()
+    const onCompositionStart = () => ime.start()
+    const onCompositionEnd = () => ime.end()
     const onKey = (event: KeyboardEvent) => {
+      if (ime.blocked(event)) return
       // stopPropagation, not just preventDefault: the shell listens on `window`
       // and closes every overlay on Escape, so without this one press closed the
       // menu *and* the right panel behind it.
@@ -87,8 +103,14 @@ export default function SlashMenu({ editor, anchor, query, range, onClose, onIma
         if (item) run(item)
       }
     }
+    document.addEventListener('compositionstart', onCompositionStart, true)
+    document.addEventListener('compositionend', onCompositionEnd, true)
     document.addEventListener('keydown', onKey, true)
-    return () => document.removeEventListener('keydown', onKey, true)
+    return () => {
+      document.removeEventListener('compositionstart', onCompositionStart, true)
+      document.removeEventListener('compositionend', onCompositionEnd, true)
+      document.removeEventListener('keydown', onKey, true)
+    }
   }, [anchor, filtered, index, onClose]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /*

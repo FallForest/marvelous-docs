@@ -33,6 +33,9 @@ coverage/
 .tmp-export.pdf
 .tmp-export-canvas.png
 .tmp-pdf/
+# Measurement output from scripts/verify/measure-*.mjs. Numbers belong in
+# docs/PERFORMANCE.md; the raw table is scratch and must not be committed.
+/measure-run*.txt
 
 # Vite debug output
 apps/web/vite-out.txt

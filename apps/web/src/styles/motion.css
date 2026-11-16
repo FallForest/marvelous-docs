@@ -17,13 +17,23 @@
 
 /* ══ 1. keyframes ═══════════════════════════════════════════════ */
 
-/* Surfaces that arrive from a direction. Used by menus, popovers, toasts. */
+/*
+ * Surfaces that arrive from a direction. Used by menus, popovers, toasts.
+ *
+ * The travel is a variable, not a second keyframe, because a floating panel is
+ * re-measured on every scroll and can flip from "below" to "above" while it is
+ * open. Swapping the animation-name on a flip makes the browser treat it as a
+ * brand new animation and replay the whole entrance under the pointer; reading
+ * `--motion-rise-direction` inside one keyframe cannot do that. See tokens.css.
+ */
 @keyframes motion-rise-in{
-  from{opacity:0;transform:translate3d(0,6px,0) scale(.985)}
+  from{opacity:0;transform:translate3d(0,calc(var(--motion-rise-shift) * var(--motion-rise-direction)),0) scale(.985)}
   to{opacity:1;transform:translate3d(0,0,0) scale(1)}
 }
+/* Kept as the above-anchored name other layers already reference; identical
+   output because the direction is now a property value, not a different shape. */
 @keyframes motion-sink-in{
-  from{opacity:0;transform:translate3d(0,-6px,0) scale(.985)}
+  from{opacity:0;transform:translate3d(0,calc(var(--motion-rise-shift) * var(--motion-rise-direction)),0) scale(.985)}
   to{opacity:1;transform:translate3d(0,0,0) scale(1)}
 }
 /* Dialogs scale from the centre, like a UIKit sheet presenting. */
@@ -150,7 +160,7 @@
 
 /* Devices without hover get press feedback instead of hover feedback. */
 @media (hover:none){
-  .press-feedback:active{transform:scale(.975)}
+  .press-feedback:active{transform:var(--press-transform)}
 }
 
 /* ══ 4. view transitions ════════════════════════════════════════

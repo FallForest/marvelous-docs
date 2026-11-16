@@ -55,7 +55,7 @@
   transition:var(--transition-colors),transform var(--duration-instant) var(--ease-spring-snappy);
 }
 .danger-btn:hover{background:var(--danger-soft)}
-.danger-btn:active{transform:scale(.97)}
+.danger-btn:active{transform:var(--press-transform)}
 
 /* ===== 28. Public share page ===== */
 .shared-page{
@@ -136,7 +136,7 @@
   transition:var(--transition-colors),transform var(--duration-instant) var(--ease-spring-snappy);
 }
 .code-overlay-icon:hover{background:var(--surface-hover);border-color:var(--border);color:var(--text)}
-.code-overlay-icon:active{transform:scale(.97)}
+.code-overlay-icon:active{transform:var(--press-transform)}
 .code-overlay-icon.danger:hover{background:var(--danger-soft);border-color:var(--danger-line);color:var(--danger)}
 .code-overlay-copy{
   display:inline-flex;
@@ -156,7 +156,7 @@
   transition:var(--transition-colors),transform var(--duration-instant) var(--ease-spring-snappy);
 }
 .code-overlay-copy:hover{background:var(--surface-hover);color:var(--text)}
-.code-overlay-copy:active{transform:scale(.97)}
+.code-overlay-copy:active{transform:var(--press-transform)}
 /*
  * Success state. The green lettering arrives through --transition-colors above,
  * so the label swap settles instead of flipping.
@@ -202,7 +202,7 @@
   transition:var(--transition-colors),transform var(--duration-instant) var(--ease-spring-snappy);
 }
 .block-tool-trigger:hover{background:var(--surface-sunken);color:var(--text)}
-.block-tool-trigger:active{transform:scale(.97)}
+.block-tool-trigger:active{transform:var(--press-transform)}
 .block-tool-trigger.is-open{
   background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent-strong);
   transition:background-color var(--duration-base) var(--ease-spring-snappy),
@@ -248,7 +248,7 @@
   transition:var(--transition-colors);
 }
 .block-tool-panel button:hover{background:var(--surface-sunken);color:var(--text)}
-.block-tool-panel button:active{transform:scale(.97)}
+.block-tool-panel button:active{transform:var(--press-transform)}
 .block-tool-panel button.danger{color:var(--danger)}
 .block-tool-panel button.danger:hover{background:var(--danger-soft)}
 
@@ -271,7 +271,7 @@
   transition:var(--transition-colors),transform var(--duration-instant) var(--ease-spring-snappy);
 }
 .lang-picker-button:hover{background:var(--surface-hover);border-color:var(--border);color:var(--text)}
-.lang-picker-button:active{transform:scale(.97)}
+.lang-picker-button:active{transform:var(--press-transform)}
 .lang-picker-button.is-open{background:var(--surface);border-color:var(--border);color:var(--text);box-shadow:0 1px 3px rgba(var(--shadow-rgb),0.1)}
 .lang-picker-flag{
   padding:0 4px;
@@ -457,3 +457,35 @@
 [data-indent='4']{padding-inline-start:6.4em}
 [data-indent='5']{padding-inline-start:8em}
 [data-indent='6']{padding-inline-start:9.6em}
+
+/*
+ * In-place upload placeholder (lib/editor/upload-placeholder.ts).
+ *
+ * A widget decoration, so it must not look like content: no width change on the
+ * line, no shift of the text around it, and its own short feedback when it turns
+ * into a failure. The reserved box keeps a fixed minimum height so the paragraph
+ * does not reflow when the real image arrives one moment later.
+ *
+ * Motion: only a fade for the arrival, and a colour change for failure. Nothing
+ * here may travel, because the writer is likely still typing on this line.
+ */
+.upload-placeholder{
+  display:inline-flex;align-items:center;gap:8px;
+  max-width:100%;min-height:28px;padding:3px 10px;margin:2px 2px;
+  border:1px dashed var(--border-strong);border-radius:var(--radius-xs);
+  background:var(--surface-muted);color:var(--text-muted);
+  font-size:12px;line-height:1.4;vertical-align:middle;
+  animation:motion-fade-in var(--duration-fast) var(--ease-standard) backwards;
+}
+.upload-placeholder-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.upload-placeholder.is-error{border-color:var(--danger-line);background:var(--danger-soft);color:var(--danger)}
+.upload-placeholder-retry{
+  flex:0 0 auto;min-height:24px;padding:0 8px;border:1px solid var(--danger-line);
+  border-radius:var(--radius-xs);background:var(--surface);color:var(--danger-strong);
+  font-size:12px;cursor:pointer;
+  transition:var(--transition-colors),transform var(--duration-instant) var(--ease-spring-snappy);
+}
+.upload-placeholder-retry:active{transform:var(--press-transform)}
+@media (prefers-reduced-motion:reduce){
+  .upload-placeholder{animation:none}
+}

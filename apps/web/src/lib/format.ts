@@ -22,6 +22,26 @@ export function wordCount(text?: string) {
   return (cjk ? cjk.length : 0) + (latin ? latin.length : 0)
 }
 
+/**
+ * Plain text of a stored Tiptap body.
+ *
+ * Exists so a caller can count a document it has not mounted — the 文档信息 panel
+ * reads a `Doc` from the tree, where the editor's incrementally maintained
+ * character count is not available. Block boundaries become a newline so two
+ * paragraphs do not read as one run-on word; nothing here is displayed as text.
+ */
+export function docText(content?: { doc?: unknown }): string {
+  const walk = (node: unknown): string => {
+    if (!node || typeof node !== 'object') return ''
+    const item = node as { type?: string; text?: string; content?: unknown[] }
+    if (item.type === 'text') return item.text || ''
+    if (item.type === 'hardBreak') return '\n'
+    const children = (item.content || []).map(walk).join('')
+    return item.type === 'doc' || item.type === 'paragraph' || item.type === 'heading' ? children : children + '\n'
+  }
+  return walk(content?.doc)
+}
+
 export function excerpt(text: string | undefined, max = 160) {
   const clean = (text || '').replace(/\s+/g, ' ').trim()
   if (clean.length <= max) return clean

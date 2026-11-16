@@ -15,6 +15,8 @@ import { emptyContent } from './lib/types'
 import { DocumentSaveQueue } from './lib/document-saves'
 import { clearSavedDraft, isBlankDraft, readDraft, writeDraft } from './lib/local-drafts'
 import { syncDocumentUrl } from './lib/url'
+import { openTarget, viewForTarget } from './lib/open-target'
+import { docText, wordCount } from './lib/format'
 import type { LinkPrompt } from './lib/editor/link-editing'
 import type { CollabStatus, HomeView, RightTab } from './lib/app-types'
 import { FAVORITES_SCOPE } from './lib/app-types'
@@ -37,6 +39,7 @@ import TemplateLibrary from './components/dialogs/TemplateLibrary'
 import DraftRecovery from './components/dialogs/DraftRecovery'
 import DocumentEditor, { type DocumentEditorHandle } from './components/editor/DocumentEditor'
 import { templateLabel } from './components/layout/TemplateMenu'
+import { DocumentInfoPanel } from './components/layout/DocumentMenu'
 import DocumentPanel from './components/panels/DocumentPanel'
 import Sidebar from './components/layout/Sidebar'
 import TopBar from './components/layout/TopBar'
@@ -119,7 +122,14 @@ function App() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved')
   const [newMenuOpen, setNewMenuOpen] = useState(false)
   const [templateLibraryOpen, setTemplateLibraryOpen] = useState(false)
-  const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  /**
+   * 文档“更多" is a document-scoped menu, so its state lives with the document
+   * rather than with the file list. Export used to have its own boolean here;
+   * those targets are rows inside this menu now, so there is one flag instead of
+   * two that could both be open at once.
+   */
+  const [documentMenuOpen, setDocumentMenuOpen] = useState(false)
+  const [documentInfoOpen, setDocumentInfoOpen] = useState(false)
   const [themeMenuOpen, setThemeMenuOpen] = useState(false)
   const [moveDoc, setMoveDoc] = useState<Doc | null>(null)
   const [previewVersion, setPreviewVersion] = useState<Version | null>(null)
@@ -155,7 +165,8 @@ function App() {
     setPreviewVersion(null)
     setNewMenuOpen(false)
     setTemplateLibraryOpen(false)
-    setExportMenuOpen(false)
+    setDocumentMenuOpen(false)
+    setDocumentInfoOpen(false)
     setThemeMenuOpen(false)
   }, [])
 
@@ -253,7 +264,6 @@ function App() {
     // setActive/setDocuments are stable setState identities; conflictDoc and token
     // are the real inputs.
   }, [conflictDoc, token]) // eslint-disable-line react-hooks/exhaustive-deps
-
   const workspaceData = useWorkspaceData({
     token,
     query: { commandOpen, homeView, query, searchScope, workspaceView },
@@ -276,6 +286,91 @@ function App() {
     adminMembers, adminMembersBusy,
     updateInfo, setUpdateInfo,
   } = workspaceData
+
+  /*
+   * These two sit below `useWorkspaceData`, not above it, because they write its
+   * setters. Above it they could only type-check with an empty dependency array —
+   * which is true of stable setters and is therefore exactly the case a lint rule
+   * cannot distinguish from a stale closure. Declaring them here lets the arrays
+   * be honest.
+   */
+  /*
+   * The one navigation used by every entry point.
+   *
+   * Sidebar tree, breadcrumb, home cards, favourites, recent, trash, search
+   * results, the command palette and the folder page all call this, so "a folder
+   * opens its own page, a document opens the editor" is answered in one place
+   * instead of nine. The rule itself is pure and lives in lib/open-target.ts; this
+   * callback is only the state write it implies.
+   *
+   * The bug this replaces: three call sites set `active` and then overwrote
+   * `selectedFolderId` with `doc.parentId`, which for a folder is the folder
+   * *above* it. Opening a folder from search therefore selected its parent — or,
+   * at the root, cleared the selection and dropped the reader on the dashboard.
+   *
+   * A trashed row is the one target the editor cannot open: the server excludes
+   * deleted rows from the live tree, so mounting the editor on one produced a 404
+   * toast after a flash of an empty page. It says so instead.
+   */
+  const openDocTarget = useCallback((doc: Doc) => {
+    const target = openTarget(doc)
+    if (target.kind === 'document' && target.trashed) {
+      setNotice('“' + (doc.title || '未命名文档') + '”在回收站中，恢复后才能打开。')
+      return
+    }
+    const next = viewForTarget(target)
+    // One navigation, one transition: every entry point goes through here, so the
+    // motion for "opened a folder" and "opened a document" is the same no matter
+    // which list the reader used. No new animation system — this is the same
+    // withViewTransition the sidebar already used, now applied once.
+    withViewTransition(() => {
+      setActive(next.active)
+      setSelectedFolderId(next.selectedFolderId)
+      setHomeView(next.homeView)
+      // The right panel belongs to the document that was open; carrying it across a
+      // switch would show another document's threads beside this one's text.
+      setShowRight(false)
+    })
+  }, [setActive, setSelectedFolderId, setHomeView, setShowRight])
+
+  /*
+   * Sidebar search: narrowing, not navigating.
+   *
+   * Typing here sets the query and nothing else. The tree already filters itself
+   * from `treeQuery`, so the results are visible while the document stays mounted;
+   * `active`, `selectedFolderId` and `homeView` are untouched, which is what keeps
+   * the caret, the selection and the scroll position of the open document alive.
+   * Before this, the first character called `setActive(null)`, so the editor
+   * unmounted mid-word and "search, then change my mind" was impossible.
+   *
+   * The results page is still one deliberate step away — Enter in the field or the
+   * 查看全部结果 row — because it searches body text and is a screen of its own.
+   */
+  const handleSidebarSearch = useCallback((value: string) => {
+    setQuery(value)
+  }, [])
+
+  const openSearchPage = useCallback(() => {
+    // The page needs a needle; the sidebar row only renders when there is one, but
+    // Enter can also arrive from a field that was just cleared by an IME.
+    if (!query.trim()) return
+    withViewTransition(() => {
+      setHomeView('search')
+      setActive(null)
+      setSelectedFolderId(null)
+      setShowRight(false)
+    })
+    if (narrow) setSidebarOpen(false)
+  }, [query, narrow, setActive, setSelectedFolderId, setHomeView, setShowRight, setSidebarOpen])
+
+  const cancelSidebarSearch = useCallback(() => {
+    setQuery('')
+    // Leaving the results page is not the same as leaving the document: `active`
+    // is only ever null here if the writer had already navigated to the page, and
+    // the editor keeps its own instance either way.
+    if (homeView === 'search') setHomeView('home')
+  }, [homeView])
+
   userRef.current = user
 
   // Everything the share dialog shows is loaded on open, so the shell keeps
@@ -296,7 +391,7 @@ function App() {
     token,
     activeRef,
     notify: setNotice,
-    closeMenu: () => setExportMenuOpen(false),
+    closeMenu: () => setDocumentMenuOpen(false),
   })
 
   const clearToken = useCallback(() => {
@@ -529,15 +624,10 @@ function App() {
       setDocuments((items) => [created, ...items])
       setShowRight(false)
       setQuery('')
-      if (kind === 'folder') {
-        setActive(null)
-        setSelectedFolderId(created.id)
-        setExpandedFolders((folders) => new Set([...folders, created.id, ...(parentId ? [parentId] : [])]))
-      } else {
-        setActive(created)
-        setSelectedFolderId(created.parentId || null)
-        setHomeView('home')
-      }
+      if (kind === 'folder') setExpandedFolders((folders) => new Set([...folders, created.id, ...(parentId ? [parentId] : [])]))
+      // Creating is opening: the new folder shows its page and the new document
+      // shows the editor, both through the same resolver every list uses.
+      openDocTarget(created)
       if (narrow) setSidebarOpen(false)
       if (templateId) setNotice('已用模板创建“' + (created.title || '未命名文档') + '”')
       void refreshStats()
@@ -555,11 +645,8 @@ function App() {
       const markdown = await file.text()
       const { document: imported } = await api.importMarkdown(token, markdown, selectedFolderId || null)
       setDocuments((items) => [imported, ...items])
-      setActive(imported)
-      setSelectedFolderId(imported.parentId || null)
-      setHomeView('home')
-      setShowRight(false)
       setQuery('')
+      openDocTarget(imported)
       setNotice('已导入“' + (imported.title || file.name) + '”')
       void refreshStats()
     } catch (error) {
@@ -583,9 +670,7 @@ function App() {
     try {
       const { document: copy } = await api.duplicate(token, doc.id, doc.parentId ?? null)
       setDocuments((rows) => [copy, ...rows])
-      setActive(copy)
-      setSelectedFolderId(copy.parentId || null)
-      setHomeView('home')
+      openDocTarget(copy)
       setNotice('已创建副本“' + (copy.title || '未命名文档') + '”')
       void refreshStats()
       await refreshDocuments()
@@ -846,12 +931,14 @@ function App() {
       treeExpanded={expanded}
       memberCount={stats?.members ?? null}
       onClose={() => setSidebarOpen(false)}
-      onSearch={(value) => {
-        setQuery(value)
-        setCommandIndex(0)
-        if (value.trim()) { setHomeView('search'); setActive(null); setSelectedFolderId(null) }
-        else if (homeView === 'search') setHomeView('home')
-      }}
+      onSearch={handleSidebarSearch}
+      onSearchSubmit={openSearchPage}
+      onSearchCancel={cancelSidebarSearch}
+      searchPageOpen={showingSearch}
+      themeId={themeId}
+      themeOpen={themeMenuOpen}
+      onThemeMenu={setThemeMenuOpen}
+      onTheme={setTheme}
       onHome={() => { withViewTransition(() => { setHomeView('home'); setActive(null); setSelectedFolderId(null); setQuery(''); setShowRight(false) }); if (narrow) setSidebarOpen(false) }}
       onAllDocuments={() => { withViewTransition(() => { setHomeView('all'); setActive(null); setSelectedFolderId(null); setShowRight(false) }); if (narrow) setSidebarOpen(false) }}
       onAdmin={() => { withViewTransition(() => setWorkspaceView('admin')); if (narrow) setSidebarOpen(false) }}
@@ -865,8 +952,8 @@ function App() {
       onCreateFolder={() => void createDocument('folder')}
       onImport={() => importInput.current?.click()}
       onToggleFolder={(id) => setExpandedFolders((folders) => { const next = new Set(folders); if (next.has(id)) next.delete(id); else next.add(id); return next })}
-      onSelectFolder={(folder) => { withViewTransition(() => { setSelectedFolderId(folder.id); setActive(null); setHomeView('home'); setQuery(''); setShowRight(false) }); if (narrow) setSidebarOpen(false) }}
-      onSelectDocument={(doc) => { withViewTransition(() => { setActive(doc); setSelectedFolderId(doc.parentId || null); setHomeView('home'); setQuery(''); setShowRight(false) }); if (narrow) setSidebarOpen(false) }}
+      onSelectFolder={(folder) => { openDocTarget(folder); setQuery(''); if (narrow) setSidebarOpen(false) }}
+      onSelectDocument={(doc) => { openDocTarget(doc); setQuery(''); if (narrow) setSidebarOpen(false) }}
       onDocumentAction={(action, doc) => void handleDocumentAction(action, doc)}
       checkedIds={checkedIds}
       onToggleChecked={toggleChecked}
@@ -896,26 +983,24 @@ function App() {
         trail={breadcrumbTrail}
         onOpenTrail={(id) => {
           const folder = documents.find((entry) => entry.id === id)
-          if (folder) { setSelectedFolderId(folder.id); setActive(null); setHomeView('home') }
+          if (folder) openDocTarget(folder)
         }}
         saveStatus={saveStatus}
         collabStatus={collabStatus}
         collaborators={collaborators}
         sidebarOpen={sidebarOpen}
-        hasDocument={Boolean(active)}
+        hasDocument={Boolean(active) && active?.kind !== 'folder'}
         favorite={Boolean(active && favoriteSet.has(active.id))}
-        exportOpen={exportMenuOpen}
-        themeId={themeId}
-        themeOpen={themeMenuOpen}
-        onThemeMenu={setThemeMenuOpen}
-        onTheme={setTheme}
+        documentMenuOpen={documentMenuOpen}
+        onDocumentMenu={setDocumentMenuOpen}
         onOpenSidebar={() => setSidebarOpen(true)}
         onFavorite={() => { if (active) void handleDocumentAction('favorite', active) }}
         onExport={(format) => void exportActive(format)}
-        onExportMenu={setExportMenuOpen}
         onHistory={() => { setRightTab('history'); setShowRight(true) }}
         onComments={() => { setRightTab('comments'); setShowRight(true) }}
         onShare={openShareDialog}
+        onMove={() => { if (active) setMoveDoc(active) }}
+        onInfo={() => setDocumentInfoOpen(true)}
       />
       {active && COLLAB_URL && collabStatus === 'disconnected' && <div className="collab-banner motion-sink" role="status"><AlertCircle size={14} />实时协作连接已断开，正在尝试重连，期间的修改会保存在本地。</div>}
       {active ? <div className="workspace-content">
@@ -1001,14 +1086,21 @@ function App() {
         onCreate={() => void createDocument('document')}
         onImport={() => importInput.current?.click()}
         onCreateFolder={() => void createDocument('folder')}
-        onOpen={(doc) => { if (doc.kind === 'folder') { setSelectedFolderId(doc.id); setActive(null) } else { setActive(doc); setSelectedFolderId(doc.parentId || null) } }}
+        // A folder page opens its own children the same way every other list does:
+        // a subfolder opens that folder, a document opens the editor.
+        onOpen={openDocTarget}
       /> : showingSearch ? <SearchPage
         query={query.trim()}
         scope={searchScope}
         onScope={setSearchScope}
         results={searchResults}
         loading={searchLoading}
-        onOpen={(doc) => { if (doc.kind === 'folder') setSelectedFolderId(doc.id); else setActive(doc); setSelectedFolderId(doc.parentId || null) }}
+        /*
+         * The result the reader accepted is the only search state that navigates.
+         * A folder hit used to fall through to `setSelectedFolderId(doc.parentId)`
+         * and land on its parent; the resolver answers both kinds now.
+         */
+        onOpen={(doc) => { openDocTarget(doc); setQuery('') }}
       /> : homeView === 'all' ? <DocumentList
         key="all-documents"
         documents={documents}
@@ -1017,7 +1109,7 @@ function App() {
         query={query === FAVORITES_SCOPE ? '' : query}
         favorites={favoriteSet}
         onCreate={() => void createDocument('document')}
-        onOpen={(doc) => { setActive(doc); setSelectedFolderId(doc.parentId || null); setHomeView('home') }}
+        onOpen={openDocTarget}
       /> : <HomeDashboard
         // One component serves home, favorites and trash; the key makes each
         // view a fresh mount so its cards stagger in on arrival.
@@ -1029,7 +1121,9 @@ function App() {
         favoritesView={homeView === 'favorites'}
         recentView={homeView === 'recent'}
         stats={stats}
-        onOpen={(doc) => { setActive(doc); setSelectedFolderId(doc.parentId || null) }}
+        // Home cards, favourites and recent all go through the same resolver; a
+        // trashed row is refused there with a message instead of a 404.
+        onOpen={openDocTarget}
         onCreate={() => void createDocument('document')}
         onImport={() => importInput.current?.click()}
         onCreateFolder={() => void createDocument('folder')}
@@ -1054,7 +1148,7 @@ function App() {
         results={searchResults}
         loading={searchLoading}
         onClose={() => setCommandOpen(false)}
-        onOpen={(doc) => { if (doc.kind === 'folder') { setSelectedFolderId(doc.id); setActive(null) } else { setActive(doc); setSelectedFolderId(doc.parentId || null) } setHomeView('home'); setQuery(''); setCommandOpen(false) }}
+        onOpen={(doc) => { openDocTarget(doc); setQuery(''); setCommandOpen(false) }}
         onCreate={() => { setCommandOpen(false); void createDocument('document') }}
         onHome={() => { setActive(null); setSelectedFolderId(null); setHomeView('home'); setQuery(''); setCommandOpen(false) }}
       />}
@@ -1077,7 +1171,7 @@ function App() {
       {pdfProgress !== null && <div className="pdf-progress motion-fade" role="dialog" aria-modal="true" aria-label="正在生成 PDF">
         <div className="pdf-progress-card motion-sheet">
           <span className="pdf-progress-title">正在生成 PDF…</span>
-          <span className="pdf-progress-track" aria-hidden="true"><i style={{ width: Math.round(pdfProgress * 100) + '%' }} /></span>
+          <span className="pdf-progress-track" aria-hidden="true"><i style={{ '--progress': pdfProgress } as React.CSSProperties} /></span>
           <span className="pdf-progress-hint">文档较长时需要几秒钟，请保持页面打开。</span>
         </div>
       </div>}
@@ -1127,6 +1221,32 @@ function App() {
       onClose={() => setShowInvite(false)}
     />}
     {moveDoc && <MoveDialog doc={moveDoc} documents={documents} busy={busy} onMove={(parentId) => void moveDocument(moveDoc, parentId)} onClose={() => setMoveDoc(null)} />}
+    {/*
+      文档信息 is a Dialog rather than a fourth side-panel tab: it describes the
+      document instead of working on it, so it should not compete with 评论 and
+      版本历史 for the panel's width, and it must be readable while the panel is
+      showing something else. Every value comes from the `Doc` the shell already
+      holds; the word count is the same measure as the editor footer, and a body
+      that is not loaded says "正文未加载" rather than showing a zero.
+    */}
+    {documentInfoOpen && active && <Dialog
+      title="文档信息"
+      description="这个文档在服务器上的记录。"
+      confirmLabel="知道了"
+      cancelLabel="关闭"
+      onConfirm={() => setDocumentInfoOpen(false)}
+      onClose={() => setDocumentInfoOpen(false)}
+    >
+      <DocumentInfoPanel
+        title={active.title}
+        createdAt={active.createdAt}
+        updatedAt={active.updatedAt}
+        words={active.content ? wordCount(docText(active.content)) : undefined}
+        version={active.version}
+        docId={active.id}
+        parentTitle={documents.find((row) => row.id === active.parentId)?.title ?? null}
+      />
+    </Dialog>}
     {previewVersion && active && <VersionPreview token={token} documentId={active.id} version={previewVersion} currentContent={previewCurrent.content} currentTitle={previewCurrent.title} onRestore={restoreVersion} onClose={() => setPreviewVersion(null)} />}
     <input ref={importInput} className="visually-hidden" type="file" accept=".md,.markdown,.txt" aria-label="导入 Markdown 文件" onChange={(event) => void handleImport(event)} />
     {active?.content && user && <DraftRecovery key={active.id} doc={active} token={token} userId={user.id} notify={setNotice} onRecovered={(recovered) => {

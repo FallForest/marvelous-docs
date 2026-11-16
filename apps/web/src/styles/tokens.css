@@ -242,6 +242,52 @@
     border-color var(--duration-fast) var(--ease-standard),
     transform var(--duration-base) var(--ease-spring-snappy);
 
+  /*
+   * How far a floating surface travels as it arrives, and which way.
+   *
+   * These two exist so a popover's direction can change WITHOUT changing its
+   * animation-name. Placement is re-measured on every scroll; when a menu near
+   * the bottom of the viewport flips from "below" to "above", a per-placement
+   * `animation:` shorthand swaps the keyframes, the browser treats that as a new
+   * animation and the menu replays its whole entrance under the pointer. A
+   * custom property read *inside* one keyframe has no such effect: the animation
+   * keeps running (or stays finished) and only the start offset changes, which
+   * matters for the one frame where a flip and an entrance coincide.
+   */
+  --motion-rise-shift:6px;
+  --motion-rise-direction:1;
+
+  /*
+   * Press feedback depth, multiplied by --motion-scale so reduced motion can
+   * neutralise it from one declaration instead of a suppression list per
+   * control: `scale(calc(1 - var(--press-scale) * var(--motion-scale)))` is .97
+   * by default and exactly 1 when the OS asked for no motion.
+   */
+  --press-scale:.03;
+  /*
+   * The press itself, as a value other layers reuse.
+   *
+   * A custom property may hold a partial value, so a control writes
+   * `transform:var(--press-transform)` and inherits two things at once: the .97
+   * depth (press feedback on everything pressable) and the reduced-motion
+   * collapse, which comes from --motion-scale becoming 0 rather than from a
+   * `transform:none` list that has to be kept in sync with every new control.
+   * That list is exactly how the old suppression block drifted: it named nine
+   * selectors and missed the other fifteen pressable ones.
+   */
+  --press-transform:scale(calc(1 - var(--press-scale) * var(--motion-scale)));
+
+  /*
+   * Determinate progress, 0..1, written inline by the caller.
+   *
+   * Declared here because every custom property a layer reads has to exist in
+   * this file (test/theme.test.ts enforces it): a reader that silently gets an
+   * empty value renders nothing, which is the one failure mode a progress bar
+   * must not have. The default is 0 so a first paint before the first progress
+   * event shows an empty track rather than a full one.
+   */
+  --progress:0;
+
   /* ── base typography ────────────────────────────────────────── */
   /*
    * The code stack is a token because three layers had already written it out

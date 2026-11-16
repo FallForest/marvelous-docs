@@ -1,7 +1,6 @@
-import { ArrowDownToLine, ChevronRight, FileText, History, MessageCircle, Palette, PanelLeftClose, Share2, Star } from 'lucide-react'
+import { ChevronRight, FileText, MessageCircle, PanelLeftClose, Share2 } from 'lucide-react'
 import type { CSSProperties } from 'react'
-import ExportMenu from '../layout/ExportMenu'
-import ThemeMenu from '../layout/ThemeMenu'
+import DocumentMenu from '../layout/DocumentMenu'
 import ArtIcon from '../ui/ArtIcon'
 import type { CollabStatus } from '../../lib/app-types'
 import type { ExportTarget, SaveStatus } from '../../lib/types'
@@ -15,25 +14,28 @@ type TopBarProps = {
   /** Folders above the open document, root first; empty at the workspace root. */
   trail: Array<{ id: string; title: string }>
   onOpenTrail: (id: string) => void
-  saveStatus: SaveStatus
   collabStatus: CollabStatus
   collaborators: Presence[]
   sidebarOpen: boolean
+  /**
+   * Whether a document is mounted. This is the whole contract of the bar: when it
+   * is false there is nothing for save state, presence, history, comments, share
+   * or export to act on, so none of them render.
+   */
   hasDocument: boolean
   favorite: boolean
-  exportOpen: boolean
-  /** Current appearance id, and whether the appearance menu is open. */
-  themeId: string
-  themeOpen: boolean
-  onThemeMenu: (open: boolean) => void
-  onTheme: (id: string) => void
+  saveStatus: SaveStatus
+  /** 文档“更多”, which now owns export/print/history/favourite/move/info. */
+  documentMenuOpen: boolean
+  onDocumentMenu: (open: boolean) => void
   onOpenSidebar: () => void
   onFavorite: () => void
   onExport: (format: ExportTarget) => void
-  onExportMenu: (open: boolean) => void
   onHistory: () => void
   onComments: () => void
   onShare: () => void
+  onMove: () => void
+  onInfo: () => void
 }
 
 /**
@@ -52,8 +54,21 @@ function foldTrail(trail: TopBarProps['trail']): Array<{ id: string | null; titl
 /**
  * Top bar: breadcrumb, save state, live presence, then document actions.
  *
- * The share button is the only filled control in the row, which keeps the
- * primary action visually distinct from the icon group beside it.
+ * The bar renders only what can act on the mounted screen. On home, a folder, the
+ * search results and the trash there is no document, so the save state, the
+ * presence stack, 版本历史, 评论, 共享, 收藏 and 导出 are all absent — not disabled.
+ * A row of grey icons is a claim that the actions exist and are temporarily
+ * unavailable; they do not exist there at all. What remains is what does work
+ * everywhere: the sidebar toggle, the path, and the page title.
+ *
+ * 外观 is not here any more. It is a browser-wide preference, so it belongs beside
+ * the account in the sidebar, and having it on a document bar implied it was a
+ * document setting.
+ *
+ * The two document actions that stay on the bar are the two a writer reaches for
+ * mid-sentence — 评论 and 共享 — with 评论 next to 共享 as the audit asks. Everything
+ * else with a document destination moved into 更多, which is why the narrow
+ * viewport no longer has to shrink five icons to fit: it renders three controls.
  */
 export default function TopBar(props: TopBarProps) {
   return <header className="topbar">
@@ -72,54 +87,59 @@ export default function TopBar(props: TopBarProps) {
           : <span className="crumb-link is-folded" aria-hidden="true">…</span>}
         <ChevronRight size={13} className="crumb-sep" />
       </span>)}
-      <strong><span className="theme-decoration crumb-title-art" aria-hidden="true"><ArtIcon name="document" fallback={<FileText size={17} />} /></span><span className="crumb-title-copy">{props.title}</span></strong>
+      <strong><span className="theme-decoration crumb-title-art" aria-hidden="true"><ArtIcon name={props.hasDocument ? 'document' : 'folder'} fallback={<FileText size={17} />} /></span><span className="crumb-title-copy">{props.title}</span></strong>
     </div>
     <div className="top-actions">
-      <span className={'save-state sketch-frame save-' + props.saveStatus} role="status" aria-live="polite">
-        <span className="save-dot" />{props.saveStatus === 'saving' ? '保存中…' : props.saveStatus === 'error' ? '保存失败' : '已保存'}
-      </span>
-      <span className="top-divider" aria-hidden="true" />
-      <div className="collaborators sketch-frame" role="group" aria-label="在线成员">
-        <div className="presence-stack">
-          <div className="mini-avatar green" title="你"><span className="presence-letter">{props.userInitial}</span></div>
-          {props.collaborators.slice(0, 3).map((person, index) => <div
-            key={person.clientId}
-            className="mini-avatar presence-enter"
-            title={person.name}
-            // Arriving collaborators pop in one step apart; a stable key means
-            // only the new avatar animates, not the whole stack.
-            style={{ background: person.color + '24', color: person.color, '--i': index } as CSSProperties}
-          ><span className="presence-letter">{person.name[0]?.toUpperCase()}</span></div>)}
-          {props.collaborators.length > 3 && <span className="presence-more">{'+' + (props.collaborators.length - 3)}</span>}
-        </div>
-        <span className={'connection-dot ' + props.collabStatus} aria-hidden="true" />
-        <span className="visually-hidden" role="status" aria-live="polite">
-          {props.collabStatus === 'connected' ? '实时协作已连接' : props.collabStatus === 'connecting' ? '实时协作连接中' : '实时协作已断开'}
+      {/*
+       * Save state and presence describe this document and this session. Both are
+       * per-document facts — "已保存" for a screen with no body is meaningless, and
+       * a presence stack for a folder page says people are editing a folder.
+       */}
+      {props.hasDocument && <>
+        <span className={'save-state sketch-frame save-' + props.saveStatus} role="status" aria-live="polite">
+          <span className="save-dot" />{props.saveStatus === 'saving' ? '保存中…' : props.saveStatus === 'error' ? '保存失败' : '已保存'}
         </span>
-      </div>
-      <span className="top-divider" aria-hidden="true" />
-      <div className="icon-group">
-        {props.hasDocument && <button type="button" className={'icon-btn favorite-btn' + (props.favorite ? ' is-favorite' : '')} aria-label={props.favorite ? '取消收藏' : '收藏文档'} aria-pressed={props.favorite} title={props.favorite ? '取消收藏' : '收藏文档'} onClick={props.onFavorite}><ArtIcon name="favorite-star" fallback={<Star size={16} fill={props.favorite ? 'currentColor' : 'none'} />} /></button>}
-        <div className="menu-anchor">
-          <button
-            type="button"
-            className="icon-btn theme-btn sketch-frame"
-            aria-label="切换主题"
-            title="切换主题"
-            aria-haspopup="menu"
-            aria-expanded={props.themeOpen}
-            onClick={() => props.onThemeMenu(!props.themeOpen)}
-          ><ArtIcon name="palette" fallback={<Palette size={16} />} /><span className="theme-trigger-label theme-decoration">外观</span></button>
-          <ThemeMenu open={props.themeOpen} currentId={props.themeId} onPick={props.onTheme} onClose={() => props.onThemeMenu(false)} />
+        <span className="top-divider" aria-hidden="true" />
+        <div className="collaborators sketch-frame" role="group" aria-label="在线成员">
+          <div className="presence-stack">
+            <div className="mini-avatar green" title="你"><span className="presence-letter">{props.userInitial}</span></div>
+            {props.collaborators.slice(0, 3).map((person, index) => <div
+              key={person.clientId}
+              className="mini-avatar presence-enter"
+              title={person.name}
+              // Arriving collaborators pop in one step apart; a stable key means
+              // only the new avatar animates, not the whole stack.
+              style={{ background: person.color + '24', color: person.color, '--i': index } as CSSProperties}
+            ><span className="presence-letter">{person.name[0]?.toUpperCase()}</span></div>)}
+            {props.collaborators.length > 3 && <span className="presence-more">{'+' + (props.collaborators.length - 3)}</span>}
+          </div>
+          <span className={'connection-dot ' + props.collabStatus} aria-hidden="true" />
+          <span className="visually-hidden" role="status" aria-live="polite">
+            {props.collabStatus === 'connected' ? '实时协作已连接' : props.collabStatus === 'connecting' ? '实时协作连接中' : '实时协作已断开'}
+          </span>
         </div>
-        <div className="menu-anchor">
-          <button type="button" className="icon-btn" aria-label="导出文档" title="导出文档" aria-haspopup="menu" aria-expanded={props.exportOpen} disabled={!props.hasDocument} onClick={() => props.onExportMenu(!props.exportOpen)}><ArtIcon name="download" fallback={<ArrowDownToLine size={16} />} /></button>
-          <ExportMenu open={props.exportOpen} onSelect={props.onExport} onClose={() => props.onExportMenu(false)} />
+        <span className="top-divider" aria-hidden="true" />
+        {/*
+         * 评论 then 共享, in that order: comment is the write-while-reading action
+         * and shared is the end state of the document. Both are reachable with one
+         * press at every width because they are not duplicated in 更多.
+         */}
+        <div className="icon-group document-actions">
+          <button type="button" className="icon-btn" aria-label="评论" title="评论" onClick={props.onComments}><ArtIcon name="comment" fallback={<MessageCircle size={16} />} /></button>
+          <DocumentMenu
+            open={props.documentMenuOpen}
+            favorite={props.favorite}
+            onOpenMenu={props.onDocumentMenu}
+            onExport={props.onExport}
+            onHistory={props.onHistory}
+            onFavorite={props.onFavorite}
+            onMove={props.onMove}
+            onInfo={props.onInfo}
+            onClose={() => props.onDocumentMenu(false)}
+          />
         </div>
-        <button type="button" className="icon-btn" aria-label="版本历史" title="版本历史" onClick={props.onHistory}><ArtIcon name="history" fallback={<History size={16} />} /></button>
-        <button type="button" className="icon-btn" aria-label="评论" title="评论" onClick={props.onComments}><ArtIcon name="comment" fallback={<MessageCircle size={16} />} /></button>
-      </div>
-      {props.hasDocument && <button type="button" className="share-btn sketch-frame" onClick={props.onShare}><ArtIcon name="share" fallback={<Share2 size={14} />} />共享</button>}
+        <button type="button" className="share-btn sketch-frame" onClick={props.onShare}><ArtIcon name="share" fallback={<Share2 size={14} />} />共享</button>
+      </>}
     </div>
   </header>
 }

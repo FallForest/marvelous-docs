@@ -140,10 +140,19 @@ export default function HomeDashboard({ documents, favorites, query, trash, favo
     </section>
   </div>
   const recent = [...visible].sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()).slice(0, 6)
+  /*
+   * The labels say what the lists actually are.
+   *
+   * "最近访问" was sorted by `updatedAt` and "我创建的" had no author filter — `Doc`
+   * carries no creator field, so the section was in fact "every document". Both
+   * names promised a personalised view the data cannot support. Renaming is the
+   * honest fix; a real visit record and a creator column are server work, and
+   * faking either here would just move the lie.
+   */
   const sections = [
-    { title: '最近访问', icon: Clock3, items: recent },
+    { title: '最近更新', icon: Clock3, items: recent },
     { title: '收藏', icon: Star, items: favoriteDocs },
-    { title: '我创建的', icon: FileText, items: visible.filter((doc) => doc.kind !== 'folder').slice(0, 6) },
+    { title: '全部文档', icon: FileText, items: visible.filter((doc) => doc.kind !== 'folder').slice(0, 6) },
   ]
   return <div className="home-dashboard" data-vt-scope="main" ref={rootRef}>
     <div className="home-hero">

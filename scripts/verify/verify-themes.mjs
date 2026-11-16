@@ -66,20 +66,31 @@ function Harness() {
       expandedFolders={new Set()}
       homeView="home"
       emptyMessage="还没有文档"
-      templates={[]}
       query=""
       narrow={false}
       floating={false}
-      workspaceOpen={false}
       newMenuOpen={false}
       treeExpanded
+      /*
+       * Appearance moved here from the top bar: it is a browser-wide preference,
+       * so it belongs beside the account instead of on a document bar that
+       * implied it was a document setting. The verifier follows it, because a
+       * test that keeps looking in the old place would fail on a change that is
+       * working exactly as intended.
+       */
+      themeId={themeId} themeOpen={themeOpen} onThemeMenu={setThemeOpen} onTheme={setTheme}
       onClose={noop}
-      onWorkspaceMenu={noop}
       onSearch={noop}
+      onSearchSubmit={noop}
+      onSearchCancel={noop}
+      searchPageOpen={false}
       onHome={noop}
+      onAllDocuments={noop}
       onAdmin={noop}
+      onRecent={noop}
       onFavorites={noop}
       onTrash={noop}
+      onOpenTemplates={noop}
       checkedIds={null}
       onToggleChecked={noop}
       onEnterSelection={noop}
@@ -103,13 +114,13 @@ function Harness() {
     />
     <div className="main-area">
       <TopBar
-        userInitial="A" title="设计协作计划" showRoot saveStatus="saved" collabStatus="connected"
+        userInitial="A" title="设计协作计划" showRoot collabStatus="connected"
         // A real path, so the breadcrumb under test is the one a reader sees.
         trail={[{ id: 'f1', title: '产品' }]} onOpenTrail={noop}
-        collaborators={[]} sidebarOpen hasDocument favorite exportOpen={false}
-        themeId={themeId} themeOpen={themeOpen} onThemeMenu={setThemeOpen} onTheme={setTheme}
-        onOpenSidebar={noop} onFavorite={noop} onExport={noop} onExportMenu={noop}
-        onHistory={noop} onComments={noop} onShare={noop}
+        collaborators={[]} sidebarOpen hasDocument favorite saveStatus="saved"
+        documentMenuOpen={false} onDocumentMenu={noop}
+        onOpenSidebar={noop} onFavorite={noop} onExport={noop}
+        onHistory={noop} onComments={noop} onShare={noop} onMove={noop} onInfo={noop}
       />
       <div className="workspace-content">
         <div className="editor-column"><Doc /></div>

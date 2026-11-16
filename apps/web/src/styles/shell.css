@@ -142,6 +142,46 @@
    caret. Fading is enough; removing it would shift the text. */
 .sidebar .action-row:focus-within kbd{opacity:0;transition:opacity var(--duration-fast) var(--ease-standard)}
 
+/*
+ * The results page is a second step, so it gets a row instead of happening
+ * silently: the field narrows the tree, and this row is the only thing in the
+ * sidebar that navigates. It is a nav row in every metric that matters (height,
+ * indent, focus ring) because it sits in the same column as the rest of them.
+ */
+.sidebar .search-page-entry{
+  width:100%;
+  height:var(--row-h);
+  min-height:var(--row-h);
+  margin-top:2px;
+  padding:0 var(--row-pad);
+  display:flex;
+  align-items:center;
+  gap:9px;
+  border:1px solid transparent;
+  border-radius:var(--row-radius);
+  background:transparent;
+  color:var(--text-secondary);
+  font-size:12.5px;
+  text-align:left;
+  transition:var(--transition-colors);
+}
+.sidebar .search-page-entry:hover{background:var(--surface-sunken);color:var(--text)}
+.sidebar .search-page-entry.is-current{
+  background:var(--accent-soft);
+  color:var(--accent-strong);
+  font-weight:600;
+}
+.sidebar .search-page-entry small{
+  margin-left:auto;
+  font-size:10.5px;
+  font-weight:600;
+  color:var(--text-muted);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:1px 4px;
+  line-height:1.4;
+}
+
 /* section label: one rhythm for both "导航" and "文档" */
 .sidebar .nav-label{
   margin:16px var(--row-pad) 4px;
@@ -455,6 +495,19 @@
 .sidebar .profile-copy{gap:1px}
 .sidebar .profile-copy b{font-size:12px;font-weight:600;line-height:1.3}
 .sidebar .profile-copy small{font-size:10.5px;line-height:1.3}
+/* The appearance trigger sits in the account row, between the name and sign-out.
+   It is an icon button in that row, not a labelled control: the row already has
+   one full-width target (help) above it, and 外观 is a preference, not a task. */
+.sidebar .profile-appearance{display:flex;flex:0 0 auto;margin-left:auto}
+.sidebar .profile-appearance .theme-btn{
+  width:28px;height:28px;
+  min-width:0;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:var(--text-muted);
+}
+.sidebar .profile-appearance .theme-btn:hover{background:var(--surface);color:var(--text)}
 
 /* ══ topbar: bold surface, quiet internals ═══════════════════════ */
 .main-area>.topbar{
@@ -528,6 +581,12 @@
 .icon-group .icon-btn:disabled{color:var(--text-disabled)}
 .favorite-btn.is-favorite{color:var(--tint-gold-ink);background:var(--tint-gold-soft)}
 .favorite-btn.is-favorite:hover{background:var(--tint-gold-hover)}
+/* 更多 is the third control of the document group: comment, more, share. It has to
+   sit on the same baseline as the icon buttons it replaces, so it borrows their
+   box rather than defining a second one. */
+.document-menu-anchor{display:flex;flex:0 0 auto}
+.document-actions .document-more-btn{width:30px;height:30px;border-radius:6px;color:var(--text-secondary)}
+.document-actions .document-more-btn:hover{background:var(--surface-sunken);color:var(--text)}
 
 .main-area>.topbar .collaborators{
   display:flex;

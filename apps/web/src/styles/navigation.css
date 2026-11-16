@@ -47,7 +47,7 @@
 /* press: the row gives under the finger and springs back, nothing moves */
 .popover .menu-item:active:not(:disabled),
 .popover .tb-menu-item:active:not(:disabled){
-  transform:scale(.97);
+  transform:var(--press-transform);
   transition-duration:var(--duration-instant);
 }
 
@@ -59,6 +59,7 @@
 .popover.template-menu{width:min(236px,calc(100vw - 24px));max-width:236px}
 .popover.tree-menu{width:184px;max-width:184px}
 .popover.export-menu{width:190px;max-width:190px}
+.popover.document-menu{width:min(232px,calc(100vw - 24px));max-width:232px}
 .popover.theme-menu{width:min(248px,calc(100vw - 24px));max-width:248px}
 
 .tb-size-menu .tb-menu-item{justify-content:center;font-variant-numeric:tabular-nums}
@@ -118,7 +119,7 @@
 /* ══ 3. topbar actions ═══════════════════════════════════════════ */
 .top-actions .icon-btn{color:var(--text-secondary);transition:var(--transition-colors),transform var(--duration-fast) var(--ease-spring-snappy)}
 .top-actions .icon-btn:hover{background:var(--surface-sunken);color:var(--text)}
-.top-actions .icon-btn:active:not(:disabled){transform:scale(.94);transition-duration:var(--duration-instant)}
+.top-actions .icon-btn:active:not(:disabled){transform:var(--press-transform);transition-duration:var(--duration-instant)}
 .favorite-btn.is-favorite{color:var(--tint-gold-ink);background:var(--tint-gold-soft)}
 
 /* focus ring only for keyboard users; avoid red box on mouse click */
@@ -237,7 +238,7 @@
 }
 .tree-select-toggle:hover{background:var(--surface-sunken);color:var(--text)}
 .tree-select-toggle.is-active{background:var(--accent-soft);color:var(--accent-strong)}
-.tree-select-toggle:active{transform:scale(.97)}
+.tree-select-toggle:active{transform:var(--press-transform)}
 
 /* A checkbox takes the chevron's slot so the label keeps its baseline. */
 .tree-check{
@@ -280,7 +281,7 @@
   transition:background var(--duration-fast) var(--ease-standard),color var(--duration-fast) var(--ease-standard);
 }
 .batch-action:hover:not(:disabled){background:var(--surface-sunken);color:var(--text)}
-.batch-action:active:not(:disabled){transform:scale(.97)}
+.batch-action:active:not(:disabled){transform:var(--press-transform)}
 .batch-action:disabled{opacity:.5;cursor:default}
 .batch-action.danger{color:var(--danger);border-color:var(--danger-soft)}
 .batch-action.danger:hover:not(:disabled){background:var(--danger-soft)}

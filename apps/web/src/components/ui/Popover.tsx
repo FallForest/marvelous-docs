@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
 import { markAnimating, staggerDelay } from '../../lib/motion'
+import { createFocusReturn } from '../../lib/focus'
 
 type PopoverProps = {
   open: boolean
@@ -67,6 +68,15 @@ export default function Popover({ open, onClose, children, align = 'right', clas
   closeRef.current = onClose
   const [position, setPosition] = useState<Position | null>(null)
   const positioned = position !== null
+  /*
+   * CONTRACTS §4. Before this existed the popover moved focus to its first row
+   * on open and never moved it back: closing with Escape or by picking a row
+   * unmounted the focused row, so the browser dropped focus on <body> and the
+   * writer's next keystroke went to no one. The controller records the trigger
+   * on open and hands focus back on close (see lib/focus.ts for the decision
+   * order, including "do not steal a caret the user moved deliberately").
+   */
+  const focusReturn = useRef(createFocusReturn())
 
   useLayoutEffect(() => {
     if (!open) { setPosition(null); return }
@@ -126,6 +136,19 @@ export default function Popover({ open, onClose, children, align = 'right', clas
 
   useEffect(() => {
     if (!open) return
+    /*
+     * Record the trigger before the panel takes focus.
+     *
+     * In a layout effect, not a passive one: the "focus first row" effect below
+     * runs after this, and `autoFocus` children focus during the commit. Recording
+     * later would capture the panel's own first button and restore focus into a
+     * node that is about to unmount — the exact bug this exists to prevent.
+     */
+    focusReturn.current.record()
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Node | null
       if (!target) return
@@ -145,6 +168,34 @@ export default function Popover({ open, onClose, children, align = 'right', clas
       document.removeEventListener('pointerdown', onPointerDown, true)
       document.removeEventListener('keydown', onKeyDown)
     }
+  }, [open])
+
+  /*
+   * Return focus as the panel goes away, while `panel.current` is still mounted.
+   *
+   * `restore` needs the closing surface to tell "focus is inside the thing being
+   * removed" (destroyed, so fall back) apart from "the writer moved focus here
+   * deliberately" (leave it alone). Running this in a cleanup effect means it
+   * fires on close and on unmount, and `panel.current` is still the old node in
+   * the close case because React has not detached it yet.
+   *
+   * The controller is a no-op until `record()` has run, so a popover that was
+   * never opened cannot drag focus into the document on mount.
+   */
+  useEffect(() => {
+    if (!open) return
+    /*
+     * Capture both refs at effect time.
+     *
+     * The cleanup runs on close, after React has already committed the removal of
+     * the panel node; reading `panel.current` there would either see `null` (so
+     * "focus is inside the closing surface" could not be detected) or, worse, the
+     * next panel. The controller reference is stable, but copying it is what makes
+     * that true by construction rather than by convention.
+     */
+    const controller = focusReturn.current
+    const overlay = panel.current
+    return () => { controller.restore({ overlay }) }
   }, [open])
 
   useEffect(() => {

@@ -124,7 +124,7 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
 .menu-item:hover{background:var(--surface-muted);color:var(--text)}
 /* Press feedback is scale-only, and only while pressed: a row that shifts on
    hover makes a menu feel like it is dodging the pointer. */
-.menu-item:active{background:var(--surface-sunken);transform:scale(.97);transition-duration:var(--duration-instant)}
+.menu-item:active{background:var(--surface-sunken);transform:var(--press-transform);transition-duration:var(--duration-instant)}
 .menu-item svg{flex:0 0 auto;width:16px;height:16px;color:var(--text-soft)}
 .menu-item:hover svg{color:var(--text-secondary)}
 .menu-item[aria-disabled="true"]{color:var(--text-muted);cursor:not-allowed}
@@ -160,15 +160,15 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
  */
 .primary-btn{background:var(--accent);color:var(--text-on-accent);border:0;border-radius:5px;min-height:36px;padding:0 13px;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:12px;font-weight:600;transition:var(--transition-colors)}
 .primary-btn:hover{background:var(--accent-strong)}
-.primary-btn:active:not(:disabled){transform:scale(.97);transition-duration:var(--duration-instant)}
+.primary-btn:active:not(:disabled){transform:var(--press-transform);transition-duration:var(--duration-instant)}
 
 .btn-danger{min-height:36px;padding:0 14px;border:0;border-radius:var(--radius-sm);background:var(--danger);color:var(--text-on-accent);font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:var(--transition-colors)}
 .btn-danger:hover{background:var(--danger-strong)}
-.btn-danger:active:not(:disabled){transform:scale(.97);transition-duration:var(--duration-instant)}
+.btn-danger:active:not(:disabled){transform:var(--press-transform);transition-duration:var(--duration-instant)}
 
 .btn-ghost{min-height:36px;padding:0 12px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--text-secondary);font-size:12px;display:inline-flex;align-items:center;gap:6px;transition:var(--transition-colors)}
 .btn-ghost:hover{background:var(--surface-muted);color:var(--text)}
-.btn-ghost:active:not(:disabled){transform:scale(.97);transition-duration:var(--duration-instant)}
+.btn-ghost:active:not(:disabled){transform:var(--press-transform);transition-duration:var(--duration-instant)}
 
 /* ── 7. modal presentation (iOS sheet) ──────────────────────────
  * Every modal in the app is <backdrop><panel class="modal-panel">. The
@@ -248,7 +248,7 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
 .modal-actions button,.dialog-actions button{min-height:36px;font-size:12px;padding:0 14px;border-radius:var(--radius-sm)}
 .modal-danger{min-height:36px;padding:0 14px;border:0;border-radius:var(--radius-sm);background:var(--danger);color:var(--text-on-accent);font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:var(--transition-colors)}
 .modal-danger:hover{background:var(--danger-strong)}
-.modal-danger:active{transform:scale(.97);transition-duration:var(--duration-instant)}
+.modal-danger:active{transform:var(--press-transform);transition-duration:var(--duration-instant)}
 .modal-actions .modal-danger{align-self:auto}
 
 /* ── 8. toast ───────────────────────────────────────────────────
@@ -290,7 +290,7 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
   transition:var(--transition-colors);
 }
 .notice-toast button:hover{background:var(--surface-muted);color:var(--text)}
-.notice-toast button:active{transform:scale(.92);transition-duration:var(--duration-instant)}
+.notice-toast button:active{transform:var(--press-transform);transition-duration:var(--duration-instant)}
 
 /* ── 8b. PDF export progress ────────────────────────────────────
  * Rasterising a long document blocks the main thread for a moment, so the
@@ -341,7 +341,18 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
   height:100%;
   border-radius:inherit;
   background:var(--accent);
-  transition:width var(--duration-base) var(--ease-standard);
+  /*
+   * Scaled, not widened.
+   *
+   * This used to be `transition:width`. A determinate bar steps on every progress
+   * event, so that was a layout pass per step on the main thread — during PDF
+   * generation, which is the exact moment the page is already busy. `transform`
+   * runs on the compositor and produces the identical picture: the track is the
+   * full width, the fill scales from its left edge.
+   */
+  transform-origin:left center;
+  transform:scaleX(var(--progress, 0));
+  transition:transform var(--duration-base) var(--ease-standard);
 }
 
 /* ── 9. sidebar profile row: clean circle + ellipsis ───────────── */
@@ -382,7 +393,7 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
 .tree-more{width:28px;height:28px;flex:0 0 28px;margin-right:4px;border:0;background:transparent;border-radius:6px;color:var(--text-soft);display:grid;place-items:center;padding:0;opacity:.7;transition:var(--transition-colors),opacity var(--duration-fast) var(--ease-standard)}
 .tree-entry:hover .tree-more,.tree-entry.selected .tree-more,.tree-more:focus-visible,.tree-more[aria-expanded="true"]{opacity:1}
 .tree-more:hover{background:var(--surface-active);color:var(--text-secondary)}
-.tree-more:active{transform:scale(.9);transition-duration:var(--duration-instant)}
+.tree-more:active{transform:var(--press-transform);transition-duration:var(--duration-instant)}
 .tree-more[aria-expanded="true"]{background:var(--surface-sunken);color:var(--text-secondary)}
 .tree-entry.selected .tree-doc{color:var(--text)}
 
@@ -393,11 +404,28 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
 .nav-row:hover,.action-row:hover,.tree-folder:hover,.tree-doc:hover{background:var(--surface-sunken);color:var(--text)}
 .icon-btn:hover,.tiny-btn:hover,.tool-btn:hover{background:var(--surface-sunken);color:var(--text)}
 .secondary-btn:hover,.share-btn:hover{border-color:var(--border-strong);color:var(--text)}
-/* press: one scale, never a hover displacement */
+/* press: one scale, never a hover displacement
+ *
+ * The depth comes from --press-transform rather than a literal `.97` so it has
+ * exactly one definition (tokens.css) and one reduced-motion behaviour: when the
+ * OS asks for less motion, --motion-scale becomes 0 and the press becomes
+ * `scale(1)` for every control at once. The alternative — a `transform:none`
+ * suppression list — is what this file used to have, and it named nine
+ * selectors while missing the rest of the pressable ones (editor.css carries a
+ * second, separate list of `:active{transform:var(--press-transform)}` rules for the same
+ * reason: there was no single value to point at).
+ *
+ * The rows keep a ground change instead of a scale: scaling a full-width row
+ * moves its text under the pointer, which reads as a layout bug rather than as
+ * a press.
+ */
 .icon-btn:active:not(:disabled),.tiny-btn:active:not(:disabled),.tool-btn:active:not(:disabled),
-.secondary-btn:active:not(:disabled),.new-doc-btn:active:not(:disabled),
+.secondary-btn:active:not(:disabled),.new-doc-btn:active:not(:disabled){
+  transform:var(--press-transform);
+  transition-duration:var(--duration-instant);
+}
 .nav-row:active,.action-row:active,.tree-doc:active,.tree-folder:active{
-  transform:scale(.97);
+  transform:none;
   transition-duration:var(--duration-instant);
 }
 /* .new-doc-btn's box comes from shell.css (.sidebar .new-doc-btn); only the
