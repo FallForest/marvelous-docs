@@ -53,11 +53,11 @@ export default function DocumentMenu(props: DocumentMenuProps) {
         <ArtIcon name="favorite-star" fallback={<Star size={15} />} /><span>{props.favorite ? '取消收藏' : '收藏'}</span>
       </button>
       <button type="button" role="menuitem" className="menu-item" onClick={() => { props.onClose(); props.onMove() }}>
-        <FolderInput size={15} /><span>移动…</span>
+        <ArtIcon name="move" fallback={<FolderInput size={15} />} /><span>移动…</span>
       </button>
       <hr className="menu-divider" />
       <button type="button" role="menuitem" className="menu-item" onClick={() => { props.onClose(); props.onInfo() }}>
-        <Info size={15} /><span>文档信息</span>
+        <ArtIcon name="info" fallback={<Info size={15} />} /><span>文档信息</span>
       </button>
     </Popover>
   </div>
@@ -90,7 +90,7 @@ type DocumentInfoProps = {
  */
 export function DocumentInfoPanel({ title, createdAt, updatedAt, words, version, docId, parentTitle }: DocumentInfoProps) {
   return <div className="document-info">
-    <div className="document-info-head"><Clock3 size={15} /><b>{title || '未命名文档'}</b></div>
+    <div className="document-info-head"><ArtIcon name="document" fallback={<Clock3 size={15} />} /><b>{title || '未命名文档'}</b></div>
     <dl className="document-info-list">
       <div><dt>创建时间</dt><dd>{createdAt ? new Date(createdAt).toLocaleString('zh-CN') : '未提供'}</dd></div>
       <div><dt>最后编辑</dt><dd>{updatedAt ? new Date(updatedAt).toLocaleString('zh-CN') : '未提供'}</dd></div>

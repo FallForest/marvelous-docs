@@ -25,7 +25,7 @@ type ExportMenuProps = { open: boolean; onSelect: (format: ExportTarget) => void
 export function ExportMenuItems({ onSelect, formats = EXPORT_ITEMS.map((item) => item.format) }: { onSelect: (format: ExportTarget) => void; formats?: ExportTarget[] }) {
   return <>{EXPORT_ITEMS.filter((item) => formats.includes(item.format)).map((item) => <button key={item.format} type="button" role="menuitem" className="menu-item" onClick={() => onSelect(item.format)}>
     {item.format === 'print'
-      ? <Printer size={15} />
+      ? <ArtIcon name="print" fallback={<Printer size={15} />} />
       : item.format === 'pdf' ? <ArtIcon name="document" fallback={<FileType2 size={15} />} /> : <ArtIcon name="download" fallback={<ArrowDownToLine size={15} />} />}
     <span>{item.label}</span>
     <small className="menu-hint">{item.hint}</small>

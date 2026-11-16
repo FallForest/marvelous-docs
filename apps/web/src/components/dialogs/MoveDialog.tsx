@@ -4,6 +4,7 @@ import { buildDocTree, descendantIds, flatten, treeDepth } from '../../lib/tree'
 import { usePresence } from '../../hooks/usePresence'
 import { staggerDelay } from '../../lib/motion'
 import type { Doc } from '../../lib/types'
+import ArtIcon from '../ui/ArtIcon'
 
 type MoveDialogProps = {
   doc: Doc
@@ -33,7 +34,7 @@ export default function MoveDialog({ doc, documents, busy, onMove, onClose }: Mo
     >
       <header>
         <div>
-          <div className="move-icon"><Folder size={17} /></div>
+          <div className="move-icon"><ArtIcon name="move" fallback={<Folder size={17} />} /></div>
           <h2 id="move-title">移动到</h2>
           <p>{doc.title || '未命名文档'}</p>
         </div>
@@ -45,7 +46,7 @@ export default function MoveDialog({ doc, documents, busy, onMove, onClose }: Mo
           aria-selected={target === null}
           className={'move-row ' + (target === null ? 'selected' : '')}
           onClick={() => setTarget(null)}
-        ><Folder size={15} /><span>根目录</span></button>
+        ><ArtIcon name="folder" fallback={<Folder size={15} />} /><span>根目录</span></button>
         {rows.map(({ doc: folder, depth }, index) => <button
           key={folder.id}
           role="option"
@@ -53,7 +54,7 @@ export default function MoveDialog({ doc, documents, busy, onMove, onClose }: Mo
           className={'move-row stagger ' + (target === folder.id ? 'selected' : '')}
           style={{ paddingLeft: 12 + depth * 14 + 'px', animationDelay: staggerDelay(index) + 'ms' }}
           onClick={() => setTarget(folder.id)}
-        ><Folder size={15} /><span>{folder.title || '未命名文件夹'}</span></button>)}
+        ><ArtIcon name="folder" fallback={<Folder size={15} />} /><span>{folder.title || '未命名文件夹'}</span></button>)}
         {!rows.length && <div className="move-empty">暂无可用的目标文件夹</div>}
       </div>
       <footer>

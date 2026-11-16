@@ -1249,23 +1249,37 @@ function App() {
     </Dialog>}
     {previewVersion && active && <VersionPreview token={token} documentId={active.id} version={previewVersion} currentContent={previewCurrent.content} currentTitle={previewCurrent.title} onRestore={restoreVersion} onClose={() => setPreviewVersion(null)} />}
     <input ref={importInput} className="visually-hidden" type="file" accept=".md,.markdown,.txt" aria-label="导入 Markdown 文件" onChange={(event) => void handleImport(event)} />
-    {active?.content && user && <DraftRecovery key={active.id} doc={active} token={token} userId={user.id} notify={setNotice} onRecovered={(recovered) => {
+    {active?.content && user && <DraftRecovery
       /*
-       * Two outcomes share this callback: the copy went back into the document
-       * that was open, or it became a second document. Replacing the row when it
-       * already exists is what keeps the first case from listing the same
-       * document twice; the second case still has to be added to the tree.
+       * Keyed on the document only. Keying on the version would remount the
+       * dialog on every autosave, which resets its dismissal and makes a
+       * decision the writer already made appear to be undone.
        */
-      const known = documents.some((row) => row.id === recovered.id)
-      setDocuments((items) => known ? items.map((row) => row.id === recovered.id ? recovered : row) : [recovered, ...items])
-      setActive(recovered)
-      setHomeView('home')
-      setSelectedFolderId(recovered.parentId || null)
-      // The restored body replaces what the editor was showing; remounting is
-      // the only path that reloads it for a REST-only session.
-      setEditorEpoch((epoch) => epoch + 1)
-      void refreshStats()
-    }} />}
+      key={active.id}
+      doc={active}
+      token={token}
+      userId={user.id}
+      notify={setNotice}
+      onRestore={async (body) => {
+        // Handed to the editor, not to the API: the writer has to see the text
+        // land, and the ordinary autosave has to be the thing that saves it.
+        const handle = editorHandle.current
+        if (!handle) throw new Error('文档还在加载，请稍后重试。')
+        await handle.restoreBody(body)
+      }}
+      onRecovered={(recovered) => {
+        /*
+         * Only "save beside" lands here: the copy became its own document, so the
+         * tree gains a row and the shell opens it. Recovery into the document
+         * already open goes through the editor and needs no navigation.
+         */
+        setDocuments((items) => [recovered, ...items])
+        setActive(recovered)
+        setHomeView('home')
+        setSelectedFolderId(recovered.parentId || null)
+        void refreshStats()
+      }}
+    />}
     <ShellDialogs
       renameDoc={renameDoc}
       deleteDoc={deleteDoc}

@@ -3,6 +3,10 @@
 /* handdrawn component layout */
 
 .art-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;vertical-align:middle;line-height:0}
+/* List badges have their own compact slot; the default 28px art would grow the
+   grid track past its 18px parent and move the star down and toward the date. */
+:root .document-list-star>.art-icon{width:18px;height:18px;flex-basis:18px}
+:root .document-list-head h1{font-family:var(--font-handwritten)}
 :root .theme-decoration{display:block}
 :root .art-icon{width:28px;height:28px}
 :root{
@@ -1069,4 +1073,23 @@
   :root .template-library-header>.icon-btn{flex-basis:44px;width:44px;height:44px}
   :root .template-library-footer{align-items:flex-start;flex-direction:column;gap:12px}
   :root .template-library-footer>button{width:100%;min-height:44px;justify-content:center}
+}
+
+/* Document facts and the newer move actions keep one layout in either skin. */
+:root .move-icon .art-icon{width:26px;height:28px}
+:root .move-row .art-icon{width:23px;height:25px;flex-basis:23px}
+:root .move-row>span:last-child{min-width:0;overflow-wrap:anywhere}
+:root .document-info{min-width:0;padding:14px;border:1px solid var(--border);border-radius:8px;background:var(--surface-soft)}
+:root .document-info-head{display:flex;align-items:flex-start;gap:9px;padding-bottom:12px;border-bottom:1px solid var(--border);color:var(--text)}
+:root .document-info-head .art-icon{width:23px;height:26px;flex-basis:23px}
+:root .document-info-head b{min-width:0;font-size:14px;line-height:1.7;overflow-wrap:anywhere}
+:root .document-info-list{display:grid;gap:0;margin:0}
+:root .document-info-list>div{display:grid;grid-template-columns:80px minmax(0,1fr);gap:12px;padding:10px 0;border-bottom:1px solid var(--border-subtle)}
+:root .document-info-list>div:last-child{padding-bottom:0;border-bottom:0}
+:root .document-info-list dt{margin:0;font-size:12px;line-height:1.7;color:var(--text-muted)}
+:root .document-info-list dd{min-width:0;margin:0;font-size:13px;line-height:1.6;color:var(--text-secondary);overflow-wrap:anywhere;-webkit-user-select:text;user-select:text}
+:root .document-info-list .document-info-id{font-family:var(--font-mono);font-size:11px;line-height:1.8}
+@media(max-width:400px){
+  :root .document-info{padding:12px}
+  :root .document-info-list>div{grid-template-columns:68px minmax(0,1fr);gap:8px}
 }

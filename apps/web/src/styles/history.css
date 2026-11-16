@@ -10,17 +10,20 @@
 .history-day[open]>summary>svg{transform:rotate(90deg)}
 .history-day>summary>small{margin-left:auto;color:var(--text-muted);font-weight:400;font-size:10px}
 .history-timeline{list-style:none;padding:6px 0 0;margin:0}
-.history-entry{position:relative;display:flex;gap:10px;padding:12px 0;min-width:0}
+.history-entry{position:relative;display:flex;align-items:flex-start;gap:10px;padding:12px 0;min-width:0}
 .history-entry:not(:last-child)::after{content:'';position:absolute;left:13px;top:42px;bottom:-9px;width:1px;background:var(--border)}
-.history-avatar{display:grid;place-items:center;flex:0 0 27px;height:27px;border:1px solid var(--border);border-radius:50%;font-size:11px;background:var(--surface-sunken);color:var(--text-secondary)}
+.history-avatar{display:grid;place-items:center;flex:0 0 27px;width:27px;min-width:27px;height:27px;border:1px solid var(--border);border-radius:50%;font-size:11px;background:var(--surface-sunken);color:var(--text-secondary)}
 .history-entry-copy{flex:1;min-width:0}
 .history-entry-meta{display:flex;align-items:baseline;gap:8px;min-height:21px;font-size:11px}
 .history-entry-meta>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .history-entry-meta>time{margin-left:auto;flex:none;color:var(--text-muted);font-size:10px}
-.history-snapshot{position:relative;width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:5px;padding:9px 22px 9px 10px;text-align:left;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:12px;line-height:1.6}
-.history-snapshot:hover{background-color:var(--surface-hover);border-color:var(--border-strong)}
-.history-snapshot>small{font-size:10px;color:var(--text-muted)}
-.history-snapshot>svg{position:absolute;right:6px;top:50%;transform:translateY(-50%)}
+/* A kind modifier belongs to the timeline row; the snapshot card belongs only
+ * to its button. Reusing the card class on the row turned this into a column
+ * and flattened its avatar as soon as a snapshot was present. */
+button.history-snapshot{position:relative;width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:5px;padding:9px 22px 9px 10px;text-align:left;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+button.history-snapshot:hover{background-color:var(--surface-hover);border-color:var(--border-strong)}
+button.history-snapshot>small{font-size:10px;color:var(--text-muted)}
+button.history-snapshot>svg{position:absolute;right:6px;top:50%;transform:translateY(-50%)}
 .history-event-label{margin:3px 0;font-size:12px;line-height:1.65;overflow-wrap:anywhere;color:var(--text-secondary)}
 .history-event-detail{display:block;font-size:10px;color:var(--text-muted);line-height:1.7;overflow-wrap:anywhere}
 .history-load-more{width:100%;margin-top:12px;font-size:12px}
@@ -58,7 +61,7 @@
 .history-preview>footer>div{margin-left:auto;flex:none}
 .history-restore-error{flex:0 0 100%;color:var(--danger);margin:0 0 4px;font-size:12px}
 [data-theme='handdrawn'] .history-day>summary{border-color:transparent;background:url('/art/handdrawn-v1/decor/pencil-rule.webp') bottom center / 100% 2px no-repeat}
-[data-theme='handdrawn'] .history-snapshot{background-image:url('/art/handdrawn-v1/textures/paper-ivory.webp');background-size:768px;box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.06)}
+[data-theme='handdrawn'] button.history-snapshot{background-image:url('/art/handdrawn-v1/textures/paper-ivory.webp');background-size:768px;box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.06)}
 [data-theme='handdrawn'] .history-diff-label{background-image:url('/art/handdrawn-v1/decor/marker-sage.webp');background-size:100% 100%;background-repeat:no-repeat}
 @media(max-width:600px){
   .history-preview.version-modal{width:min(100%,calc(100vw - 24px));height:calc(100dvh - 24px);max-height:calc(100dvh - 24px)}

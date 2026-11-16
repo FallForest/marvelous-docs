@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "generator": "built-in image_gen",
   "assets": [
     {
@@ -1060,6 +1060,90 @@
       "partialAlphaFraction": 0.9905,
       "pngBytes": 756587,
       "webpBytes": 65848
+    },
+    {
+      "id": "print",
+      "name": "手绘打印机",
+      "category": "icons",
+      "usage": "文档操作 / 打印预览",
+      "png": "icons/print.png",
+      "webp": "icons/print.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 78,
+        "top": 111,
+        "width": 1097,
+        "height": 1036
+      },
+      "crop": {
+        "left": 56,
+        "top": 89,
+        "width": 1141,
+        "height": 1080
+      },
+      "transparentFraction": 0.4066,
+      "partialAlphaFraction": 0.5933,
+      "pngBytes": 95631,
+      "webpBytes": 18422
+    },
+    {
+      "id": "move",
+      "name": "手绘移动文件夹",
+      "category": "icons",
+      "usage": "文档操作 / 移动目标",
+      "png": "icons/move.png",
+      "webp": "icons/move.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 124,
+        "top": 161,
+        "width": 1006,
+        "height": 901
+      },
+      "crop": {
+        "left": 102,
+        "top": 139,
+        "width": 1050,
+        "height": 945
+      },
+      "transparentFraction": 0.4773,
+      "partialAlphaFraction": 0.5227,
+      "pngBytes": 103094,
+      "webpBytes": 20382
+    },
+    {
+      "id": "info",
+      "name": "纸质信息标记",
+      "category": "icons",
+      "usage": "文档信息 / 提示对话框",
+      "png": "icons/info.png",
+      "webp": "icons/info.webp",
+      "width": 256,
+      "height": 256,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "alphaBounds": {
+        "left": 80,
+        "top": 81,
+        "width": 1081,
+        "height": 1094
+      },
+      "crop": {
+        "left": 58,
+        "top": 59,
+        "width": 1125,
+        "height": 1138
+      },
+      "transparentFraction": 0.4164,
+      "partialAlphaFraction": 0.5836,
+      "pngBytes": 99733,
+      "webpBytes": 19884
     }
   ]
 }

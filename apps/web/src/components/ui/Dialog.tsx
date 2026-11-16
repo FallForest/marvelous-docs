@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { AlertTriangle, Info, X } from 'lucide-react'
 import { usePresence } from '../../hooks/usePresence'
+import ArtIcon from './ArtIcon'
 
 type DialogProps = {
   title: string
@@ -87,7 +88,7 @@ export function Dialog({ title, description, children, confirmLabel = '确定', 
       onAnimationEnd={onAnimationEnd}
     >
       <header>
-        <div className={'modal-icon' + (danger ? ' modal-icon-danger' : '')}>{danger ? <AlertTriangle size={18} /> : <Info size={18} />}</div>
+        <div className={'modal-icon' + (danger ? ' modal-icon-danger' : '')}>{danger ? <AlertTriangle size={18} /> : <ArtIcon name="info" fallback={<Info size={18} />} />}</div>
         <div className="modal-copy">
           <h2 id={titleId}>{title}</h2>
           {description && <p id={descriptionId}>{description}</p>}

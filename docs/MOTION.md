@@ -35,6 +35,10 @@ that is dropped under `prefers-reduced-motion`.
 
 ## Choosing a motion
 
+Popover rows use staggered `motion-fade-in`, while their panel uses the shared
+rise animation. Do not reuse `motion-enter` on the rows: its 8px vertical travel
+extends the last row beyond the menu's padding and briefly creates a scrollbar.
+
 | The user… | Use | Duration |
 | --- | --- | --- |
 | pressed a control | `:active{transform:scale(.97)}` | `--duration-instant` |

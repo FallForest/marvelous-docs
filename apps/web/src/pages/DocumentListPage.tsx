@@ -1,4 +1,4 @@
-import { FileText, Folder, Search } from 'lucide-react'
+import { FileText, Folder, Search, Star } from 'lucide-react'
 import { useMemo } from 'react'
 import ArtIcon from '../components/ui/ArtIcon'
 import DocumentCreatedTime from '../components/ui/DocumentCreatedTime'
@@ -78,7 +78,7 @@ export default function DocumentList({ documents, query, favorites, onOpen, onCr
               <b>{row.doc.title || '未命名文档'}</b>
               <small>{row.folder ? row.folder.title || '未命名文件夹' : '工作区根目录'}</small>
             </span>
-            {favorites.has(row.doc.id) && <span className="document-list-star" aria-label="已收藏"><ArtIcon name="favorite-star" fallback={null} /></span>}
+            {favorites.has(row.doc.id) && <span className="document-list-star" aria-label="已收藏"><ArtIcon name="favorite-star" fallback={<Star size={18} />} /></span>}
             {/* The timestamp says which of two similarly named rows is the live
                 one; the created time already has its own component. */}
             <small className="document-list-time">{untitledCreatedTime(row.doc) ? <DocumentCreatedTime doc={row.doc} /> : '更新于 ' + (formatDate(row.doc.updatedAt) || '刚刚')}</small>

@@ -28,7 +28,7 @@ import ImageToolbar from './ImageToolbar'
 import BlockHandle from './BlockHandle'
 import { useBlockAnchor } from '../../hooks/useBlockAnchor'
 import { emptyContent } from '../../lib/types'
-import { clearSavedDraft, isBlankDraft, sameDraftBody, writeDraft } from '../../lib/local-drafts'
+import { clearSavedDraft, isBlankDraft, sameDraftContent, writeDraft } from '../../lib/local-drafts'
 import { startLinkEdit, mapLinkEdit, linkEditTransaction } from '../../lib/editor/link-editing'
 import type { LinkEditSession, LinkPrompt } from '../../lib/editor/link-editing'
 import { compositionGuard } from '../../lib/editor/ime'
@@ -42,6 +42,8 @@ export type DocumentEditorHandle = {
   flushTitle: () => Promise<void>
   setLocked: (locked: boolean) => void
   commentDraftAnchor: () => CommentAnchor | null
+  /** Replaces the body through the editor, so the change is visible and saved. */
+  restoreBody: (body: Record<string, unknown>) => Promise<void>
 }
 
 type DocumentEditorProps = {
@@ -190,7 +192,15 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
       }
       const { document: latest } = await api.document(token, doc.id)
       if (!live.current || restoreLock.current || attempt !== confirmation.current) return
-      if (provider.wsconnected && provider.synced && editor && sameDraftBody(latest.content?.doc, editor.getJSON(), editor.schema)) {
+      /*
+       * "Saved" means the cloud holds these words, which is not the same claim as
+       * "these two JSON trees are byte-identical". The strict comparison almost
+       * never held - attribute defaults and key order differ after one round trip
+       * through PostgreSQL - so this loop kept re-checking and the footer could sit
+       * on 正在保存… long after the text had landed. `sameDraftContent` answers the
+       * question the writer is actually asking.
+       */
+      if (provider.wsconnected && provider.synced && editor && sameDraftContent(latest.content?.doc, editor.getJSON(), editor.schema)) {
         clearSavedDraft(localStorage, doc.id, user.id, editor.getJSON())
         localDirty.current = false
         onSaveStatus('saved')
@@ -729,6 +739,57 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
       setLocked(value)
       if (editor && !editor.isDestroyed) editor.setEditable(!value)
       if (value) window.clearTimeout(statusTimer.current)
+    },
+    /*
+     * Recovery is an edit, so it goes through the editor.
+     *
+     * Writing the copy straight to the API left the open editor showing the old
+     * body: the reload that followed was the only thing that could reveal the
+     * text, and for a collaborative room the pending local state could put the
+     * old body back on top. Dispatching the replacement as an ordinary document
+     * transaction does what typing does - the writer sees it at once, the room
+     * broadcasts it, autosave persists it, and the undo stack can take it back.
+     */
+    restoreBody: async (body) => {
+      if (!editor || editor.isDestroyed) throw new Error('编辑器正在加载，请稍后再试。')
+      /*
+       * A connected room that has not synced yet is about to deliver the cloud
+       * copy, and anything dispatched before that arrives is merged with it - the
+       * recovered text would land next to the old body instead of replacing it.
+       * So the write waits for the first sync, but only while a socket is
+       * actually open: offline (no socket), there is nothing to merge with and
+       * waiting would just fail the one case recovery matters most for.
+       */
+      if (provider?.wsconnected && !provider.synced) {
+        const synced = await new Promise<boolean>((resolve) => {
+          const done = (state: boolean) => { window.clearTimeout(timer); provider.off('sync', done); resolve(state) }
+          const timer = window.setTimeout(() => { provider.off('sync', done); resolve(false) }, 8000)
+          provider.on('sync', done)
+        })
+        if (!synced) throw new Error('实时协作同步超时，请稍后重试。')
+      }
+      if (!editor || editor.isDestroyed) throw new Error('文档已切换，请重新选择恢复。')
+      const replacement = editor.schema.nodeFromJSON(body)
+      /*
+       * Marked dirty before the transaction lands. Without it the footer would
+       * claim "saved" for a body that has never left the browser, and the
+       * safety copy would be neither written nor cleared.
+       */
+      localDirty.current = true
+      editor.view.dispatch(editor.state.tr.replaceWith(0, editor.state.doc.content.size, replacement.content))
+      editor.commands.setTextSelection(1)
+      editor.view.focus()
+      /*
+       * Only a collaborative session needs the confirmation timer: its autosave
+       * goes through the room, so the footer has to be read back from the server.
+       * Without a room, onUpdate already hands the body to the REST save path,
+       * which reports its own status; polling there would never settle.
+       */
+      if (provider) {
+        onSaveStatus('saving')
+        window.clearTimeout(statusTimer.current)
+        statusTimer.current = window.setTimeout(() => { void confirmPersisted() }, 1000)
+      }
     },
   }))
 

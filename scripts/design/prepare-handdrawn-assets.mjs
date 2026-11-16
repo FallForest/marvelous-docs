@@ -49,9 +49,12 @@ const definitions = [
   ['pencil-rule', '铅笔分隔线', 'decor', '顶部 / 底部 / 表格 / 代码块分隔'],
   ['avatar-badge', '协作头像纸底', 'decor', '实时头像背景，字母仍为HTML'],
   ['menu-paper', '浮层纸张', 'decor', '下拉菜单九宫格纸张表面，文字仍为HTML'],
+  ['print', '手绘打印机', 'icons', '文档操作 / 打印预览'],
+  ['move', '手绘移动文件夹', 'icons', '文档操作 / 移动目标'],
+  ['info', '纸质信息标记', 'icons', '文档信息 / 提示对话框'],
 ]
 
-const manifest = { version: 4, generator: 'built-in image_gen', assets: [] }
+const manifest = { version: 5, generator: 'built-in image_gen', assets: [] }
 for (const [id, name, category, usage] of definitions) {
   const sourcePath = path.join(sourceDir, id + '.png')
   const source = await sharp(sourcePath).ensureAlpha().raw().toBuffer({ resolveWithObject: true })

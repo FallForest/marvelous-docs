@@ -106,7 +106,7 @@ export default function ShellDialogs(props: ShellDialogsProps) {
         </div>)}
       </dl>
       <p className="help-note">代码块中也可在末尾连续按三次 Enter 继续正文；移动、创建副本和删除位于代码块右上角的“⋯”菜单，也可从左侧拖动柄操作。</p>
-      <p className="help-note">协作连接断开时请保持页面打开，连接恢复后会继续同步。浏览器可用时会保留本地草稿，重新打开文档可恢复为新文档或下载备份；历史版本仅包含已同步到服务器的内容。</p>
+      <p className="help-note">协作连接断开时请保持页面打开，连接恢复后会继续同步。浏览器可用时会保留本地草稿，重新打开文档时若云端缺少这些文字，可以写回这篇文档、另存为新文档或下载备份；历史版本仅包含已同步到服务器的内容。</p>
     </Dialog>}
 
     {linkPrompt && <LinkDialog

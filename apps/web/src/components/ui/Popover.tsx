@@ -204,8 +204,8 @@ export default function Popover({ open, onClose, children, align = 'right', clas
     first?.focus({ preventScroll: true })
   }, [open, positioned, focusOnOpen])
 
-  // Stagger lives on the rows, not on a wrapper: the menu itself slides in as
-  // one surface while its rows settle 20ms apart, like a UIKit contextual menu.
+  // The menu moves as one surface; rows only fade in 20ms apart. Translating
+  // the rows too would expand the scroll bounds during the entrance.
   // Layout effect, so the class lands before the first paint and the rows never
   // flash fully opaque for a frame before animating.
   useLayoutEffect(() => {

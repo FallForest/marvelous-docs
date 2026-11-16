@@ -94,11 +94,12 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
 .popover-left{left:0;right:auto}
 .popover[role="menu"]{pointer-events:auto}
 
-/* Staggered rows: 20ms apart, capped at eight so a long menu stays synchronous.
-   Popover.tsx adds the class and the inline delay; the animation lives here. */
-/* backwards, not both: the row must return to its base styles once it has
-   arrived, otherwise the retained final keyframe would swallow :active's scale. */
-.popover-item-enter{animation:motion-enter var(--duration-fast) var(--ease-decelerate) backwards}
+/* Rows fade in 20ms apart, capped at eight. The panel already moves as one
+   sheet. Translating rows by motion-enter's 8px extended the last row past the
+   6px padding and created a scrollbar for the first ~100ms of a short menu.
+   Opacity does not change scroll bounds, including under CSS zoom. Backwards
+   fill still releases the row's transform for its normal press feedback. */
+.popover-item-enter{animation:motion-fade-in var(--duration-fast) var(--ease-decelerate) backwards}
 
 /* the template picker is a scrollable list, not a tall menu */
 .template-menu{max-height:min(70vh,420px)}
@@ -537,6 +538,9 @@ html,body{max-width:100%}
 .shortcut-row dd{margin:0;display:flex;align-items:center;gap:4px;justify-content:flex-end;flex-wrap:wrap}
 .shortcut-row kbd{font-family:inherit;font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--surface-sunken);border:1px solid var(--border);border-radius:var(--radius-xs);padding:2px 6px;white-space:nowrap;line-height:1.4}
 .help-note{margin:0;padding:10px 12px;border-radius:var(--radius-md);background:var(--surface-muted);font-size:12px;line-height:1.55;color:var(--text-muted)}
+/* A qualifier under a dialog's main sentence: same size as body copy, but
+   quiet, and never boxed - it is a note, not a field. */
+.dialog-hint{margin:0;font-size:12px;line-height:1.6;color:var(--text-muted)}
 .help-links{display:flex;flex-wrap:wrap;gap:10px 16px;padding-top:4px;border-top:1px solid var(--border);font-size:12px}
 .help-links a{color:var(--accent-strong);text-decoration:none}
 .help-links a:hover{text-decoration:underline}

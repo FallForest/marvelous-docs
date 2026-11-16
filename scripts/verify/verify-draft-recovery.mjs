@@ -24,13 +24,15 @@ let persistenceReads = 0
 try {
   await build({
     stdin: { resolveDir: WEB, loader: 'tsx', contents: `
-      import { useState } from 'react'
+      import { useRef, useState } from 'react'
       import { createRoot } from 'react-dom/client'
       import DocumentEditor from './src/components/editor/DocumentEditor'
       import DraftRecovery from './src/components/dialogs/DraftRecovery'
       import { PromptDialog } from './src/components/ui/Dialog'
       import './src/styles/index.css'
-      const doc = { id: 'draft-doc', title: '草稿恢复验证', version: 1, content: { schemaVersion: 1, doc: { type: 'doc', content: [{ type: 'paragraph' }] } } }
+      const body = (...nodes) => ({ schemaVersion: 1, doc: { type: 'doc', content: nodes } })
+      const para = (text) => text ? { type: 'paragraph', content: [{ type: 'text', text }] } : { type: 'paragraph' }
+      const doc = { id: 'draft-doc', title: '草稿恢复验证', version: 1, content: body(para()) }
       const user = { id: 'draft-author', email: 'draft@example.test', name: '测试作者', role: 'admin' }
       const noop = () => {}
       window.__submits = 0
@@ -38,10 +40,25 @@ try {
       function Harness() {
         const [status, setStatus] = useState('saved')
         const [recovered, setRecovered] = useState(null)
+        const [version, setVersion] = useState(1)
+        const [serverBody] = useState(() => location.search === '?saved=1' ? body(para('已经保存的句子')) : body(para()))
+        const handle = useRef(null)
+        const current = { ...doc, version, content: serverBody }
+        const recovery = (id) => <DraftRecovery doc={{ ...current, id }} token="fixture" userId={user.id} onRestore={async (next) => { await handle.current.restoreBody(next) }} onRecovered={setRecovered} notify={noop}/>
         if (location.search === '?prompt=1') return <><button id="outside">外部按钮</button><PromptDialog title="异步输入验证" label="名称" initialValue="测试" onClose={() => window.__closed++} onSubmit={() => { window.__submits++; return new Promise((resolve, reject) => { window.__finish = (fail) => fail ? reject(new Error('测试请求失败')) : resolve() }) }}/></>
-        if (location.search === '?recover=1') return <><DraftRecovery doc={doc} token="fixture" userId={user.id} onRecovered={setRecovered} notify={noop}/><p id="recovered">{recovered?.title}</p></>
+        // Recovery runs against the real editor: the copy is written back as an
+        // edit, not as a second document, so the page itself has to show it.
+        if (location.search === '?recover=1') return <>
+          <p id="save-status">{status}</p>
+          <DocumentEditor ref={handle} doc={current} token="fixture" user={user} persist={noop} saveStatus={status} onSaveStatus={setStatus} onAwareness={noop} onCollabStatus={noop} onSelection={noop} onExport={noop} onLink={noop} comments={[]} activeCommentId={null} commentDraft={null}/>
+          {recovery(current.id)}
+          <button id="bump" onClick={() => setVersion((value) => value + 1)}>bump</button>
+          <p id="recovered">{recovered?.title}</p>
+        </>
         // A document whose only local copy is blank: the dialog must stay shut.
-        if (location.search === '?blank=1') return <><DraftRecovery doc={{ ...doc, id: 'blank-doc', title: '空白草稿验证' }} token="fixture" userId={user.id} onRecovered={setRecovered} notify={noop}/><p id="recovered">{recovered?.title}</p></>
+        if (location.search === '?blank=1') return recovery('blank-doc')
+        // Its copy says exactly what the cloud already says: nothing to recover.
+        if (location.search === '?saved=1') return <><DocumentEditor ref={handle} doc={current} token="fixture" user={user} persist={noop} saveStatus={status} onSaveStatus={setStatus} onAwareness={noop} onCollabStatus={noop} onSelection={noop} onExport={noop} onLink={noop} comments={[]} activeCommentId={null} commentDraft={null}/>{recovery(current.id)}<button id="bump" onClick={() => setVersion((value) => value + 1)}>bump</button></>
         return <><p id="save-status">{status}</p><DocumentEditor doc={doc} token="fixture" user={user} persist={noop} saveStatus={status} onSaveStatus={setStatus} onAwareness={noop} onCollabStatus={noop} onSelection={noop} onExport={noop} onLink={noop} comments={[]} activeCommentId={null} commentDraft={null}/></>
       }
       createRoot(document.getElementById('root')).render(<Harness/>)
@@ -150,14 +167,39 @@ try {
   for (let i = 0; i < 60 && !await evaluate('Boolean(document.querySelector("[role=dialog]"))'); i++) await sleep(100)
   assert.ok(await evaluate('document.body.textContent.includes("发现未保存的本地草稿")'), 'reload must offer recovery')
   assert.ok(await evaluate('document.querySelector(".draft-preview").textContent.includes("断网时写下的内容")'), 'the dialog quotes the copy before writing it')
-  // The default route writes the copy back into the document that was open.
-  await evaluate('Array.from(document.querySelectorAll("button")).find(button => button.textContent === "写回这篇文档").click()')
-  for (let i = 0; i < 60 && !restoredBody; i++) await sleep(100)
-  assert.ok(restoredBody, 'writing back must update the existing document')
-  assert.ok(JSON.stringify(restoredBody.content.doc).includes('断网时写下的内容'))
-  assert.equal(restoredBody.content.schemaVersion, 1)
-  await sleep(200)
-  assert.equal(await evaluate('localStorage.getItem("mdocs-draft-draft-doc")'), null, 'only successful recovery clears the old copy')
+  // One decision, one primary action.
+  assert.equal(await evaluate('document.querySelectorAll(".modal-actions button").length'), 2, 'the footer holds exactly cancel and restore')
+  assert.equal(await evaluate('document.querySelector(".modal-actions .primary-btn").textContent'), '写回这篇文档')
+  await evaluate('document.querySelector(".modal-actions .primary-btn").click()')
+  /*
+   * The text has to appear in the page, not only in a request. Writing to the
+   * API behind the editor's back is what made the old recovery look like a
+   * no-op: the document changed on the server while the editor kept showing the
+   * old body, and nothing on screen confirmed the copy had gone anywhere.
+   */
+  for (let i = 0; i < 60 && !await evaluate('document.querySelector(".tiptap-content").textContent.includes("断网时写下的内容")'); i++) await sleep(100)
+  assert.ok(await evaluate('document.querySelector(".tiptap-content").textContent.includes("断网时写下的内容")'), 'recovery must show the text in the open editor')
+  assert.equal(await evaluate('Boolean(document.querySelector("[role=dialog]"))'), false, 'the dialog closes once the copy is back')
+  await sleep(400)
+  /*
+   * The copy is still on disk while the save is unconfirmed, and the prompt does
+   * not come back for it in the same session: it is the text that is now in the
+   * editor, so asking again would be asking about an edit just accepted.
+   */
+  assert.ok(await evaluate('localStorage.getItem("mdocs-draft-draft-doc")'), 'an unconfirmed write keeps its safety copy')
+  await evaluate('document.getElementById("bump").click()')
+  await sleep(600)
+  assert.equal(await evaluate('Boolean(document.querySelector("[role=dialog]"))'), false, 'the same copy is not offered twice')
+  /*
+   * A copy whose words the cloud already holds is not lost work, so it must not
+   * be offered. This is the rule that stops the prompt from firing on ordinary
+   * writing: the save had landed, only the acknowledgement had not.
+   */
+  await evaluate('localStorage.setItem("mdocs-draft-draft-doc", JSON.stringify({ format: 1, documentId: "draft-doc", userId: "draft-author", body: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "已经保存的句子" }] }] }, savedAt: new Date().toISOString() }))')
+  await open(url + '/?saved=1')
+  await sleep(1500)
+  assert.equal(await evaluate('Boolean(document.querySelector("[role=dialog]"))'), false, 'a copy already stored is not offered')
+  assert.equal(await evaluate('localStorage.getItem("mdocs-draft-draft-doc")'), null, 'an already-saved copy is discarded')
   // The escape hatch still exists: saving the copy beside the document.
   await evaluate('localStorage.setItem("mdocs-draft-draft-doc", JSON.stringify({ format: 1, documentId: "draft-doc", userId: "draft-author", body: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "另存分支的正文" }] }] }, savedAt: new Date().toISOString() }))')
   await open(url + '/?recover=1')
@@ -207,7 +249,7 @@ try {
   await evaluate('document.querySelector(".primary-btn").click()')
   assert.equal(await evaluate('window.__submits'), 2)
   await evaluate('window.__finish(false)')
-  console.log('offline drafts, write-back recovery, explicit copy creation, blank-copy filtering, modal focus and async submission verified in Chrome')
+  console.log('offline drafts, in-place write-back, explicit copy creation, blank and already-saved copies filtered, modal focus and async submission verified in Chrome')
 } finally {
   socket?.close()
   for (const client of collaboration?.clients ?? []) client.terminate()

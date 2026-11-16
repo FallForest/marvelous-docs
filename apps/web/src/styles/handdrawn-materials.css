@@ -1,5 +1,23 @@
 /* Material coverage for real search/admin/dialog/command components. */
 
+/* The newer flat document list uses quiet paper rows rather than dashboard
+   cards. Rounded pencil-like outlines only appear on the row being read. */
+[data-theme='handdrawn'] .document-list-main{border-radius:7px 11px 6px 9px}
+[data-theme='handdrawn'] .document-list-main:hover{
+  background-color:var(--surface-soft);
+  border-color:var(--border-strong);
+  border-image-source:url('/art/handdrawn-v1/decor/pencil-frame.webp');
+  border-image-slice:64;
+  border-image-width:6px;
+  border-image-repeat:stretch;
+}
+[data-theme='handdrawn'] .document-list-head h1{
+  text-decoration-line:underline;
+  text-decoration-color:var(--tint-sage-line);
+  text-decoration-thickness:3px;
+  text-underline-offset:7px;
+}
+
 /* A transparent AI graphite perimeter, sliced into corners and edges so it
  * bends around small controls without stretching the corner artwork. The
  * overlay never receives pointer events or changes a control's hit target. */
@@ -65,3 +83,10 @@
 [data-theme='handdrawn'] .template-library{background:var(--surface) url('/art/handdrawn-v1/textures/paper-ivory.webp') center / 768px;border-radius:10px 15px 9px 13px;box-shadow:3px 5px 0 rgba(var(--shadow-rgb),.1)}
 [data-theme='handdrawn'] .template-library-card{background:var(--tint-sage-softer);border-radius:7px 11px 6px 9px;box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.04)}
 [data-theme='handdrawn'] .template-library-card:hover{background:var(--surface-selected)}
+
+/* Metadata is a small paper record, with pencil separators between facts. */
+[data-theme='handdrawn'] .document-info{border-color:var(--border-strong);border-radius:8px 12px 7px 10px;background:var(--surface-soft) url('/art/handdrawn-v1/textures/paper-ivory.webp') center / 768px;box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.06)}
+[data-theme='handdrawn'] .document-info-head{border-bottom-color:var(--border-strong)}
+[data-theme='handdrawn'] .document-info-list>div{border-bottom-color:var(--border)}
+[data-theme='handdrawn'] .document-info-list dt{color:var(--text-muted)}
+[data-theme='handdrawn'] .document-info-list dd{color:var(--text)}

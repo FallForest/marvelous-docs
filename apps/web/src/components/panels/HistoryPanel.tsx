@@ -97,7 +97,7 @@ export default function HistoryPanel({ token, documentId, refreshKey, active = t
       : !items.length && !error ? <div className="panel-empty"><ArtIcon name="history" fallback={<Clock3 size={22} />} /><b>还没有历史记录</b><span>文档编辑后会自动保留快照，改名和权限等重要变化也会显示在这里。</span></div>
         : <div className="history-groups">{[...groups].map(([day, entries]) => <details className="history-day" key={day} open>
           <summary><ChevronRight size={13} /><span>{day}</span><small>{entries.length} 条</small></summary>
-          <ol className="history-timeline">{entries.map(item => <li key={item.id} className={'history-entry history-' + item.kind} data-history-id={item.id}>
+          <ol className="history-timeline">{entries.map(item => <li key={item.id} className={'history-entry history-kind-' + item.kind} data-history-id={item.id}>
             <span className="history-avatar" aria-hidden="true">{(item.userName || '成').slice(0, 1).toUpperCase()}</span>
             <div className="history-entry-copy"><div className="history-entry-meta"><b>{item.userName || '成员'}</b><time dateTime={item.createdAt} title={new Date(item.createdAt).toLocaleString('zh-CN')}>{new Date(item.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</time></div>
               {item.kind === 'snapshot' ? <button type="button" className="history-snapshot" aria-label={'预览版本 ' + item.version} onClick={() => onPreviewVersion({ id: item.versionId, version: item.version, title: item.title, createdAt: item.createdAt, createdBy: item.userId, createdByName: item.userName, summary: item.summary, reason: item.reason })}>

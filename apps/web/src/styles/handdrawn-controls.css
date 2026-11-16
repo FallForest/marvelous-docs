@@ -66,8 +66,66 @@
 [data-theme='handdrawn'] .bubble-btn.is-active{background:var(--tint-sage-soft);border-color:var(--border-strong);color:var(--accent-strong)}
 [data-theme='handdrawn'] .bubble-divider{background:var(--border-strong)}
 
+/* Image controls are a floating paper strip, including their actual selected,
+ * destructive and keyboard-focus states. The buttons retain their native
+ * targets and image selection behavior. */
+[data-theme='handdrawn'] .block-tool-iconbar{
+  border-color:transparent;
+  border-image-source:url('/art/handdrawn-v1/decor/menu-paper.webp');
+  border-image-slice:64 fill;
+  border-image-width:6px;
+  border-image-repeat:stretch;
+  border-radius:6px 9px 5px 8px;
+  background-color:var(--surface);
+  box-shadow:var(--shadow-popover);
+}
+[data-theme='handdrawn'] .block-tool-iconbar button{border-radius:5px 7px 4px 6px;color:var(--text-secondary)}
+[data-theme='handdrawn'] .block-tool-iconbar button:hover:not(:disabled){background-color:var(--tint-sage-softer);color:var(--text)}
+[data-theme='handdrawn'] .block-tool-iconbar button:is(.is-active,[aria-pressed='true']){
+  background:var(--tint-sage-soft) url('/art/handdrawn-v1/decor/marker-sage.webp') center / 100% 85% no-repeat;
+  color:var(--accent-strong);
+}
+[data-theme='handdrawn'] .block-tool-iconbar button.danger{color:var(--danger)}
+[data-theme='handdrawn'] .block-tool-iconbar button.danger:hover:not(:disabled){background:var(--danger-soft);color:var(--danger-strong)}
+[data-theme='handdrawn'] .block-tool-iconbar button:disabled{background:none;color:var(--text-disabled);opacity:.55}
+[data-theme='handdrawn'] .block-tool-iconbar button:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+[data-theme='handdrawn'] .block-tool-divider{background:url('/art/handdrawn-v1/decor/pencil-rule.webp') center / 100% 100% no-repeat}
+
+/* Upload reservations are stationery annotations, never saved document nodes.
+ * A failed reservation keeps its error ink and an individually framed retry. */
+[data-theme='handdrawn'] .upload-placeholder{
+  border-color:var(--border-strong);
+  border-image-source:url('/art/handdrawn-v1/decor/pencil-frame.webp');
+  border-image-slice:64;
+  border-image-width:5px;
+  border-image-repeat:stretch;
+  border-radius:5px 8px 4px 7px;
+  background-color:var(--surface-muted);
+  background-image:url('/art/handdrawn-v1/textures/paper-ivory.webp');
+  background-size:768px;
+  background-blend-mode:multiply;
+  color:var(--text-secondary);
+}
+[data-theme='handdrawn'] .upload-placeholder.is-error{background-color:var(--danger-soft);color:var(--danger)}
+[data-theme='handdrawn'] .upload-placeholder-retry{
+  border-color:var(--danger-line);
+  border-radius:4px 7px 3px 6px;
+  background:var(--surface) url('/art/handdrawn-v1/textures/paper-ivory.webp') center / 768px;
+  color:var(--danger-strong);
+  box-shadow:1px 1px 0 rgba(var(--shadow-rgb),.08);
+}
+[data-theme='handdrawn'] .upload-placeholder-retry:hover:not(:disabled){background-color:var(--danger-soft)}
+[data-theme='handdrawn'] .upload-placeholder-retry:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+[data-theme='handdrawn'] .upload-placeholder-retry:disabled{background:var(--surface-sunken);color:var(--text-disabled);opacity:.55;box-shadow:none}
+
 [data-theme='handdrawn'] .stat-card:not(.stat-member) .stat-icon{background:transparent}
 [data-theme='handdrawn'] .stat-card.stat-member .stat-icon{border-radius:9px 7px 10px 8px;background:var(--tint-sage-softer);color:var(--text-secondary)}
 @media (max-width:820px){
   [data-theme='handdrawn'] .main-area>.topbar .collaborators{background:transparent}
+}
+@media(forced-colors:active){
+  [data-theme='handdrawn'] :is(.block-tool-iconbar,.upload-placeholder){border-image:none;border-color:CanvasText;background:none;box-shadow:none}
+  [data-theme='handdrawn'] .block-tool-divider{background:CanvasText}
+  [data-theme='handdrawn'] .block-tool-iconbar button:is(.is-active,[aria-pressed='true']){background:Highlight;color:HighlightText}
+  [data-theme='handdrawn'] .upload-placeholder-retry{background:ButtonFace;color:ButtonText;border-color:ButtonText;box-shadow:none}
 }

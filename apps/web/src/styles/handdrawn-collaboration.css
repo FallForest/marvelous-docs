@@ -34,7 +34,7 @@
 
 /* A share link is a small paper slip, including the address that stays
  * available when clipboard access is refused. */
-[data-theme='handdrawn'] :is(.share-link-item,.invite-result,.draft-preview){
+[data-theme='handdrawn'] :is(.share-link-item,.invite-result){
   border-color:var(--border-strong);
   border-image-source:url('/art/handdrawn-v1/decor/pencil-frame.webp');
   border-image-slice:64;
@@ -46,6 +46,22 @@
   background-size:768px;
   box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.06);
 }
+/* The draft card is a slip of paper holding a quotation: the paper stays, the
+ * frame moves to the card, and the quote itself keeps a plain pencil rule. A
+ * frame around the words alone read as a field to type into. */
+[data-theme='handdrawn'] .draft-card{
+  border-color:var(--border-strong);
+  border-image-source:url('/art/handdrawn-v1/decor/pencil-frame.webp');
+  border-image-slice:64;
+  border-image-width:6px;
+  border-image-repeat:stretch;
+  border-radius:7px 11px 6px 9px;
+  background-color:var(--surface-soft);
+  background-image:url('/art/handdrawn-v1/textures/paper-ivory.webp');
+  background-size:768px;
+  box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.06);
+}
+[data-theme='handdrawn'] .draft-preview{border-left-color:var(--border-strong)}
 [data-theme='handdrawn'] .share-link-section{
   border-bottom-color:transparent;
   background:url('/art/handdrawn-v1/decor/pencil-rule.webp') center bottom / 100% 2px no-repeat;
@@ -131,7 +147,7 @@
   background:var(--surface-soft);
   color:var(--text-secondary);
 }
-[data-theme='handdrawn'] .history-snapshot{
+[data-theme='handdrawn'] button.history-snapshot{
   border-color:var(--border-strong);
   border-image-source:url('/art/handdrawn-v1/decor/pencil-frame.webp');
   border-image-slice:64;
@@ -140,7 +156,7 @@
   border-radius:7px 10px 6px 9px;
   background-color:var(--surface);
 }
-[data-theme='handdrawn'] .history-snapshot:hover{background-color:var(--tint-sage-softer)}
+[data-theme='handdrawn'] button.history-snapshot:hover{background-color:var(--tint-sage-softer)}
 [data-theme='handdrawn'] .history-entry:not(:last-child)::after{
   background:url('/art/handdrawn-v1/decor/pencil-rule.webp') center / 100% 100% no-repeat;
 }
@@ -170,7 +186,7 @@
 [data-theme='handdrawn'] .history-preview>footer{border-top-color:var(--border-strong);background:var(--surface)}
 
 @media(forced-colors:active){
-  [data-theme='handdrawn'] :is(.modal-panel,.share-modal,.invite-modal,.history-preview,.share-link-item,.invite-result,.draft-preview,.share-link-copy input,.link-copy input,.comment-edit textarea,.history-snapshot){border-image:none;box-shadow:none}
+  [data-theme='handdrawn'] :is(.modal-panel,.share-modal,.invite-modal,.history-preview,.share-link-item,.invite-result,.draft-card,.share-link-copy input,.link-copy input,.comment-edit textarea,button.history-snapshot){border-image:none;box-shadow:none}
   [data-theme='handdrawn'] :is(.share-restriction,.history-diff-summary,.find-case) input[type='checkbox']{
     appearance:auto;
     -webkit-appearance:auto;

@@ -9,7 +9,8 @@ import { basename, dirname, join, resolve } from 'node:path'
 import { servePublicArt } from './public-art.mjs'
 
 const WEB = resolve(import.meta.dirname, '../../apps/web')
-const OUT = resolve(import.meta.dirname, '../../docs/design/handdrawn-v1/implementation-v9')
+const motionMode = process.argv.includes('--motion') || process.argv.includes('--motion-baseline')
+const OUT = resolve(import.meta.dirname, '../../docs/design/handdrawn-v1/implementation-v10')
 const { build } = createRequire(join(WEB, 'package.json'))('esbuild')
 const work = await mkdtemp(join(tmpdir(), 'mdocs-controls-'))
 const sleep = ms => new Promise(done => setTimeout(done, ms))
@@ -30,6 +31,7 @@ try {
       import DocumentPanel from './src/components/panels/DocumentPanel'
       import VersionPreview from './src/components/panels/VersionPreview'
       import Select from './src/components/ui/Select'
+      import DocumentListPage from './src/pages/DocumentListPage'
       import { useBlockGeometry } from './src/hooks/useBlockGeometry'
       import { buildEditorExtensions } from './src/lib/editor'
       import { writeDraft } from './src/lib/local-drafts'
@@ -76,6 +78,7 @@ try {
           window.__draft = () => {writeDraft(localStorage,doc.id,'owner',{type:'doc',content:[p('这是一段上次离开时没有保存的文字。')]});setScene('draft')}
         },[editor,permission,role,testValue])
         const showPanel = scene==='comments' || scene==='history'
+        if(scene==='documents') return <div className="app-shell" style={{height:'100dvh'}}><main className="main-area" style={{width:'100%',minWidth:0}}><DocumentListPage documents={[doc,{...doc,id:'second',title:'项目资料',parentId:'folder'},{...doc,id:'folder',kind:'folder',title:'团队资料'}]} favorites={new Set([doc.id])} query="" onOpen={noop} onCreate={noop}/></main></div>
         return <div className="app-shell" style={{height:'100dvh'}}>
           <main className="main-area" style={{width:'100%',minWidth:0}}>
             <div className="workspace-content">
@@ -113,6 +116,7 @@ try {
       }
       response.end(JSON.stringify({items:[
         {id:'snapshot',kind:'snapshot',versionId:'v3',version:3,title:'设计协作计划',userId:'owner',userName:'ZHZ',createdAt:'2026-11-15T03:00:00Z',summary:{added:26,removed:3}},
+        {id:'snapshot-long',kind:'snapshot',versionId:'v2',version:2,title:'长标题：设计协作计划与全部交互细节',userId:'lin',userName:'一位名字比较长的团队成员',createdAt:'2026-11-15T02:45:00Z',reason:'manual',summary:{added:148,removed:29}},
         {id:'permission',kind:'event',action:'permission_changed',userId:'owner',userName:'ZHZ',createdAt:'2026-11-15T02:30:00Z',details:{beforeRole:'viewer',afterRole:'editor',targetUserName:'林一'}},
         {id:'renamed',kind:'event',action:'document_renamed',userId:'lin',userName:'林一',createdAt:'2026-11-14T02:00:00Z',details:{beforeTitle:'未命名文档',afterTitle:'设计协作计划'}}
       ],nextCursor:null})); return
@@ -181,6 +185,11 @@ try {
   await until('Boolean(window.__editor && document.querySelector(".tiptap-content"))')
   await evaluate('document.fonts.ready');await sleep(200)
   await setViewport(1280,900)
+
+  if (motionMode) {
+    const { verifyMotion } = await import('./handdrawn-motion-checks.mjs')
+    await verifyMotion({evaluate,send,sessionId,key,scene,setViewport,screenshot,OUT,baseline:process.argv.includes('--motion-baseline')})
+  } else {
 
   for(const [name,trigger,panel] of [
     ['paragraph','.tb-group-block .tb-anchor:first-child button','.popover[aria-label="段落样式"]'],
@@ -274,6 +283,7 @@ try {
   measurements.push({name:'select-short-resize',short,restored})
   await writeFile(join(OUT,'verification.json'),JSON.stringify({fixture:'isolated real components; no workspace database',measurements},null,2)+'\n')
   console.log('Handdrawn controls verified: '+measurements.filter(item=>item.delta).length+' theme geometry comparisons plus short-screen resize; screenshots: '+OUT)
+  }
 } finally {
   socket?.close()
   if(chrome){const stopped=new Promise(done=>chrome.once('exit',done));chrome.kill();await Promise.race([stopped,sleep(3000)])}

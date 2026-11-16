@@ -61,6 +61,80 @@ export function isBlankDraft(value: unknown): boolean {
   return !found
 }
 
+/**
+ * How a body's words compare, ignoring what serialization adds around them.
+ *
+ * Every space is dropped, including paragraph breaks: two round trips of one page
+ * disagree about trailing whitespace and about the empty paragraph the editor
+ * keeps at the end, and neither disagreement is something a writer typed. What
+ * survives is the text itself, which is exactly the question "are these the same
+ * words?".
+ */
+const squeeze = (value: unknown) => draftText(value).replace(/\s+/gu, '')
+
+/**
+ * True when two bodies hold the same words.
+ *
+ * "Has this copy already been saved?" is not a serialization question. Two
+ * representations of one page differ for reasons that have nothing to do with
+ * the writing - attribute defaults the schema fills in, key order after a round
+ * trip through PostgreSQL's jsonb, the room's own projection - and comparing
+ * them byte for byte kept answering "different" for words the cloud had already
+ * accepted. The consequence was that the safety copy was never cleared, so every
+ * later visit offered to restore text that was already on the page.
+ */
+export function sameDraftText(a: unknown, b: unknown): boolean {
+  const left = squeeze(a)
+  return Boolean(left) && left === squeeze(b)
+}
+
+/**
+ * The shape of a body, as the sequence of node types and marks it contains.
+ *
+ * Compared instead of the serialized tree because defaults and key order are not
+ * content, and compared at all because text alone cannot tell "this page" from
+ * "this page with half of it bold": a copy whose only difference is formatting is
+ * still a copy worth keeping.
+ */
+export function draftShape(value: unknown): string {
+  /*
+   * The editor always keeps one empty paragraph at the end of the document, and
+   * a stored body may or may not have it - that trailing node is why an
+   * otherwise identical page looked different. Only the tail is dropped: an
+   * empty paragraph between two paragraphs is a blank line the writer made.
+   */
+  const children = (nodes: unknown): string => {
+    const parts = nodesArray(nodes).map(walk)
+    while (parts.length && parts[parts.length - 1] === '(paragraph)') parts.pop()
+    return parts.join('')
+  }
+  const nodesArray = (value: unknown): unknown[] => Array.isArray(value) ? value : []
+  const walk = (node: unknown): string => {
+    if (!node || typeof node !== 'object') return ''
+    const typed = node as { type?: unknown; text?: unknown; marks?: unknown; content?: unknown }
+    if (typeof typed.text === 'string') {
+      const marks = Array.isArray(typed.marks)
+        ? typed.marks.map((mark) => String((mark as { type?: unknown })?.type)).sort().join('+')
+        : ''
+      return '[' + marks + ']'
+    }
+    return '(' + String(typed.type) + children(typed.content) + ')'
+  }
+  return children([value])
+}
+
+/**
+ * The comparison used to decide whether a safety copy is still needed.
+ *
+ * Same words and same shape means the cloud already holds this edit, however
+ * differently the two bodies are serialized. Both halves matter: text alone
+ * would delete a copy whose only change was bolding a sentence, and shape alone
+ * would call two unrelated paragraphs of equal length identical.
+ */
+export function sameDraftContent(a: unknown, b: unknown, schema?: { nodeFromJSON: (value: unknown) => { toJSON: () => unknown } }): boolean {
+  return (sameDraftText(a, b) && draftShape(a) === draftShape(b)) || sameDraftBody(a, b, schema)
+}
+
 export function readDraft(storage: DraftStorage, id: string, userId: string): LocalDraft | null {
   try {
     const raw = storage.getItem(draftKey(id))
@@ -81,8 +155,29 @@ export function writeDraft(storage: DraftStorage, id: string, userId: string, bo
   } catch { return false }
 }
 
+/**
+ * Removes the copy regardless of what it holds.
+ *
+ * Used when the copy has been proven obsolete - it is blank, or the cloud copy
+ * already contains its words - and when a recovery succeeded. Unlike
+ * `clearSavedDraft` it does not compare bodies first, because the caller has
+ * already decided: the body it is replacing is the one that must go.
+ */
+export function discardDraft(storage: DraftStorage, id: string): void {
+  try { storage.removeItem(draftKey(id)) } catch { /* private mode */ }
+}
+
+/**
+ * Removes the copy once `savedBody` proves it is no longer needed.
+ *
+ * The comparison is `sameDraftContent`, not byte equality: see its comment for
+ * why an exact match almost never fired and left every saved copy on disk to be
+ * offered back on the next visit. A body whose words are already stored has been
+ * saved; a later edit changes the text, so an old acknowledgement still cannot
+ * erase newer work.
+ */
 export function clearSavedDraft(storage: DraftStorage, id: string, userId: string, savedBody: unknown): void {
   const current = readDraft(storage, id, userId)
-  if (!current || !sameDraftBody(current.body, savedBody)) return
+  if (!current || !sameDraftContent(current.body, savedBody)) return
   try { storage.removeItem(draftKey(id)) } catch { /* private mode */ }
 }
