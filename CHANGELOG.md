@@ -4,6 +4,72 @@ All notable changes to Marvelous Docs are documented in this file. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.79] - 2026-11-17
+
+The hand-drawn skin reaches the surfaces it still missed, and the CLI leaves the
+repository.
+
+### Removed
+
+- **`packages/cli` (`mdocs`) is gone.** It was a thin REST client published
+  beside the app; the app, the deployment stack and the server contract are what
+  this repository is now maintained for, and a second client meant a second place
+  to keep the API mapping honest for no user. `test:cli` and `cli` are removed
+  from the root scripts, the lockfile importer is dropped, and
+  `scripts/release/bump-version.mjs` no longer looks for a CLI manifest.
+  `docs/API.md` still lists the endpoint-to-command mapping; it is now a record
+  of the contract that client followed, not a promise that the binary exists.
+
+### Fixed
+
+- **`ArtIcon name="recent"` pointed at an asset that did not exist.** 最近访问
+  fell back to a plain Lucide clock beside hand-drawn siblings. The icon is drawn
+  and wired.
+- **A disabled primary button was unreadable.** The generic disabled rule painted
+  the background pale paper while the primary rule kept white text — about
+  1.2:1 contrast, so "处理中…" nearly vanished. Disabled state now keeps the
+  normal / secondary / danger distinction instead of collapsing them.
+- **The slash menu's active row never matched its hand-drawn rule.** The rule
+  targeted `.is-active`; the component sets `aria-selected` and
+  `.active`. Arrow-key selection now gets the same marker as the language and
+  font-size menus.
+- **The document tree's multi-select checkbox was still native.** 任务、分享、
+  查找 checkboxes were hand-drawn; the tree's was an `accent-color` input.
+  It now uses the shared `check-empty` / `check-filled` pair as a background
+  while keeping the real input for focus, keyboard and forced-colors.
+- **Public share pages had paper around the document but not in it.** The
+  read-only body lacked `.tiptap-content`, so quotes, headings, code blocks and
+  tables rendered with none of the editor's pencil treatments. A read-only content
+  skin supplies them without importing editor padding or the toolbars.
+- **The public page's brand mark sat on a green square.** `handdrawn.css`
+  overrode the background at a lower specificity than the shared page rule that
+  re-painted it.
+- **Admin update states animated the wrong element.** The running indicator was
+  keyed to a selector the state never sets, so "正在更新" showed no motion and a
+  failure showed no colour.
+- **Toast, PDF-progress and error cards escaped the skin entirely.** They are
+  app-level surfaces that inherit neither `.modal-panel` nor `.popover`, so
+  they stayed flat white next to paper. They now carry the framed treatment while
+  keeping their real text, determinate progress value and recovery actions.
+
+### Added
+
+- **`styles/handdrawn-feedback.css` and `handdrawn-shared.css`** — the
+  feedback surfaces and the read-only content skin, in that cascade order.
+- Three decor assets the new surfaces needed: `index-tab-blue`, `washi-sage`
+  and the `recent` icon, with their `.webp` runtime copies.
+- **`verify-document-title.mjs`** and **`verify-handdrawn-audit-fixes.mjs`**:
+  the title contract in a real browser, and one check per audit item above.
+  `pnpm verify:browser` now runs sixteen steps.
+- `scripts/maintenance/prune-uploads.mjs` is reachable as
+  `pnpm prune:uploads`.
+- The audit that produced this list: `docs/design/handdrawn-v1/audit-v13/`.
+
+### Verified
+
+- Web unit tests 283, server 122 (1 skipped), `pnpm typecheck` and
+  `npx eslint .` clean (9 pre-existing `exhaustive-deps` warnings).
+
 ## [0.1.78] - 2026-11-17
 
 A document that opened empty now opens with its text, and a socket that never
