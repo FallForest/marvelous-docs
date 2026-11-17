@@ -16,7 +16,6 @@ ENV VITE_API_URL=$VITE_API_URL \
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/server/package.json apps/server/package.json
 COPY apps/web/package.json apps/web/package.json
-COPY packages/cli/package.json packages/cli/package.json
 RUN pnpm install --frozen-lockfile --filter @marvelous-docs/web...
 COPY apps/web/tsconfig.json apps/web/index.html apps/web/vite.config.ts apps/web/
 COPY apps/web/public apps/web/public
