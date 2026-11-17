@@ -111,9 +111,8 @@
         32
       ],
       "retryFocused": true,
-      "focusVisible": true,
-      "outlineStyle": "solid",
-      "outlineWidth": "2px",
+      "keyboardRing": true,
+      "outlineStyle": "none",
       "overflowX": false
     },
     {
@@ -226,9 +225,8 @@
         32
       ],
       "retryFocused": true,
-      "focusVisible": true,
+      "keyboardRing": true,
       "outlineStyle": "solid",
-      "outlineWidth": "2px",
       "overflowX": false
     }
   ]

@@ -193,7 +193,7 @@
             278,
             900
           ],
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgb(248, 245, 236)",
           "border": "",
           "borderImage": "none",
@@ -214,7 +214,7 @@
             14,
             14
           ],
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/icons/check-filled.webp\")",
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/icons/check-filled.webp\")",
           "backgroundColor": "rgba(0, 0, 0, 0)",
           "border": "0px none rgba(0, 0, 0, 0)",
           "borderImage": "none",
@@ -342,7 +342,7 @@
           "background": "none",
           "backgroundColor": "rgb(255, 254, 249)",
           "border": "1px solid rgba(0, 0, 0, 0)",
-          "borderImage": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/menu-paper.webp\")",
+          "borderImage": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/menu-paper.webp\")",
           "borderRadius": "9px 12px 8px 10px",
           "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
           "backdrop": "none",
@@ -360,7 +360,7 @@
             253,
             34
           ],
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/marker-sage.webp\")",
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/marker-sage.webp\")",
           "backgroundColor": "rgba(0, 0, 0, 0)",
           "border": "0px none rgb(53, 54, 48)",
           "borderImage": "none",
@@ -381,7 +381,7 @@
             850,
             1
           ],
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-rule.webp\")",
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-rule.webp\")",
           "backgroundColor": "rgba(0, 0, 0, 0)",
           "border": "",
           "borderImage": "none",
@@ -506,10 +506,10 @@
             460,
             136.25
           ],
-          "background": "linear-gradient(rgba(255, 254, 249, 0.84), rgba(255, 254, 249, 0.84)), url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "linear-gradient(rgba(255, 254, 249, 0.84), rgba(255, 254, 249, 0.84)), url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgb(255, 254, 249)",
           "border": "1px solid rgb(170, 165, 143)",
-          "borderImage": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-frame.webp\")",
+          "borderImage": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-frame.webp\")",
           "borderRadius": "12px 16px 10px 14px",
           "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
           "backdrop": "none",
@@ -883,10 +883,10 @@
             230,
             41.390625
           ],
-          "background": "linear-gradient(rgba(255, 254, 249, 0.88), rgba(255, 254, 249, 0.88)), url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "linear-gradient(rgba(255, 254, 249, 0.88), rgba(255, 254, 249, 0.88)), url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgb(255, 254, 249)",
           "border": "1px solid rgba(0, 0, 0, 0)",
-          "borderImage": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-frame.webp\")",
+          "borderImage": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-frame.webp\")",
           "borderRadius": "9px 13px 8px 11px",
           "shadow": "rgba(53, 54, 48, 0.13) 2px 3px 0px 0px",
           "backdrop": "none",
@@ -930,10 +930,10 @@
         ".admin-update-icon svg": {
           "tag": "svg",
           "box": [
-            354.89910888671875,
-            607.1647338867188,
-            45.7955322265625,
-            45.7955322265625
+            354.8990478515625,
+            607.1646728515625,
+            45.795654296875,
+            45.795654296875
           ],
           "background": "none",
           "backgroundColor": "rgba(0, 0, 0, 0)",
@@ -982,10 +982,10 @@
         ".admin-update-icon img": {
           "tag": "IMG",
           "box": [
-            354.92449951171875,
-            607.1901245117188,
-            45.7447509765625,
-            45.7447509765625
+            354.92462158203125,
+            607.1902465820312,
+            45.7445068359375,
+            45.7445068359375
           ],
           "background": "none",
           "backgroundColor": "rgba(0, 0, 0, 0)",
@@ -1217,7 +1217,7 @@
             410,
             569.328125
           ],
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgba(0, 0, 0, 0)",
           "border": "0px none rgb(53, 54, 48)",
           "borderImage": "none",
@@ -1243,10 +1243,10 @@
         ".login-spinner": {
           "tag": "SPAN",
           "box": [
-            690.5527954101562,
-            587.6309204101562,
-            18.2694091796875,
-            18.2694091796875
+            690.7521362304688,
+            587.8302612304688,
+            17.8707275390625,
+            17.8707275390625
           ],
           "background": "none",
           "backgroundColor": "rgba(0, 0, 0, 0)",
@@ -1295,10 +1295,10 @@
         ".login-spinner": {
           "tag": "SPAN",
           "box": [
-            690.5525512695312,
-            587.6306762695312,
-            18.2698974609375,
-            18.2698974609375
+            690.5531005859375,
+            587.6312255859375,
+            18.268798828125,
+            18.268798828125
           ],
           "background": "none",
           "backgroundColor": "rgba(0, 0, 0, 0)",
@@ -1844,10 +1844,10 @@
             772,
             674.484375
           ],
-          "background": "linear-gradient(rgba(255, 254, 249, 0.9), rgba(255, 254, 249, 0.9)), url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "linear-gradient(rgba(255, 254, 249, 0.9), rgba(255, 254, 249, 0.9)), url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgb(255, 254, 249)",
           "border": "1px solid rgba(0, 0, 0, 0)",
-          "borderImage": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-frame.webp\")",
+          "borderImage": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-frame.webp\")",
           "borderRadius": "9px 12px 7px 10px",
           "shadow": "rgba(53, 54, 48, 0.08) 3px 4px 0px 0px",
           "backdrop": "none",
@@ -1886,7 +1886,7 @@
             642,
             54.390625
           ],
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/marker-sage.webp\")",
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/marker-sage.webp\")",
           "backgroundColor": "rgba(0, 0, 0, 0)",
           "border": "",
           "borderImage": "none",
@@ -1907,10 +1907,10 @@
             642,
             79.5
           ],
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgb(252, 250, 243)",
           "border": "1px solid rgba(0, 0, 0, 0)",
-          "borderImage": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-frame.webp\")",
+          "borderImage": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-frame.webp\")",
           "borderRadius": "7px 10px 6px 9px",
           "shadow": "rgba(53, 54, 48, 0.06) 1px 2px 0px 0px",
           "backdrop": "none",
@@ -2075,10 +2075,10 @@
             772,
             135
           ],
-          "background": "linear-gradient(rgba(255, 254, 249, 0.9), rgba(255, 254, 249, 0.9)), url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "linear-gradient(rgba(255, 254, 249, 0.9), rgba(255, 254, 249, 0.9)), url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgb(255, 254, 249)",
           "border": "1px solid rgba(0, 0, 0, 0)",
-          "borderImage": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-frame.webp\")",
+          "borderImage": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-frame.webp\")",
           "borderRadius": "9px 12px 7px 10px",
           "shadow": "rgba(53, 54, 48, 0.08) 3px 4px 0px 0px",
           "backdrop": "none",
@@ -2164,10 +2164,10 @@
         ".login-spinner": {
           "tag": "SPAN",
           "box": [
-            584.8649291992188,
-            127.36493682861328,
-            18.2701416015625,
-            18.27013397216797
+            584.86572265625,
+            127.36576080322266,
+            18.2685546875,
+            18.26848602294922
           ],
           "background": "none",
           "backgroundColor": "rgba(0, 0, 0, 0)",
@@ -2216,10 +2216,10 @@
         ".login-spinner": {
           "tag": "SPAN",
           "box": [
-            584.864990234375,
-            127.36495971679688,
-            18.27001953125,
-            18.27008056640625
+            584.808349609375,
+            127.30833435058594,
+            18.38330078125,
+            18.383331298828125
           ],
           "background": "none",
           "backgroundColor": "rgba(0, 0, 0, 0)",
@@ -2367,7 +2367,7 @@
             538,
             57
           ],
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/marker-sage.webp\")",
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/marker-sage.webp\")",
           "backgroundColor": "rgb(230, 234, 219)",
           "border": "0px none rgb(53, 54, 48)",
           "borderImage": "none",
@@ -2471,10 +2471,10 @@
             460,
             278.78125
           ],
-          "background": "linear-gradient(rgba(255, 254, 249, 0.88), rgba(255, 254, 249, 0.88)), url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "linear-gradient(rgba(255, 254, 249, 0.88), rgba(255, 254, 249, 0.88)), url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgb(255, 254, 249)",
           "border": "1px solid rgba(0, 0, 0, 0)",
-          "borderImage": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-frame.webp\")",
+          "borderImage": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-frame.webp\")",
           "borderRadius": "9px 13px 8px 11px",
           "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
           "backdrop": "none",
@@ -2596,10 +2596,10 @@
             142,
             46
           ],
-          "background": "linear-gradient(rgba(255, 254, 249, 0.88), rgba(255, 254, 249, 0.88)), url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "linear-gradient(rgba(255, 254, 249, 0.88), rgba(255, 254, 249, 0.88)), url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgb(255, 254, 249)",
           "border": "1px solid rgba(0, 0, 0, 0)",
-          "borderImage": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-frame.webp\")",
+          "borderImage": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-frame.webp\")",
           "borderRadius": "9px 13px 8px 11px",
           "shadow": "rgba(53, 54, 48, 0.13) 2px 3px 0px 0px",
           "backdrop": "none",
@@ -2721,10 +2721,10 @@
             320,
             103.5
           ],
-          "background": "linear-gradient(rgba(255, 254, 249, 0.88), rgba(255, 254, 249, 0.88)), url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "linear-gradient(rgba(255, 254, 249, 0.88), rgba(255, 254, 249, 0.88)), url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgb(255, 254, 249)",
           "border": "1px solid rgba(0, 0, 0, 0)",
-          "borderImage": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-frame.webp\")",
+          "borderImage": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-frame.webp\")",
           "borderRadius": "9px 13px 8px 11px",
           "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
           "backdrop": "none",
@@ -2742,7 +2742,7 @@
             278,
             4
           ],
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-rule.webp\")",
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-rule.webp\")",
           "backgroundColor": "rgb(238, 234, 221)",
           "border": "0px none rgb(53, 54, 48)",
           "borderImage": "none",
@@ -2971,7 +2971,7 @@
             258,
             844
           ],
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgb(248, 245, 236)",
           "border": "",
           "borderImage": "none",
@@ -2992,7 +2992,7 @@
             14,
             14
           ],
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/icons/check-filled.webp\")",
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/icons/check-filled.webp\")",
           "backgroundColor": "rgba(0, 0, 0, 0)",
           "border": "0px none rgba(0, 0, 0, 0)",
           "borderImage": "none",
@@ -3120,7 +3120,7 @@
           "background": "none",
           "backgroundColor": "rgb(255, 254, 249)",
           "border": "1px solid rgba(0, 0, 0, 0)",
-          "borderImage": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/menu-paper.webp\")",
+          "borderImage": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/menu-paper.webp\")",
           "borderRadius": "9px 12px 8px 10px",
           "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
           "backdrop": "none",
@@ -3138,7 +3138,7 @@
             253,
             44
           ],
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/marker-sage.webp\")",
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/marker-sage.webp\")",
           "backgroundColor": "rgba(0, 0, 0, 0)",
           "border": "0px none rgb(53, 54, 48)",
           "borderImage": "none",
@@ -3159,7 +3159,7 @@
             308,
             1
           ],
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-rule.webp\")",
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-rule.webp\")",
           "backgroundColor": "rgba(0, 0, 0, 0)",
           "border": "",
           "borderImage": "none",
@@ -3284,10 +3284,10 @@
             358,
             236.25
           ],
-          "background": "linear-gradient(rgba(255, 254, 249, 0.84), rgba(255, 254, 249, 0.84)), url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "linear-gradient(rgba(255, 254, 249, 0.84), rgba(255, 254, 249, 0.84)), url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgb(255, 254, 249)",
           "border": "1px solid rgb(170, 165, 143)",
-          "borderImage": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-frame.webp\")",
+          "borderImage": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-frame.webp\")",
           "borderRadius": "12px 16px 10px 14px",
           "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
           "backdrop": "none",
@@ -3661,10 +3661,10 @@
             351,
             41.390625
           ],
-          "background": "linear-gradient(rgba(255, 254, 249, 0.88), rgba(255, 254, 249, 0.88)), url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "linear-gradient(rgba(255, 254, 249, 0.88), rgba(255, 254, 249, 0.88)), url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgb(255, 254, 249)",
           "border": "1px solid rgba(0, 0, 0, 0)",
-          "borderImage": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-frame.webp\")",
+          "borderImage": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-frame.webp\")",
           "borderRadius": "9px 13px 8px 11px",
           "shadow": "rgba(53, 54, 48, 0.13) 2px 3px 0px 0px",
           "backdrop": "none",
@@ -3708,9 +3708,9 @@
         ".admin-update-icon svg": {
           "tag": "svg",
           "box": [
-            37.12763977050781,
+            37.12762451171875,
             955.5026245117188,
-            45.744720458984375,
+            45.7447509765625,
             45.7447509765625
           ],
           "background": "none",
@@ -3760,10 +3760,10 @@
         ".admin-update-icon img": {
           "tag": "IMG",
           "box": [
-            37.102169036865234,
-            955.4771728515625,
-            45.795658111572266,
-            45.795654296875
+            37.127601623535156,
+            955.5026245117188,
+            45.74479675292969,
+            45.7447509765625
           ],
           "background": "none",
           "backgroundColor": "rgba(0, 0, 0, 0)",
@@ -3995,7 +3995,7 @@
             350,
             559.328125
           ],
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgba(0, 0, 0, 0)",
           "border": "0px none rgb(53, 54, 48)",
           "borderImage": "none",
@@ -4021,10 +4021,10 @@
         ".login-spinner": {
           "tag": "SPAN",
           "box": [
-            57.365081787109375,
-            558.6306762695312,
-            18.26983642578125,
-            18.26983642578125
+            57.36536407470703,
+            558.6309814453125,
+            18.269271850585938,
+            18.269287109375
           ],
           "background": "none",
           "backgroundColor": "rgba(0, 0, 0, 0)",
@@ -4073,10 +4073,10 @@
         ".login-spinner": {
           "tag": "SPAN",
           "box": [
-            57.56359100341797,
-            558.8292236328125,
-            17.872817993164062,
-            17.872802734375
+            57.3651123046875,
+            558.6307373046875,
+            18.269775390625,
+            18.269775390625
           ],
           "background": "none",
           "backgroundColor": "rgba(0, 0, 0, 0)",
@@ -4622,10 +4622,10 @@
             327,
             643.71875
           ],
-          "background": "linear-gradient(rgba(255, 254, 249, 0.9), rgba(255, 254, 249, 0.9)), url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "linear-gradient(rgba(255, 254, 249, 0.9), rgba(255, 254, 249, 0.9)), url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgb(255, 254, 249)",
           "border": "1px solid rgba(0, 0, 0, 0)",
-          "borderImage": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-frame.webp\")",
+          "borderImage": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-frame.webp\")",
           "borderRadius": "9px 12px 7px 10px",
           "shadow": "rgba(53, 54, 48, 0.08) 3px 4px 0px 0px",
           "backdrop": "none",
@@ -4664,7 +4664,7 @@
             285,
             47.75
           ],
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/marker-sage.webp\")",
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/marker-sage.webp\")",
           "backgroundColor": "rgba(0, 0, 0, 0)",
           "border": "",
           "borderImage": "none",
@@ -4685,10 +4685,10 @@
             285,
             79.5
           ],
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgb(252, 250, 243)",
           "border": "1px solid rgba(0, 0, 0, 0)",
-          "borderImage": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-frame.webp\")",
+          "borderImage": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-frame.webp\")",
           "borderRadius": "7px 10px 6px 9px",
           "shadow": "rgba(53, 54, 48, 0.06) 1px 2px 0px 0px",
           "backdrop": "none",
@@ -4853,10 +4853,10 @@
             342,
             107
           ],
-          "background": "linear-gradient(rgba(255, 254, 249, 0.9), rgba(255, 254, 249, 0.9)), url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "linear-gradient(rgba(255, 254, 249, 0.9), rgba(255, 254, 249, 0.9)), url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgb(255, 254, 249)",
           "border": "1px solid rgba(0, 0, 0, 0)",
-          "borderImage": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-frame.webp\")",
+          "borderImage": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-frame.webp\")",
           "borderRadius": "9px 12px 7px 10px",
           "shadow": "rgba(53, 54, 48, 0.08) 3px 4px 0px 0px",
           "backdrop": "none",
@@ -4942,10 +4942,10 @@
         ".login-spinner": {
           "tag": "SPAN",
           "box": [
-            139.8648681640625,
-            127.36486053466797,
-            18.270278930664062,
-            18.270286560058594
+            139.86514282226562,
+            127.3651351928711,
+            18.269729614257812,
+            18.26972198486328
           ],
           "background": "none",
           "backgroundColor": "rgba(0, 0, 0, 0)",
@@ -4994,10 +4994,10 @@
         ".login-spinner": {
           "tag": "SPAN",
           "box": [
-            140.06317138671875,
-            127.56317138671875,
-            17.8736572265625,
-            17.8736572265625
+            139.8652801513672,
+            127.36528015136719,
+            18.269439697265625,
+            18.269439697265625
           ],
           "background": "none",
           "backgroundColor": "rgba(0, 0, 0, 0)",
@@ -5145,7 +5145,7 @@
             348,
             57
           ],
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/marker-sage.webp\")",
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/marker-sage.webp\")",
           "backgroundColor": "rgb(230, 234, 219)",
           "border": "0px none rgb(53, 54, 48)",
           "borderImage": "none",
@@ -5249,10 +5249,10 @@
             342,
             278.78125
           ],
-          "background": "linear-gradient(rgba(255, 254, 249, 0.88), rgba(255, 254, 249, 0.88)), url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "linear-gradient(rgba(255, 254, 249, 0.88), rgba(255, 254, 249, 0.88)), url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgb(255, 254, 249)",
           "border": "1px solid rgba(0, 0, 0, 0)",
-          "borderImage": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-frame.webp\")",
+          "borderImage": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-frame.webp\")",
           "borderRadius": "9px 13px 8px 11px",
           "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
           "backdrop": "none",
@@ -5374,10 +5374,10 @@
             366,
             54
           ],
-          "background": "linear-gradient(rgba(255, 254, 249, 0.88), rgba(255, 254, 249, 0.88)), url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "linear-gradient(rgba(255, 254, 249, 0.88), rgba(255, 254, 249, 0.88)), url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgb(255, 254, 249)",
           "border": "1px solid rgba(0, 0, 0, 0)",
-          "borderImage": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-frame.webp\")",
+          "borderImage": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-frame.webp\")",
           "borderRadius": "9px 13px 8px 11px",
           "shadow": "rgba(53, 54, 48, 0.13) 2px 3px 0px 0px",
           "backdrop": "none",
@@ -5499,10 +5499,10 @@
             320,
             103.5
           ],
-          "background": "linear-gradient(rgba(255, 254, 249, 0.88), rgba(255, 254, 249, 0.88)), url(\"http://127.0.0.1:56904/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "background": "linear-gradient(rgba(255, 254, 249, 0.88), rgba(255, 254, 249, 0.88)), url(\"http://127.0.0.1:60243/art/handdrawn-v1/textures/paper-ivory.webp\")",
           "backgroundColor": "rgb(255, 254, 249)",
           "border": "1px solid rgba(0, 0, 0, 0)",
-          "borderImage": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-frame.webp\")",
+          "borderImage": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-frame.webp\")",
           "borderRadius": "9px 13px 8px 11px",
           "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
           "backdrop": "none",
@@ -5520,7 +5520,7 @@
             278,
             4
           ],
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/decor/pencil-rule.webp\")",
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/decor/pencil-rule.webp\")",
           "backgroundColor": "rgb(238, 234, 221)",
           "border": "0px none rgb(53, 54, 48)",
           "borderImage": "none",
@@ -5728,13 +5728,13 @@
           "checked": true,
           "width": 14,
           "height": 14,
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/icons/check-filled.webp\")"
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/icons/check-filled.webp\")"
         },
         {
           "checked": false,
           "width": 14,
           "height": 14,
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/icons/check-empty.webp\")"
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/icons/check-empty.webp\")"
         }
       ]
     },
@@ -6811,13 +6811,13 @@
           "checked": true,
           "width": 14,
           "height": 14,
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/icons/check-filled.webp\")"
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/icons/check-filled.webp\")"
         },
         {
           "checked": false,
           "width": 14,
           "height": 14,
-          "background": "url(\"http://127.0.0.1:56904/art/handdrawn-v1/icons/check-empty.webp\")"
+          "background": "url(\"http://127.0.0.1:60243/art/handdrawn-v1/icons/check-empty.webp\")"
         }
       ]
     },
