@@ -1,0 +1,9 @@
+{
+  "baseline": "Current working tree, including uncommitted handdrawn/title refinements",
+  "method": "Resolve literal ArtIcon names, the ArtIcon type registry, and CSS /art URLs against apps/web/public; dynamic names need manual review.",
+  "filesScanned": 122,
+  "referencesChecked": 235,
+  "registeredAssets": 44,
+  "missing": [],
+  "missingUniqueUrls": []
+}

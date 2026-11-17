@@ -47,8 +47,8 @@ export default function SharedDocumentPage({ token }: { token: string }) {
     {/* Keyed on the token so a second share link replays the entry instead of
         silently swapping the text in place. */}
     <article className="shared-content motion-enter" key={token}>
-      <h1 className="shared-document-title">{doc.title || '未命名文档'}</h1>
-      <div dangerouslySetInnerHTML={{ __html: renderDocHTML(doc.content.doc) }} />
+      <h1 className="shared-document-title"><span>{doc.title || '未命名文档'}</span></h1>
+      <div className="shared-readonly" dangerouslySetInnerHTML={{ __html: renderDocHTML(doc.content.doc) }} />
     </article>
     <div className="shared-footer">由 Marvelous Docs 分享 · {new Date(doc.updatedAt).toLocaleDateString()}</div>
   </div>

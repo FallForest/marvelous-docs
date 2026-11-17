@@ -21,7 +21,8 @@ Every other layer — `base.css`, `surfaces.css`, `select.css`, `dialogs.css`,
 `handdrawn-navigation.css`, `handdrawn-content.css`, `handdrawn-controls.css`,
 `handdrawn-materials.css`, `handdrawn-writing.css`,
 `handdrawn-editor-chrome.css`, `handdrawn-menus.css`,
-`handdrawn-collaboration.css` — only *uses* these names. The hand-drawn skin
+`handdrawn-collaboration.css`, `handdrawn-shared.css`,
+`handdrawn-feedback.css` — only *uses* these names. The hand-drawn skin
 replaces material, radius and shadow treatment under its root theme selector;
 durations, easing and interaction timing continue to use the shared motion
 tokens. A rule that hard-codes `220ms` or `ease-in-out` is a bug: it will not
@@ -32,6 +33,11 @@ preview. `handdrawn-menus.css` and `handdrawn-collaboration.css` follow it to
 paint the newer controls without changing their geometry. The history layer's
 one movement is the day chevron, a `transform` rotate at `--duration-fast`
 that is dropped under `prefers-reduced-motion`.
+
+`handdrawn-shared.css` paints public reading without editor behavior.
+`handdrawn-feedback.css` paints notifications, PDF progress and error recovery;
+the progress fill keeps its real determinate transform. The updater animates
+the visible `.art-icon` slot in both themes and stops under reduced motion.
 
 ## Choosing a motion
 

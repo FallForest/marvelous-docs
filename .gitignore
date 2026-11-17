@@ -40,7 +40,9 @@ coverage/
 # Raw per-frame motion trace from verify-handdrawn-controls.mjs --motion. Every
 # run samples requestAnimationFrame, so the file differs each time and is 2.5 MB;
 # it is scratch, and the readable record is the screenshot set plus MOTION.md.
-docs/design/handdrawn-v1/implementation-v*/motion-verification.json
+# The `**` matters: the motion verifier writes to whatever sub-directory its
+# scene lives in, so a fixed depth missed implementation-v14/controls-motion/.
+docs/design/handdrawn-v1/implementation-v*/**/motion-verification.json
 
 # Vite debug output
 apps/web/vite-out.txt

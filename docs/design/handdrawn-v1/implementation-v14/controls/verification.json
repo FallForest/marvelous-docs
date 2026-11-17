@@ -1,0 +1,2210 @@
+{
+  "fixture": "isolated real components; no workspace database",
+  "measurements": [
+    {
+      "name": "paragraph",
+      "paper": {
+        "box": [
+          293,
+          66,
+          180,
+          148
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.14) 0px 12px 30px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          293,
+          66,
+          180,
+          148
+        ],
+        "background": "none",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "font-size",
+      "paper": {
+        "box": [
+          369.3125,
+          66,
+          104,
+          224
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.14) 0px 12px 30px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          369.3125,
+          66,
+          104,
+          224
+        ],
+        "background": "none",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "alignment",
+      "paper": {
+        "box": [
+          654.125,
+          66,
+          150,
+          148
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.14) 0px 12px 30px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          654.125,
+          66,
+          150,
+          148
+        ],
+        "background": "none",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "color",
+      "paper": {
+        "box": [
+          596.125,
+          66,
+          196,
+          116
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.14) 0px 12px 30px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          596.125,
+          66,
+          196,
+          116
+        ],
+        "background": "none",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "highlight",
+      "paper": {
+        "box": [
+          625.125,
+          66,
+          196,
+          116
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.14) 0px 12px 30px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          625.125,
+          66,
+          196,
+          116
+        ],
+        "background": "none",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "insert",
+      "paper": {
+        "box": [
+          793.125,
+          66,
+          180,
+          148
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.14) 0px 12px 30px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          793.125,
+          66,
+          180,
+          148
+        ],
+        "background": "none",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "table",
+      "paper": {
+        "box": [
+          812,
+          360.53125,
+          180,
+          420
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.14) 0px 12px 30px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          812,
+          360.53125,
+          180,
+          420
+        ],
+        "background": "none",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "code-language",
+      "paper": {
+        "box": [
+          265,
+          282.21875,
+          184,
+          264
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.15) 0px 10px 28px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          265,
+          282.21875,
+          184,
+          264
+        ],
+        "background": "none",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "share-modal",
+      "paper": {
+        "box": [
+          390,
+          101.78125,
+          500,
+          696.4375
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.24) 0px 24px 64px 0px, rgba(17, 24, 39, 0.08) 0px 2px 8px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          390,
+          101.78125,
+          500,
+          696.4375
+        ],
+        "background": "linear-gradient(rgba(255, 254, 249, 0.84), rgba(255, 254, 249, 0.84)), url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/pencil-frame.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "share-expiry",
+      "paper": {
+        "box": [
+          413,
+          395.21875,
+          139,
+          238
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.14) 0px 12px 30px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          413,
+          395.21875,
+          139,
+          238
+        ],
+        "background": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "share-role",
+      "paper": {
+        "box": [
+          784,
+          704.71875,
+          205,
+          162
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.14) 0px 12px 30px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          784,
+          704.71875,
+          205,
+          162
+        ],
+        "background": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "invite-role",
+      "paper": {
+        "box": [
+          443,
+          541.125,
+          394,
+          86
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.14) 0px 12px 30px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          443,
+          541.125,
+          394,
+          86
+        ],
+        "background": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "comments",
+      "paper": {
+        "box": [
+          976,
+          0,
+          304,
+          900
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          976,
+          0,
+          304,
+          900
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "comment-filter",
+      "paper": {
+        "box": [
+          1024,
+          164,
+          241,
+          162
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.14) 0px 12px 30px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          1024,
+          164,
+          241,
+          162
+        ],
+        "background": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "history",
+      "paper": {
+        "box": [
+          976,
+          0,
+          304,
+          900
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          976,
+          0,
+          304,
+          900
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "version-preview",
+      "paper": {
+        "box": [
+          160,
+          40,
+          960,
+          820
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.24) 0px 24px 64px 0px, rgba(17, 24, 39, 0.08) 0px 2px 8px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          160,
+          40,
+          960,
+          820
+        ],
+        "background": "linear-gradient(rgba(255, 254, 249, 0.84), rgba(255, 254, 249, 0.84)), url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/pencil-frame.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "version-original",
+      "paper": {
+        "box": [
+          160,
+          40,
+          960,
+          820
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.24) 0px 24px 64px 0px, rgba(17, 24, 39, 0.08) 0px 2px 8px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          160,
+          40,
+          960,
+          820
+        ],
+        "background": "linear-gradient(rgba(255, 254, 249, 0.84), rgba(255, 254, 249, 0.84)), url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/pencil-frame.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "draft-recovery",
+      "paper": {
+        "box": [
+          409.98565673828125,
+          327.64190673828125,
+          460.0286865234375,
+          244.6558837890625
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.24) 0px 24px 64px 0px, rgba(17, 24, 39, 0.08) 0px 2px 8px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          410,
+          327.671875,
+          460,
+          244.640625
+        ],
+        "background": "linear-gradient(rgba(255, 254, 249, 0.84), rgba(255, 254, 249, 0.84)), url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/pencil-frame.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0.01434326171875,
+        0.02996826171875,
+        0.0286865234375,
+        0.0152587890625
+      ]
+    },
+    {
+      "name": "phone-more",
+      "paper": {
+        "box": [
+          88,
+          74,
+          280,
+          762
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.14) 0px 12px 30px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          88,
+          74,
+          280,
+          762
+        ],
+        "background": "none",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-share",
+      "paper": {
+        "box": [
+          12,
+          64.1875,
+          366,
+          715.625
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.24) 0px 24px 64px 0px, rgba(17, 24, 39, 0.08) 0px 2px 8px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          12,
+          64.1875,
+          366,
+          715.625
+        ],
+        "background": "linear-gradient(rgba(255, 254, 249, 0.84), rgba(255, 254, 249, 0.84)), url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/pencil-frame.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-share-expiry",
+      "paper": {
+        "box": [
+          31,
+          380.8125,
+          240,
+          286
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.14) 0px 12px 30px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          31,
+          380.8125,
+          240,
+          286
+        ],
+        "background": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-invite",
+      "paper": {
+        "box": [
+          12,
+          263.875,
+          366,
+          316.25
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.24) 0px 24px 64px 0px, rgba(17, 24, 39, 0.08) 0px 2px 8px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          12,
+          263.875,
+          366,
+          316.25
+        ],
+        "background": "linear-gradient(rgba(255, 254, 249, 0.84), rgba(255, 254, 249, 0.84)), url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/pencil-frame.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-invite-role",
+      "paper": {
+        "box": [
+          31,
+          516.125,
+          328,
+          102
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.14) 0px 12px 30px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          31,
+          516.125,
+          328,
+          102
+        ],
+        "background": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-comments-filter",
+      "paper": {
+        "box": [
+          118,
+          176,
+          257,
+          194
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.14) 0px 12px 30px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          118,
+          176,
+          257,
+          194
+        ],
+        "background": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-share-expiry-reopened",
+      "paper": {
+        "box": [
+          31,
+          380.8125,
+          240,
+          286
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.14) 0px 12px 30px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          31,
+          380.8125,
+          240,
+          286
+        ],
+        "background": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-share-role",
+      "paper": {
+        "box": [
+          142,
+          444.3125,
+          240,
+          194
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.14) 0px 12px 30px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          142,
+          444.3125,
+          240,
+          194
+        ],
+        "background": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-version-preview",
+      "paper": {
+        "box": [
+          12,
+          12,
+          366,
+          820
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.24) 0px 24px 64px 0px, rgba(17, 24, 39, 0.08) 0px 2px 8px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          12,
+          12,
+          366,
+          820
+        ],
+        "background": "linear-gradient(rgba(255, 254, 249, 0.84), rgba(255, 254, 249, 0.84)), url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/pencil-frame.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "select-short-resize",
+      "short": {
+        "box": [
+          31,
+          8,
+          240,
+          264.625
+        ],
+        "innerHeight": 360,
+        "innerClientHeight": 253,
+        "innerScrollHeight": 274,
+        "panelClient": 263,
+        "panelScroll": 263
+      },
+      "restored": {
+        "box": [
+          30.99968719482422,
+          380.81109619140625,
+          240.0006103515625,
+          286.00079345703125
+        ],
+        "background": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "desktop-document-menu",
+      "paper": {
+        "box": [
+          1026,
+          50.5,
+          232,
+          459
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.14) 0px 12px 30px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          1026,
+          50.5,
+          232,
+          459
+        ],
+        "background": "none",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "desktop-document-info-dialog",
+      "paper": {
+        "box": [
+          410,
+          179.28125,
+          460,
+          541.421875
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.24) 0px 24px 64px 0px, rgba(17, 24, 39, 0.08) 0px 2px 8px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          410,
+          179.28125,
+          460,
+          541.421875
+        ],
+        "background": "linear-gradient(rgba(255, 254, 249, 0.84), rgba(255, 254, 249, 0.84)), url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/pencil-frame.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "desktop-document-info-panel",
+      "paper": {
+        "box": [
+          435,
+          276.53125,
+          410,
+          367.171875
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          435,
+          276.53125,
+          410,
+          367.171875
+        ],
+        "background": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "none",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.06) 1px 2px 0px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "desktop-move-dialog",
+      "paper": {
+        "box": [
+          420,
+          289.375,
+          440,
+          321.25
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.24) 0px 24px 64px 0px, rgba(17, 24, 39, 0.08) 0px 2px 8px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          420,
+          289.375,
+          440,
+          321.25
+        ],
+        "background": "linear-gradient(rgba(255, 254, 249, 0.84), rgba(255, 254, 249, 0.84)), url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/pencil-frame.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "desktop-image-toolbar",
+      "paper": {
+        "box": [
+          485.390625,
+          132.59375,
+          223,
+          32
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.1) 0px 2px 8px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          485.390625,
+          132.59375,
+          223,
+          32
+        ],
+        "background": "none",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "desktop-upload-loading",
+      "paper": {
+        "box": [
+          255,
+          168.25,
+          217.5625,
+          28
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(95, 102, 115)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          255,
+          168.25,
+          217.5625,
+          28
+        ],
+        "background": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/pencil-frame.webp\")",
+        "color": "rgb(85, 89, 75)",
+        "shadow": "rgba(53, 54, 48, 0.06) 1px 2px 0px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "desktop-upload-error",
+      "paper": {
+        "box": [
+          255,
+          166.59375,
+          276,
+          32
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(176, 69, 58)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          255,
+          166.59375,
+          276,
+          32
+        ],
+        "background": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/pencil-frame.webp\")",
+        "color": "rgb(166, 66, 53)",
+        "shadow": "rgb(231, 197, 182) 2px 0px 0px 0px inset, rgba(53, 54, 48, 0.06) 1px 2px 0px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-document-menu",
+      "paper": {
+        "box": [
+          140,
+          76.5,
+          240,
+          495
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.14) 0px 12px 30px 0px, rgba(17, 24, 39, 0.06) 0px 2px 6px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          140,
+          76.5,
+          240,
+          495
+        ],
+        "background": "none",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-document-info-dialog",
+      "paper": {
+        "box": [
+          12,
+          106.59375,
+          366,
+          630.8125
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.24) 0px 24px 64px 0px, rgba(17, 24, 39, 0.08) 0px 2px 8px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          12,
+          106.59375,
+          366,
+          630.8125
+        ],
+        "background": "linear-gradient(rgba(255, 254, 249, 0.84), rgba(255, 254, 249, 0.84)), url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/pencil-frame.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-document-info-panel",
+      "paper": {
+        "box": [
+          33,
+          199.84375,
+          324,
+          404.5625
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          33,
+          199.84375,
+          324,
+          404.5625
+        ],
+        "background": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "none",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.06) 1px 2px 0px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-move-dialog",
+      "paper": {
+        "box": [
+          12,
+          263.375,
+          366,
+          317.25
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.24) 0px 24px 64px 0px, rgba(17, 24, 39, 0.08) 0px 2px 8px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          12,
+          263.375,
+          366,
+          317.25
+        ],
+        "background": "linear-gradient(rgba(255, 254, 249, 0.84), rgba(255, 254, 249, 0.84)), url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/pencil-frame.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-image-toolbar",
+      "paper": {
+        "box": [
+          8,
+          162.1875,
+          223,
+          32
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.1) 0px 2px 8px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          8,
+          162.1875,
+          223,
+          32
+        ],
+        "background": "none",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/menu-paper.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.13) 3px 4px 0px 0px, rgba(53, 54, 48, 0.07) 0px 8px 24px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-upload-loading",
+      "paper": {
+        "box": [
+          57,
+          196.84375,
+          217.5625,
+          28
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(95, 102, 115)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          57,
+          196.84375,
+          217.5625,
+          28
+        ],
+        "background": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/pencil-frame.webp\")",
+        "color": "rgb(85, 89, 75)",
+        "shadow": "rgba(53, 54, 48, 0.06) 1px 2px 0px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-upload-error",
+      "paper": {
+        "box": [
+          57,
+          196.1875,
+          276,
+          32
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(176, 69, 58)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          57,
+          196.1875,
+          276,
+          32
+        ],
+        "background": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/pencil-frame.webp\")",
+        "color": "rgb(166, 66, 53)",
+        "shadow": "rgb(231, 197, 182) 2px 0px 0px 0px inset, rgba(53, 54, 48, 0.06) 1px 2px 0px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "desktop-showcase-editor",
+      "paper": {
+        "box": [
+          190,
+          0,
+          900,
+          900
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          190,
+          0,
+          900,
+          900
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "desktop-showcase-share",
+      "paper": {
+        "box": [
+          390,
+          101.78125,
+          500,
+          696.4375
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.24) 0px 24px 64px 0px, rgba(17, 24, 39, 0.08) 0px 2px 8px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          390,
+          101.78125,
+          500,
+          696.4375
+        ],
+        "background": "linear-gradient(rgba(255, 254, 249, 0.84), rgba(255, 254, 249, 0.84)), url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/pencil-frame.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "desktop-showcase-comments",
+      "paper": {
+        "box": [
+          976,
+          0,
+          304,
+          900
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          976,
+          0,
+          304,
+          900
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "desktop-showcase-history",
+      "paper": {
+        "box": [
+          976,
+          0,
+          304,
+          900
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          976,
+          0,
+          304,
+          900
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "desktop-showcase-documents",
+      "paper": {
+        "box": [
+          0,
+          0,
+          1280,
+          900
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          0,
+          0,
+          1280,
+          900
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "desktop-showcase-home",
+      "paper": {
+        "box": [
+          0,
+          0,
+          1280,
+          900
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "handdrawn": {
+        "box": [
+          0,
+          0,
+          1280,
+          900
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 1280
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-showcase-editor",
+      "paper": {
+        "box": [
+          0,
+          0,
+          390,
+          844
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          0,
+          0,
+          390,
+          844
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-showcase-share",
+      "paper": {
+        "box": [
+          12,
+          64.1875,
+          366,
+          715.625
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.24) 0px 24px 64px 0px, rgba(17, 24, 39, 0.08) 0px 2px 8px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          12,
+          64.1875,
+          366,
+          715.625
+        ],
+        "background": "linear-gradient(rgba(255, 254, 249, 0.84), rgba(255, 254, 249, 0.84)), url(\"http://127.0.0.1:55910/art/handdrawn-v1/textures/paper-ivory.webp\")",
+        "borderImage": "url(\"http://127.0.0.1:55910/art/handdrawn-v1/decor/pencil-frame.webp\")",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-showcase-comments",
+      "paper": {
+        "box": [
+          70,
+          0,
+          320,
+          844
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.15) -18px 0px 44px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          70,
+          0,
+          320,
+          844
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.15) -18px 0px 44px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-showcase-history",
+      "paper": {
+        "box": [
+          70,
+          0,
+          320,
+          844
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "rgba(17, 24, 39, 0.15) -18px 0px 44px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          70,
+          0,
+          320,
+          844
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "rgba(53, 54, 48, 0.15) -18px 0px 44px 0px",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-showcase-documents",
+      "paper": {
+        "box": [
+          0,
+          0,
+          390,
+          844
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          0,
+          0,
+          390,
+          844
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "phone-showcase-home",
+      "paper": {
+        "box": [
+          0,
+          0,
+          390,
+          844
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(31, 41, 55)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "handdrawn": {
+        "box": [
+          0,
+          0,
+          390,
+          844
+        ],
+        "background": "none",
+        "borderImage": "none",
+        "color": "rgb(53, 54, 48)",
+        "shadow": "none",
+        "overflowX": false,
+        "backdropOverflowX": false,
+        "backdropOverflowY": false,
+        "viewport": 390
+      },
+      "delta": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "generator": "built-in image_gen",
+  "previousAssets": 43,
+  "totalAssets": 44,
+  "asset": {
+    "id": "recent",
+    "name": "最近访问纸页时钟",
+    "category": "icons",
+    "usage": "最近访问导航 / 最近访问空态",
+    "png": "icons/recent.png",
+    "webp": "icons/recent.webp",
+    "width": 256,
+    "height": 256,
+    "sourceWidth": 1312,
+    "sourceHeight": 1199,
+    "alphaBounds": {
+      "left": 325,
+      "top": 248,
+      "width": 661,
+      "height": 740
+    },
+    "crop": {
+      "left": 303,
+      "top": 226,
+      "width": 705,
+      "height": 784
+    },
+    "transparentFraction": 0.7317,
+    "partialAlphaFraction": 0.2683,
+    "pngBytes": 84627,
+    "webpBytes": 13828,
+    "rawAlphaMin": 0,
+    "rawAlphaMax": 255,
+    "rawZeroAlphaPixels": 1151033,
+    "rawPartialAlphaPixels": 422043,
+    "pngHasAlpha": true,
+    "webpHasAlpha": true
+  }
+}

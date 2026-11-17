@@ -18,6 +18,14 @@
   background-repeat:no-repeat;
 }
 
+/* The semantic hr keeps its one-pixel border box and document spacing. Draw
+   within that existing border box rather than adding height to the content. */
+[data-theme='handdrawn'] .tiptap-content hr{
+  border-top-color:transparent;
+  background:url('/art/handdrawn-v1/decor/pencil-rule.webp') center / 100% 100% no-repeat;
+  background-origin:border-box;
+}
+
 /* A translucent marker sweep rather than a stock rounded callout box. */
 [data-theme='handdrawn'] .tiptap-content blockquote{
   border-radius:0;
@@ -45,7 +53,7 @@
   background-size:contain;
   background-repeat:no-repeat;
 }
-[data-theme='handdrawn'] .tiptap-content ul[data-type='taskList'] li[data-checked]>label input[type='checkbox']:checked{background-image:url('/art/handdrawn-v1/icons/check-filled.webp')}
+[data-theme='handdrawn'] .tiptap-content ul[data-type='taskList'] li[data-checked]>label input[type='checkbox']:where(:checked){background-image:url('/art/handdrawn-v1/icons/check-filled.webp')}
 [data-theme='handdrawn'] .tiptap-content ul[data-type='taskList'] li[data-checked]>label input[type='checkbox']:focus-visible{outline:2px solid var(--focus-ring);outline-offset:3px;border-radius:4px}
 [data-theme='handdrawn'] .tiptap-content ul[data-type='taskList'] li[data-checked]>label input[type='checkbox']:disabled{opacity:.5}
 
@@ -144,6 +152,7 @@
 [data-theme='handdrawn'] .comment-compose textarea:focus-visible{outline:2px solid var(--focus-ring);outline-offset:3px;box-shadow:none}
 
 @media(forced-colors:active){
+  [data-theme='handdrawn'] .tiptap-content hr{background:none;border-top-color:CanvasText}
   [data-theme='handdrawn'] .tiptap-content ul[data-type='taskList'] li[data-checked]>label input[type='checkbox']{
     appearance:auto;-webkit-appearance:auto;background:none;accent-color:auto;
   }

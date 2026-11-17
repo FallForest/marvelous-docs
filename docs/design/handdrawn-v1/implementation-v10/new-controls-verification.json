@@ -1,0 +1,235 @@
+{
+  "fixture": "actual components and upload-placeholder plugin; no workspace database",
+  "details": [
+    {
+      "name": "desktop-document-menu",
+      "icons": [
+        {
+          "source": "/art/handdrawn-v1/icons/document.webp",
+          "loaded": true,
+          "failed": false,
+          "width": 25,
+          "height": 27
+        },
+        {
+          "source": "/art/handdrawn-v1/icons/download.webp",
+          "loaded": true,
+          "failed": false,
+          "width": 25,
+          "height": 27
+        },
+        {
+          "source": "/art/handdrawn-v1/icons/download.webp",
+          "loaded": true,
+          "failed": false,
+          "width": 25,
+          "height": 27
+        },
+        {
+          "source": "/art/handdrawn-v1/icons/download.webp",
+          "loaded": true,
+          "failed": false,
+          "width": 25,
+          "height": 27
+        },
+        {
+          "source": "/art/handdrawn-v1/icons/print.webp",
+          "loaded": true,
+          "failed": false,
+          "width": 25,
+          "height": 27
+        },
+        {
+          "source": "/art/handdrawn-v1/icons/history.webp",
+          "loaded": true,
+          "failed": false,
+          "width": 25,
+          "height": 27
+        },
+        {
+          "source": "/art/handdrawn-v1/icons/favorite-star.webp",
+          "loaded": true,
+          "failed": false,
+          "width": 25,
+          "height": 27
+        },
+        {
+          "source": "/art/handdrawn-v1/icons/move.webp",
+          "loaded": true,
+          "failed": false,
+          "width": 25,
+          "height": 27
+        },
+        {
+          "source": "/art/handdrawn-v1/icons/info.webp",
+          "loaded": true,
+          "failed": false,
+          "width": 25,
+          "height": 27
+        }
+      ]
+    },
+    {
+      "name": "desktop-document-info",
+      "text": "document_6d0d9566a79849ecb2d56658a0a1756f6d0d9566a79849ecb2d56658a0a1756f6d0d9566a79849ecb2d56658a0a1756f6d0d9566a79849ecb2d56658a0a1756f6d0d9566a79849ecb2d56658a0a1756f",
+      "textLength": 169,
+      "lineCount": 4,
+      "userSelect": "text",
+      "overflowX": false,
+      "idOverflowX": false,
+      "idBox": [
+        542,
+        549.515625,
+        288,
+        79.1875
+      ],
+      "panelBox": [
+        435,
+        276.53125,
+        410,
+        367.171875
+      ],
+      "labelRight": 530
+    },
+    {
+      "name": "desktop-upload-error",
+      "state": {
+        "entries": [
+          {
+            "id": "skin-upload",
+            "pos": 20,
+            "status": "error",
+            "name": "界面素材与交互说明.png",
+            "message": "上传失败：网络连接暂时中断，请重试"
+          }
+        ]
+      },
+      "box": [
+        255,
+        166.59375,
+        276,
+        32
+      ],
+      "retryFocused": true,
+      "focusVisible": true,
+      "outlineStyle": "solid",
+      "outlineWidth": "2px",
+      "overflowX": false
+    },
+    {
+      "name": "phone-document-menu",
+      "icons": [
+        {
+          "source": "/art/handdrawn-v1/icons/document.webp",
+          "loaded": true,
+          "failed": false,
+          "width": 25,
+          "height": 27
+        },
+        {
+          "source": "/art/handdrawn-v1/icons/download.webp",
+          "loaded": true,
+          "failed": false,
+          "width": 25,
+          "height": 27
+        },
+        {
+          "source": "/art/handdrawn-v1/icons/download.webp",
+          "loaded": true,
+          "failed": false,
+          "width": 25,
+          "height": 27
+        },
+        {
+          "source": "/art/handdrawn-v1/icons/download.webp",
+          "loaded": true,
+          "failed": false,
+          "width": 25,
+          "height": 27
+        },
+        {
+          "source": "/art/handdrawn-v1/icons/print.webp",
+          "loaded": true,
+          "failed": false,
+          "width": 25,
+          "height": 27
+        },
+        {
+          "source": "/art/handdrawn-v1/icons/history.webp",
+          "loaded": true,
+          "failed": false,
+          "width": 25,
+          "height": 27
+        },
+        {
+          "source": "/art/handdrawn-v1/icons/favorite-star.webp",
+          "loaded": true,
+          "failed": false,
+          "width": 25,
+          "height": 27
+        },
+        {
+          "source": "/art/handdrawn-v1/icons/move.webp",
+          "loaded": true,
+          "failed": false,
+          "width": 25,
+          "height": 27
+        },
+        {
+          "source": "/art/handdrawn-v1/icons/info.webp",
+          "loaded": true,
+          "failed": false,
+          "width": 25,
+          "height": 27
+        }
+      ]
+    },
+    {
+      "name": "phone-document-info",
+      "text": "document_6d0d9566a79849ecb2d56658a0a1756f6d0d9566a79849ecb2d56658a0a1756f6d0d9566a79849ecb2d56658a0a1756f6d0d9566a79849ecb2d56658a0a1756f6d0d9566a79849ecb2d56658a0a1756f",
+      "textLength": 169,
+      "lineCount": 5,
+      "userSelect": "text",
+      "overflowX": false,
+      "idOverflowX": false,
+      "idBox": [
+        122,
+        492.421875,
+        222,
+        98.984375
+      ],
+      "panelBox": [
+        33,
+        199.84375,
+        324,
+        404.5625
+      ],
+      "labelRight": 114
+    },
+    {
+      "name": "phone-upload-error",
+      "state": {
+        "entries": [
+          {
+            "id": "skin-upload",
+            "pos": 20,
+            "status": "error",
+            "name": "界面素材与交互说明.png",
+            "message": "上传失败：网络连接暂时中断，请重试"
+          }
+        ]
+      },
+      "box": [
+        57,
+        196.1875,
+        276,
+        32
+      ],
+      "retryFocused": true,
+      "focusVisible": true,
+      "outlineStyle": "solid",
+      "outlineWidth": "2px",
+      "overflowX": false
+    }
+  ]
+}

@@ -15,10 +15,27 @@
   background-size:768px;
   opacity:.23;
 }
-[data-theme='handdrawn'] .document-title-field::after{
-  background:url('/art/handdrawn-v1/decor/marker-yellow.webp') center / 100% 100% no-repeat;
+[data-theme='handdrawn'] .document-title-text{
+  background-image:url('/art/handdrawn-v1/decor/marker-yellow.webp');
 }
-[data-theme='handdrawn'] .document-heading input:focus{box-shadow:0 2px 0 var(--accent-line)}
+[data-theme='handdrawn'] .document-title-art::before{
+  background:url('/art/handdrawn-v1/decor/washi-sage.webp') center / 100% auto no-repeat;
+  opacity:.78;
+}
+/* Dates read as quiet index labels. The automatic-name hint has its own warm
+   ink, so it is distinguishable without adding another control to the title. */
+[data-theme='handdrawn'] .doc-meta>:is(span,time){
+  background-color:var(--surface-soft);
+  border-color:var(--border-subtle);
+  border-radius:5px 8px 4px 7px;
+  box-shadow:1px 1px 0 rgba(var(--shadow-rgb),.035);
+}
+[data-theme='handdrawn'] .doc-meta>.untitled-document-time{background:var(--tint-blue-soft);color:var(--tint-blue-ink);border-color:var(--info-line)}
+[data-theme='handdrawn'] .doc-meta>.title-mode-hint{
+  background:var(--tint-gold-soft);
+  color:var(--tint-gold-ink);
+  border-color:var(--warning-line);
+}
 [data-theme='handdrawn'] .tiptap-content blockquote{
   background:var(--tint-sage-softer);
   border-radius:3px 10px 8px 2px;
@@ -70,6 +87,8 @@
   border-radius:13px 9px 11px 8px;
   background:var(--surface);
   box-shadow:2px 3px 0 rgba(var(--shadow-rgb),.07);
+  background-image:linear-gradient(115deg,rgba(var(--sage-rgb),.055),rgba(var(--surface-rgb),.82) 62%),url('/art/handdrawn-v1/textures/paper-ivory.webp');
+  background-size:auto,768px;
 }
 [data-theme='handdrawn'] .home-hero h1::after{background:url('/art/handdrawn-v1/decor/marker-yellow.webp') center / 100% 100% no-repeat}
 [data-theme='handdrawn'] .stat-card{border-color:var(--border-strong);border-radius:9px 7px 10px 8px;background:var(--surface);box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.04)}
@@ -79,6 +98,19 @@
 [data-theme='handdrawn'] .home-card:active{background:var(--surface-active)}
 [data-theme='handdrawn'] .home-card-icon{background:transparent}
 [data-theme='handdrawn'] .home-card-icon.folder{background:transparent}
+[data-theme='handdrawn'] .home-section-head h2{
+  background:url('/art/handdrawn-v1/decor/marker-sage.webp') 26px bottom / 68px 5px no-repeat;
+}
+[data-theme='handdrawn'] .home-card{
+  background-image:linear-gradient(rgba(var(--surface-rgb),.86),rgba(var(--surface-rgb),.86)),url('/art/handdrawn-v1/textures/paper-ivory.webp');
+  background-size:auto,768px;
+}
+[data-theme='handdrawn'] .home-card:hover{box-shadow:2px 3px 0 rgba(var(--shadow-rgb),.1),inset 3px 0 0 var(--tint-sage-line)}
+[data-theme='handdrawn'] .stat-doc{background-color:var(--surface-soft);box-shadow:inset 0 3px 0 var(--tint-sage-line),1px 2px 0 rgba(var(--shadow-rgb),.06)}
+[data-theme='handdrawn'] .stat-folder{background-color:var(--surface-soft);box-shadow:inset 0 3px 0 var(--warning-line),1px 2px 0 rgba(var(--shadow-rgb),.06)}
+[data-theme='handdrawn'] .stat-member{box-shadow:inset 0 3px 0 var(--info-line),1px 2px 0 rgba(var(--shadow-rgb),.06)}
+[data-theme='handdrawn'] .stat-comment{box-shadow:inset 0 3px 0 var(--tint-sage-line),1px 2px 0 rgba(var(--shadow-rgb),.06)}
+[data-theme='handdrawn'] .stat-trash{box-shadow:inset 0 3px 0 var(--tint-rose-line),1px 2px 0 rgba(var(--shadow-rgb),.06)}
 [data-theme='handdrawn'] .home-empty{border-color:var(--border-strong);border-radius:10px 8px 11px 7px}
 [data-theme='handdrawn'] .folder-overview-head{border-bottom-color:var(--border-strong)}
 [data-theme='handdrawn'] .folder-large-icon{background:transparent}
@@ -95,4 +127,8 @@
 [data-theme='handdrawn'] .login-card input{border-color:var(--border-strong);border-radius:7px 5px 8px 6px}
 @media(max-width:560px){
   [data-theme='handdrawn'] .paper{border-radius:9px 7px 10px 8px}
+}
+@media(forced-colors:active){
+  [data-theme='handdrawn'] .document-title-art::before{background:none}
+  [data-theme='handdrawn'] .doc-meta>:is(span,time){background:Canvas;color:CanvasText;border-color:CanvasText;box-shadow:none}
 }

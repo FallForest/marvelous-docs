@@ -148,7 +148,7 @@
 .admin-update-icon{width:36px;height:36px;border-radius:7px;background:var(--tint-rose-soft);color:var(--accent);display:grid;place-items:center}
 
 /* An in-flight update is the one state on this page that is genuinely alive. */
-.admin-update-icon.is-running svg{animation:motion-breathe calc(var(--duration-slow) * 3) var(--ease-standard) infinite}
+.admin-update-icon.is-running>.art-icon{animation:motion-breathe calc(var(--duration-slow) * 3) var(--ease-standard) infinite}
 
 .admin-update-copy{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
 
@@ -482,7 +482,7 @@
 
 .error-card p{margin:0;font-size:12px;line-height:1.7;color:var(--text-muted)}
 
-.error-card pre{margin:14px 0 0;max-height:120px;overflow:auto;background:var(--surface-muted);border-radius:5px;padding:10px;font-size:11px;color:var(--danger-strong);white-space:pre-wrap}
+.error-card pre{margin:14px 0 0;max-height:120px;overflow:auto;background:var(--surface-muted);border-radius:5px;padding:10px;font-size:11px;color:var(--danger-strong);white-space:pre-wrap;-webkit-user-select:text;user-select:text}
 
 .error-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 
@@ -503,6 +503,7 @@
  * entry to a cross-fade keeps the "something arrived" signal without travel.
  */
 @media (prefers-reduced-motion:reduce){
+  .admin-update-icon.is-running>.art-icon{animation:none}
   /* This block used to re-declare the page entrances with a cross-fade. That
      worked only while each page root owned its own animation; now the class
      does, and the global rule in motion.css already collapses travel to a

@@ -263,15 +263,6 @@ importers:
         specifier: ^6.0.1
         version: 6.4.4(@types/node@22.20.5)(tsx@4.23.15)
 
-  packages/cli:
-    devDependencies:
-      '@types/node':
-        specifier: ^22.13.10
-        version: 22.20.5
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.3
-
 packages:
 
   '@babel/code-frame@7.29.7':

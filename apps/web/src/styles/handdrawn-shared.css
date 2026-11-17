@@ -1,0 +1,48 @@
+/* Public reading uses the same paper and ink as the editor, with a separate
+   scope so none of this skin can leak into HTML/print/PDF export documents. */
+[data-theme='handdrawn'] .shared-page .shared-header .shared-logo{background:transparent;box-shadow:none;color:var(--text)}
+[data-theme='handdrawn'] .shared-page .shared-header .shared-badge{background:var(--tint-blue-soft);color:var(--tint-blue-ink);border-radius:5px 8px 4px 7px;box-shadow:1px 1px 0 rgba(var(--shadow-rgb),.06)}
+[data-theme='handdrawn'] .shared-page .shared-content{
+  border-color:transparent;
+  border-image-source:url('/art/handdrawn-v1/decor/pencil-frame.webp');
+  border-image-slice:64;border-image-width:8px;border-image-repeat:stretch;
+  background-color:var(--surface);
+  background-image:linear-gradient(rgba(var(--surface-rgb),.9),rgba(var(--surface-rgb),.9)),url('/art/handdrawn-v1/textures/paper-ivory.webp');
+  background-size:auto,768px;
+  box-shadow:3px 4px 0 rgba(var(--shadow-rgb),.08);
+}
+[data-theme='handdrawn'] .shared-document-title>span{background-image:url('/art/handdrawn-v1/decor/marker-yellow.webp')}
+[data-theme='handdrawn'] .shared-readonly blockquote{
+  background:transparent url('/art/handdrawn-v1/decor/marker-sage.webp') center / 100% 100% no-repeat;
+  border-left-color:var(--tint-sage-line);
+  border-radius:3px 8px 2px 6px;
+  color:var(--text);
+}
+[data-theme='handdrawn'] .shared-page .shared-readonly pre{
+  border-color:transparent;
+  border-image-source:url('/art/handdrawn-v1/decor/pencil-frame.webp');
+  border-image-slice:64;border-image-width:7px;border-image-repeat:stretch;
+  background:var(--surface-soft) url('/art/handdrawn-v1/textures/paper-ivory.webp') center / 768px;
+  border-radius:7px 10px 6px 9px;
+  box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.06);
+}
+[data-theme='handdrawn'] .shared-readonly :is(th,td){
+  border-image-source:url('/art/handdrawn-v1/decor/pencil-frame.webp');
+  border-image-slice:64;border-image-width:5px;border-image-repeat:stretch;
+  background-clip:padding-box;
+}
+[data-theme='handdrawn'] .shared-readonly th{background:var(--tint-sage-softer) url('/art/handdrawn-v1/textures/paper-ivory.webp') center / 768px;background-blend-mode:multiply}
+[data-theme='handdrawn'] .shared-readonly hr{background:transparent url('/art/handdrawn-v1/decor/pencil-rule.webp') center / 100% 100% no-repeat}
+[data-theme='handdrawn'] .shared-readonly .task-item>input[type='checkbox']{
+  appearance:none;-webkit-appearance:none;border-color:transparent;border-radius:0;
+  background:transparent url('/art/handdrawn-v1/icons/check-empty.webp') center / contain no-repeat;
+}
+[data-theme='handdrawn'] .shared-readonly .task-item>input[type='checkbox']:where(:checked){background-image:url('/art/handdrawn-v1/icons/check-filled.webp')}
+[data-theme='handdrawn'] .shared-readonly .task-item[data-checked='true']>.task-item-content>:is(p,h1,h2,h3){text-decoration-color:var(--text-soft)}
+
+@media(forced-colors:active){
+  [data-theme='handdrawn'] .shared-page .shared-content,[data-theme='handdrawn'] .shared-page .shared-readonly pre,[data-theme='handdrawn'] .shared-readonly :is(th,td){border-image:none;border-color:CanvasText;background:none;box-shadow:none}
+  [data-theme='handdrawn'] .shared-readonly blockquote{background:none;border-left-color:CanvasText;color:CanvasText}
+  [data-theme='handdrawn'] .shared-readonly hr{background:CanvasText}
+  [data-theme='handdrawn'] .shared-readonly .task-item>input[type='checkbox']{appearance:auto;-webkit-appearance:auto;background:none;border-color:revert;accent-color:auto}
+}

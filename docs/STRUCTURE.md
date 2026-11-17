@@ -155,6 +155,8 @@ styles/                   CSS layers, imported in cascade order by index.css
   handdrawn-editor-chrome.css Toolbar, breadcrumbs, presence and editor status strip
   handdrawn-menus.css      AI paper surfaces and menu selection/control states
   handdrawn-collaboration.css Sharing, comment, draft and history materials
+  handdrawn-shared.css     Public read-only paper, prose and task materials
+  handdrawn-feedback.css   Toast, PDF progress and error recovery materials
 ```
 
 Each layer answers one question. `tokens.css` owns *what a value is*,

@@ -343,7 +343,7 @@
 /* Feishu-like document canvas */
 .paper{padding:56px 72px 120px;max-width:780px}
 .document-heading{margin-bottom:22px;padding-bottom:14px;border-bottom:1px solid var(--border)}
-.document-heading input{font-size:32px;line-height:1.25;font-weight:700;letter-spacing:-.01em}
+.document-heading textarea{font-size:32px;line-height:1.25;font-weight:700;letter-spacing:-.01em}
 .doc-meta{font-size:11px;color:var(--text-muted);display:flex;gap:8px;margin-top:8px}
 .tiptap-content{font-size:15px;line-height:1.75;color:var(--text);min-height:45vh}
 .tiptap-content h1{font-size:28px;line-height:1.3;margin:26px 0 10px;font-weight:700}
@@ -464,7 +464,7 @@
   .tb-separator{display:none}
 
   .paper{padding:22px 16px 64px}
-  .document-heading input{font-size:24px}
+  .document-heading textarea{font-size:24px}
   .document-heading{margin-bottom:16px;padding-bottom:12px}
   .tiptap-content{font-size:16px;line-height:1.75}
 

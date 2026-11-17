@@ -305,22 +305,15 @@
   margin-bottom:26px;
   border-bottom:1px solid var(--border-subtle);
 }
-:root .document-title-row{display:flex;align-items:center;gap:17px;min-width:0}
-:root .document-title-art{flex:0 0 63px;line-height:0;pointer-events:none}
-:root .document-title-art .art-icon{width:63px;height:70px}
-:root .document-title-field{min-width:0;flex:1;position:relative;isolation:isolate}
-:root .document-title-field::after{
-  content:'';
-  position:absolute;
-  left:-2px;
-  right:0;
-  bottom:-7px;
-  max-width:420px;
-  height:11px;
-  z-index:-1;
-  pointer-events:none;
+:root .document-title-row{display:flex;align-items:flex-start;gap:17px;min-width:0}
+:root .document-title-art{flex:0 0 63px;line-height:0;pointer-events:none;position:relative}
+:root .document-title-art::before{
+  content:'';position:absolute;left:8%;top:0;width:72%;height:14px;
+  transform:rotate(-8deg);z-index:1;pointer-events:none;
 }
-:root .document-heading input{
+:root .document-title-art .art-icon{width:63px;height:70px}
+:root .document-title-field{
+  min-width:0;flex:1;position:relative;isolation:isolate;margin-top:8px;
   min-height:49px;
   font-family:var(--font-handwritten);
   font-size:36px;
@@ -328,7 +321,31 @@
   line-height:1.35;
   letter-spacing:.01em;
 }
-:root .doc-meta{margin:12px 0 0 80px;font-size:12px;line-height:1.5}
+/* The mirror sizes the native textarea through font loads, wrapping and resize.
+   Only its marker is visible. Both layers use exactly the same text metrics. */
+:root .document-title-measure{
+  min-height:inherit;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;
+  color:transparent;pointer-events:none;user-select:none;
+}
+:root .document-title-text{
+  padding-bottom:6px;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone;
+  background-position:left bottom;background-size:100% 9px;background-repeat:no-repeat;
+}
+:root .document-heading textarea{
+  position:absolute;inset:0;width:100%;height:100%;min-height:0;margin:0;padding:0;
+  border:0;outline:none;border-radius:0;box-shadow:none;background:transparent;
+  font:inherit;letter-spacing:inherit;line-height:inherit;color:var(--text);
+  white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;
+  resize:none;overflow:hidden;user-select:text;caret-color:var(--text);
+}
+:root .document-heading textarea:focus-visible{outline:none;box-shadow:none}
+:root .document-title-field:focus-within .document-title-text{
+  text-decoration-line:underline;text-decoration-color:var(--focus-ring);
+  text-decoration-thickness:1px;text-underline-offset:5px;
+}
+:root .doc-meta{margin:12px 0 0 80px;font-size:12px;line-height:1.5;flex-wrap:wrap;gap:6px 10px}
+:root .doc-meta>:is(span,time){padding:3px 7px;border:1px solid transparent;border-radius:5px}
 :root .tiptap-content{font-size:16px;line-height:1.9}
 :root .tiptap-content :is(h1,h2,h3){font-family:var(--font-handwritten);letter-spacing:.01em}
 :root .tiptap-content h1{font-size:29px;margin-top:30px}
@@ -454,7 +471,7 @@
   :root .document-title-row{gap:13px}
   :root .document-title-art{flex-basis:53px}
   :root .document-title-art .art-icon{width:53px;height:60px}
-  :root .document-heading input{font-size:31px;min-height:43px}
+  :root .document-title-field{font-size:31px;min-height:43px}
   :root .doc-meta{margin-left:66px}
   :root .home-hero{padding:26px 24px}
   :root .home-hero-art .art-icon{width:91px;height:99px}
@@ -477,7 +494,7 @@
   :root .document-title-art{flex-basis:42px}
   :root .document-title-art .art-icon{width:42px;height:48px}
   :root .document-heading{padding-bottom:18px;margin-bottom:20px}
-  :root .document-heading input{font-size:27px;min-height:39px}
+  :root .document-title-field{font-size:27px;min-height:39px;margin-top:4px}
   :root .doc-meta{margin-left:53px;margin-top:12px;font-size:11px}
   :root .tiptap-content{font-size:16px;line-height:1.85}
   :root .tiptap-content h2{font-size:23px}

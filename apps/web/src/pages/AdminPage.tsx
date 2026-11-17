@@ -30,7 +30,7 @@ export default function AdminWorkspace({ user, members, membersBusy, updateInfo,
         </section>
         <section {...staggerItemProps(1, 'admin-section')}>
           <div className="admin-section-head"><div><h2><LayoutDashboard size={18} />系统更新</h2><p>检查并部署 Marvelous Docs 的新版本。</p></div>{updateInfo?.url && <a className="admin-release-link" href={updateInfo.url} target="_blank" rel="noreferrer">查看发布说明</a>}</div>
-          <div className="admin-update-card">
+          <div className={'admin-update-card' + (updateInfo?.status === 'running' ? ' is-running' : updateInfo?.status === 'failed' ? ' is-failed' : '')}>
             <div className={'admin-update-icon' + (updateInfo?.status === 'running' ? ' is-running' : '')}><ArtIcon name="brand-spark" fallback={<Sparkles size={19} />} /></div>
             <div className="admin-update-copy">
               <b>{updateInfo?.status === 'available' ? '发现新版本 ' + updateInfo.version : updateInfo?.status === 'running' ? '正在更新到 ' + updateInfo.version : updateInfo?.status === 'failed' ? '更新失败（' + updateInfo.version + '）' : '当前使用最新版本'}</b>

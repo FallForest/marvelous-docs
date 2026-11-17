@@ -1,0 +1,78 @@
+{
+  "generator": "built-in image_gen",
+  "existingRegistryEntriesPreserved": 41,
+  "assets": [
+    {
+      "id": "washi-sage",
+      "name": "鼠尾草绿纸胶带",
+      "category": "decor",
+      "usage": "标题笔记本 / 协作便签的淡绿纸胶带",
+      "png": "decor/washi-sage.png",
+      "webp": "decor/washi-sage.webp",
+      "width": 1024,
+      "height": 173,
+      "sourceWidth": 2172,
+      "sourceHeight": 724,
+      "alphaBounds": {
+        "left": 75,
+        "top": 203,
+        "width": 2020,
+        "height": 321
+      },
+      "crop": {
+        "left": 63,
+        "top": 191,
+        "width": 2044,
+        "height": 345
+      },
+      "transparentFraction": 0.6061,
+      "partialAlphaFraction": 0.3938,
+      "pngBytes": 234765,
+      "webpBytes": 33214,
+      "rawAlphaMin": 0,
+      "rawAlphaMax": 255,
+      "rawZeroAlphaPixels": 953179,
+      "rawVisiblePixels": 619349,
+      "rawPartialAlphaPixels": 619234,
+      "outputAspectRatio": 5.919,
+      "pngHasAlpha": true,
+      "webpHasAlpha": true
+    },
+    {
+      "id": "index-tab-blue",
+      "name": "蓝灰索引纸签",
+      "category": "decor",
+      "usage": "菜单分组 / 历史日期的空白纸质标签",
+      "png": "decor/index-tab-blue.png",
+      "webp": "decor/index-tab-blue.webp",
+      "width": 1024,
+      "height": 270,
+      "sourceWidth": 2172,
+      "sourceHeight": 724,
+      "alphaBounds": {
+        "left": 91,
+        "top": 108,
+        "width": 1991,
+        "height": 508
+      },
+      "crop": {
+        "left": 79,
+        "top": 96,
+        "width": 2015,
+        "height": 532
+      },
+      "transparentFraction": 0.3666,
+      "partialAlphaFraction": 0.6318,
+      "pngBytes": 362239,
+      "webpBytes": 40346,
+      "rawAlphaMin": 0,
+      "rawAlphaMax": 255,
+      "rawZeroAlphaPixels": 576476,
+      "rawVisiblePixels": 996052,
+      "rawPartialAlphaPixels": 993502,
+      "outputAspectRatio": 3.793,
+      "pngHasAlpha": true,
+      "webpHasAlpha": true
+    }
+  ]
+}

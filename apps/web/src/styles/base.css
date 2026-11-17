@@ -167,9 +167,9 @@ button:disabled{cursor:not-allowed;opacity:.55}
 
 .document-heading{margin-bottom:31px}
 
-.document-heading input{width:100%;border:0;outline:0;padding:0;color:var(--text);font-size:30px;font-weight:700;line-height:1.35;background:transparent}
+.document-heading textarea{width:100%;border:0;outline:0;padding:0;color:var(--text);font-size:30px;font-weight:700;line-height:1.35;background:transparent}
 
-.document-heading input::placeholder{color:var(--text-soft)}
+.document-heading textarea::placeholder{color:var(--text-soft)}
 
 .doc-meta{display:flex;align-items:center;gap:10px;margin-top:10px;color:var(--text-muted);font-size:11px}
 
@@ -324,7 +324,7 @@ html,body{-webkit-user-select:none;user-select:none;caret-color:transparent}
 
 /* Titles, counts, e-mail addresses and error strings: short, but the kind of
    string a user retypes or pastes elsewhere. */
-.document-heading input,
+.document-heading textarea,
 .breadcrumbs strong,
 .doc-meta,
 .home-card-main,

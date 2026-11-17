@@ -10,7 +10,11 @@ import { servePublicArt } from './public-art.mjs'
 
 const WEB = resolve(import.meta.dirname, '../../apps/web')
 const motionMode = process.argv.includes('--motion') || process.argv.includes('--motion-baseline')
-const OUT = resolve(import.meta.dirname, '../../docs/design/handdrawn-v1/implementation-v10')
+const outIndex = process.argv.indexOf('--out-dir')
+const outInline = process.argv.find(argument => argument.startsWith('--out-dir='))
+const outOverride = outInline?.slice('--out-dir='.length) ?? (outIndex < 0 ? undefined : process.argv[outIndex + 1])
+if ((outInline || outIndex >= 0) && (!outOverride || outOverride.startsWith('--'))) throw new Error('--out-dir requires a directory path')
+const OUT = outOverride ? resolve(outOverride) : resolve(import.meta.dirname, '../../docs/design/handdrawn-v1/implementation-v10')
 const { build } = createRequire(join(WEB, 'package.json'))('esbuild')
 const work = await mkdtemp(join(tmpdir(), 'mdocs-controls-'))
 const sleep = ms => new Promise(done => setTimeout(done, ms))
@@ -25,6 +29,10 @@ try {
       import CodeBlockView from './src/components/editor/CodeBlockView'
       import EditorToolbar from './src/components/editor/EditorToolbar'
       import TableMenu from './src/components/editor/TableMenu'
+      import ImageToolbar from './src/components/editor/ImageToolbar'
+      import DocumentMenu, { DocumentInfoPanel } from './src/components/layout/DocumentMenu'
+      import MoveDialog from './src/components/dialogs/MoveDialog'
+      import { Dialog } from './src/components/ui/Dialog'
       import ShareDialog from './src/components/dialogs/ShareDialog'
       import InviteDialog from './src/components/dialogs/InviteDialog'
       import DraftRecovery from './src/components/dialogs/DraftRecovery'
@@ -32,9 +40,12 @@ try {
       import VersionPreview from './src/components/panels/VersionPreview'
       import Select from './src/components/ui/Select'
       import DocumentListPage from './src/pages/DocumentListPage'
+      import HomeDashboard from './src/pages/HomePage'
       import { useBlockGeometry } from './src/hooks/useBlockGeometry'
       import { buildEditorExtensions } from './src/lib/editor'
       import { writeDraft } from './src/lib/local-drafts'
+      import { geometryFor, selectedImage } from './src/lib/editor/selection-target'
+      import { addUpload, failUpload, uploadPlaceholderKey, uploadPosition } from './src/lib/editor/upload-placeholder'
       import './src/styles/index.css'
       const noop = () => {}
       const p = text => ({type:'paragraph',content:text?[{type:'text',text}]:[]})
@@ -49,6 +60,8 @@ try {
         {type:'codeBlock',attrs:{language:'javascript'},content:[{type:'text',text:'const idea = "开始记录";'}]},p('下一步：一起完善细节。')
       ]}
       const doc = {id:'skin-fixture',title:'设计协作计划',version:3,updatedAt:'2026-11-15T03:00:00Z',content:{schemaVersion:1,doc:content}}
+      const longDocId = 'document_' + '6d0d9566a79849ecb2d56658a0a1756f'.repeat(5)
+      const infoProps = {title:'设计协作计划：跨团队的界面与交互细节说明',createdAt:'2026-11-14T02:00:00Z',updatedAt:doc.updatedAt,words:1286,version:doc.version,docId:longDocId,parentTitle:'团队资料 / 产品设计 / 界面与交互'}
       const members = [{id:'owner',name:'ZHZ',email:'zhz@example.test',role:'admin'},{id:'lin',name:'林一',email:'lin@example.test',role:'member'}]
       const comments = [{id:'comment-a',userId:'lin',userName:'林一',body:'下拉菜单的选中项也需要保持手绘质感。',status:'open',createdAt:'2026-11-15T03:15:00Z',anchor:{text:'让每一个想法，都有落笔的地方。'}},
         {id:'comment-b',userId:'owner',userName:'ZHZ',body:'这部分已经确认，可以继续。',status:'resolved',createdAt:'2026-11-14T07:15:00Z'}]
@@ -61,7 +74,12 @@ try {
         const [commentText,setCommentText] = useState('')
         const [busy,setBusy] = useState(false)
         const [testValue,setTestValue] = useState('alpha')
-        const editor = useEditor({extensions:buildEditorExtensions({codeBlockNodeView:ReactNodeViewRenderer(CodeBlockView)}),content,editorProps:{attributes:{class:'tiptap-content'}}})
+        const [documentMenuOpen,setDocumentMenuOpen] = useState(false)
+        const editor = useEditor({extensions:buildEditorExtensions({codeBlockNodeView:ReactNodeViewRenderer(CodeBlockView),onRetryUpload:id=>{
+          const instance=window.__editor
+          window.__retriedUpload=id
+          instance.view.dispatch(addUpload(instance.state,{id,pos:uploadPosition(instance.state,id)??1,status:'uploading',name:'界面素材与交互说明.png'}))
+        }}),content,editorProps:{attributes:{class:'tiptap-content'}}})
         const blocks = useBlockGeometry(editor)
         useEffect(() => {
           window.__editor = editor
@@ -70,6 +88,31 @@ try {
           window.__permission = permission
           window.__role = role
           window.__testValue = testValue
+          window.__restoreEditor = () => {
+            editor.view.dispatch(editor.state.tr.setMeta(uploadPlaceholderKey,{type:'remove',id:'skin-upload'}))
+            editor.commands.setContent(content)
+            editor.commands.setTextSelection(1)
+            setScene('editor')
+          }
+          window.__showImage = () => {
+            setScene('image')
+            editor.view.dispatch(editor.state.tr.setMeta(uploadPlaceholderKey,{type:'remove',id:'skin-upload'}))
+            editor.commands.setContent({type:'doc',content:[p('选中图片后，可以调整尺寸和对齐方式。'),{type:'image',attrs:{src:'/art/handdrawn-v1/decor/menu-paper.webp',width:'60%',textAlign:'left',alt:'纸张素材示例'}},p('继续记录下一段内容。')]})
+            let imagePos
+            editor.state.doc.descendants((node,pos)=>{if(node.type.name==='image')imagePos=pos})
+            editor.chain().focus().setNodeSelection(imagePos).run()
+          }
+          window.__showUpload = () => {
+            setScene('upload')
+            editor.view.dispatch(editor.state.tr.setMeta(uploadPlaceholderKey,{type:'remove',id:'skin-upload'}))
+            editor.commands.setContent({type:'doc',content:[p('把图片放到这里，上传时也能继续写作。'),p('上传完成后会在原位置显示图片。')]})
+            const pos=editor.state.doc.firstChild.nodeSize
+            window.__uploadBody=JSON.stringify(editor.getJSON())
+            window.__retriedUpload=null
+            editor.view.dispatch(addUpload(editor.state,{id:'skin-upload',pos,status:'uploading',name:'界面素材与交互说明.png'}))
+          }
+          window.__failUpload = () => editor.view.dispatch(failUpload(editor.state,'skin-upload','上传失败：网络连接暂时中断，请重试'))
+          window.__uploadState = () => uploadPlaceholderKey.getState(editor.state)
           window.__selectTable = () => {
             let cell
             editor.state.doc.descendants((node,pos) => {if(cell === undefined && node.type.name==='tableCell') cell=pos})
@@ -78,15 +121,18 @@ try {
           window.__draft = () => {writeDraft(localStorage,doc.id,'owner',{type:'doc',content:[p('这是一段上次离开时没有保存的文字。')]});setScene('draft')}
         },[editor,permission,role,testValue])
         const showPanel = scene==='comments' || scene==='history'
+        if(scene==='home') return <div className="app-shell" style={{height:'100dvh'}}><main className="main-area" style={{width:'100%',minWidth:0}}><HomeDashboard documents={[doc,{...doc,id:'second',title:'项目资料',parentId:'folder'},{...doc,id:'folder',kind:'folder',title:'团队资料'}]} favorites={new Set([doc.id])} query="" trash={false} favoritesView={false} recentView={false} stats={{documents:2,folders:1,members:2,openComments:1,trashed:0}} onOpen={noop} onCreate={noop} onImport={noop} onCreateFolder={noop} onRestore={async()=>{}} onPermanentDelete={async()=>{}} onEmptyTrash={noop}/></main></div>
         if(scene==='documents') return <div className="app-shell" style={{height:'100dvh'}}><main className="main-area" style={{width:'100%',minWidth:0}}><DocumentListPage documents={[doc,{...doc,id:'second',title:'项目资料',parentId:'folder'},{...doc,id:'folder',kind:'folder',title:'团队资料'}]} favorites={new Set([doc.id])} query="" onOpen={noop} onCreate={noop}/></main></div>
         return <div className="app-shell" style={{height:'100dvh'}}>
           <main className="main-area" style={{width:'100%',minWidth:0}}>
+            {scene==='document-menu' && <div className="topbar" style={{display:'flex',justifyContent:'space-between',gap:16}}><span style={{flex:1,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>设计协作计划</span><DocumentMenu open={documentMenuOpen} favorite onOpenMenu={setDocumentMenuOpen} onExport={target=>{window.__exportTarget=target}} onHistory={()=>setScene('history')} onFavorite={noop} onMove={()=>setScene('move')} onInfo={()=>setScene('info')} onClose={()=>setDocumentMenuOpen(false)}/></div>}
             <div className="workspace-content">
               <div className="editor-column" style={{padding:'20px 16px'}}>
                 <EditorToolbar editor={editor} actions={{onLink:noop,onImage:noop,onFind:noop,onOutline:noop,onComment:()=>setScene('comments')}}/>
                 {scene==='select-test' && <div style={{padding:20}}><Select label="Keyboard fixture" value={testValue} onValueChange={setTestValue} options={[{value:'alpha',label:'Alpha'},{value:'beta',label:'Beta',disabled:true},{value:'bravo',label:'Bravo'},{value:'charlie',label:'Charlie'}]}/><button type="button" id="next-control">Next</button></div>}
                 <div className="paper" style={{padding:'36px 28px',marginTop:18,overflow:'auto'}}><EditorContent editor={editor}/></div>
                 <TableMenu editor={editor} table={blocks.find(b=>b.kind==='table')||null}/>
+                <ImageToolbar editor={editor} image={geometryFor(blocks,editor?selectedImage(editor.state):null,'image')}/>
               </div>
               {showPanel && <DocumentPanel doc={doc} token="fixture" open tab={scene==='history'?'history':tab} comments={comments} commentText={commentText} commentAnchor={null} activeCommentId={null} commentLocations={{'comment-a':{status:'attached'}}} currentUserId="lin" onTab={setTab} onClose={()=>setScene('editor')} onCommentText={setCommentText} onClearAnchor={noop} onSubmitComment={noop} onActiveComment={noop} onReply={noop} onCommentStatus={noop} onPreviewVersion={noop} onEditComment={async()=>{}} onDeleteComment={async()=>{}}/>}
             </div>
@@ -95,6 +141,8 @@ try {
           {scene==='invite' && <InviteDialog email={email} setEmail={setEmail} role={role} setRole={setRole} link="" error="" busy={busy} copied={false} onSubmit={event=>event.preventDefault()} onCopy={noop} onClose={()=>setScene('editor')}/>}
           {scene==='draft' && <DraftRecovery doc={doc} token="fixture" userId="owner" onRecovered={noop} notify={noop}/>}
           {scene==='version' && <VersionPreview token="fixture" documentId={doc.id} version={{id:'v1',version:1,createdBy:'lin',createdByName:'林一',createdAt:'2026-11-14T03:00:00Z'}} currentContent={doc.content} currentTitle={doc.title} onRestore={async()=>true} onClose={()=>setScene('editor')}/>}
+          {scene==='info' && <Dialog title="文档信息" description="这个文档在服务器上的记录。" confirmLabel="知道了" cancelLabel="关闭" onConfirm={()=>setScene('editor')} onClose={()=>setScene('editor')}><DocumentInfoPanel {...infoProps}/></Dialog>}
+          {scene==='move' && <MoveDialog doc={doc} documents={[doc,{...doc,id:'folder-a',kind:'folder',title:'产品设计'},{...doc,id:'folder-b',kind:'folder',title:'团队协作资料'}]} onMove={noop} onClose={()=>setScene('editor')}/>}
         </div>
       }
       createRoot(document.getElementById('root')).render(<Harness/>)
@@ -165,7 +213,14 @@ try {
   const closeMenus=async()=>{await key('Escape');await sleep(120)}
   const setViewport=async(width,height)=>{await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false},sessionId);await sleep(180)}
   await mkdir(OUT,{recursive:true})
-  const screenshot=async name=>{await evaluate('Promise.all([document.fonts.ready,...Array.from(document.images).map(i=>i.complete?Promise.resolve():new Promise(r=>{i.onload=i.onerror=r}))])');const shot=await send('Page.captureScreenshot',{format:'png'},sessionId);await writeFile(join(OUT,name+'.png'),Buffer.from(shot.data,'base64'))}
+  const screenshot=async name=>{
+    await evaluate('Promise.all([document.fonts.ready,...Array.from(document.images).map(i=>i.complete?Promise.resolve():new Promise(r=>{i.onload=i.onerror=r}))])')
+    // Theme switches animate colours for 220ms. A capture before that finishes
+    // shows an interpolated palette even though the component geometry is stable.
+    await sleep(280)
+    const shot=await send('Page.captureScreenshot',{format:'png'},sessionId)
+    await writeFile(join(OUT,name+'.png'),Buffer.from(shot.data,'base64'))
+  }
   const inspect=async selector=>evaluate(`(()=>{const n=document.querySelector(${JSON.stringify(selector)});if(!n)return null;const r=n.getBoundingClientRect(),s=getComputedStyle(n),b=n.closest('.modal-backdrop');return {box:[r.x,r.y,r.width,r.height],background:s.backgroundImage,borderImage:s.borderImageSource,color:s.color,shadow:s.boxShadow,overflowX:n.scrollWidth>n.clientWidth+1,backdropOverflowX:Boolean(b&&b.scrollWidth>b.clientWidth+1),backdropOverflowY:Boolean(b&&b.scrollHeight>b.clientHeight+1),viewport:innerWidth}})()`)
   const compare=async(name,selector)=>{
     await evaluate("document.documentElement.dataset.theme='paper'");await sleep(120)
@@ -260,7 +315,9 @@ try {
   await scene('editor')
 
   await setViewport(390,844)
-  await click('[aria-label="更多格式"]');await compare('phone-more','.tb-more-menu');await screenshot('phone-more');await closeMenus()
+  await click('[aria-label="更多格式"]');await compare('phone-more','.tb-more-menu')
+  if(outOverride)assert.ok(await evaluate('getComputedStyle(document.querySelector(".tb-more-section")).backgroundImage.includes("index-tab-blue.webp")'),'phone formatting groups use the new AI paper tab')
+  await screenshot('phone-more');await closeMenus()
   await scene('share');await compare('phone-share','.share-modal');await click('[aria-label="分享链接有效期"]');await compare('phone-share-expiry','[role="listbox"]');await screenshot('phone-share-expiry');await key('Escape')
   await scene('invite');await compare('phone-invite','.invite-modal');await click('[role="combobox"]');await compare('phone-invite-role','[role="listbox"]');await screenshot('phone-invite-role')
   await scene('comments');await click('[aria-label="筛选评论"]');await compare('phone-comments-filter','[role="listbox"]');await screenshot('phone-comments')
@@ -281,6 +338,25 @@ try {
   const restored=await inspect('.select-panel')
   assert.ok(restored.box[3]>short.box[3]+20,'select recovers natural height after viewport grows')
   measurements.push({name:'select-short-resize',short,restored})
+  await key('Escape')
+  const { verifyNewControls } = await import('./handdrawn-new-controls-checks.mjs')
+  await verifyNewControls({evaluate,send,sessionId,key,scene,setViewport,screenshot,compare,click,until,OUT,requireNewMaterials:Boolean(outOverride)})
+  if(outOverride) {
+    for(const [width,height,prefix] of [[1280,900,'desktop'],[390,844,'phone']]) {
+      await setViewport(width,height)
+      await evaluate('window.__restoreEditor()')
+      await sleep(250)
+      for(const [state,selector] of [['editor','.editor-column'],['share','.share-modal'],['comments','.right-panel'],['history','.right-panel'],['documents','.document-list'],['home','.home-dashboard']]) {
+        await scene(state)
+        if(state==='history')await until('Boolean(document.querySelector(".history-entry"))')
+        await compare(prefix+'-showcase-'+state,selector)
+        for(const theme of ['paper','handdrawn']) {
+          await evaluate(`document.documentElement.dataset.theme=${JSON.stringify(theme)}`)
+          await screenshot(prefix+'-'+state+'-'+theme)
+        }
+      }
+    }
+  }
   await writeFile(join(OUT,'verification.json'),JSON.stringify({fixture:'isolated real components; no workspace database',measurements},null,2)+'\n')
   console.log('Handdrawn controls verified: '+measurements.filter(item=>item.delta).length+' theme geometry comparisons plus short-screen resize; screenshots: '+OUT)
   }

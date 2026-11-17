@@ -1,0 +1,33 @@
+{
+  "baseline": "Current working tree, including uncommitted handdrawn/title refinements",
+  "method": "Resolve literal ArtIcon names, the ArtIcon type registry, and CSS /art URLs against apps/web/public; dynamic names need manual review.",
+  "filesScanned": 120,
+  "referencesChecked": 216,
+  "registeredAssets": 43,
+  "missing": [
+    {
+      "kind": "literal ArtIcon",
+      "path": "apps/web/src/components/layout/Sidebar.tsx",
+      "line": 206,
+      "url": "/art/handdrawn-v1/icons/recent.webp",
+      "exists": false
+    },
+    {
+      "kind": "literal ArtIcon",
+      "path": "apps/web/src/pages/HomePage.tsx",
+      "line": 98,
+      "url": "/art/handdrawn-v1/icons/recent.webp",
+      "exists": false
+    },
+    {
+      "kind": "ArtIcon type registry",
+      "path": "apps/web/src/components/ui/ArtIcon.tsx",
+      "line": 4,
+      "url": "/art/handdrawn-v1/icons/recent.webp",
+      "exists": false
+    }
+  ],
+  "missingUniqueUrls": [
+    "/art/handdrawn-v1/icons/recent.webp"
+  ]
+}

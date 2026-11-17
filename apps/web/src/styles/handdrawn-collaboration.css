@@ -28,7 +28,7 @@
   background-repeat:no-repeat;
   box-shadow:none;
 }
-[data-theme='handdrawn'] :is(.share-restriction,.history-diff-summary,.find-case) input[type='checkbox']:checked{background-image:url('/art/handdrawn-v1/icons/check-filled.webp')}
+[data-theme='handdrawn'] :is(.share-restriction,.history-diff-summary,.find-case) input[type='checkbox']:where(:checked){background-image:url('/art/handdrawn-v1/icons/check-filled.webp')}
 [data-theme='handdrawn'] :is(.share-restriction,.history-diff-summary,.find-case) input[type='checkbox']:focus-visible{outline:2px solid var(--focus-ring);outline-offset:3px}
 [data-theme='handdrawn'] :is(.share-restriction,.history-diff-summary,.find-case) input[type='checkbox']:disabled{opacity:.5}
 
@@ -66,16 +66,46 @@
   border-bottom-color:transparent;
   background:url('/art/handdrawn-v1/decor/pencil-rule.webp') center bottom / 100% 2px no-repeat;
 }
+[data-theme='handdrawn'] .share-restriction{
+  border-color:var(--border-strong);
+  border-image-source:url('/art/handdrawn-v1/decor/pencil-frame.webp');
+  border-image-slice:64;
+  border-image-width:6px;
+  border-image-repeat:stretch;
+  background-color:var(--surface-soft);
+  background-image:url('/art/handdrawn-v1/decor/washi-sage.webp');
+  background-size:42px auto;
+  background-position:10px 2px;
+  background-repeat:no-repeat;
+  box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.06);
+}
+[data-theme='handdrawn'] .share-restriction:has(input:checked){background-color:var(--tint-sage-softer);box-shadow:inset 3px 0 0 var(--tint-sage-line),1px 2px 0 rgba(var(--shadow-rgb),.06)}
+[data-theme='handdrawn'] .share-restriction:focus-within{box-shadow:inset 3px 0 0 var(--accent),1px 2px 0 rgba(var(--shadow-rgb),.06)}
+[data-theme='handdrawn'] .share-restriction:has(input:disabled){background-color:var(--surface-muted);box-shadow:none}
+[data-theme='handdrawn'] .share-restriction:has(input:disabled) b{color:var(--text-muted)}
+[data-theme='handdrawn'] .share-link-item{
+  background-image:linear-gradient(225deg,var(--tint-sage-soft) 0 8px,transparent 8px),url('/art/handdrawn-v1/textures/paper-ivory.webp');
+  background-size:14px 14px,768px;
+  background-position:right top,center;
+  background-repeat:no-repeat,repeat;
+  background-blend-mode:normal,multiply;
+}
+[data-theme='handdrawn'] .share-link-item:focus-within{box-shadow:inset 3px 0 0 var(--tint-sage-line),1px 2px 0 rgba(var(--shadow-rgb),.08)}
+[data-theme='handdrawn'] .share-link-info>b{background:url('/art/handdrawn-v1/decor/marker-sage.webp') left bottom / 100% 6px no-repeat;color:var(--text)}
+[data-theme='handdrawn'] .share-link-info>small:first-of-type{color:var(--text-secondary)}
+[data-theme='handdrawn'] .share-link-copy input::selection{background:var(--accent-soft);color:var(--text)}
 [data-theme='handdrawn'] .share-members{border-top-color:var(--border-strong)}
 [data-theme='handdrawn'] .share-member{border-bottom-color:var(--border)}
+[data-theme='handdrawn'] .share-member:focus-within{background-color:var(--tint-sage-softer)}
 [data-theme='handdrawn'] .share-member .avatar{
   border-radius:8px 10px 7px 9px;
-  background:var(--tint-sage-soft);
+  border-color:transparent;
+  background:transparent url('/art/handdrawn-v1/decor/avatar-badge.webp') center / contain no-repeat;
   color:var(--text);
 }
 [data-theme='handdrawn'] .share-admin{
   border-radius:5px 8px 4px 7px;
-  background:var(--tint-gold-soft);
+  background:var(--tint-gold-soft) url('/art/handdrawn-v1/decor/washi-tape.webp') center / 100% 100% no-repeat;
   color:var(--tint-gold-ink);
 }
 [data-theme='handdrawn'] :is(.share-link-copy input,.link-copy input,.comment-edit textarea){
@@ -110,11 +140,33 @@
 [data-theme='handdrawn'] .modal-icon.modal-icon-danger{background:var(--danger-soft);color:var(--danger);border-color:var(--danger-line)}
 [data-theme='handdrawn'] .primary-btn.btn-danger{background:var(--danger);color:var(--text-on-accent)}
 [data-theme='handdrawn'] .primary-btn.btn-danger:hover:not(:disabled){background:var(--danger-strong)}
-[data-theme='handdrawn'] .primary-btn.btn-danger:disabled{background:var(--surface-disabled)}
+/* Disabled ink and fill remain paired in surfaces.css for every appearance. */
 
 /* Reply branches and inline edits use the same pencil/marker language as
  * the original comment composer, without repainting deleted words. */
-[data-theme='handdrawn'] .comment-replies{border-left-color:var(--tint-sage-line)}
+[data-theme='handdrawn'] .comment{
+  border-color:transparent;
+  border-image-source:url('/art/handdrawn-v1/decor/pencil-frame.webp');
+  border-image-slice:64;
+  border-image-width:5px;
+  border-image-repeat:stretch;
+  background:linear-gradient(110deg,var(--surface),var(--surface-soft));
+  box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.07);
+}
+[data-theme='handdrawn'] .comment.is-active{background:var(--tint-sage-softer);box-shadow:inset 3px 0 0 var(--accent),2px 3px 0 rgba(var(--shadow-rgb),.08)}
+[data-theme='handdrawn'] .comment.comment-resolved:not(.is-active){background:var(--surface-soft);opacity:1;box-shadow:1px 1px 0 rgba(var(--shadow-rgb),.04)}
+[data-theme='handdrawn'] .comment.comment-resolved:not(.is-active)>p{color:var(--text-muted)}
+[data-theme='handdrawn'] .comment .small-avatar{border-color:transparent;background:transparent url('/art/handdrawn-v1/decor/avatar-badge.webp') center / contain no-repeat}
+[data-theme='handdrawn'] .comment:has(.comment-edit){background:var(--surface-soft);box-shadow:inset 3px 0 0 var(--tint-sage-line),2px 3px 0 rgba(var(--shadow-rgb),.08)}
+[data-theme='handdrawn'] .comment-replies{
+  border-left-color:var(--tint-sage-line);
+  background:linear-gradient(90deg,rgba(var(--sage-rgb),.055),transparent);
+}
+[data-theme='handdrawn'] .comment-reply+.comment-reply{background:url('/art/handdrawn-v1/decor/pencil-rule.webp') left top / 100% 1px no-repeat}
+[data-theme='handdrawn'] .comment-reply .comment-head>b{color:var(--accent-strong)}
+[data-theme='handdrawn'] .comment-edit textarea{box-shadow:inset 3px 0 0 var(--tint-sage-line)}
+[data-theme='handdrawn'] .comment-edit textarea:disabled{background:var(--surface-muted);color:var(--text-muted);box-shadow:none}
+[data-theme='handdrawn'] .comment-edit .comment-actions>button:first-child:not(:disabled){color:var(--accent-strong);background:url('/art/handdrawn-v1/decor/marker-sage.webp') center bottom / 100% 5px no-repeat}
 [data-theme='handdrawn'] :is(.comment-anchor,.anchor-preview){
   border-radius:3px 7px 5px 2px;
   border-left-color:var(--quote-line);
@@ -125,6 +177,8 @@
   color:var(--quote-ink);
 }
 [data-theme='handdrawn'] .comment-anchor:hover:not(:disabled){background-color:var(--quote-bg-hover)}
+[data-theme='handdrawn'] .comment-anchor:disabled{background:var(--surface-muted);color:var(--text-muted);border-left-color:var(--border-strong);opacity:.8}
+[data-theme='handdrawn'] :is(.comment-anchor,.anchor-preview button,.comment-actions button):focus-visible{outline:2px dashed var(--focus-ring);outline-offset:2px}
 [data-theme='handdrawn'] .comment-actions button{
   border-radius:4px 6px 3px 5px;
   color:var(--text-secondary);
@@ -135,16 +189,20 @@
   color:var(--accent-strong);
   background:url('/art/handdrawn-v1/decor/marker-sage.webp') center bottom / 100% 5px no-repeat;
 }
-[data-theme='handdrawn'] .comment-actions button:disabled{color:var(--text-disabled)}
+[data-theme='handdrawn'] .comment-actions button:disabled{background:none;color:var(--text-disabled)}
 [data-theme='handdrawn'] .comment p.comment-deleted{color:var(--text-muted)}
 
 /* History entries are paper index cards on the same warm panel as comments.
  * The connector remains a real timeline, and every snapshot stays a button. */
 [data-theme='handdrawn'] .history-intro{background:var(--surface-muted)}
+[data-theme='handdrawn'] .history-day>summary>span{background:url('/art/handdrawn-v1/decor/marker-sage.webp') left bottom / 100% 5px no-repeat;color:var(--accent-strong)}
+[data-theme='handdrawn'] .history-day:not([open])>summary>span{background-image:none;color:var(--text-secondary)}
+[data-theme='handdrawn'] .history-day>summary>small{background:var(--surface-soft);border-radius:4px 6px 3px 5px;box-shadow:inset 0 -1px 0 var(--border)}
+[data-theme='handdrawn'] .history-day>summary:focus-visible{outline:2px dashed var(--focus-ring);outline-offset:2px;border-radius:5px 7px 4px 6px}
 [data-theme='handdrawn'] .history-avatar{
-  border-color:var(--border-strong);
+  border-color:transparent;
   border-radius:46% 52% 44% 54%;
-  background:var(--surface-soft);
+  background:transparent url('/art/handdrawn-v1/decor/avatar-badge.webp') center / contain no-repeat;
   color:var(--text-secondary);
 }
 [data-theme='handdrawn'] button.history-snapshot{
@@ -155,8 +213,20 @@
   border-image-repeat:stretch;
   border-radius:7px 10px 6px 9px;
   background-color:var(--surface);
+  background-image:url('/art/handdrawn-v1/decor/washi-sage.webp'),url('/art/handdrawn-v1/textures/paper-ivory.webp');
+  background-size:28px auto,768px;
+  background-position:right 9px top 3px,center;
+  background-repeat:no-repeat,repeat;
+  background-blend-mode:normal,multiply;
+  box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.08);
 }
-[data-theme='handdrawn'] button.history-snapshot:hover{background-color:var(--tint-sage-softer)}
+[data-theme='handdrawn'] .history-kind-snapshot .history-avatar{box-shadow:0 0 0 2px rgba(var(--sage-rgb),.1);color:var(--accent-strong)}
+[data-theme='handdrawn'] .history-entry-meta>time{background:url('/art/handdrawn-v1/decor/pencil-rule.webp') left bottom / 100% 1px no-repeat}
+[data-theme='handdrawn'] button.history-snapshot>small{color:var(--text-secondary);background:url('/art/handdrawn-v1/decor/marker-yellow.webp') left bottom / 100% 5px no-repeat}
+[data-theme='handdrawn'] button.history-snapshot:hover:not(:disabled){background-color:var(--tint-sage-softer);box-shadow:2px 3px 0 rgba(var(--shadow-rgb),.12)}
+[data-theme='handdrawn'] button.history-snapshot:active:not(:disabled){box-shadow:inset 0 1px 0 rgba(var(--shadow-rgb),.12)}
+[data-theme='handdrawn'] button.history-snapshot:focus-visible{outline:2px dashed var(--focus-ring);outline-offset:2px}
+[data-theme='handdrawn'] button.history-snapshot:disabled{background-color:var(--surface-muted);color:var(--text-disabled);box-shadow:none;opacity:.65}
 [data-theme='handdrawn'] .history-entry:not(:last-child)::after{
   background:url('/art/handdrawn-v1/decor/pencil-rule.webp') center / 100% 100% no-repeat;
 }
@@ -186,6 +256,9 @@
 [data-theme='handdrawn'] .history-preview>footer{border-top-color:var(--border-strong);background:var(--surface)}
 
 @media(forced-colors:active){
+  [data-theme='handdrawn'] :is(.share-restriction,.comment){border-image:none;border-color:CanvasText;box-shadow:none;background:none}
+  [data-theme='handdrawn'] .comment.is-active{box-shadow:inset 3px 0 0 Highlight}
+  [data-theme='handdrawn'] :is(.history-avatar,.comment .small-avatar,.share-member .avatar){background:Canvas;color:CanvasText;border-color:CanvasText;box-shadow:none}
   [data-theme='handdrawn'] :is(.modal-panel,.share-modal,.invite-modal,.history-preview,.share-link-item,.invite-result,.draft-card,.share-link-copy input,.link-copy input,.comment-edit textarea,button.history-snapshot){border-image:none;box-shadow:none}
   [data-theme='handdrawn'] :is(.share-restriction,.history-diff-summary,.find-case) input[type='checkbox']{
     appearance:auto;

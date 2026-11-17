@@ -354,7 +354,7 @@ const summary = await evaluate("(() => {" +
     "breadcrumb: read('.breadcrumbs')," +
     "treeLabel: read('.tree-label')," +
     "editor: read('.tiptap-content')," +
-    "title: read('.document-heading input')," +
+    "title: read('.document-heading textarea')," +
   "};" +
 "})()")
 log('computed -> ' + JSON.stringify(summary))

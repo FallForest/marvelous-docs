@@ -15,5 +15,7 @@
 - [修复前逐帧记录](./motion-baseline.json)：保留打开后 600ms 的真实高度、滚动高度和最后一行 transform。
 - `node scripts/verify/verify-handdrawn-controls.mjs`：稳定态、内部布局、交互和截图。
 - `node scripts/verify/verify-handdrawn-controls.mjs --motion`：动画逐帧检查，含普通/减少动态效果、100%/125%/150%/200% 缩放、正常/短窗口。
+- 动画验收包含 96 组开场配置、48 组短窗口扩高恢复；正常空间的全部采样帧均无溢出。列表星标与行的中心偏差为 0，历史头像为 27×27px。
+- 新增组件验收检查实际加载的打印/移动/信息图、手机长 ID 换行、图片选择工具动作，以及上传中/失败/重试状态；占位不会进入保存的正文。
 - 新图标使用内置 `image_gen` 生成，原图和线上路径、完整提示词见 [icon-prompts.md](./icon-prompts.md)。
 

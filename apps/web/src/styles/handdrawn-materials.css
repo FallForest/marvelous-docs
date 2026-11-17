@@ -90,3 +90,25 @@
 [data-theme='handdrawn'] .document-info-list>div{border-bottom-color:var(--border)}
 [data-theme='handdrawn'] .document-info-list dt{color:var(--text-muted)}
 [data-theme='handdrawn'] .document-info-list dd{color:var(--text)}
+
+/* The flat list stays scannable, with a warm index-card tint for the actual
+   favourites and a pencil edge under the pointer. */
+[data-theme='handdrawn'] .document-list-main{
+  background-color:rgba(var(--surface-rgb),.55);
+  border-color:var(--border-subtle);
+  box-shadow:0 1px 0 rgba(var(--shadow-rgb),.025);
+}
+[data-theme='handdrawn'] .document-list-main:has(.document-list-star){
+  background:linear-gradient(100deg,var(--tint-gold-soft),rgba(var(--surface-rgb),.65) 70%);
+  border-color:var(--warning-line);
+}
+[data-theme='handdrawn'] .document-list-main:has(.document-list-star) .document-list-copy b{color:var(--tint-gold-ink)}
+[data-theme='handdrawn'] .document-list-main:hover{background-color:var(--surface-selected);box-shadow:inset 3px 0 0 var(--tint-sage-line),1px 2px 0 rgba(var(--shadow-rgb),.05)}
+[data-theme='handdrawn'] .document-list-star{border-radius:45% 52% 47% 55%;background-color:var(--tint-gold-soft);box-shadow:0 0 0 3px var(--tint-gold-soft)}
+[data-theme='handdrawn'] .document-info-head{
+  border-bottom-color:transparent;
+  background:url('/art/handdrawn-v1/decor/pencil-rule.webp') center bottom / 100% 2px no-repeat;
+}
+[data-theme='handdrawn'] .document-info-list>div:nth-child(even){background-color:rgba(var(--sage-rgb),.035)}
+[data-theme='handdrawn'] .document-info-list>div{border-bottom-style:dashed}
+[data-theme='handdrawn'] .document-info-id{background-color:var(--surface-muted);border-radius:3px 6px 2px 5px;color:var(--accent-strong)}

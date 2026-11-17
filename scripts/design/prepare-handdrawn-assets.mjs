@@ -52,10 +52,22 @@ const definitions = [
   ['print', '手绘打印机', 'icons', '文档操作 / 打印预览'],
   ['move', '手绘移动文件夹', 'icons', '文档操作 / 移动目标'],
   ['info', '纸质信息标记', 'icons', '文档信息 / 提示对话框'],
+  ['washi-sage', '鼠尾草绿纸胶带', 'decor', '标题笔记本 / 协作便签的淡绿纸胶带'],
+  ['index-tab-blue', '蓝灰索引纸签', 'decor', '菜单分组 / 历史日期的空白纸质标签'],
+  ['recent', '最近访问纸页时钟', 'icons', '最近访问导航 / 最近访问空态'],
 ]
 
-const manifest = { version: 5, generator: 'built-in image_gen', assets: [] }
+// --only=id,id adds or refreshes those explicitly named assets while preserving
+// every other registry entry and output file byte for byte.
+const onlyArgument = process.argv.find(argument => argument.startsWith('--only='))
+const only = onlyArgument ? new Set(onlyArgument.slice('--only='.length).split(',').filter(Boolean)) : null
+if (only && (!only.size || [...only].some(id => !definitions.some(definition => definition[0] === id)))) throw new Error('Unknown or empty --only asset selection')
+const previous = only ? JSON.parse(await fs.readFile(path.join(outputDir, 'manifest.json'), 'utf8')) : null
+const manifest = previous
+  ? { ...previous, version: 7, assets: previous.assets.filter(asset => !only.has(asset.id)) }
+  : { version: 7, generator: 'built-in image_gen', assets: [] }
 for (const [id, name, category, usage] of definitions) {
+  if (only && !only.has(id)) continue
   const sourcePath = path.join(sourceDir, id + '.png')
   const source = await sharp(sourcePath).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
   const { width, height, channels } = source.info

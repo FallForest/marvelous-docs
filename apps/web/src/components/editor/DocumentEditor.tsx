@@ -80,6 +80,9 @@ function countWords(editor: Editor): number {
   if (stored && typeof stored.words === 'function') return stored.words()
   return wordCount(editor.getText())
 }
+// Titles stay one logical name, even when pasted text contains paragraph breaks.
+// The textarea wraps visually; it does not store those soft wraps in the name.
+const normalizeTitle = (value: string) => value.replace(/[\r\n\u2028\u2029]+/g, ' ')
 const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(function DocumentEditor({ doc, token, persist, user, saveStatus, onSaveStatus, onAwareness, onCollabStatus, onSelection, onCommentLocations, onLink, comments, activeCommentId, commentDraft }: DocumentEditorProps, ref) {
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null)
   const [provider, setProvider] = useState<WebsocketProvider | null>(null)
@@ -97,6 +100,7 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
   const currentDocument = useRef(doc)
   currentDocument.current = doc
   const titleEditing = useRef(false)
+  const titleField = useRef<HTMLTextAreaElement | null>(null)
   const titleDirty = useRef(false)
   const titleWritePending = useRef(false)
   const titleOrigin = useRef<Pick<Doc, 'title' | 'titleMode'>>(doc)
@@ -115,6 +119,36 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
   const confirmSave = useRef<() => Promise<void>>(async () => {})
   /** One tracker for the title field, so its Enter/Escape share the guard. */
   const titleIme = useRef(compositionGuard())
+
+  const insertTitleText = useCallback((field: HTMLTextAreaElement, value: string) => {
+    const remaining = Math.max(0, field.maxLength - field.value.length + field.selectionEnd - field.selectionStart)
+    let text = normalizeTitle(value).slice(0, remaining)
+    // Match maxlength's UTF-16 budget without cutting a pasted emoji in half.
+    if (/[\uD800-\uDBFF]$/.test(text)) text = text.slice(0, -1)
+    if (!text && field.selectionStart === field.selectionEnd) return true
+    // insertText is used specifically for native undo. Replacing .value after
+    // input clears the browser's undo buffer. If unavailable, let the original
+    // edit proceed; writeTitle still normalizes the name before saving it.
+    if (!document.execCommand('insertText', false, text)) return false
+    titleDirty.current = true
+    setTitle(field.value)
+    return true
+  }, [])
+
+  useEffect(() => {
+    const field = titleField.current
+    if (!field) return
+    const beforeInput = (event: InputEvent) => {
+      if (event.isComposing || !event.cancelable) return
+      if (event.inputType === 'insertLineBreak' || event.inputType === 'insertParagraph') {
+        event.preventDefault()
+      } else if (event.data && normalizeTitle(event.data) !== event.data && insertTitleText(field, event.data)) {
+        event.preventDefault()
+      }
+    }
+    field.addEventListener('beforeinput', beforeInput)
+    return () => field.removeEventListener('beforeinput', beforeInput)
+  }, [insertTitleText])
 
   useEffect(() => {
     if (!titleEditing.current && !titleWritePending.current) setTitle(doc.title)
@@ -701,7 +735,7 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
   }
 
   async function writeTitle(next: string): Promise<Doc | null> {
-    const clean = next.trim()
+    const clean = normalizeTitle(next).trim()
     titleDirty.current = false
     if (!clean) { setTitle(currentDocument.current.title); return currentDocument.current }
     const origin = titleOrigin.current
@@ -858,14 +892,23 @@ const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(fun
       <div className="document-heading">
         <div className="document-title-row">
           <span className="theme-decoration document-title-art" aria-hidden="true"><ArtIcon name="notebook" fallback={<FileText size={40} />} /></span>
-          <div className="document-title-field"><input
+          <div className="document-title-field">
+          <div className="document-title-measure" aria-hidden="true"><span className="document-title-text">{title || '\u200b'}</span></div>
+          <textarea
+          ref={titleField}
           aria-label="文档标题"
+          rows={1}
+          wrap="soft"
           disabled={titleSaving || locked}
           maxLength={500}
           title={doc.titleMode === 'auto' ? '根据正文自动命名；手动修改后固定名称' : '修改文档标题'}
           value={title}
           onFocus={(event) => { titleEditing.current = true; titleOrigin.current = currentDocument.current; titleDirty.current = false; if (doc.titleMode === 'auto' && title === '未命名文档') event.currentTarget.select() }}
-          onChange={(event) => { titleDirty.current = true; setTitle(event.target.value) }}
+          onChange={(event) => { titleDirty.current = true; setTitle(event.currentTarget.value) }}
+          onPaste={(event) => {
+            const text = event.clipboardData.getData('text/plain')
+            if (normalizeTitle(text) !== text && insertTitleText(event.currentTarget, text)) event.preventDefault()
+          }}
           onCompositionStart={() => titleIme.current.start()}
           onCompositionEnd={() => titleIme.current.end()}
           onBlur={(event) => { titleEditing.current = false; if (titleDirty.current) void saveTitle(event.target.value); else setTitle(currentDocument.current.title) }}

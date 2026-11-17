@@ -108,6 +108,16 @@
 }
 [data-theme='handdrawn'] .sidebar .tree-entry.is-selected .tree-label{color:var(--text)}
 [data-theme='handdrawn'] .sidebar .tree-entry.is-checked{background-color:var(--accent-soft);border-color:var(--accent-line)}
+/* Keep the native input and its 14px chevron slot; only the checkbox face
+   changes, so Space and clicking the row retain their existing behavior.
+   :where(:checked) lets forced-colors replace both image faces below. */
+[data-theme='handdrawn'] .sidebar .tree-check{
+  appearance:none;-webkit-appearance:none;
+  border-color:transparent;border-radius:0;box-shadow:none;
+  background:transparent url('/art/handdrawn-v1/icons/check-empty.webp') center / contain no-repeat;
+}
+[data-theme='handdrawn'] .sidebar .tree-check:where(:checked){background-image:url('/art/handdrawn-v1/icons/check-filled.webp')}
+[data-theme='handdrawn'] .sidebar .tree-check:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px;border-radius:3px}
 [data-theme='handdrawn'] .sidebar .tree-entry.is-drop-target{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent)}
 [data-theme='handdrawn'] .sidebar .tree-more{color:var(--text-muted)}
 [data-theme='handdrawn'] .sidebar .tree-node:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px;border-radius:7px}
@@ -164,4 +174,9 @@
      the space left over by a document title. */
   [data-theme='handdrawn'] .main-area>.topbar .share-btn{box-shadow:none;border-color:var(--border-strong)}
   [data-theme='handdrawn'] .sidebar .tree-more{opacity:1}
+}
+@media(forced-colors:active){
+  [data-theme='handdrawn'] .sidebar .tree-check{
+    appearance:auto;-webkit-appearance:auto;background:none;accent-color:auto;border-color:revert;
+  }
 }

@@ -1,0 +1,51 @@
+/* App-level feedback surfaces do not inherit .modal-panel or .popover. Keep
+   their real messages, determinate progress and recovery actions native. */
+[data-theme='handdrawn'] :is(.notice-toast,.pdf-progress-card,.error-card){
+  border-color:transparent;
+  border-image-source:url('/art/handdrawn-v1/decor/pencil-frame.webp');
+  border-image-slice:64;border-image-width:7px;border-image-repeat:stretch;
+  border-radius:9px 13px 8px 11px;
+  background-color:var(--surface);
+  background-image:linear-gradient(rgba(var(--surface-rgb),.88),rgba(var(--surface-rgb),.88)),url('/art/handdrawn-v1/textures/paper-ivory.webp');
+  background-size:auto,768px;
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+[data-theme='handdrawn'] .notice-toast{
+  color:var(--text-secondary);
+  box-shadow:var(--shadow-toast);
+}
+[data-theme='handdrawn'] .notice-toast button{border-radius:5px 8px 4px 7px;color:var(--text-secondary)}
+[data-theme='handdrawn'] .notice-toast button:hover{background:var(--tint-sage-softer);color:var(--text)}
+[data-theme='handdrawn'] .pdf-progress-card{box-shadow:var(--shadow-modal)}
+[data-theme='handdrawn'] .pdf-progress-title{color:var(--accent-strong)}
+[data-theme='handdrawn'] .pdf-progress-track{
+  border-radius:3px 6px 2px 5px;
+  background:var(--surface-sunken) url('/art/handdrawn-v1/decor/pencil-rule.webp') center / 100% 100% no-repeat;
+}
+[data-theme='handdrawn'] .pdf-progress-track i{
+  border-radius:3px 5px 2px 4px;
+  background:var(--accent) url('/art/handdrawn-v1/decor/marker-sage.webp') center / 100% 100% no-repeat;
+  background-blend-mode:multiply;
+}
+[data-theme='handdrawn'] .error-card{box-shadow:var(--shadow-modal)}
+[data-theme='handdrawn'] .error-icon{
+  border-radius:7px 10px 6px 9px;
+  background:var(--danger-soft);color:var(--danger-strong);
+  box-shadow:inset 0 0 0 1px var(--danger-line);
+}
+[data-theme='handdrawn'] .error-card h1{
+  text-decoration-line:underline;text-decoration-color:var(--danger-line);
+  text-decoration-thickness:3px;text-underline-offset:4px;
+}
+[data-theme='handdrawn'] .error-card pre{
+  border-radius:5px 8px 4px 7px;
+  background:var(--surface-muted);color:var(--danger-strong);
+  box-shadow:inset 2px 0 0 var(--danger-line);
+}
+@media(forced-colors:active){
+  [data-theme='handdrawn'] :is(.notice-toast,.pdf-progress-card,.error-card){border-image:none;border-color:CanvasText;background:Canvas;color:CanvasText;box-shadow:none}
+  [data-theme='handdrawn'] .pdf-progress-track{background:Canvas;box-shadow:none;outline:1px solid CanvasText;outline-offset:-1px}
+  [data-theme='handdrawn'] .pdf-progress-track i{background:Highlight}
+  [data-theme='handdrawn'] .error-icon{background:Canvas;color:CanvasText;box-shadow:none;outline:1px solid CanvasText;outline-offset:-1px}
+  [data-theme='handdrawn'] .error-card pre{background:Canvas;color:CanvasText;box-shadow:none}
+}

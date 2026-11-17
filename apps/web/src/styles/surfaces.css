@@ -53,11 +53,15 @@ button:focus:not(:focus-visible),[role="menuitem"]:focus:not(:focus-visible){out
 
 /* ── 3. disabled: muted but still legible (no opacity faking) ──── */
 button:disabled{opacity:1;cursor:not-allowed;color:var(--text-muted)}
-button:disabled:not(.icon-btn):not(.tiny-btn):not(.tree-more):not(.tool-btn):not(.send-btn){
+button:disabled:not(:where(.icon-btn,.tiny-btn,.tree-more,.tool-btn,.send-btn)){
   background:var(--surface-sunken);border-color:var(--border);box-shadow:none}
 button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,button.tree-more:disabled{color:var(--text-soft);background:transparent}
-.primary-btn:disabled,.btn-danger:disabled{background:var(--surface-disabled);color:var(--text-on-accent);transform:none}
-.secondary-btn:disabled{background:var(--surface-sunken);color:var(--text-muted)}
+/* State owns the ink/fill pair, above appearance paint. The old long :not()
+   chain won the pale background while the primary rule kept white lettering. */
+:root[data-theme] button:is(.primary-btn,.secondary-btn,.btn-danger,.modal-danger,.share-btn,.dialog-confirm-btn):disabled{
+  background:var(--surface-sunken);color:var(--text-secondary);
+  border-color:var(--border);box-shadow:none;transform:none;
+}
 
 /* ── 4. anchors + popover surfaces ─────────────────────────────── */
 .menu-anchor,.new-menu-anchor,.workspace-anchor,.tree-entry,.tree-menu-anchor{position:relative;display:block}
@@ -274,6 +278,7 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
   border-radius:var(--radius-lg);
   font-size:12px;
   line-height:1.45;
+  overflow-wrap:anywhere;
   color:var(--text-secondary);
   box-shadow:var(--shadow-toast);
   animation:motion-rise-in var(--duration-base) var(--ease-spring-snappy) backwards;
@@ -334,9 +339,7 @@ button.icon-btn:disabled,button.tiny-btn:disabled,button.tool-btn:disabled,butto
   background:var(--surface-sunken);
   overflow:hidden;
 }
-/* Only width animates: the bar is the one place a layout property is the honest
-   choice — a transform-scaled bar would keep its own corner radius mirrored.
-   motion-check-ignore: layout-animation (deliberate, see above) */
+/* Determinate progress scales the fill from its left edge on the compositor. */
 .pdf-progress-track i{
   display:block;
   height:100%;

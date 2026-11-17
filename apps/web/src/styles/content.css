@@ -96,6 +96,47 @@
   margin-top:32px;text-align:center;font-size:12px;color:var(--text-muted);
 }
 
+/* Static public prose has its own geometry. It must never acquire the editor's
+   content-visibility placeholders, contextual handles or editable hit targets. */
+.shared-page .shared-document-title{font-family:var(--font-handwritten);font-size:clamp(26px,4.5vw,36px);line-height:1.4;letter-spacing:.01em}
+.shared-document-title>span{-webkit-box-decoration-break:clone;box-decoration-break:clone;padding-bottom:5px;background-position:left bottom;background-size:100% 8px;background-repeat:no-repeat}
+.shared-readonly{min-width:0;font-size:16px;line-height:1.9;color:var(--text);overflow-wrap:anywhere;-webkit-user-select:text;user-select:text}
+.shared-readonly p{margin:0 0 14px}
+.shared-readonly :is(h1,h2,h3){font-family:var(--font-handwritten);line-height:1.45;letter-spacing:.01em;margin:28px 0 14px;color:var(--text)}
+.shared-readonly h1{font-size:29px}
+.shared-readonly h2{font-size:25px}
+.shared-readonly h3{font-size:21px}
+.shared-readonly :is(ul,ol){margin:14px 0;padding-left:26px}
+.shared-readonly li{margin:5px 0}
+.shared-readonly blockquote{margin:18px 0;padding:12px 18px;border-left:2px solid var(--quote-line);color:var(--text-secondary)}
+.shared-readonly blockquote>:last-child{margin-bottom:0}
+.shared-readonly a{color:var(--accent-strong);text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
+.shared-readonly code{font-family:var(--font-mono);font-size:.9em;background:var(--surface-sunken);border-radius:4px;padding:1px 5px}
+.shared-readonly pre code{display:block;padding:0;background:none;color:var(--text);font-size:13px;line-height:1.75;white-space:pre;overflow-wrap:normal}
+.shared-readonly hr{height:3px;margin:26px 0;border:0;background:var(--border-strong)}
+/* Separate cells let border-image paint real pencil edges. A collapsed table
+   ignores border images on its internal cells, even when computed URLs exist.
+   Both appearances use the same zero-spacing table geometry. */
+.shared-page .shared-readonly table{table-layout:fixed;border-collapse:separate;border-spacing:0}
+.shared-readonly :is(th,td){vertical-align:top;overflow-wrap:anywhere}
+.shared-readonly :is(th,td)>:last-child{margin-bottom:0}
+.shared-readonly ul.task-list{list-style:none;padding-left:0}
+.shared-readonly .task-item{display:flex;align-items:flex-start;gap:9px;margin:10px 0}
+.shared-readonly .task-item>input[type='checkbox']{flex:0 0 18px;width:18px;height:18px;margin:6px 0 0;border:1px solid var(--border-strong);opacity:1;accent-color:var(--accent);cursor:default}
+.shared-readonly .task-item-content{min-width:0;flex:1}
+.shared-readonly .task-item-content>:first-child{margin-top:0}
+.shared-readonly .task-item-content>:last-child{margin-bottom:0}
+.shared-readonly .task-item-content>ul.task-list{margin-top:9px}
+.shared-readonly .task-item[data-checked='true']>.task-item-content>:is(p,h1,h2,h3){color:var(--text-muted);text-decoration:line-through}
+
+@media(max-width:600px){
+  .shared-readonly{font-size:15px;line-height:1.85}
+  .shared-readonly h1{font-size:26px}
+  .shared-readonly h2{font-size:23px}
+  .shared-readonly h3{font-size:20px}
+  .shared-readonly blockquote{padding:10px 13px}
+}
+
 /* ===== 29. Code block chrome ===== */
 /* One surface owns the block: border, radius and background live in section 26. */
 /* Overlay toolbar sits inside the block's top strip, never above it. */

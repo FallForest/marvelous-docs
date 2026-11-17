@@ -42,7 +42,7 @@ const ROOT = resolve(import.meta.dirname, '../..')
 const TARGETS = [
   { file: 'apps/server/package.json', label: 'server manifest', pattern: /"version":\s*"([^"]+)"/ },
   { file: 'apps/web/package.json', label: 'web manifest', pattern: /"version":\s*"([^"]+)"/ },
-  { file: 'packages/cli/package.json', label: 'cli manifest', pattern: /"version":\s*"([^"]+)"/ },
+  // packages/cli was deleted in 0.1.79; the CLI is no longer a published package.
   { file: '.env.example', label: 'compose env template', pattern: /^APP_VERSION=(\S+)$/m },
   { file: 'apps/server/.env.example', label: 'server env template', pattern: /^APP_VERSION=(\S+)$/m },
   // The comment above the assignment quotes "(default 0.1.71)"; it is part of

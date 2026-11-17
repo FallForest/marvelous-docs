@@ -42,8 +42,44 @@
 [data-theme='handdrawn'] .tb-swatch[aria-pressed='true']{outline:2px solid var(--accent-strong);outline-offset:2px;box-shadow:1px 2px 0 rgba(var(--shadow-rgb),.14)}
 [data-theme='handdrawn'] .find-field.is-empty{border-color:var(--danger);background:var(--danger-soft)}
 
+/* Menu headings are hand-marked dividers; format hints look like little index
+   tabs. All decoration is paint, so opening a menu never gains scroll bounds. */
+[data-theme='handdrawn'] .popover .menu-heading{
+  background:url('/art/handdrawn-v1/decor/index-tab-blue.webp') 4px center / 70px auto no-repeat;
+  color:var(--tint-blue-ink);
+}
+[data-theme='handdrawn'] .popover .menu-hint{
+  background-color:var(--surface-muted);
+  border-radius:3px 6px 2px 5px;
+  box-shadow:0 0 0 3px var(--surface-muted);
+  color:var(--text-muted);
+}
+[data-theme='handdrawn'] .popover .menu-item:hover:not(:disabled):not(.menu-item-danger){
+  background-color:var(--tint-sage-softer);
+  box-shadow:inset 2px 0 0 var(--tint-sage-line);
+}
+[data-theme='handdrawn'] .popover .menu-item.is-active{
+  background-color:var(--tint-sage-softer);
+  background-image:url('/art/handdrawn-v1/decor/marker-sage.webp');
+  background-size:100% 78%;background-position:center;background-repeat:no-repeat;
+}
+[data-theme='handdrawn'] .popover .tb-more-section{
+  color:var(--tint-blue-ink);
+  background-image:url('/art/handdrawn-v1/decor/index-tab-blue.webp'),url('/art/handdrawn-v1/decor/pencil-rule.webp');
+  background-position:4px center,center top;
+  background-size:82px auto,100% 1px;background-repeat:no-repeat;
+  text-decoration:none;
+}
+[data-theme='handdrawn'] .tb-more-menu>.tb-more-group:first-child>.tb-more-section{background-image:url('/art/handdrawn-v1/decor/index-tab-blue.webp')}
+[data-theme='handdrawn'] :is(.tb-menu-item,.lang-picker-item):hover:not(:disabled){box-shadow:inset 2px 0 0 var(--tint-sage-line)}
+[data-theme='handdrawn'] .tb-menu-item.danger:hover:not(:disabled){box-shadow:inset 2px 0 0 var(--danger-line)}
+[data-theme='handdrawn'] .select-option[data-active='true']{box-shadow:inset 2px 0 0 var(--accent)}
+[data-theme='handdrawn'] .select-option[aria-disabled='true']{box-shadow:none}
+
 @media(forced-colors:active){
   [data-theme='handdrawn'] :is(.popover,.lang-picker-panel,.block-tool-panel,.block-menu,.slash-menu,.find-panel,.outline-panel,.bubble-toolbar){border-image:none;border-color:CanvasText;box-shadow:none}
   [data-theme='handdrawn'] :is(.popover,.select-trigger).sketch-frame{border-color:CanvasText}
   [data-theme='handdrawn'] .select-trigger.sketch-frame::after{border-image:none}
+  [data-theme='handdrawn'] .popover .menu-hint{background:Canvas;color:CanvasText;box-shadow:none}
+  [data-theme='handdrawn'] :is(.menu-item,.tb-menu-item,.lang-picker-item):hover:not(:disabled){box-shadow:none}
 }

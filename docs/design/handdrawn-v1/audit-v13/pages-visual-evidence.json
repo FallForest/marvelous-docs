@@ -1,0 +1,1750 @@
+{
+  "fixture": "Actual page components and ErrorBoundary; isolated HTTP shared-document fixture. Toast/PDF are exact App.tsx markup with fixed data, not an export or notification operation.",
+  "states": [
+    {
+      "scene": "admin-failed",
+      "width": 1280,
+      "file": "pages-admin-failed-desktop.png",
+      "evidence": "actual page/component",
+      "styles": {
+        ".admin-section": {
+          "tag": "SECTION",
+          "box": [
+            330.796875,
+            201.28125,
+            872.40625,
+            259.390625
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(255, 254, 249)",
+          "border": "1px solid rgb(170, 165, 143)",
+          "borderImage": "none",
+          "borderRadius": "10px 14px 8px 12px",
+          "shadow": "rgba(53, 54, 48, 0.07) 2px 3px 0px 0px",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-enter",
+          "display": "block",
+          "overflowX": false
+        },
+        ".admin-update-card": {
+          "tag": "DIV",
+          "box": [
+            331.796875,
+            586.0625,
+            870.40625,
+            88
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "flex",
+          "overflowX": false
+        },
+        ".admin-update-icon": {
+          "tag": "DIV",
+          "box": [
+            353.796875,
+            606.0625,
+            48,
+            48
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(82, 100, 66)",
+          "borderImage": "none",
+          "borderRadius": "7px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(82, 100, 66)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "grid",
+          "overflowX": false
+        },
+        ".admin-update-copy b": {
+          "tag": "B",
+          "box": [
+            414.796875,
+            607.359375,
+            704.40625,
+            20
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".role-badge": {
+          "tag": "SPAN",
+          "box": [
+            1126.203125,
+            327.671875,
+            54,
+            29
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(247, 239, 215)",
+          "border": "1px solid rgb(170, 165, 143)",
+          "borderImage": "none",
+          "borderRadius": "6px 8px 5px 7px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(107, 85, 37)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".admin-status": {
+          "tag": "SPAN",
+          "box": [
+            1135.203125,
+            34,
+            68,
+            24
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(101, 105, 88)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(101, 105, 88)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "flex",
+          "overflowX": false
+        },
+        ".notice-toast": {
+          "tag": "DIV",
+          "box": [
+            1028,
+            836.609375,
+            230,
+            41.390625
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(255, 254, 249, 0.9)",
+          "border": "1px solid rgb(216, 211, 194)",
+          "borderImage": "none",
+          "borderRadius": "12px 15px 10px 13px",
+          "shadow": "rgba(53, 54, 48, 0.13) 2px 3px 0px 0px",
+          "backdrop": "blur(20px) saturate(1.8)",
+          "color": "rgb(85, 89, 75)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-rise-in",
+          "display": "flex",
+          "overflowX": false
+        }
+      },
+      "documentOverflowX": false
+    },
+    {
+      "scene": "admin-running",
+      "width": 1280,
+      "file": "pages-admin-running-desktop.png",
+      "evidence": "actual page/component",
+      "styles": {
+        ".admin-update-icon img": {
+          "tag": "IMG",
+          "box": [
+            354.796875,
+            607.0625,
+            46,
+            46
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(82, 100, 66)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(82, 100, 66)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".admin-update-icon svg": {
+          "tag": "svg",
+          "box": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(82, 100, 66)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(82, 100, 66)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-breathe",
+          "display": "inline",
+          "overflowX": false
+        },
+        ".admin-update-copy b": {
+          "tag": "B",
+          "box": [
+            414.796875,
+            607.359375,
+            765.40625,
+            20
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        }
+      },
+      "documentOverflowX": false
+    },
+    {
+      "scene": "login-error",
+      "width": 1280,
+      "file": "pages-login-error-desktop.png",
+      "evidence": "actual page/component",
+      "styles": {
+        ".login-card": {
+          "tag": "DIV",
+          "box": [
+            641.1875,
+            165.328125,
+            410,
+            569.328125
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(255, 254, 249)",
+          "border": "1px solid rgb(170, 165, 143)",
+          "borderImage": "none",
+          "borderRadius": "13px 9px 12px 8px",
+          "shadow": "rgba(53, 54, 48, 0.09) 4px 5px 0px 0px",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-rise-in",
+          "display": "block",
+          "overflowX": false
+        },
+        ".login-card input": {
+          "tag": "INPUT",
+          "box": [
+            679.1875,
+            398.265625,
+            334,
+            44
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(255, 254, 249)",
+          "border": "1px solid rgb(170, 165, 143)",
+          "borderImage": "none",
+          "borderRadius": "7px 5px 8px 6px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".login-error": {
+          "tag": "DIV",
+          "box": [
+            679.1875,
+            544.265625,
+            334,
+            32
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(250, 234, 226)",
+          "border": "0px none rgb(139, 53, 43)",
+          "borderImage": "none",
+          "borderRadius": "4px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(139, 53, 43)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-disclose",
+          "display": "flex",
+          "overflowX": false
+        },
+        ".login-card::before": {
+          "tag": "DIV",
+          "box": [
+            641.1875,
+            165.328125,
+            410,
+            569.328125
+          ],
+          "background": "url(\"http://127.0.0.1:54673/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "13px 9px 12px 8px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        }
+      },
+      "documentOverflowX": false
+    },
+    {
+      "scene": "login-busy",
+      "width": 1280,
+      "file": "pages-login-busy-desktop.png",
+      "evidence": "actual page/component",
+      "styles": {
+        ".login-spinner": {
+          "tag": "SPAN",
+          "box": [
+            690.75048828125,
+            587.82861328125,
+            17.8740234375,
+            17.8740234375
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "",
+          "borderImage": "none",
+          "borderRadius": "50%",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-spin",
+          "display": "block",
+          "overflowX": false
+        },
+        ".login-submit": {
+          "tag": "BUTTON",
+          "box": [
+            679.1875,
+            574.765625,
+            334,
+            44
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(238, 234, 221)",
+          "border": "1px solid rgb(216, 211, 194)",
+          "borderImage": "none",
+          "borderRadius": "7px 10px 6px 9px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-enter",
+          "display": "flex",
+          "overflowX": false
+        }
+      },
+      "documentOverflowX": false
+    },
+    {
+      "scene": "search-results",
+      "width": 1280,
+      "file": "pages-search-results-desktop.png",
+      "evidence": "actual page/component",
+      "styles": {
+        ".search-page": {
+          "tag": "DIV",
+          "box": [
+            0,
+            0,
+            1280,
+            900
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(248, 245, 236)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".search-scope button.active": {
+          "tag": "BUTTON",
+          "box": [
+            92.5,
+            168.484375,
+            56,
+            34
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(220, 228, 206)",
+          "border": "1px solid rgb(82, 100, 66)",
+          "borderImage": "none",
+          "borderRadius": "7px 10px 6px 9px",
+          "shadow": "rgba(53, 54, 48, 0.09) 1px 2px 0px 0px",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".search-hit": {
+          "tag": "BUTTON",
+          "box": [
+            92.5,
+            227.484375,
+            1080,
+            84
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(255, 254, 249)",
+          "border": "1px solid rgb(170, 165, 143)",
+          "borderImage": "none",
+          "borderRadius": "9px 13px 8px 11px",
+          "shadow": "rgba(53, 54, 48, 0.06) 2px 3px 0px 0px",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-enter",
+          "display": "flex",
+          "overflowX": false
+        },
+        ".search-hit .art-icon": {
+          "tag": "SPAN",
+          "box": [
+            113.5,
+            249.484375,
+            36,
+            40
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(101, 117, 105)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(101, 117, 105)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "flex",
+          "overflowX": false
+        }
+      },
+      "documentOverflowX": false
+    },
+    {
+      "scene": "search-empty",
+      "width": 1280,
+      "file": "pages-search-empty-desktop.png",
+      "evidence": "actual page/component",
+      "styles": {
+        ".home-empty": {
+          "tag": "DIV",
+          "box": [
+            92.5,
+            227.484375,
+            1080,
+            94
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(252, 250, 243)",
+          "border": "1px dashed rgb(170, 165, 143)",
+          "borderImage": "none",
+          "borderRadius": "10px 8px 11px 7px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(106, 107, 92)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "flex",
+          "overflowX": false
+        },
+        ".search-hero h1": {
+          "tag": "H1",
+          "box": [
+            92.5,
+            77,
+            1080,
+            46.390625
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"Docs Hand\", KaiTi, STKaiti, \"Noto Sans SC\", serif",
+          "animation": "motion-enter",
+          "display": "block",
+          "overflowX": false
+        }
+      },
+      "documentOverflowX": false
+    },
+    {
+      "scene": "shared-readonly",
+      "width": 1280,
+      "file": "pages-shared-readonly-desktop.png",
+      "evidence": "actual page/component",
+      "styles": {
+        ".shared-logo": {
+          "tag": "DIV",
+          "box": [
+            254,
+            60,
+            36,
+            36
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(82, 100, 66)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderImage": "none",
+          "borderRadius": "8px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "grid",
+          "overflowX": false
+        },
+        ".shared-content": {
+          "tag": "ARTICLE",
+          "box": [
+            254,
+            128,
+            772,
+            540.203125
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(255, 254, 249)",
+          "border": "1px solid rgb(170, 165, 143)",
+          "borderImage": "none",
+          "borderRadius": "9px 12px 7px 10px",
+          "shadow": "rgba(53, 54, 48, 0.09) 3px 4px 0px 0px",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-enter",
+          "display": "block",
+          "overflowX": false
+        },
+        ".shared-document-title": {
+          "tag": "H1",
+          "box": [
+            319,
+            169,
+            642,
+            40
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".shared-content blockquote": {
+          "tag": "BLOCKQUOTE",
+          "box": [
+            359,
+            233,
+            562,
+            20
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".shared-content pre": {
+          "tag": "PRE",
+          "box": [
+            319,
+            538.609375,
+            642,
+            75.59375
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(248, 245, 236)",
+          "border": "1px solid rgb(216, 211, 194)",
+          "borderImage": "none",
+          "borderRadius": "8px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "monospace",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".shared-content table": {
+          "tag": "TABLE",
+          "box": [
+            319,
+            393.609375,
+            642,
+            131
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "table",
+          "overflowX": false
+        },
+        ".shared-content ul.task-list": {
+          "tag": "UL",
+          "box": [
+            319,
+            325.609375,
+            642,
+            54
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".shared-badge": {
+          "tag": "SPAN",
+          "box": [
+            973,
+            67,
+            53,
+            22
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(230, 234, 219)",
+          "border": "0px none rgb(66, 82, 55)",
+          "borderImage": "none",
+          "borderRadius": "12px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(66, 82, 55)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        }
+      },
+      "taskMarkup": "<ul class=\"task-list\"><li><p>确认需求：已经完成</p></li><li><p>交互方案：等待补充</p></li></ul>",
+      "documentOverflowX": false
+    },
+    {
+      "scene": "shared-error",
+      "width": 1280,
+      "file": "pages-shared-error-desktop.png",
+      "evidence": "actual page/component",
+      "styles": {
+        ".shared-content": {
+          "tag": "DIV",
+          "box": [
+            254,
+            128,
+            772,
+            135
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(255, 254, 249)",
+          "border": "1px solid rgb(170, 165, 143)",
+          "borderImage": "none",
+          "borderRadius": "9px 12px 7px 10px",
+          "shadow": "rgba(53, 54, 48, 0.09) 3px 4px 0px 0px",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".shared-state": {
+          "tag": "P",
+          "box": [
+            319,
+            169,
+            642,
+            17
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(106, 107, 92)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(106, 107, 92)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "flex",
+          "overflowX": false
+        },
+        ".secondary-btn": {
+          "tag": "BUTTON",
+          "box": [
+            319,
+            186,
+            70,
+            36
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(255, 254, 249)",
+          "border": "1px solid rgb(170, 165, 143)",
+          "borderImage": "none",
+          "borderRadius": "7px 10px 6px 9px",
+          "shadow": "rgba(53, 54, 48, 0.15) 1px 2px 0px 0px",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "inline-flex",
+          "overflowX": false
+        }
+      },
+      "documentOverflowX": false
+    },
+    {
+      "scene": "shared-loading",
+      "width": 1280,
+      "file": "pages-shared-loading-desktop.png",
+      "evidence": "actual page/component",
+      "styles": {
+        ".shared-state": {
+          "tag": "P",
+          "box": [
+            254,
+            128,
+            772,
+            17
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(106, 107, 92)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(106, 107, 92)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "flex",
+          "overflowX": false
+        },
+        ".login-spinner": {
+          "tag": "SPAN",
+          "box": [
+            584.8653564453125,
+            127.3653793334961,
+            18.269287109375,
+            18.26923370361328
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "",
+          "borderImage": "none",
+          "borderRadius": "50%",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(106, 107, 92)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-spin",
+          "display": "block",
+          "overflowX": false
+        }
+      },
+      "documentOverflowX": false
+    },
+    {
+      "scene": "palette",
+      "width": 1280,
+      "file": "pages-palette-desktop.png",
+      "evidence": "actual page/component",
+      "styles": {
+        ".command-palette": {
+          "tag": "SECTION",
+          "box": [
+            360,
+            108,
+            560,
+            407.390625
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(255, 254, 249)",
+          "border": "1px solid rgb(170, 165, 143)",
+          "borderImage": "none",
+          "borderRadius": "12px 16px 10px 14px",
+          "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "page-palette-in",
+          "display": "flex",
+          "overflowX": false
+        },
+        ".command-backdrop": {
+          "tag": "DIV",
+          "box": [
+            0,
+            0,
+            1280,
+            900
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(53, 54, 48, 0.42)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "blur(20px) saturate(1.8)",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-fade-in",
+          "display": "flex",
+          "overflowX": false
+        },
+        ".command-list button.active": {
+          "tag": "BUTTON",
+          "box": [
+            371,
+            344,
+            538,
+            57
+          ],
+          "background": "url(\"http://127.0.0.1:54673/art/handdrawn-v1/decor/marker-sage.webp\")",
+          "backgroundColor": "rgb(230, 234, 219)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "8px 12px 7px 10px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-enter",
+          "display": "flex",
+          "overflowX": false
+        }
+      },
+      "documentOverflowX": false
+    },
+    {
+      "scene": "error-boundary",
+      "width": 1280,
+      "file": "pages-error-boundary-desktop.png",
+      "evidence": "actual page/component",
+      "styles": {
+        ".error-card": {
+          "tag": "DIV",
+          "box": [
+            410,
+            310.609375,
+            460,
+            278.78125
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(255, 254, 249)",
+          "border": "1px solid rgb(216, 211, 194)",
+          "borderImage": "none",
+          "borderRadius": "9px",
+          "shadow": "rgba(53, 54, 48, 0.1) 0px 18px 55px 0px",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-rise-in",
+          "display": "block",
+          "overflowX": false
+        },
+        ".error-icon": {
+          "tag": "DIV",
+          "box": [
+            437,
+            337.609375,
+            36,
+            36
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(250, 234, 226)",
+          "border": "0px none rgb(82, 100, 66)",
+          "borderImage": "none",
+          "borderRadius": "8px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(82, 100, 66)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "grid",
+          "overflowX": false
+        },
+        ".error-card pre": {
+          "tag": "PRE",
+          "box": [
+            437,
+            475.390625,
+            406,
+            33
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(248, 245, 236)",
+          "border": "0px none rgb(139, 53, 43)",
+          "borderImage": "none",
+          "borderRadius": "5px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(139, 53, 43)",
+          "fontFamily": "monospace",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        }
+      },
+      "documentOverflowX": false
+    },
+    {
+      "scene": "toast",
+      "width": 1280,
+      "file": "pages-toast-desktop.png",
+      "evidence": "exact App markup; copied DOM only",
+      "styles": {
+        ".notice-toast": {
+          "tag": "DIV",
+          "box": [
+            1116,
+            832,
+            142,
+            46
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(255, 254, 249, 0.9)",
+          "border": "1px solid rgb(216, 211, 194)",
+          "borderImage": "none",
+          "borderRadius": "12px 15px 10px 13px",
+          "shadow": "rgba(53, 54, 48, 0.13) 2px 3px 0px 0px",
+          "backdrop": "blur(20px) saturate(1.8)",
+          "color": "rgb(85, 89, 75)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-rise-in",
+          "display": "flex",
+          "overflowX": false
+        },
+        ".notice-toast button": {
+          "tag": "BUTTON",
+          "box": [
+            1223,
+            842,
+            24,
+            24
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(106, 107, 92)",
+          "borderImage": "none",
+          "borderRadius": "5px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(106, 107, 92)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "grid",
+          "overflowX": false
+        }
+      },
+      "documentOverflowX": false
+    },
+    {
+      "scene": "pdf",
+      "width": 1280,
+      "file": "pages-pdf-desktop.png",
+      "evidence": "exact App markup; copied DOM only",
+      "styles": {
+        ".pdf-progress-card": {
+          "tag": "DIV",
+          "box": [
+            480,
+            398.25,
+            320,
+            103.5
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(255, 254, 249)",
+          "border": "1px solid rgb(216, 211, 194)",
+          "borderImage": "none",
+          "borderRadius": "12px 15px 10px 13px",
+          "shadow": "rgba(53, 54, 48, 0.15) 5px 6px 0px 0px, rgba(53, 54, 48, 0.12) 0px 18px 50px 0px",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-sheet-in",
+          "display": "flex",
+          "overflowX": false
+        },
+        ".pdf-progress-track": {
+          "tag": "SPAN",
+          "box": [
+            501,
+            449.25,
+            278,
+            4
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(238, 234, 221)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "999px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".pdf-progress": {
+          "tag": "DIV",
+          "box": [
+            0,
+            0,
+            1280,
+            900
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(53, 54, 48, 0.42)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "blur(6px) saturate(1.4)",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-fade-in",
+          "display": "grid",
+          "overflowX": false
+        }
+      },
+      "documentOverflowX": false
+    },
+    {
+      "scene": "admin-failed",
+      "width": 390,
+      "file": "pages-admin-failed-phone.png",
+      "evidence": "actual page/component",
+      "styles": {
+        ".admin-section": {
+          "tag": "SECTION",
+          "box": [
+            18,
+            484.59375,
+            339,
+            306.390625
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(255, 254, 249)",
+          "border": "1px solid rgb(170, 165, 143)",
+          "borderImage": "none",
+          "borderRadius": "10px 14px 8px 12px",
+          "shadow": "rgba(53, 54, 48, 0.07) 2px 3px 0px 0px",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-enter",
+          "display": "block",
+          "overflowX": false
+        },
+        ".admin-update-card": {
+          "tag": "DIV",
+          "box": [
+            19,
+            937.375,
+            337,
+            183.390625
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "flex",
+          "overflowX": false
+        },
+        ".admin-update-icon": {
+          "tag": "DIV",
+          "box": [
+            36,
+            954.375,
+            48,
+            48
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(82, 100, 66)",
+          "borderImage": "none",
+          "borderRadius": "7px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(82, 100, 66)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "grid",
+          "overflowX": false
+        },
+        ".admin-update-copy b": {
+          "tag": "B",
+          "box": [
+            36,
+            1012.375,
+            303,
+            20
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".role-badge": {
+          "tag": "SPAN",
+          "box": [
+            286,
+            657.984375,
+            54,
+            29
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(247, 239, 215)",
+          "border": "1px solid rgb(170, 165, 143)",
+          "borderImage": "none",
+          "borderRadius": "6px 8px 5px 7px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(107, 85, 37)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".admin-status": {
+          "tag": "SPAN",
+          "box": [
+            287,
+            338,
+            68,
+            24
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(101, 105, 88)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(101, 105, 88)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "flex",
+          "overflowX": false
+        },
+        ".notice-toast": {
+          "tag": "DIV",
+          "box": [
+            12,
+            790.609375,
+            351,
+            41.390625
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(255, 254, 249, 0.9)",
+          "border": "1px solid rgb(216, 211, 194)",
+          "borderImage": "none",
+          "borderRadius": "12px 15px 10px 13px",
+          "shadow": "rgba(53, 54, 48, 0.13) 2px 3px 0px 0px",
+          "backdrop": "blur(20px) saturate(1.8)",
+          "color": "rgb(85, 89, 75)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-rise-in",
+          "display": "flex",
+          "overflowX": false
+        }
+      },
+      "documentOverflowX": false
+    },
+    {
+      "scene": "login-error",
+      "width": 390,
+      "file": "pages-login-error-phone.png",
+      "evidence": "actual page/component",
+      "styles": {
+        ".login-card": {
+          "tag": "DIV",
+          "box": [
+            20,
+            142.328125,
+            350,
+            559.328125
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(255, 254, 249)",
+          "border": "1px solid rgb(170, 165, 143)",
+          "borderImage": "none",
+          "borderRadius": "13px 9px 12px 8px",
+          "shadow": "rgba(53, 54, 48, 0.09) 4px 5px 0px 0px",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-rise-in",
+          "display": "block",
+          "overflowX": false
+        },
+        ".login-card input": {
+          "tag": "INPUT",
+          "box": [
+            46,
+            369.265625,
+            298,
+            44
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(255, 254, 249)",
+          "border": "1px solid rgb(170, 165, 143)",
+          "borderImage": "none",
+          "borderRadius": "7px 5px 8px 6px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".login-error": {
+          "tag": "DIV",
+          "box": [
+            46,
+            515.265625,
+            298,
+            32
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(250, 234, 226)",
+          "border": "0px none rgb(139, 53, 43)",
+          "borderImage": "none",
+          "borderRadius": "4px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(139, 53, 43)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-disclose",
+          "display": "flex",
+          "overflowX": false
+        },
+        ".login-card::before": {
+          "tag": "DIV",
+          "box": [
+            20,
+            142.328125,
+            350,
+            559.328125
+          ],
+          "background": "url(\"http://127.0.0.1:54673/art/handdrawn-v1/textures/paper-ivory.webp\")",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "13px 9px 12px 8px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        }
+      },
+      "documentOverflowX": false
+    },
+    {
+      "scene": "search-results",
+      "width": 390,
+      "file": "pages-search-results-phone.png",
+      "evidence": "actual page/component",
+      "styles": {
+        ".search-page": {
+          "tag": "DIV",
+          "box": [
+            0,
+            0,
+            390,
+            844
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(248, 245, 236)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".search-scope button.active": {
+          "tag": "BUTTON",
+          "box": [
+            22,
+            161.234375,
+            54,
+            40
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(220, 228, 206)",
+          "border": "1px solid rgb(82, 100, 66)",
+          "borderImage": "none",
+          "borderRadius": "7px 10px 6px 9px",
+          "shadow": "rgba(53, 54, 48, 0.09) 1px 2px 0px 0px",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".search-hit": {
+          "tag": "BUTTON",
+          "box": [
+            22,
+            226.234375,
+            331,
+            93.375
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(255, 254, 249)",
+          "border": "1px solid rgb(170, 165, 143)",
+          "borderImage": "none",
+          "borderRadius": "9px 13px 8px 11px",
+          "shadow": "rgba(53, 54, 48, 0.06) 2px 3px 0px 0px",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-enter",
+          "display": "flex",
+          "overflowX": false
+        },
+        ".search-hit .art-icon": {
+          "tag": "SPAN",
+          "box": [
+            38,
+            252.921875,
+            36,
+            40
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(101, 117, 105)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(101, 117, 105)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "flex",
+          "overflowX": false
+        }
+      },
+      "documentOverflowX": false
+    },
+    {
+      "scene": "shared-readonly",
+      "width": 390,
+      "file": "pages-shared-readonly-phone.png",
+      "evidence": "actual page/component",
+      "styles": {
+        ".shared-logo": {
+          "tag": "DIV",
+          "box": [
+            24,
+            60,
+            36,
+            36
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(82, 100, 66)",
+          "border": "0px none rgb(255, 255, 255)",
+          "borderImage": "none",
+          "borderRadius": "8px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(255, 255, 255)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "grid",
+          "overflowX": false
+        },
+        ".shared-content": {
+          "tag": "ARTICLE",
+          "box": [
+            24,
+            128,
+            342,
+            552.203125
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(255, 254, 249)",
+          "border": "1px solid rgb(170, 165, 143)",
+          "borderImage": "none",
+          "borderRadius": "9px 12px 7px 10px",
+          "shadow": "rgba(53, 54, 48, 0.09) 3px 4px 0px 0px",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-enter",
+          "display": "block",
+          "overflowX": false
+        },
+        ".shared-document-title": {
+          "tag": "H1",
+          "box": [
+            45,
+            155,
+            300,
+            80
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".shared-content blockquote": {
+          "tag": "BLOCKQUOTE",
+          "box": [
+            85,
+            259,
+            220,
+            20
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".shared-content pre": {
+          "tag": "PRE",
+          "box": [
+            45,
+            564.609375,
+            300,
+            75.59375
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(248, 245, 236)",
+          "border": "1px solid rgb(216, 211, 194)",
+          "borderImage": "none",
+          "borderRadius": "8px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "monospace",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".shared-content table": {
+          "tag": "TABLE",
+          "box": [
+            45,
+            419.609375,
+            300,
+            131
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "table",
+          "overflowX": false
+        },
+        ".shared-content ul.task-list": {
+          "tag": "UL",
+          "box": [
+            45,
+            351.609375,
+            300,
+            54
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(53, 54, 48)",
+          "borderImage": "none",
+          "borderRadius": "0px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        },
+        ".shared-badge": {
+          "tag": "SPAN",
+          "box": [
+            313,
+            67,
+            53,
+            22
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(230, 234, 219)",
+          "border": "0px none rgb(66, 82, 55)",
+          "borderImage": "none",
+          "borderRadius": "12px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(66, 82, 55)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        }
+      },
+      "taskMarkup": "<ul class=\"task-list\"><li><p>确认需求：已经完成</p></li><li><p>交互方案：等待补充</p></li></ul>",
+      "documentOverflowX": false
+    },
+    {
+      "scene": "error-boundary",
+      "width": 390,
+      "file": "pages-error-boundary-phone.png",
+      "evidence": "actual page/component",
+      "styles": {
+        ".error-card": {
+          "tag": "DIV",
+          "box": [
+            24,
+            282.609375,
+            342,
+            278.78125
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(255, 254, 249)",
+          "border": "1px solid rgb(216, 211, 194)",
+          "borderImage": "none",
+          "borderRadius": "9px",
+          "shadow": "rgba(53, 54, 48, 0.1) 0px 18px 55px 0px",
+          "backdrop": "none",
+          "color": "rgb(53, 54, 48)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-rise-in",
+          "display": "block",
+          "overflowX": false
+        },
+        ".error-icon": {
+          "tag": "DIV",
+          "box": [
+            51,
+            309.609375,
+            36,
+            36
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(250, 234, 226)",
+          "border": "0px none rgb(82, 100, 66)",
+          "borderImage": "none",
+          "borderRadius": "8px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(82, 100, 66)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "grid",
+          "overflowX": false
+        },
+        ".error-card pre": {
+          "tag": "PRE",
+          "box": [
+            51,
+            447.390625,
+            288,
+            33
+          ],
+          "background": "none",
+          "backgroundColor": "rgb(248, 245, 236)",
+          "border": "0px none rgb(139, 53, 43)",
+          "borderImage": "none",
+          "borderRadius": "5px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(139, 53, 43)",
+          "fontFamily": "monospace",
+          "animation": "none",
+          "display": "block",
+          "overflowX": false
+        }
+      },
+      "documentOverflowX": false
+    },
+    {
+      "scene": "toast",
+      "width": 390,
+      "file": "pages-toast-phone.png",
+      "evidence": "exact App markup; copied DOM only",
+      "styles": {
+        ".notice-toast": {
+          "tag": "DIV",
+          "box": [
+            12,
+            778,
+            366,
+            54
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(255, 254, 249, 0.9)",
+          "border": "1px solid rgb(216, 211, 194)",
+          "borderImage": "none",
+          "borderRadius": "12px 15px 10px 13px",
+          "shadow": "rgba(53, 54, 48, 0.13) 2px 3px 0px 0px",
+          "backdrop": "blur(20px) saturate(1.8)",
+          "color": "rgb(85, 89, 75)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "motion-rise-in",
+          "display": "flex",
+          "overflowX": false
+        },
+        ".notice-toast button": {
+          "tag": "BUTTON",
+          "box": [
+            335,
+            788,
+            32,
+            32
+          ],
+          "background": "none",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(106, 107, 92)",
+          "borderImage": "none",
+          "borderRadius": "5px",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(106, 107, 92)",
+          "fontFamily": "\"DM Sans\", \"Noto Sans SC\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "animation": "none",
+          "display": "grid",
+          "overflowX": false
+        }
+      },
+      "documentOverflowX": false
+    }
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/v1/shared/shared-readonly"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/shared/shared-error"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/shared/shared-loading"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/shared/shared-readonly"
+    }
+  ]
+}

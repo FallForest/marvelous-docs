@@ -62,7 +62,13 @@ export function renderDocHTML(node: Record<string, unknown> | undefined): string
     case 'orderedList': return '<ol>' + inner + '</ol>'
     case 'listItem': return '<li>' + inner + '</li>'
     case 'taskList': return '<ul class="task-list">' + inner + '</ul>'
-    case 'taskItem': return '<li>' + inner + '</li>'
+    case 'taskItem': {
+      // A static document keeps the stored completion state without exposing an
+      // editor. Only a real boolean may create the checked attribute; arbitrary
+      // node attributes never become HTML or event handlers.
+      const checked = attrs.checked === true
+      return '<li class="task-item" data-checked="' + String(checked) + '"><input type="checkbox" disabled' + (checked ? ' checked' : '') + ' aria-label="任务完成状态"><div class="task-item-content">' + inner + '</div></li>'
+    }
     case 'horizontalRule': return '<hr>'
     case 'image': {
       const src = safeHref(attrs.src)
